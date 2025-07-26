@@ -1,0 +1,93 @@
+[
+  { "question": "What is the capital of France?", "answer": "Paris" },
+  { "question": "What is 2 + 2?", "answer": "4" },
+  { "question": "Who wrote 'To Kill a Mockingbird'?", "answer": "Harper Lee" },
+  { "question": "What is the boiling point of water (°C)?", "answer": "100" },
+  {
+    "question": "What is the largest planet in our solar system?",
+    "answer": "Jupiter"
+  },
+  { "question": "What is the chemical symbol for gold?", "answer": "Au" },
+  { "question": "Who painted the Mona Lisa?", "answer": "Leonardo da Vinci" },
+  { "question": "What year did World War II end?", "answer": "1945" },
+  { "question": "What is the square root of 64?", "answer": "8" },
+  { "question": "What is the fastest land animal?", "answer": "Cheetah" },
+  { "question": "What is the smallest prime number?", "answer": "2" },
+  { "question": "Who discovered penicillin?", "answer": "Alexander Fleming" },
+  {
+    "question": "What is the main ingredient in guacamole?",
+    "answer": "Avocado"
+  },
+  { "question": "What is the capital city of Japan?", "answer": "Tokyo" },
+  { "question": "What is the freezing point of water (°C)?", "answer": "0" },
+  {
+    "question": "What is the tallest mountain in the world?",
+    "answer": "Mount Everest"
+  },
+  {
+    "question": "Who is known as the father of computers?",
+    "answer": "Charles Babbage"
+  },
+  { "question": "What is the hardest natural substance?", "answer": "Diamond" },
+  {
+    "question": "What is the largest ocean on Earth?",
+    "answer": "Pacific Ocean"
+  },
+  {
+    "question": "What is the main language spoken in Brazil?",
+    "answer": "Portuguese"
+  },
+  {
+    "question": "What is the currency of the United Kingdom?",
+    "answer": "Pound Sterling"
+  },
+  {
+    "question": "Who invented the telephone?",
+    "answer": "Alexander Graham Bell"
+  },
+  { "question": "What is the chemical formula for water?", "answer": "H2O" },
+  { "question": "What is the largest continent?", "answer": "Asia" },
+  { "question": "Who wrote '1984'?", "answer": "George Orwell" },
+  {
+    "question": "What is the process by which plants make food?",
+    "answer": "Photosynthesis"
+  },
+  {
+    "question": "What is the smallest country in the world?",
+    "answer": "Vatican City"
+  },
+  {
+    "question": "What is the speed of light in vacuum (km/s)?",
+    "answer": "299,792"
+  },
+  { "question": "What is the largest mammal?", "answer": "Blue Whale" },
+  {
+    "question": "Who developed the theory of relativity?",
+    "answer": "Albert Einstein"
+  },
+  { "question": "What is the capital of Canada?", "answer": "Ottawa" },
+  { "question": "What is the main ingredient in bread?", "answer": "Flour" },
+  { "question": "What is the longest river in the world?", "answer": "Nile" },
+  {
+    "question": "What is the largest desert in the world?",
+    "answer": "Sahara"
+  },
+  {
+    "question": "Who is the author of 'Pride and Prejudice'?",
+    "answer": "Jane Austen"
+  },
+  { "question": "What is the chemical symbol for sodium?", "answer": "Na" },
+  {
+    "question": "What is the main gas in Earth's atmosphere?",
+    "answer": "Nitrogen"
+  },
+  { "question": "What is the capital of Australia?", "answer": "Canberra" },
+  {
+    "question": "What is the largest island in the world?",
+    "answer": "Greenland"
+  },
+  {
+    "question": "Who invented the World Wide Web?",
+    "answer": "Tim Berners-Lee"
+  }
+]
