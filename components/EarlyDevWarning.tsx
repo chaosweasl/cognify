@@ -30,7 +30,7 @@ export const EarlyDevWarning: React.FC = () => {
           className={`tooltip tooltip-error tooltip-left font-semibold ${
             showTooltip ? "tooltip-open" : ""
           }`}
-          data-tip="This app is in early development. Data and features may be volatile."
+          data-tip="Cognify is in early development. Data and features may be volatile."
           style={{ position: "absolute", right: "2.5rem", bottom: "1.3rem" }}
         ></div>
       </div>

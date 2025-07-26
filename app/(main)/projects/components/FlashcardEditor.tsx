@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
+import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 
 // Define Flashcard type locally without 'id'
 type Flashcard = {
@@ -24,6 +25,7 @@ type Flashcard = {
   answer: string;
 };
 
+// Main FlashcardEditor Component
 interface FlashcardEditorProps {
   project: Project;
 }
@@ -107,6 +109,16 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   function handleCancel() {
     router.push("/projects");
+  }
+
+  function handleImportFlashcards(importedCards: Flashcard[]) {
+    // Replace all existing flashcards with imported ones
+    setFlashcards(importedCards);
+    setCurrent(0);
+
+    // Alternative: Append to existing flashcards (uncomment if preferred)
+    // setFlashcards(prev => [...prev, ...importedCards]);
+    // setCurrent(flashcards.length); // Navigate to first imported card
   }
 
   const card = flashcards[current] || { question: "", answer: "" };
@@ -265,14 +277,20 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                     </div>
                   </div>
 
-                  <button
-                    className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"
-                    onClick={handleAdd}
-                    disabled={saving}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Card
-                  </button>
+                  <div className="flex gap-2">
+                    <FlashcardJsonImporter
+                      onImport={handleImportFlashcards}
+                      disabled={saving}
+                    />
+                    <button
+                      className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"
+                      onClick={handleAdd}
+                      disabled={saving}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Card
+                    </button>
+                  </div>
                 </div>
 
                 {/* Enhanced Card Content */}
