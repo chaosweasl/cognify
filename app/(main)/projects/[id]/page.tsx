@@ -16,6 +16,7 @@ export default async function ProjectStudyPage(props: {
       <StudyFlashcards
         flashcards={normalized.flashcards}
         projectName={normalized.name}
+        projectId={normalized.id}
       />
     </main>
   );

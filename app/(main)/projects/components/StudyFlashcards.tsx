@@ -19,12 +19,14 @@ interface Flashcard {
 
 interface StudyFlashcardsProps {
   flashcards: Flashcard[];
-  projectName: string; // assumed to be a valid ID used in the URL path
+  projectName: string;
+  projectId: string;
 }
 
 export default function StudyFlashcards({
   flashcards,
   projectName,
+  projectId,
 }: StudyFlashcardsProps) {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
@@ -130,7 +132,7 @@ export default function StudyFlashcards({
           </h2>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => router.push(`/${projectName}/edit`)}
+              onClick={() => router.push(`/projects/${projectId}/edit`)}
               className="btn btn-outline btn-sm gap-2"
               title="Edit flashcards"
             >
