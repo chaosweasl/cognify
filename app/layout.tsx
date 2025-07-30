@@ -45,10 +45,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-base-100`}
       >
         <ToastProvider>
-          <ProfileProvider>{children}</ProfileProvider>
+          <ProfileProvider>
+            {children}
+            {/* Early development warning fixed at bottom left */}
+            <EarlyDevWarning />
+          </ProfileProvider>
         </ToastProvider>
-        {/* Early development warning fixed at bottom left */}
-        <EarlyDevWarning />
       </body>
     </html>
   );
