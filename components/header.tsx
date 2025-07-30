@@ -82,7 +82,7 @@ export function Header() {
           aria-label="Toggle theme"
         >
           {mounted ? (
-            theme === "dim" ? (
+            theme === "darkgreen" ? (
               <Sun className="w-5 h-5" />
             ) : (
               <Moon className="w-5 h-5" />

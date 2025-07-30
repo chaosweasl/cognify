@@ -109,7 +109,7 @@ export function HeaderMain() {
           onClick={toggleTheme}
           aria-label="Toggle theme"
         >
-          {mounted && theme === "dim" ? (
+          {mounted && theme === "darkgreen" ? (
             <Sun className="w-5 h-5" />
           ) : (
             <Moon className="w-5 h-5" />
