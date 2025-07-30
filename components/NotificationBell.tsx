@@ -19,6 +19,15 @@ export function NotificationBell() {
   const userId = useUserId();
   const [userNotifications, setUserNotifications] = useState<any[]>([]);
   const [appNotifications, setAppNotifications] = useState<any[]>([]);
+
+  // Only show notifications whose trigger_at is in the past
+  const now = Date.now();
+  const filteredUserNotifications = userNotifications.filter(
+    (n) => !n.trigger_at || new Date(n.trigger_at).getTime() <= now
+  );
+  const filteredAppNotifications = appNotifications.filter(
+    (n) => !n.trigger_at || new Date(n.trigger_at).getTime() <= now
+  );
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"user" | "app">("user");
   // Track read app notifications per user from DB
@@ -51,17 +60,19 @@ export function NotificationBell() {
     });
   }, [userId, appNotifications.length]);
 
-  // Mark all as read when user tab is opened
+  // Mark all as read when user tab is opened, but only for visible (due) notifications
   useEffect(() => {
     if (
       open &&
       activeTab === "user" &&
       userId &&
-      userNotifications.some((n: any) => !n.read)
+      filteredUserNotifications.some((n: any) => !n.read)
     ) {
-      const unread = userNotifications.filter((n: any) => !n.read);
+      const unreadVisible = filteredUserNotifications.filter(
+        (n: any) => !n.read
+      );
       Promise.all(
-        unread.map((n: any) => {
+        unreadVisible.map((n: any) => {
           console.log("[Supabase] markNotificationRead", n.id);
           return markNotificationRead(n.id);
         })
@@ -78,7 +89,7 @@ export function NotificationBell() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activeTab, userId, userNotifications]);
+  }, [open, activeTab, userId, filteredUserNotifications]);
 
   // Mark all app notifications as read when app tab is opened
   useEffect(() => {
@@ -111,11 +122,12 @@ export function NotificationBell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeTab, userId, appNotifications, readAppIds]);
 
-  const unreadAppCount = appNotifications.filter(
+  const unreadAppCount = filteredAppNotifications.filter(
     (n: any) => !readAppIds.includes(n.id)
   ).length;
   const notificationCount =
-    userNotifications.filter((n: any) => !n.read).length + unreadAppCount;
+    filteredUserNotifications.filter((n: any) => !n.read).length +
+    unreadAppCount;
 
   return (
     <div className="relative m-0 p-0">
@@ -144,9 +156,9 @@ export function NotificationBell() {
               onClick={() => setActiveTab("user")}
             >
               User
-              {userNotifications.filter((n) => !n.read).length > 0 && (
+              {filteredUserNotifications.filter((n) => !n.read).length > 0 && (
                 <span className="ml-2 badge badge-xs badge-primary align-middle">
-                  {userNotifications.filter((n) => !n.read).length}
+                  {filteredUserNotifications.filter((n) => !n.read).length}
                 </span>
               )}
             </button>
@@ -171,9 +183,9 @@ export function NotificationBell() {
           <div className="max-h-72 overflow-y-auto">
             {activeTab === "user" && (
               <>
-                {userNotifications.length > 0 ? (
+                {filteredUserNotifications.length > 0 ? (
                   <div className="divide-y divide-base-200">
-                    {userNotifications.map((n: any) => (
+                    {filteredUserNotifications.map((n: any) => (
                       <div
                         key={n.id}
                         className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
@@ -246,9 +258,9 @@ export function NotificationBell() {
 
             {activeTab === "app" && (
               <>
-                {appNotifications.length > 0 ? (
+                {filteredAppNotifications.length > 0 ? (
                   <div className="divide-y divide-base-200">
-                    {appNotifications.map((n: any) => (
+                    {filteredAppNotifications.map((n: any) => (
                       <div
                         key={n.id}
                         className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
