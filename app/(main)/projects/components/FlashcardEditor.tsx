@@ -2,20 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { ManageFlashcardsModal } from "./ManageFlashcardsModal";
+import { ProjectInfoForm } from "./ProjectInfoForm";
+import { FlashcardCardEditor } from "./FlashcardCardEditor";
+import { FlashcardNavigation } from "./FlashcardNavigation";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  Save,
-  X,
-  Loader2,
-  BookOpen,
-  Edit3,
-  AlertCircle,
-  CheckCircle2,
-} from "lucide-react";
+import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
@@ -198,84 +189,23 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Enhanced Project Info */}
+          {/* Project Info Form */}
           <div className="xl:col-span-1">
-            <div className="card bg-base-100/90 backdrop-blur shadow-lg border border-base-300/50">
-              <div className="card-body p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Edit3 className="w-5 h-5 text-secondary" />
-                  <h2 className="card-title text-lg">Project Details</h2>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium text-base-content/80">
-                        Project Name
-                      </span>
-                      <span className="label-text-alt text-error">
-                        {!name.trim() && "*Required"}
-                      </span>
-                    </label>
-                    <input
-                      className={`input input-bordered w-full transition-all duration-200 ${
-                        !name.trim() ? "input-error" : "focus:input-primary"
-                      }`}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter project name"
-                      disabled={saving}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium text-base-content/80">
-                        Description
-                      </span>
-                      <span className="label-text-alt text-base-content/50">
-                        Optional
-                      </span>
-                    </label>
-                    <textarea
-                      className="textarea textarea-bordered w-full h-28 resize-none focus:textarea-primary transition-all duration-200"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Describe your flashcard set..."
-                      disabled={saving}
-                    />
-                  </div>
-                </div>
-
-                {/* Validation Status */}
-                <div className="mt-6 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm">
-                    {isValid ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-success" />
-                        <span className="text-success font-medium">
-                          Ready to save
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-warning" />
-                        <span className="text-warning font-medium">
-                          Project name required
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ProjectInfoForm
+              name={name}
+              setName={setName}
+              description={description}
+              setDescription={setDescription}
+              isValid={isValid}
+              saving={saving}
+            />
           </div>
 
-          {/* Enhanced Card Editor */}
+          {/* Card Editor and Navigation */}
           <div className="xl:col-span-2">
             <div className="card bg-base-100/90 backdrop-blur shadow-lg border border-base-300/50">
               <div className="card-body p-6">
-                {/* Enhanced Card Header */}
+                {/* Card Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div className="flex items-center gap-4">
                     <h2 className="card-title text-xl">Flashcard Editor</h2>
@@ -290,7 +220,6 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                       )}
                     </div>
                   </div>
-
                   <div className="flex gap-2">
                     <FlashcardJsonImporter
                       onImport={handleImportFlashcards}
@@ -322,97 +251,22 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                     onDeleteAll={handleDeleteAll}
                   />
                 </div>
-
-                {/* Enhanced Card Content */}
-                <div className="space-y-6">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium text-lg text-base-content/90">
-                        Question
-                      </span>
-                      <span className="label-text-alt text-base-content/50">
-                        {typeof card.question === "string"
-                          ? card.question.length
-                          : 0}
-                        /300
-                      </span>
-                    </label>
-                    <textarea
-                      className={`textarea textarea-bordered w-full h-32 resize-none text-base transition-all duration-200 ${
-                        !(
-                          typeof card.question === "string" &&
-                          card.question.trim()
-                        )
-                          ? "textarea-error"
-                          : "focus:textarea-primary"
-                      }`}
-                      value={
-                        typeof card.question === "string" ? card.question : ""
-                      }
-                      onChange={(e) => handleChange("question", e.target.value)}
-                      placeholder="What would you like to ask? Be clear and specific..."
-                      disabled={saving}
-                      maxLength={300}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium text-lg text-base-content/90">
-                        Answer
-                      </span>
-                      <span className="label-text-alt text-base-content/50">
-                        {typeof card.answer === "string"
-                          ? card.answer.length
-                          : 0}
-                        /300
-                      </span>
-                    </label>
-                    <textarea
-                      className={`textarea textarea-bordered w-full h-32 resize-none text-base transition-all duration-200 ${
-                        !(typeof card.answer === "string" && card.answer.trim())
-                          ? "textarea-error"
-                          : "focus:textarea-primary"
-                      }`}
-                      value={typeof card.answer === "string" ? card.answer : ""}
-                      onChange={(e) => handleChange("answer", e.target.value)}
-                      placeholder="Provide a clear, concise answer..."
-                      disabled={saving}
-                      maxLength={300}
-                    />
-                  </div>
-                </div>
-
-                {/* Enhanced Card Navigation */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-8 pt-6 border-t border-base-300/60">
-                  <div className="flex gap-2">
-                    <button
-                      className="btn btn-outline hover:btn-primary transition-all duration-200"
-                      onClick={() => navigate(-1)}
-                      disabled={current === 0 || saving}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Previous
-                    </button>
-                    <button
-                      className="btn btn-outline hover:btn-primary transition-all duration-200"
-                      onClick={() => navigate(1)}
-                      disabled={current === flashcards.length - 1 || saving}
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <button
-                    className="btn btn-error btn-outline hover:shadow-md transition-all duration-200"
-                    onClick={handleDelete}
-                    disabled={flashcards.length <= 1 || saving}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Card
-                  </button>
-                </div>
+                {/* Card Content */}
+                <FlashcardCardEditor
+                  card={card}
+                  handleChange={handleChange as any}
+                  saving={saving}
+                />
+                {/* Card Navigation */}
+                <FlashcardNavigation
+                  current={current}
+                  total={flashcards.length}
+                  onPrev={() => navigate(-1)}
+                  onNext={() => navigate(1)}
+                  onDelete={handleDelete}
+                  canDelete={flashcards.length > 1}
+                  saving={saving}
+                />
               </div>
             </div>
           </div>
