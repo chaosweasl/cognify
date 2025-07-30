@@ -20,6 +20,10 @@
 # production
 /build
 
+# supabase
+/supabase
+/schema.sql
+
 # misc
 .DS_Store
 *.pem
