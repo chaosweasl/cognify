@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 const THEME_KEY = "theme";
-const DEFAULT_THEME = "dim";
+const DEFAULT_THEME = "darkgreen";
 
 interface ThemeState {
   theme: string;
