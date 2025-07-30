@@ -198,7 +198,7 @@ export function NotificationBell() {
                           </div>
                           {n.trigger_at && (
                             <div className="text-xs text-base-content/40 mt-1">
-                              {new Date(n.trigger_at).toLocaleDateString()}
+                              {new Date(n.trigger_at).toLocaleString()}
                             </div>
                           )}
                         </a>
