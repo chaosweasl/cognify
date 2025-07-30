@@ -22,7 +22,7 @@
 
 # supabase
 /supabase
-/schema.sql
+/schema-dump.sql
 
 # misc
 .DS_Store
