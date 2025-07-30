@@ -1,15 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  RotateCcw,
-  BookOpen,
-  CheckCircle,
-  XCircle,
-  Pencil,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { RotateCcw, BookOpen, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  initSRSState,
+  scheduleSRSCard,
+  getNextDueCardId,
+  SRSRating,
+} from "./SRSScheduler";
 
 interface Flashcard {
   id: string;
@@ -29,12 +27,16 @@ export default function StudyFlashcards({
   projectId,
 }: StudyFlashcardsProps) {
   const router = useRouter();
-  const [current, setCurrent] = useState(0);
+  const [ankiState, setAnkiState] = useState(() =>
+    initSRSState(
+      (flashcards && flashcards.length > 0 ? flashcards : demoFlashcards).map(
+        (c) => c.id
+      )
+    )
+  );
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
-  const [studyStats, setStudyStats] = useState({ correct: 0, incorrect: 0 });
-  const [cardStatus, setCardStatus] = useState<{
-    [key: string]: "correct" | "incorrect" | null;
-  }>({});
+  const [sessionDone, setSessionDone] = useState(false);
 
   const demoFlashcards = [
     { id: "1", question: "What is the capital of France?", answer: "Paris" },
@@ -48,63 +50,75 @@ export default function StudyFlashcards({
 
   const cards =
     flashcards && flashcards.length > 0 ? flashcards : demoFlashcards;
-  const card = cards[current];
+  // Map of id to card
+  const cardMap = React.useMemo(
+    () => Object.fromEntries(cards.map((c) => [c.id, c])),
+    [cards]
+  );
+  const card = currentId ? cardMap[currentId] : null;
 
   const handleFlip = () => setFlipped((f) => !f);
 
-  const handleNext = React.useCallback(() => {
-    setFlipped(false);
-    setCurrent((prev) => (prev + 1 < cards.length ? prev + 1 : 0));
-  }, [cards.length]);
-
-  const handlePrev = React.useCallback(() => {
-    setFlipped(false);
-    setCurrent((prev) => (prev - 1 >= 0 ? prev - 1 : cards.length - 1));
-  }, [cards.length]);
-
+  // Keyboard shortcuts: flip (space/f), rate (1-4), reset (r)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "a") handlePrev();
-      if (e.key === "ArrowRight" || e.key === "d") handleNext();
       if (e.key === " " || e.key === "f") {
         e.preventDefault();
         handleFlip();
       }
+      if (["1", "2", "3", "4"].includes(e.key)) {
+        if (flipped) {
+          handleRate((parseInt(e.key, 10) - 1) as SRSRating);
+        }
+      }
       if (e.key === "r") handleReset();
     };
-
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [current, cards.length, handlePrev, handleNext]);
+    // eslint-disable-next-line
+  }, [currentId, flipped, ankiState]);
 
   const handleReset = () => {
-    setCurrent(0);
+    setAnkiState(initSRSState(cards.map((c) => c.id)));
+    setSessionDone(false);
     setFlipped(false);
-    setStudyStats({ correct: 0, incorrect: 0 });
-    setCardStatus({});
+    setCurrentId(null);
   };
 
-  const markCard = (status: "correct" | "incorrect") => {
-    const cardId = card.id;
-    const wasAlreadyMarked = cardStatus[cardId];
-
-    setCardStatus((prev) => ({ ...prev, [cardId]: status }));
-
-    if (!wasAlreadyMarked) {
-      setStudyStats((prev) => ({
+  // Rate card: 0=Again, 1=Hard, 2=Good, 3=Easy
+  const handleRate = useCallback(
+    (rating: SRSRating) => {
+      if (!card) return;
+      const now = Date.now();
+      setAnkiState((prev) => ({
         ...prev,
-        [status]: prev[status] + 1,
+        [card.id]: scheduleSRSCard(prev[card.id], rating, now),
       }));
-    } else if (wasAlreadyMarked !== status) {
-      setStudyStats((prev) => ({
-        correct: prev.correct + (status === "correct" ? 1 : -1),
-        incorrect: prev.incorrect + (status === "incorrect" ? 1 : -1),
-      }));
-    }
-  };
+      setFlipped(false);
+      // Find next due card
+      setTimeout(() => {
+        setCurrentId((prevId) => {
+          const nextId = getNextDueCardId(
+            {
+              ...ankiState,
+              [card.id]: scheduleSRSCard(ankiState[card.id], rating, now),
+            },
+            [card.id]
+          );
+          if (nextId) return nextId;
+          setSessionDone(true);
+          return null;
+        });
+      }, 200);
+    },
+    [card, ankiState]
+  );
 
-  const progress = ((current + 1) / cards.length) * 100;
-  const currentCardStatus = cardStatus[card.id];
+  // Progress: percent of cards reviewed in this session
+  const reviewedCount = Object.values(ankiState).filter(
+    (c) => c.lastReviewed > 0
+  ).length;
+  const progress = (reviewedCount / cards.length) * 100;
 
   if (!cards || cards.length === 0) {
     return (
@@ -121,6 +135,34 @@ export default function StudyFlashcards({
       </div>
     );
   }
+
+  // On mount or reset, pick first due card
+  useEffect(() => {
+    if (!currentId) {
+      const nextId = getNextDueCardId(ankiState);
+      setCurrentId(nextId);
+    }
+  }, [ankiState, currentId]);
+
+  if (sessionDone) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <BookOpen className="w-16 h-16 text-success mx-auto mb-4" />
+          <div className="text-2xl font-bold text-success mb-2">
+            Session complete!
+          </div>
+          <div className="text-base-content/70 mb-4">
+            All due cards reviewed for now. Come back later for more!
+          </div>
+          <button className="btn btn-primary" onClick={handleReset}>
+            Restart Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (!card) return null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh]">
@@ -142,7 +184,7 @@ export default function StudyFlashcards({
             <button
               onClick={handleReset}
               className="btn btn-ghost btn-sm gap-2"
-              title="Reset progress"
+              title="Reset session"
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -158,20 +200,13 @@ export default function StudyFlashcards({
           />
         </div>
 
-        {/* Stats */}
         <div className="flex justify-between items-center text-sm">
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2 text-success">
-              <CheckCircle className="w-4 h-4" />
-              <span>{studyStats.correct} correct</span>
-            </div>
-            <div className="flex items-center gap-2 text-error">
-              <XCircle className="w-4 h-4" />
-              <span>{studyStats.incorrect} incorrect</span>
-            </div>
+          <div className="text-base-content/70">
+            {reviewedCount} of {cards.length} reviewed
           </div>
           <div className="text-base-content/70">
-            Card {current + 1} of {cards.length}
+            Due:{" "}
+            {Object.values(ankiState).filter((c) => c.due <= Date.now()).length}
           </div>
         </div>
       </div>
@@ -190,13 +225,7 @@ export default function StudyFlashcards({
           >
             {/* Front */}
             <div
-              className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-base-100 to-base-200 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] transition-all duration-300 ${
-                currentCardStatus === "correct"
-                  ? "border-success shadow-success/20"
-                  : currentCardStatus === "incorrect"
-                  ? "border-error shadow-error/20"
-                  : "border-base-300 hover:border-primary/50"
-              }`}
+              className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-base-100 to-base-200 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] transition-all duration-300 border-base-300 hover:border-primary/50`}
             >
               <div className="text-center px-4 py-6">
                 <div className="text-sm md:text-base lg:text-xl font-semibold text-base-content mb-6 leading-relaxed">
@@ -210,13 +239,7 @@ export default function StudyFlashcards({
 
             {/* Back */}
             <div
-              className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] [transform:rotateY(180deg)] transition-all duration-300 ${
-                currentCardStatus === "correct"
-                  ? "border-success shadow-success/20"
-                  : currentCardStatus === "incorrect"
-                  ? "border-error shadow-error/20"
-                  : "border-primary/30"
-              }`}
+              className={`absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] [transform:rotateY(180deg)] transition-all duration-300 border-primary/30`}
             >
               <div className="text-center px-4 py-6">
                 <div className="text-sm md:text-base lg:text-xl font-semibold text-base-content mb-6 leading-relaxed">
@@ -231,9 +254,9 @@ export default function StudyFlashcards({
         </div>
       </div>
 
-      {/* Controls (always render to prevent layout shift) */}
+      {/* Anki Rating Controls (show only when flipped) */}
       <div
-        className={`flex gap-3 mb-6 min-h-[48px] transition-all duration-200 ${
+        className={`flex flex-wrap gap-3 mb-6 min-h-[48px] transition-all duration-200 justify-center ${
           flipped
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -241,60 +264,39 @@ export default function StudyFlashcards({
         aria-hidden={!flipped}
       >
         <button
-          onClick={() => markCard("incorrect")}
-          className={`btn btn-outline ${
-            currentCardStatus === "incorrect" ? "btn-error" : "hover:btn-error"
-          } gap-2`}
+          className="btn btn-outline btn-error"
+          onClick={() => handleRate(0)}
         >
-          <XCircle className="w-4 h-4" />
-          Incorrect
+          Again
         </button>
         <button
-          onClick={() => markCard("correct")}
-          className={`btn btn-outline ${
-            currentCardStatus === "correct"
-              ? "btn-success"
-              : "hover:btn-success"
-          } gap-2`}
+          className="btn btn-outline btn-warning"
+          onClick={() => handleRate(1)}
         >
-          <CheckCircle className="w-4 h-4" />
-          Correct
+          Hard
         </button>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center gap-2 flex-wrap justify-center">
         <button
-          className="btn btn-md btn-outline"
-          onClick={handlePrev}
-          disabled={cards.length <= 1}
+          className="btn btn-outline btn-success"
+          onClick={() => handleRate(2)}
         >
-          <ChevronLeft className="w-4 h-4" />
-          Previous
+          Good
         </button>
-
-        <div className="flex items-center gap-0.5 text-base-content/70 text-sm bg-base-200 px-4 py-2 rounded-full">
-          <span className="font-medium">{current + 1}</span>
-          <span>/</span>
-          <span>{cards.length}</span>
-        </div>
-
         <button
-          className="btn btn-md btn-primary"
-          onClick={handleNext}
-          disabled={cards.length <= 1}
+          className="btn btn-outline btn-info"
+          onClick={() => handleRate(3)}
         >
-          Next
-          <ChevronRight className="w-4 h-4" />
+          Easy
         </button>
       </div>
 
       {/* Shortcuts */}
       <div className="mt-8 text-xs text-base-content/50 text-center">
         <div className="hidden lg:flex flex-wrap justify-center gap-4">
-          <span>← / A: Previous</span>
-          <span>→ / D: Next</span>
           <span>Space / F: Flip</span>
+          <span>1: Again</span>
+          <span>2: Hard</span>
+          <span>3: Good</span>
+          <span>4: Easy</span>
           <span>R: Reset</span>
         </div>
       </div>
