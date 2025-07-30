@@ -14,12 +14,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
 import React from "react";
-import { NotificationBell } from "../../../../components/NotificationBell";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useUserProfileStore } from "@/hooks/useUserProfile";
 import { useState, useEffect } from "react";
-import { signOut } from "../actions";
+import { signOut } from "../dashboard/actions";
 
-export function Header() {
+export function HeaderMain() {
   const { theme, toggleTheme } = useThemeStore();
   const { userProfile } = useUserProfileStore();
   const [mounted, setMounted] = useState(false);

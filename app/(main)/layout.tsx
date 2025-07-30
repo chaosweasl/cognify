@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Header } from "./dashboard/components/HeaderDashboard";
+import { HeaderMain } from "./components/HeaderMain";
 import { useUserProfileStore } from "@/hooks/useUserProfile";
 
 export default function MainLayout({
@@ -16,7 +16,7 @@ export default function MainLayout({
 
   return (
     <>
-      <Header />
+      <HeaderMain />
       {children}
     </>
   );
