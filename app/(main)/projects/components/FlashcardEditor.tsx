@@ -112,13 +112,16 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   }
 
   function handleImportFlashcards(importedCards: Flashcard[]) {
-    // Replace all existing flashcards with imported ones
-    setFlashcards(importedCards);
+    // Remove any cards that are missing a non-empty question or answer
+    const filtered = importedCards.filter(
+      (fc) =>
+        typeof fc.question === "string" &&
+        typeof fc.answer === "string" &&
+        fc.question.trim() &&
+        fc.answer.trim()
+    );
+    setFlashcards(filtered);
     setCurrent(0);
-
-    // Alternative: Append to existing flashcards (uncomment if preferred)
-    // setFlashcards(prev => [...prev, ...importedCards]);
-    // setCurrent(flashcards.length); // Navigate to first imported card
   }
 
   const card = flashcards[current] || { question: "", answer: "" };
@@ -281,6 +284,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                     <FlashcardJsonImporter
                       onImport={handleImportFlashcards}
                       disabled={saving}
+                      existingFlashcards={flashcards}
                     />
                     <button
                       className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"

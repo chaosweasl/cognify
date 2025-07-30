@@ -13,11 +13,13 @@ type Flashcard = {
 interface FlashcardJsonImporterProps {
   onImport: (flashcards: Flashcard[]) => void;
   disabled?: boolean;
+  existingFlashcards?: Flashcard[];
 }
 
 export function FlashcardJsonImporter({
   onImport,
   disabled = false,
+  existingFlashcards = [],
 }: FlashcardJsonImporterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -121,7 +123,9 @@ export function FlashcardJsonImporter({
 
   const handleImport = () => {
     if (preview.length > 0) {
-      onImport(preview);
+      // Merge previous flashcards with imported ones
+      const merged = [...existingFlashcards, ...preview];
+      onImport(merged);
       handleClose();
     }
   };
