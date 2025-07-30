@@ -229,33 +229,36 @@ export default function StudyFlashcards({
         </div>
       </div>
 
-      {/* Controls */}
-      {flipped && (
-        <div className="flex gap-3 mb-6 animate-in fade-in duration-300">
-          <button
-            onClick={() => markCard("incorrect")}
-            className={`btn btn-outline ${
-              currentCardStatus === "incorrect"
-                ? "btn-error"
-                : "hover:btn-error"
-            } gap-2`}
-          >
-            <XCircle className="w-4 h-4" />
-            Incorrect
-          </button>
-          <button
-            onClick={() => markCard("correct")}
-            className={`btn btn-outline ${
-              currentCardStatus === "correct"
-                ? "btn-success"
-                : "hover:btn-success"
-            } gap-2`}
-          >
-            <CheckCircle className="w-4 h-4" />
-            Correct
-          </button>
-        </div>
-      )}
+      {/* Controls (always render to prevent layout shift) */}
+      <div
+        className={`flex gap-3 mb-6 min-h-[48px] transition-all duration-200 ${
+          flipped
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!flipped}
+      >
+        <button
+          onClick={() => markCard("incorrect")}
+          className={`btn btn-outline ${
+            currentCardStatus === "incorrect" ? "btn-error" : "hover:btn-error"
+          } gap-2`}
+        >
+          <XCircle className="w-4 h-4" />
+          Incorrect
+        </button>
+        <button
+          onClick={() => markCard("correct")}
+          className={`btn btn-outline ${
+            currentCardStatus === "correct"
+              ? "btn-success"
+              : "hover:btn-success"
+          } gap-2`}
+        >
+          <CheckCircle className="w-4 h-4" />
+          Correct
+        </button>
+      </div>
 
       {/* Navigation */}
       <div className="flex items-center gap-2 flex-wrap justify-center">

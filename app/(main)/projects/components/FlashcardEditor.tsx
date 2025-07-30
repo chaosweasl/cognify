@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ManageFlashcardsModal } from "./ManageFlashcardsModal";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -31,6 +32,7 @@ interface FlashcardEditorProps {
 }
 
 export function FlashcardEditor({ project }: FlashcardEditorProps) {
+  const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
   const [flashcards, setFlashcards] = useState<Flashcard[]>(
@@ -47,22 +49,9 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const router = useRouter();
 
   useEffect(() => {
-    const valid =
-      flashcards.length > 0 &&
-      flashcards.every(
-        (fc) =>
-          typeof fc.question === "string" &&
-          typeof fc.answer === "string" &&
-          fc.question &&
-          typeof fc.question.trim === "function" &&
-          fc.question.trim() &&
-          fc.answer &&
-          typeof fc.answer.trim === "function" &&
-          fc.answer.trim()
-      );
+    // Allow saving as long as project name is present
     setIsValid(
-      valid &&
-        typeof name === "string" &&
+      typeof name === "string" &&
         typeof name.trim === "function" &&
         !!name.trim()
     );
@@ -87,6 +76,25 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     setCurrent(flashcards.length);
   }
 
+  function handleJumpTo(idx: number) {
+    setCurrent(idx);
+  }
+
+  function handleDeleteAt(idx: number) {
+    setFlashcards((prev) => prev.filter((_, i) => i !== idx));
+    // If deleting current card, move to previous or 0
+    setCurrent((prev) => {
+      if (idx < prev) return prev - 1;
+      if (idx === prev) return Math.max(0, prev - 1);
+      return prev;
+    });
+  }
+
+  function handleDeleteAll() {
+    setFlashcards([]);
+    setCurrent(0);
+  }
+
   function handleDelete() {
     if (flashcards.length <= 1) return;
     setFlashcards((prev) => {
@@ -102,7 +110,18 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   async function handleSave() {
     setSaving(true);
-    await updateProject({ id: project.id, name, description, flashcards });
+    // Only save non-empty cards (at least one non-empty field)
+    const filtered = flashcards.filter(
+      (fc) =>
+        (typeof fc.question === "string" && fc.question.trim()) ||
+        (typeof fc.answer === "string" && fc.answer.trim())
+    );
+    await updateProject({
+      id: project.id,
+      name,
+      description,
+      flashcards: filtered,
+    });
     setSaving(false);
     router.push("/projects");
   }
@@ -126,16 +145,12 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   const card = flashcards[current] || { question: "", answer: "" };
   const currentCardValid =
-    typeof card.question === "string" &&
-    typeof card.answer === "string" &&
-    card.question.trim() &&
-    card.answer.trim();
+    (typeof card.question === "string" && card.question.trim()) ||
+    (typeof card.answer === "string" && card.answer.trim());
   const completedCards = flashcards.filter(
     (fc) =>
-      typeof fc.question === "string" &&
-      typeof fc.answer === "string" &&
-      fc.question.trim() &&
-      fc.answer.trim()
+      (typeof fc.question === "string" && fc.question.trim()) ||
+      (typeof fc.answer === "string" && fc.answer.trim())
   ).length;
 
   return (
@@ -239,18 +254,14 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                       <>
                         <CheckCircle2 className="w-4 h-4 text-success" />
                         <span className="text-success font-medium">
-                          All fields valid
+                          Ready to save
                         </span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="w-4 h-4 text-warning" />
                         <span className="text-warning font-medium">
-                          {!name.trim()
-                            ? "Project name required"
-                            : flashcards.length === 0
-                            ? "Add at least one card"
-                            : "Complete all flashcards"}
+                          Project name required
                         </span>
                       </>
                     )}
@@ -287,6 +298,13 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                       existingFlashcards={flashcards}
                     />
                     <button
+                      className="btn btn-outline btn-info"
+                      onClick={() => setManageModalOpen(true)}
+                      disabled={saving || flashcards.length === 0}
+                    >
+                      Manage Cards
+                    </button>
+                    <button
                       className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"
                       onClick={handleAdd}
                       disabled={saving}
@@ -295,6 +313,14 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                       Add Card
                     </button>
                   </div>
+                  <ManageFlashcardsModal
+                    open={manageModalOpen}
+                    onClose={() => setManageModalOpen(false)}
+                    flashcards={flashcards}
+                    onJump={handleJumpTo}
+                    onDelete={handleDeleteAt}
+                    onDeleteAll={handleDeleteAll}
+                  />
                 </div>
 
                 {/* Enhanced Card Content */}
