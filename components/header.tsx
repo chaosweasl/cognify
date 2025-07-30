@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, Sun, Moon } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
@@ -73,9 +74,10 @@ export function Header() {
         </ul>
       </div>
 
-      <div className="navbar-end">
+      <div className="navbar-end flex items-center gap-2">
+        <NotificationBell />
         <button
-          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors mr-2"
+          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
           onClick={toggleTheme}
           aria-label="Toggle theme"
         >

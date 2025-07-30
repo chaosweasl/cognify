@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient } from "@/utils/supabase/client";
 
 const supabase = createClient();
 
@@ -16,8 +16,8 @@ export async function upsertSRSState(state: {
   card_id: string;
   interval: number;
   ease: number;
-  due: string; // ISO string
-  last_reviewed: string; // ISO string
+  due: string;
+  last_reviewed: string;
   repetitions: number;
 }) {
   return supabase

@@ -14,6 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
 import React from "react";
+import { NotificationBell } from "../../../../components/NotificationBell";
 import { useUserProfileStore } from "@/hooks/useUserProfile";
 import { useState, useEffect } from "react";
 import { signOut } from "../actions";
@@ -101,8 +102,7 @@ export function Header() {
 
       {/* Right side actions */}
       <div className="navbar-end gap-3">
-        {/* New Project button with better styling */}
-
+        <NotificationBell />
         {/* Theme toggle with better styling */}
         <button
           className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
