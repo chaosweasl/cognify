@@ -1,5 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { AnkiRatingControls } from "./AnkiRatingControls";
+import { useUserId } from "@/hooks/useUserId";
+import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { RotateCcw, BookOpen, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -26,6 +29,7 @@ export default function StudyFlashcards({
   projectName,
   projectId,
 }: StudyFlashcardsProps) {
+  const userId = useUserId();
   const router = useRouter();
   const [ankiState, setAnkiState] = useState(() =>
     initSRSState(
@@ -98,13 +102,13 @@ export default function StudyFlashcards({
       // Find next due card
       setTimeout(() => {
         setCurrentId((prevId) => {
-          const nextId = getNextDueCardId(
-            {
-              ...ankiState,
-              [card.id]: scheduleSRSCard(ankiState[card.id], rating, now),
-            },
-            [card.id]
-          );
+          const updatedState = {
+            ...ankiState,
+            [card.id]: scheduleSRSCard(ankiState[card.id], rating, now),
+          };
+          // Only exclude the just-answered card if it's not due now
+          const exclude = updatedState[card.id].due > now ? [card.id] : [];
+          const nextId = getNextDueCardId(updatedState, exclude);
           if (nextId) return nextId;
           setSessionDone(true);
           return null;
@@ -144,7 +148,29 @@ export default function StudyFlashcards({
     }
   }, [ankiState, currentId]);
 
+  useEffect(() => {
+    if (sessionDone && userId && projectId && projectName) {
+      // Find the next due date from the SRS state
+      const nextDue = Math.min(...Object.values(ankiState).map((c) => c.due));
+      if (nextDue && nextDue > Date.now()) {
+        scheduleSRSReminderForProject({
+          user_id: userId,
+          project_id: projectId,
+          project_name: projectName,
+          due: nextDue,
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionDone, userId, projectId, projectName]);
+
   if (sessionDone) {
+    // Find the next due date (after this session)
+    const futureDueDates = Object.values(ankiState)
+      .map((c) => c.due)
+      .filter((d) => d > Date.now());
+    const nextDue =
+      futureDueDates.length > 0 ? Math.min(...futureDueDates) : null;
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <div className="text-center">
@@ -152,9 +178,22 @@ export default function StudyFlashcards({
           <div className="text-2xl font-bold text-success mb-2">
             Session complete!
           </div>
-          <div className="text-base-content/70 mb-4">
+          <div className="text-base-content/70 mb-2">
             All due cards reviewed for now. Come back later for more!
           </div>
+          {nextDue && (
+            <div className="text-base-content/60 mb-4">
+              <span>Next review scheduled for: </span>
+              <span className="font-semibold">
+                {new Date(nextDue).toLocaleString()}
+              </span>
+            </div>
+          )}
+          {!nextDue && (
+            <div className="text-base-content/60 mb-4">
+              No future reviews scheduled.
+            </div>
+          )}
           <button className="btn btn-primary" onClick={handleReset}>
             Restart Session
           </button>
@@ -255,39 +294,7 @@ export default function StudyFlashcards({
       </div>
 
       {/* Anki Rating Controls (show only when flipped) */}
-      <div
-        className={`flex flex-wrap gap-3 mb-6 min-h-[48px] transition-all duration-200 justify-center ${
-          flipped
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-        aria-hidden={!flipped}
-      >
-        <button
-          className="btn btn-outline btn-error"
-          onClick={() => handleRate(0)}
-        >
-          Again
-        </button>
-        <button
-          className="btn btn-outline btn-warning"
-          onClick={() => handleRate(1)}
-        >
-          Hard
-        </button>
-        <button
-          className="btn btn-outline btn-success"
-          onClick={() => handleRate(2)}
-        >
-          Good
-        </button>
-        <button
-          className="btn btn-outline btn-info"
-          onClick={() => handleRate(3)}
-        >
-          Easy
-        </button>
-      </div>
+      <AnkiRatingControls flipped={flipped} handleRate={handleRate} />
 
       {/* Shortcuts */}
       <div className="mt-8 text-xs text-base-content/50 text-center">
