@@ -11,9 +11,20 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (!loading && projects.length === 0) {
+      console.log("[ProjectsPage] Fetching projects from database...");
       fetchProjects();
     }
   }, [loading, projects.length, fetchProjects]);
+
+  useEffect(() => {
+    console.log("[ProjectsPage] Projects loaded:", projects);
+  }, [projects]);
+
+  useEffect(() => {
+    if (error) {
+      console.error("[ProjectsPage] Error loading projects:", error);
+    }
+  }, [error]);
 
   return (
     <>

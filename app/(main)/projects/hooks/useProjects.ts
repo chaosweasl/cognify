@@ -29,6 +29,9 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
   loading: true,
   error: null,
   fetchProjects: async () => {
+    console.log(
+      "[useProjects] fetchProjects called: fetching projects from DB..."
+    );
     if (isFetching || get().loading) {
       set({ loading: false });
       return;
@@ -63,6 +66,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
       };
       set((state) => ({ projects: [optimistic, ...state.projects] }));
       await createProject(project);
+      console.log("[useProjects] Refetching projects after create...");
       await get().fetchProjects();
     } catch {
       set({ error: "Failed to create project" });
@@ -86,6 +90,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
         description: updates.description ?? current.description,
         flashcards: updates.flashcards ?? current.flashcards,
       });
+      console.log("[useProjects] Refetching projects after update...");
       await get().fetchProjects();
     } catch {
       set({ error: "Failed to update project" });
@@ -106,6 +111,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
         set({ loading: true });
         try {
           await deleteProject(id);
+          console.log("[useProjects] Refetching projects after delete...");
           await get().fetchProjects();
         } catch {
           set({ error: "Failed to delete project" });
