@@ -1,33 +1,121 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
-import Link from "next/link";
-import { getDueSRSProjects } from "@/utils/supabase/srs";
-import { getAppNotifications } from "@/utils/supabase/appNotifications";
+
 import { useUserId } from "@/hooks/useUserId";
+import { getAppNotifications } from "@/utils/supabase/appNotifications";
+import {
+  getAppNotificationReads,
+  markAppNotificationRead,
+} from "@/utils/supabase/appNotificationReads";
+import {
+  getUserNotifications,
+  markNotificationRead,
+  deleteUserNotification,
+} from "@/utils/supabase/userNotifications";
 
 export function NotificationBell() {
   const userId = useUserId();
-  const [dueProjects, setDueProjects] = useState<string[]>([]);
+  const [userNotifications, setUserNotifications] = useState<any[]>([]);
   const [appNotifications, setAppNotifications] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"user" | "app">("user");
+  // Track read app notifications per user from DB
+  const [readAppIds, setReadAppIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!userId) return;
-    getDueSRSProjects(userId).then(({ data }) => {
-      if (data) {
-        setDueProjects([...new Set(data.map((row: any) => row.project_id))]);
-      }
+    console.log("[Supabase] getUserNotifications", userId);
+    getUserNotifications(userId).then(({ data, error }) => {
+      if (error) console.error("[Supabase] getUserNotifications error", error);
+      if (data) setUserNotifications(data);
     });
   }, [userId]);
 
   useEffect(() => {
-    getAppNotifications().then(({ data }) => {
+    console.log("[Supabase] getAppNotifications");
+    getAppNotifications().then(({ data, error }) => {
+      if (error) console.error("[Supabase] getAppNotifications error", error);
       if (data) setAppNotifications(data);
     });
   }, []);
 
-  const notificationCount = dueProjects.length + appNotifications.length;
+  // Fetch app notification reads for this user
+  useEffect(() => {
+    if (!userId) return;
+    getAppNotificationReads(userId).then(({ data, error }) => {
+      if (error)
+        console.error("[Supabase] getAppNotificationReads error", error);
+      if (data) setReadAppIds(data.map((row: any) => row.notification_id));
+    });
+  }, [userId, appNotifications.length]);
+
+  // Mark all as read when user tab is opened
+  useEffect(() => {
+    if (
+      open &&
+      activeTab === "user" &&
+      userId &&
+      userNotifications.some((n: any) => !n.read)
+    ) {
+      const unread = userNotifications.filter((n: any) => !n.read);
+      Promise.all(
+        unread.map((n: any) => {
+          console.log("[Supabase] markNotificationRead", n.id);
+          return markNotificationRead(n.id);
+        })
+      ).then(() => {
+        console.log(
+          "[Supabase] getUserNotifications (after mark read)",
+          userId
+        );
+        getUserNotifications(userId).then(({ data, error }) => {
+          if (error)
+            console.error("[Supabase] getUserNotifications error", error);
+          if (data) setUserNotifications(data);
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeTab, userId, userNotifications]);
+
+  // Mark all app notifications as read when app tab is opened
+  useEffect(() => {
+    if (
+      open &&
+      activeTab === "app" &&
+      userId &&
+      appNotifications.some((n: any) => !readAppIds.includes(n.id))
+    ) {
+      const unreadAppNotifications = appNotifications.filter(
+        (n: any) => !readAppIds.includes(n.id)
+      );
+      Promise.all(
+        unreadAppNotifications.map((n: any) => {
+          console.log("[Supabase] markAppNotificationRead", userId, n.id);
+          return markAppNotificationRead(userId, n.id);
+        })
+      ).then(() => {
+        console.log(
+          "[Supabase] getAppNotificationReads (after mark read)",
+          userId
+        );
+        getAppNotificationReads(userId).then(({ data, error }) => {
+          if (error)
+            console.error("[Supabase] getAppNotificationReads error", error);
+          if (data) setReadAppIds(data.map((row: any) => row.notification_id));
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeTab, userId, appNotifications, readAppIds]);
+
+  const unreadAppCount = appNotifications.filter(
+    (n: any) => !readAppIds.includes(n.id)
+  ).length;
+  const notificationCount =
+    userNotifications.filter((n: any) => !n.read).length + unreadAppCount;
 
   return (
     <div className="relative m-0 p-0">
@@ -44,52 +132,156 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-base-100 shadow-lg rounded-xl z-50 border border-base-200">
-          <div className="p-4 border-b border-base-200 font-bold text-base-content">
-            Notifications
+        <div className="absolute right-0 mt-2 w-80 bg-base-100 shadow-lg rounded-lg z-50 border border-base-200">
+          {/* Simple header tabs */}
+          <div className="flex border-b border-base-200">
+            <button
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "user"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("user")}
+            >
+              User
+              {userNotifications.filter((n) => !n.read).length > 0 && (
+                <span className="ml-2 badge badge-xs badge-primary align-middle">
+                  {userNotifications.filter((n) => !n.read).length}
+                </span>
+              )}
+            </button>
+            <button
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "app"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setActiveTab("app")}
+            >
+              App
+              {unreadAppCount > 0 && (
+                <span className="ml-2 badge badge-xs badge-primary align-middle">
+                  {unreadAppCount}
+                </span>
+              )}
+            </button>
           </div>
-          <div className="max-h-96 overflow-y-auto">
-            {dueProjects.length > 0 && (
-              <div className="p-4 border-b border-base-200">
-                <div className="font-semibold mb-2 text-warning">
-                  Projects Ready to Study
-                </div>
-                {dueProjects.map((pid) => (
-                  <Link
-                    key={pid}
-                    href={`/projects/${pid}`}
-                    className="block text-sm text-primary hover:underline mb-1"
-                    onClick={() => setOpen(false)}
-                  >
-                    Project {pid}
-                  </Link>
-                ))}
-              </div>
+
+          {/* Content */}
+          <div className="max-h-72 overflow-y-auto">
+            {activeTab === "user" && (
+              <>
+                {userNotifications.length > 0 ? (
+                  <div className="divide-y divide-base-200">
+                    {userNotifications.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
+                          !n.read ? "bg-primary/5" : ""
+                        }`}
+                      >
+                        <a
+                          href={n.url || "#"}
+                          className="block"
+                          target={n.url ? "_blank" : undefined}
+                          rel="noopener noreferrer"
+                        >
+                          <div
+                            className={`text-sm font-medium mb-1 ${
+                              !n.read ? "text-primary" : ""
+                            }`}
+                          >
+                            {n.title}
+                          </div>
+                          <div className="text-xs text-base-content/70">
+                            {n.message}
+                          </div>
+                          {n.trigger_at && (
+                            <div className="text-xs text-base-content/40 mt-1">
+                              {new Date(n.trigger_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </a>
+                        <button
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 btn btn-xs btn-ghost text-error"
+                          title="Delete notification"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log(
+                              "[Supabase] deleteUserNotification",
+                              n.id
+                            );
+                            await deleteUserNotification(n.id);
+                            if (userId) {
+                              console.log(
+                                "[Supabase] getUserNotifications (after delete)",
+                                userId
+                              );
+                              getUserNotifications(userId).then(
+                                ({ data, error }) => {
+                                  if (error)
+                                    console.error(
+                                      "[Supabase] getUserNotifications error",
+                                      error
+                                    );
+                                  if (data) setUserNotifications(data);
+                                }
+                              );
+                            }
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-sm text-base-content/60">
+                    No notifications
+                  </div>
+                )}
+              </>
             )}
-            {appNotifications.length > 0 && (
-              <div className="p-4">
-                <div className="font-semibold mb-2 text-info">App Updates</div>
-                {appNotifications.map((n) => (
-                  <a
-                    key={n.id}
-                    href={n.url || "#"}
-                    className="block text-sm text-base-content hover:underline mb-1"
-                    target={n.url ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    onClick={() => setOpen(false)}
-                  >
-                    <div className="font-medium">{n.title}</div>
-                    <div className="text-xs text-base-content/70">
-                      {n.message}
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-            {notificationCount === 0 && (
-              <div className="p-4 text-base-content/60 text-sm">
-                No notifications
-              </div>
+
+            {activeTab === "app" && (
+              <>
+                {appNotifications.length > 0 ? (
+                  <div className="divide-y divide-base-200">
+                    {appNotifications.map((n: any) => (
+                      <div
+                        key={n.id}
+                        className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
+                          !readAppIds.includes(n.id) ? "bg-primary/5" : ""
+                        }`}
+                      >
+                        <a
+                          href={n.url || "#"}
+                          className="block"
+                          target={n.url ? "_blank" : undefined}
+                          rel="noopener noreferrer"
+                          onClick={() => setOpen(false)}
+                        >
+                          <div
+                            className={`text-sm font-medium mb-1 ${
+                              !readAppIds.includes(n.id) ? "text-primary" : ""
+                            }`}
+                          >
+                            {n.title}
+                          </div>
+                          <div className="text-xs text-base-content/70">
+                            {n.message}
+                          </div>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-sm text-base-content/60">
+                    No updates
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
