@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Upload, FileText, AlertTriangle, CheckCircle2, X } from "lucide-react";
 
 // Define Flashcard type to match your existing code
@@ -163,161 +164,166 @@ export function FlashcardJsonImporter({
         Import JSON
       </button>
 
-      {/* Modal */}
-      {isOpen && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileText className="w-6 h-6 text-primary" />
+      {/* Modal rendered via Portal */}
+      {isOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="modal modal-open z-[1000]">
+            <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <FileText className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">
+                      Import Flashcards from JSON
+                    </h3>
+                    <p className="text-base-content/60">
+                      Upload a JSON file containing your flashcards
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold">
-                    Import Flashcards from JSON
-                  </h3>
-                  <p className="text-base-content/60">
-                    Upload a JSON file containing your flashcards
-                  </p>
-                </div>
+                <button
+                  className="btn btn-sm btn-circle btn-ghost"
+                  onClick={handleClose}
+                  disabled={importing}
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                className="btn btn-sm btn-circle btn-ghost"
-                onClick={handleClose}
-                disabled={importing}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* File Input */}
-            <div className="mb-6">
-              <label className="label">
-                <span className="label-text font-medium">Select JSON File</span>
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleFileSelect}
-                className="file-input file-input-bordered file-input-primary w-full"
-                disabled={importing}
-              />
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="alert alert-error mb-6">
-                <AlertTriangle className="w-5 h-5" />
-                <div>
-                  <div className="font-bold">Import Error</div>
-                  <div className="text-sm">{error}</div>
-                </div>
-              </div>
-            )}
-
-            {/* Loading State */}
-            {importing && (
-              <div className="flex items-center justify-center py-8">
-                <div className="loading loading-spinner loading-lg text-primary"></div>
-                <span className="ml-3 text-lg">Processing file...</span>
-              </div>
-            )}
-
-            {/* Preview */}
-            {preview.length > 0 && (
+              {/* File Input */}
               <div className="mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                  <span className="font-medium text-success">
-                    Found {preview.length} valid flashcard
-                    {preview.length !== 1 ? "s" : ""}
+                <label className="label">
+                  <span className="label-text font-medium">
+                    Select JSON File
                   </span>
-                </div>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileSelect}
+                  className="file-input file-input-bordered file-input-primary w-full"
+                  disabled={importing}
+                />
+              </div>
 
-                <div className="bg-base-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                  <div className="space-y-3">
-                    {preview.slice(0, 5).map((card, index) => (
-                      <div key={index} className="bg-base-100 rounded-lg p-3">
-                        <div className="text-sm font-medium text-base-content/60 mb-1">
-                          Card {index + 1}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <div className="text-xs font-medium text-base-content/40 mb-1">
-                              Question:
+              {/* Error Display */}
+              {error && (
+                <div className="alert alert-error mb-6">
+                  <AlertTriangle className="w-5 h-5" />
+                  <div>
+                    <div className="font-bold">Import Error</div>
+                    <div className="text-sm">{error}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {importing && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="loading loading-spinner loading-lg text-primary"></div>
+                  <span className="ml-3 text-lg">Processing file...</span>
+                </div>
+              )}
+
+              {/* Preview */}
+              {preview.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle2 className="w-5 h-5 text-success" />
+                    <span className="font-medium text-success">
+                      Found {preview.length} valid flashcard
+                      {preview.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="bg-base-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <div className="space-y-3">
+                      {preview.slice(0, 5).map((card, index) => (
+                        <div key={index} className="bg-base-100 rounded-lg p-3">
+                          <div className="text-sm font-medium text-base-content/60 mb-1">
+                            Card {index + 1}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <div className="text-xs font-medium text-base-content/40 mb-1">
+                                Question:
+                              </div>
+                              <div className="text-sm line-clamp-2">
+                                {card.question}
+                              </div>
                             </div>
-                            <div className="text-sm line-clamp-2">
-                              {card.question}
+                            <div>
+                              <div className="text-xs font-medium text-base-content/40 mb-1">
+                                Answer:
+                              </div>
+                              <div className="text-sm line-clamp-2">
+                                {card.answer}
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <div className="text-xs font-medium text-base-content/40 mb-1">
-                              Answer:
-                            </div>
-                            <div className="text-sm line-clamp-2">
-                              {card.answer}
-                            </div>
-                          </div>
                         </div>
-                      </div>
-                    ))}
-                    {preview.length > 5 && (
-                      <div className="text-center text-sm text-base-content/60 py-2">
-                        ... and {preview.length - 5} more cards
-                      </div>
-                    )}
+                      ))}
+                      {preview.length > 5 && (
+                        <div className="text-center text-sm text-base-content/60 py-2">
+                          ... and {preview.length - 5} more cards
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* JSON Format Example */}
+              <div className="collapse collapse-arrow bg-base-200 mb-6">
+                <input type="checkbox" />
+                <div className="collapse-title text-sm font-medium">
+                  📋 Expected JSON Format
+                </div>
+                <div className="collapse-content">
+                  <div className="text-sm text-base-content/60 mb-3">
+                    Your JSON file should contain an array of objects with
+                    "question" and "answer" properties:
+                  </div>
+                  <div className="mockup-code text-xs">
+                    <pre>
+                      <code>{getExampleJson()}</code>
+                    </pre>
+                  </div>
+                  <div className="mt-3 text-xs text-base-content/60">
+                    <strong>Supported property names:</strong>
+                    <br />• question, front, q, prompt (for questions)
+                    <br />• answer, back, a, response (for answers)
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* JSON Format Example */}
-            <div className="collapse collapse-arrow bg-base-200 mb-6">
-              <input type="checkbox" />
-              <div className="collapse-title text-sm font-medium">
-                📋 Expected JSON Format
-              </div>
-              <div className="collapse-content">
-                <div className="text-sm text-base-content/60 mb-3">
-                  Your JSON file should contain an array of objects with
-                  "question" and "answer" properties:
-                </div>
-                <div className="mockup-code text-xs">
-                  <pre>
-                    <code>{getExampleJson()}</code>
-                  </pre>
-                </div>
-                <div className="mt-3 text-xs text-base-content/60">
-                  <strong>Supported property names:</strong>
-                  <br />• question, front, q, prompt (for questions)
-                  <br />• answer, back, a, response (for answers)
-                </div>
+              {/* Actions */}
+              <div className="modal-action">
+                <button
+                  className="btn btn-ghost"
+                  onClick={handleClose}
+                  disabled={importing}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleImport}
+                  disabled={preview.length === 0 || importing}
+                >
+                  <Upload className="w-4 h-4" />
+                  Import {preview.length} Card{preview.length !== 1 ? "s" : ""}
+                </button>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="modal-action">
-              <button
-                className="btn btn-ghost"
-                onClick={handleClose}
-                disabled={importing}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleImport}
-                disabled={preview.length === 0 || importing}
-              >
-                <Upload className="w-4 h-4" />
-                Import {preview.length} Card{preview.length !== 1 ? "s" : ""}
-              </button>
-            </div>
-          </div>
-          <div className="modal-backdrop" onClick={handleClose}></div>
-        </div>
-      )}
+            <div className="modal-backdrop" onClick={handleClose}></div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }
