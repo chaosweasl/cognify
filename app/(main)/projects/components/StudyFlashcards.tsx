@@ -41,6 +41,14 @@ export default function StudyFlashcards({
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [sessionDone, setSessionDone] = useState(false);
+  // Track session stats: ratings breakdown
+  const [sessionStats, setSessionStats] = useState({
+    again: 0,
+    hard: 0,
+    good: 0,
+    easy: 0,
+    reviewed: 0,
+  });
 
   const demoFlashcards = [
     { id: "1", question: "What is the capital of France?", answer: "Paris" },
@@ -87,6 +95,7 @@ export default function StudyFlashcards({
     setSessionDone(false);
     setFlipped(false);
     setCurrentId(null);
+    setSessionStats({ again: 0, hard: 0, good: 0, easy: 0, reviewed: 0 });
   };
 
   // Rate card: 0=Again, 1=Hard, 2=Good, 3=Easy
@@ -94,6 +103,15 @@ export default function StudyFlashcards({
     (rating: SRSRating) => {
       if (!card) return;
       const now = Date.now();
+      // Update session stats
+      setSessionStats((prev) => {
+        let newStats = { ...prev, reviewed: prev.reviewed + 1 };
+        if (rating === 0) newStats.again += 1;
+        if (rating === 1) newStats.hard += 1;
+        if (rating === 2) newStats.good += 1;
+        if (rating === 3) newStats.easy += 1;
+        return newStats;
+      });
       setAnkiState((prev) => ({
         ...prev,
         [card.id]: scheduleSRSCard(prev[card.id], rating, now),
@@ -171,36 +189,109 @@ export default function StudyFlashcards({
       .filter((d) => d > Date.now());
     const nextDue =
       futureDueDates.length > 0 ? Math.min(...futureDueDates) : null;
+
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <BookOpen className="w-16 h-16 text-success mx-auto mb-4" />
-          <div className="text-2xl font-bold text-success mb-2">
-            Session complete!
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+        <div className="w-full max-w-lg text-center space-y-6">
+          {/* Success Icon */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+              <BookOpen className="w-8 h-8 text-success" />
+            </div>
           </div>
-          <div className="text-base-content/70 mb-2">
-            All due cards reviewed for now. Come back later for more!
+
+          {/* Title */}
+          <div>
+            <h2 className="text-2xl font-bold text-base-content mb-2">
+              Session Complete
+            </h2>
+            <p className="text-base-content/70">
+              All due cards reviewed. Great work!
+            </p>
           </div>
+
+          {/* Session Stats - Clean Grid Layout */}
+          <div className="bg-base-100 rounded-xl border border-base-300 p-6">
+            <h3 className="text-lg font-semibold text-base-content mb-4">
+              Session Summary
+            </h3>
+
+            {/* Total Reviewed - Prominent */}
+            <div className="text-center mb-6 pb-4 border-b border-base-300">
+              <div className="text-3xl font-bold text-primary mb-1">
+                {sessionStats.reviewed}
+              </div>
+              <div className="text-base text-base-content/70">
+                Cards Reviewed
+              </div>
+            </div>
+
+            {/* Rating Breakdown - Even 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-xl font-bold text-success">
+                  {sessionStats.easy}
+                </div>
+                <div className="text-sm text-base-content/70">Easy</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-info">
+                  {sessionStats.good}
+                </div>
+                <div className="text-sm text-base-content/70">Good</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-warning">
+                  {sessionStats.hard}
+                </div>
+                <div className="text-sm text-base-content/70">Hard</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-error">
+                  {sessionStats.again}
+                </div>
+                <div className="text-sm text-base-content/70">Again</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Next Review Info */}
           {nextDue && (
-            <div className="text-base-content/60 mb-4">
-              <span>Next review scheduled for: </span>
-              <span className="font-semibold">
-                {new Date(nextDue).toLocaleString()}
-              </span>
+            <div className="bg-base-200/50 rounded-lg p-4">
+              <div className="text-sm text-base-content/70 mb-1">
+                Next review scheduled
+              </div>
+              <div className="font-medium text-base-content">
+                {new Date(nextDue).toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
             </div>
           )}
+
           {!nextDue && (
-            <div className="text-base-content/60 mb-4">
-              No future reviews scheduled.
+            <div className="bg-base-200/50 rounded-lg p-4">
+              <div className="text-sm text-base-content/70">
+                No future reviews scheduled
+              </div>
             </div>
           )}
-          <button className="btn btn-primary" onClick={handleReset}>
-            Restart Session
-          </button>
+
+          {/* Action Button */}
+          <div className="pt-2">
+            <button className="btn btn-primary btn-wide" onClick={handleReset}>
+              Study Again
+            </button>
+          </div>
         </div>
       </div>
     );
   }
+
   if (!card) return null;
 
   return (
