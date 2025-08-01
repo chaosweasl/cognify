@@ -18,7 +18,12 @@ export function SessionProgress({
         </div>
         {learningQueueCount > 0 && (
           <div className="text-xs text-orange-600 mt-1">
-            {learningQueueCount} cards in learning queue
+            {learningQueueCount} card{learningQueueCount === 1 ? '' : 's'} in learning queue
+          </div>
+        )}
+        {reviewed > 0 && learningQueueCount === 0 && (
+          <div className="text-xs text-green-600 mt-1">
+            ✓ Learning queue empty
           </div>
         )}
       </div>
@@ -32,6 +37,9 @@ export function SessionProgress({
           <span>3: Good</span>
           <span>4: Easy</span>
           <span>R: Reset</span>
+        </div>
+        <div className="lg:hidden text-center mt-2">
+          <div>Tap to flip • Use buttons to rate</div>
         </div>
       </div>
     </>

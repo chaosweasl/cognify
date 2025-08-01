@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
 import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
+import { createClient } from "@/utils/supabase/client";
+import { saveSRSStates } from "./SRSDBUtils";
 import {
   initSRSState,
   scheduleSRSCard,
@@ -56,6 +58,7 @@ export default function StudyFlashcards({
   existingSRSStates,
 }: StudyFlashcardsProps) {
   const userId = useUserId();
+  const supabase = createClient();
 
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
@@ -91,7 +94,36 @@ export default function StudyFlashcards({
 
   const [sessionStartTime] = useState(Date.now());
 
-  // Derived state
+  // Auto-save SRS states to database with debounce
+  const saveSRSStatesToDB = useCallback(
+    async (states: Record<string, SRSCardState>) => {
+      if (userId && projectId) {
+        try {
+          await saveSRSStates(supabase, userId, projectId, states);
+          console.log("SRS states saved to database");
+        } catch (error) {
+          console.error("Failed to save SRS states:", error);
+        }
+      }
+    },
+    [userId, projectId, supabase]
+  );
+
+  // Debounced save function to prevent excessive database calls
+  const debouncedSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (states: Record<string, SRSCardState>) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          saveSRSStatesToDB(states);
+        }, 1000); // Save after 1 second of inactivity
+      };
+    })(),
+    [saveSRSStatesToDB]
+  );
+
+  // Derived state - recalculate stats dynamically
   const cards = flashcards?.length > 0 ? flashcards : demoFlashcards;
   const cardMap = React.useMemo(
     () => Object.fromEntries(cards.map((c) => [c.id, c])),
@@ -99,14 +131,17 @@ export default function StudyFlashcards({
   );
   const currentCard = currentCardId ? cardMap[currentCardId] : null;
   const currentCardState = currentCardId ? srsState[currentCardId] : null;
-  const studyStats = getStudyStats(srsState);
+
+  // Recalculate study stats on every SRS state change
+  const studyStats = React.useMemo(() => getStudyStats(srsState), [srsState]);
 
   // Event handlers
   const handleFlip = () => setFlipped((f) => !f);
 
   const handleReset = () => {
     const cardIds = cards.map((c) => c.id);
-    setSRSState(initSRSState(cardIds));
+    const newSRSState = initSRSState(cardIds);
+    setSRSState(newSRSState);
     setStudySession(initStudySession());
     setSessionComplete(false);
     setFlipped(false);
@@ -119,6 +154,8 @@ export default function StudyFlashcards({
       reviewed: 0,
       timeSpent: 0,
     });
+    // Save reset state to database immediately (not debounced)
+    saveSRSStatesToDB(newSRSState);
   };
 
   const handleRate = useCallback(
@@ -140,8 +177,13 @@ export default function StudyFlashcards({
       // Schedule the card
       const newCardState = scheduleSRSCard(currentCardState, rating, now);
 
-      // Update SRS state
-      setSRSState((prev) => ({ ...prev, [currentCard.id]: newCardState }));
+      // Update SRS state and save to database
+      setSRSState((prev) => {
+        const newSRSState = { ...prev, [currentCard.id]: newCardState };
+        // Debounced save to database
+        debouncedSave(newSRSState);
+        return newSRSState;
+      });
 
       // Update study session
       setStudySession((prev) =>
@@ -152,39 +194,37 @@ export default function StudyFlashcards({
 
       // Find next card after a short delay
       setTimeout(() => {
-        const updatedSRSState = { ...srsState, [currentCard.id]: newCardState };
-        const updatedSession = updateStudySession(
-          studySession,
-          currentCardState,
-          rating,
-          newCardState
-        );
-        const nextCardId = getNextCardToStudy(
-          updatedSRSState,
-          updatedSession,
-          now
-        );
+        setSRSState((currentSRSState) => {
+          setStudySession((currentSession) => {
+            const nextCardId = getNextCardToStudy(
+              currentSRSState,
+              currentSession,
+              now
+            );
 
-        if (nextCardId) {
-          setCurrentCardId(nextCardId);
-        } else {
-          setSessionComplete(true);
-          setCurrentCardId(null);
-          setSessionStats((prev) => ({
-            ...prev,
-            timeSpent: Math.round((now - sessionStartTime) / 1000 / 60),
-          }));
-        }
+            if (nextCardId) {
+              setCurrentCardId(nextCardId);
+            } else {
+              setSessionComplete(true);
+              setCurrentCardId(null);
+              setSessionStats((prev) => ({
+                ...prev,
+                timeSpent: Math.round((now - sessionStartTime) / 1000 / 60),
+              }));
+            }
+            return currentSession;
+          });
+          return currentSRSState;
+        });
         setRatingLoading(false);
       }, 300);
     },
     [
       currentCard,
       currentCardState,
-      srsState,
-      studySession,
       sessionStartTime,
       ratingLoading,
+      debouncedSave,
     ]
   );
 
@@ -234,6 +274,15 @@ export default function StudyFlashcards({
       }
     }
   }, [sessionComplete, userId, projectId, projectName, srsState]);
+
+  // Save on component unmount
+  useEffect(() => {
+    return () => {
+      if (userId && projectId) {
+        saveSRSStatesToDB(srsState);
+      }
+    };
+  }, [userId, projectId, srsState, saveSRSStatesToDB]);
 
   // Render conditions
   if (!cards || cards.length === 0) {

@@ -8,7 +8,7 @@ export const SRS_SETTINGS = {
   MAX_REVIEWS_PER_DAY: 200, // Maximum reviews per day (0 = unlimited)
 
   // Learning steps (in minutes) - cards cycle through these when clicked "Again" in learning
-  LEARNING_STEPS: [1, 10], // 1 minute, then 10 minutes before graduating
+  LEARNING_STEPS: [10, 1440], // 10 minutes, then 1 day (1440 minutes) - more realistic for real study
 
   // Relearning steps (in minutes) - for cards that fail review (Again on mature cards)
   RELEARNING_STEPS: [10], // 10 minutes before going back to review queue
@@ -16,6 +16,7 @@ export const SRS_SETTINGS = {
   // Graduation settings
   GRADUATING_INTERVAL: 1, // Days after completing learning steps
   EASY_INTERVAL: 4, // Days when "Easy" is pressed on new card
+  GOOD_INTERVAL: 1, // Days when "Good" is pressed on new card (Anki default)
 
   // Interval limits
   MINIMUM_INTERVAL: 1, // Minimum interval in days
@@ -157,16 +158,17 @@ function scheduleNewCard(
       interval: SRS_SETTINGS.LEARNING_STEPS[0],
     };
   } else if (rating === 2) {
-    // Good - enter learning queue
+    // Good - graduate directly to review with 1 day interval (Anki behavior)
     return {
       ...card,
-      state: "learning",
+      state: "review",
+      repetitions: 1,
+      interval: SRS_SETTINGS.GOOD_INTERVAL,
+      due: addDays(now, SRS_SETTINGS.GOOD_INTERVAL),
       learningStep: 0,
-      due: addMinutes(now, SRS_SETTINGS.LEARNING_STEPS[0]),
-      interval: SRS_SETTINGS.LEARNING_STEPS[0],
     };
   } else {
-    // Easy - graduate immediately to review
+    // Easy - graduate immediately to review with longer interval
     return {
       ...card,
       state: "review",
@@ -396,9 +398,9 @@ export function getNextCardToStudy(
   }
 
   // 2. Second priority: Review cards that are due (if under daily limit)
-  // If MAX_REVIEWS_PER_DAY is 0, allow unlimited reviews
+  // If MAX_REVIEWS_PER_DAY is 0 or less, allow unlimited reviews
   if (
-    SRS_SETTINGS.MAX_REVIEWS_PER_DAY === 0 ||
+    SRS_SETTINGS.MAX_REVIEWS_PER_DAY <= 0 ||
     session.reviewsCompleted < SRS_SETTINGS.MAX_REVIEWS_PER_DAY
   ) {
     const reviewCards = allCards.filter(

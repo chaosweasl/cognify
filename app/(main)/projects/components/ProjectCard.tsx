@@ -1,6 +1,9 @@
 import { BookOpen, Edit2, Trash2, Play, Calendar } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { ProjectSRSStats } from "./ProjectSRSStats";
+import { getProjectSRSStats, ProjectSRSInfo } from "./ProjectSRSUtils";
+import { useUserId } from "@/hooks/useUserId";
 
 type Flashcard = { question: string; answer: string };
 
@@ -22,10 +25,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onDelete,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [srsStats, setSRSStats] = useState<ProjectSRSInfo | null>(null);
+  const userId = useUserId();
+
   const flashcardCount = Array.isArray(project.flashcards)
     ? project.flashcards.length
     : 0;
   const hasFlashcards = flashcardCount > 0;
+
+  // Load SRS statistics
+  useEffect(() => {
+    async function loadSRSStats() {
+      if (userId && hasFlashcards) {
+        const cardIds = project.flashcards.map((_, index) => `${index}`);
+        const stats = await getProjectSRSStats(userId, project.id, cardIds);
+        setSRSStats(stats);
+      }
+    }
+    loadSRSStats();
+  }, [userId, project.id, project.flashcards, hasFlashcards]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -59,6 +77,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           {project.description || "No description provided"}
         </p>
 
+        {/* SRS Statistics */}
+        {hasFlashcards && srsStats && (
+          <ProjectSRSStats
+            newCards={srsStats.newCards}
+            learningCards={srsStats.learningCards}
+            reviewCards={srsStats.reviewCards}
+            dueCards={srsStats.dueCards}
+            totalCards={srsStats.totalCards}
+          />
+        )}
+
         {/* Date */}
         <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
           <Calendar className="w-4 h-4" />
@@ -70,9 +99,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
         {hasFlashcards ? (
           <Link href={`/projects/${project.id}`}>
-            <button className="btn btn-md btn-success gap-2 flex-auto max-w-[6rem]">
+            <button
+              className={`btn btn-md gap-2 flex-auto max-w-[6rem] ${
+                srsStats && srsStats.dueCards > 0
+                  ? "btn-error"
+                  : srsStats && srsStats.newCards > 0
+                  ? "btn-primary"
+                  : "btn-success"
+              }`}
+            >
               <Play className="w-4 h-4" />
-              Study
+              {srsStats && srsStats.dueCards > 0
+                ? "Review"
+                : srsStats && srsStats.newCards > 0
+                ? "Study"
+                : "Practice"}
             </button>
           </Link>
         ) : (
