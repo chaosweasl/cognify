@@ -1,68 +1,80 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { Settings, User, Brain, RotateCcw } from "lucide-react";
 import { useSettingsStore } from "@/hooks/useSettings";
+
+// Sub-components
 import { UserSettingsTab } from "./components/UserSettingsTab";
 import { SRSSettingsTab } from "./components/SRSSettingsTab";
-import { User, Brain } from "lucide-react";
 
 export default function SettingsPage() {
-  const { loadSettings, isLoading } = useSettingsStore();
-  const [activeTab, setActiveTab] = React.useState<"user" | "srs">("user");
-  const [isInitialized, setIsInitialized] = React.useState(false);
+  const [activeTab, setActiveTab] = useState("user");
+  const { resetAllSettings } = useSettingsStore();
 
-  React.useEffect(() => {
-    if (!isInitialized) {
-      loadSettings().finally(() => setIsInitialized(true));
+  const tabs = [
+    { id: "user", label: "User Settings", icon: User },
+    { id: "srs", label: "Card Settings", icon: Brain },
+  ];
+
+  const handleResetAll = () => {
+    if (
+      confirm(
+        "Are you sure you want to reset all settings to default? This action cannot be undone."
+      )
+    ) {
+      resetAllSettings();
     }
-  }, [loadSettings, isInitialized]);
-
-  if (isLoading && !isInitialized) {
-    return (
-      <div className="min-h-screen bg-base-100 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-base-100">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-base-content mb-2">Settings</h1>
-          <p className="text-base-content/70">
-            Configure your preferences and study settings
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div className="tabs tabs-bordered mb-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Settings className="w-6 h-6 text-primary" />
+            <h1 className="text-2xl font-bold text-base-content">Settings</h1>
+          </div>
           <button
-            className={`tab tab-lg gap-2 ${
-              activeTab === "user" ? "tab-active" : ""
-            }`}
-            onClick={() => setActiveTab("user")}
+            onClick={handleResetAll}
+            className="btn btn-outline btn-error gap-2"
           >
-            <User className="w-5 h-5" />
-            Profile & Preferences
-          </button>
-          <button
-            className={`tab tab-lg gap-2 ${
-              activeTab === "srs" ? "tab-active" : ""
-            }`}
-            onClick={() => setActiveTab("srs")}
-          >
-            <Brain className="w-5 h-5" />
-            Card & Study Settings
+            <RotateCcw className="w-4 h-4" />
+            Reset All
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-base-200 rounded-lg p-6">
-          {activeTab === "user" && <UserSettingsTab />}
-          {activeTab === "srs" && <SRSSettingsTab />}
+        <div className="bg-base-100 rounded-lg shadow-lg overflow-hidden">
+          {/* Tab Navigation */}
+          <div className="border-b border-base-300">
+            <div className="flex">
+              {tabs.map((tab) => {
+                const TabIcon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                        : "text-base-content/70 hover:text-base-content hover:bg-base-200"
+                    }`}
+                  >
+                    <TabIcon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "user" && <UserSettingsTab />}
+            {activeTab === "srs" && <SRSSettingsTab />}
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

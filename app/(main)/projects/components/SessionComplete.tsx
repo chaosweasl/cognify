@@ -46,7 +46,7 @@ export function SessionComplete({
             Study Session Complete!
           </h2>
           <p className="text-base-content/70">
-            Great work! You've completed all due cards.
+            Great work! You&apos;ve completed all due cards.
           </p>
         </div>
 

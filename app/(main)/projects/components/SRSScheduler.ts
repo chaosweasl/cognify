@@ -74,12 +74,6 @@ function addDays(timestamp: number, days: number): number {
   return timestamp + days * 24 * 60 * 60 * 1000;
 }
 
-function isToday(timestamp: number): boolean {
-  const today = new Date();
-  const date = new Date(timestamp);
-  return today.toDateString() === date.toDateString();
-}
-
 /**
  * Calculate new ease factor using SM-2 algorithm
  * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy

@@ -68,9 +68,6 @@ export default function StudyFlashcards({
     loadSettings();
   }, [loadSettings]);
 
-  // Use effective settings (user settings or defaults)
-  const effectiveSettings = srsSettings || DEFAULT_SRS_SETTINGS;
-
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
     if (existingSRSStates && Object.keys(existingSRSStates).length > 0) {
@@ -121,18 +118,15 @@ export default function StudyFlashcards({
   );
 
   // Debounced save function to prevent excessive database calls
-  const debouncedSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (states: Record<string, SRSCardState>) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          saveSRSStatesToDB(states);
-        }, 1000); // Save after 1 second of inactivity
-      };
-    })(),
-    [saveSRSStatesToDB]
-  );
+  const debouncedSave = useCallback(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (states: Record<string, SRSCardState>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        saveSRSStatesToDB(states);
+      }, 1000); // Save after 1 second of inactivity
+    };
+  }, [saveSRSStatesToDB])();
 
   // Derived state - recalculate stats dynamically
   const cards = flashcards?.length > 0 ? flashcards : demoFlashcards;
@@ -149,7 +143,7 @@ export default function StudyFlashcards({
   // Event handlers
   const handleFlip = () => setFlipped((f) => !f);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     const cardIds = cards.map((c) => c.id);
     const newSRSState = initSRSState(cardIds);
     setSRSState(newSRSState);
@@ -167,7 +161,7 @@ export default function StudyFlashcards({
     });
     // Save reset state to database immediately (not debounced)
     saveSRSStatesToDB(newSRSState);
-  };
+  }, [cards, saveSRSStatesToDB]);
 
   const handleRate = useCallback(
     (rating: SRSRating) => {

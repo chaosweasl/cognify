@@ -20,7 +20,10 @@ export function SRSSettingsTab() {
     setFormData(srsSettings);
   }, [srsSettings]);
 
-  const handleUpdate = (field: keyof typeof srsSettings, value: any) => {
+  const handleUpdate = (
+    field: keyof typeof srsSettings,
+    value: string | number | number[]
+  ) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
 

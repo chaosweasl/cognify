@@ -72,18 +72,25 @@ export function FlashcardJsonImporter({
     }
   };
 
-  const validateAndNormalizeFlashcards = (data: any): Flashcard[] => {
+  const validateAndNormalizeFlashcards = (data: unknown): Flashcard[] => {
     const flashcards: Flashcard[] = [];
 
     // Handle different JSON structures
-    let items: any[] = [];
+    let items: unknown[] = [];
 
     if (Array.isArray(data)) {
       items = data;
-    } else if (data.flashcards && Array.isArray(data.flashcards)) {
-      items = data.flashcards;
-    } else if (data.cards && Array.isArray(data.cards)) {
-      items = data.cards;
+    } else if (data && typeof data === "object") {
+      const dataObj = data as Record<string, unknown>;
+      if (dataObj.flashcards && Array.isArray(dataObj.flashcards)) {
+        items = dataObj.flashcards;
+      } else if (dataObj.cards && Array.isArray(dataObj.cards)) {
+        items = dataObj.cards;
+      } else {
+        throw new Error(
+          'Expected an array of flashcards or an object with "flashcards" or "cards" property'
+        );
+      }
     } else {
       throw new Error(
         'Expected an array of flashcards or an object with "flashcards" or "cards" property'
@@ -97,23 +104,24 @@ export function FlashcardJsonImporter({
         continue; // Skip invalid items
       }
 
+      const itemObj = item as Record<string, unknown>;
       // Try different property names
-      let question = item.question || item.front || item.q || item.prompt;
-      let answer = item.answer || item.back || item.a || item.response;
+      let question =
+        itemObj.question || itemObj.front || itemObj.q || itemObj.prompt;
+      let answer =
+        itemObj.answer || itemObj.back || itemObj.a || itemObj.response;
 
       // Convert to string and validate
-      if (typeof question !== "string") {
-        question = String(question || "");
-      }
-      if (typeof answer !== "string") {
-        answer = String(answer || "");
-      }
+      const questionStr =
+        typeof question === "string" ? question : String(question || "");
+      const answerStr =
+        typeof answer === "string" ? answer : String(answer || "");
 
       // Only include cards with both question and answer
-      if (question.trim() && answer.trim()) {
+      if (questionStr.trim() && answerStr.trim()) {
         flashcards.push({
-          question: question.trim(),
-          answer: answer.trim(),
+          question: questionStr.trim(),
+          answer: answerStr.trim(),
         });
       }
     }
@@ -290,7 +298,7 @@ export function FlashcardJsonImporter({
                 <div className="collapse-content">
                   <div className="text-sm text-base-content/60 mb-3">
                     Your JSON file should contain an array of objects with
-                    "question" and "answer" properties:
+                    &quot;question&quot; and &quot;answer&quot; properties:
                   </div>
                   <div className="mockup-code text-xs">
                     <pre>

@@ -48,7 +48,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     );
   }, [flashcards, name]);
 
-  function handleChange(field: keyof Flashcard, value: string) {
+  function handleChange(field: "question" | "answer", value: string) {
     setFlashcards((prev) => {
       const up = [...prev];
       up[current] = { ...up[current], [field]: value };
@@ -254,7 +254,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                 {/* Card Content */}
                 <FlashcardCardEditor
                   card={card}
-                  handleChange={handleChange as any}
+                  handleChange={handleChange}
                   saving={saving}
                 />
                 {/* Card Navigation */}

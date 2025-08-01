@@ -14,12 +14,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
 
   // Handle client-side hydration and mobile detection
   useEffect(() => {
-    setHasMounted(true);
-
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);

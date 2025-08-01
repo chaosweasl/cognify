@@ -15,10 +15,9 @@ export function UserSettingsTab() {
     displayName: userProfile?.display_name || "",
     bio: userProfile?.bio || "",
     theme: userSettings.theme,
-    emailNotifications: userSettings.emailNotifications,
-    studyReminders: userSettings.studyReminders,
-    soundEffects: userSettings.soundEffects,
-    showAdvancedStats: userSettings.showAdvancedStats,
+    notificationsEnabled: userSettings.notificationsEnabled,
+    dailyReminder: userSettings.dailyReminder,
+    reminderTime: userSettings.reminderTime,
   });
 
   React.useEffect(() => {
@@ -39,12 +38,12 @@ export function UserSettingsTab() {
         bio: formData.bio,
       });
       showToast("Profile updated successfully!", "success");
-    } catch (error) {
+    } catch {
       showToast("Failed to update profile", "error");
     }
   };
 
-  const handleSettingsUpdate = (field: string, value: any) => {
+  const handleSettingsUpdate = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     updateUserSettings({ [field]: value });
     showToast("Settings updated", "success");
@@ -156,9 +155,9 @@ export function UserSettingsTab() {
               <span className="label-text">Email Notifications</span>
               <input
                 type="checkbox"
-                checked={formData.emailNotifications}
+                checked={formData.notificationsEnabled}
                 onChange={(e) =>
-                  handleSettingsUpdate("emailNotifications", e.target.checked)
+                  handleSettingsUpdate("notificationsEnabled", e.target.checked)
                 }
                 className="checkbox checkbox-primary"
               />
@@ -171,43 +170,29 @@ export function UserSettingsTab() {
               <span className="label-text">Study Reminders</span>
               <input
                 type="checkbox"
-                checked={formData.studyReminders}
+                checked={formData.dailyReminder}
                 onChange={(e) =>
-                  handleSettingsUpdate("studyReminders", e.target.checked)
+                  handleSettingsUpdate("dailyReminder", e.target.checked)
                 }
                 className="checkbox checkbox-primary"
               />
             </label>
           </div>
 
-          {/* Sound Effects */}
+          {/* Reminder Time */}
           <div className="form-control">
-            <label className="label cursor-pointer">
-              <span className="label-text">Sound Effects</span>
-              <input
-                type="checkbox"
-                checked={formData.soundEffects}
-                onChange={(e) =>
-                  handleSettingsUpdate("soundEffects", e.target.checked)
-                }
-                className="checkbox checkbox-primary"
-              />
+            <label className="label">
+              <span className="label-text">Daily Reminder Time</span>
             </label>
-          </div>
-
-          {/* Advanced Stats */}
-          <div className="form-control">
-            <label className="label cursor-pointer">
-              <span className="label-text">Show Advanced Statistics</span>
-              <input
-                type="checkbox"
-                checked={formData.showAdvancedStats}
-                onChange={(e) =>
-                  handleSettingsUpdate("showAdvancedStats", e.target.checked)
-                }
-                className="checkbox checkbox-primary"
-              />
-            </label>
+            <input
+              type="time"
+              value={formData.reminderTime}
+              onChange={(e) =>
+                handleSettingsUpdate("reminderTime", e.target.value)
+              }
+              className="input input-bordered"
+              disabled={!formData.dailyReminder}
+            />
           </div>
         </div>
       </div>
