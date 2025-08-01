@@ -1,112 +1,277 @@
 # Contributing to Cognify
 
-To run Cognify locally, you need your own [Supabase](https://supabase.com/) project. Here's how to configure it:
+Thank you for your interest in contributing to Cognify! We appreciate community involvement in making this learning platform better for everyone.
 
-Welcome contributions! Please read the following guidelines to get started.
+## 🎯 Areas We Welcome Contributions
 
-## How to Contribute
+Cognify has a **selective contribution model**. We welcome contributions in these specific areas:
 
-1. **Fork the repository** and create your branch from `main`.
-2. **Create a new branch** for your feature or fix (do not commit directly to `main`).
-3. **Install dependencies** if you haven't already.
-4. **Set up your own `.env.local`**  
-   Use your own Supabase project credentials and set `NEXT_PUBLIC_SITE_URL` to your local or deployed URL (e.g., `http://localhost:3000`).  
-   **Do not use the official production URL unless you are deploying your own instance.**
-5. **Make your changes** (add features, fix bugs, improve docs).
-6. **Test your changes** locally. (If possible, also deploy a preview with Vercel to check for ESLint issues.)
-7. **Commit your changes** with clear messages.
-8. **Push to your fork** and submit a Pull Request.
+### 🎨 **Themes & UI Improvements**
 
-## Code Style
+- Create new DaisyUI themes
+- Improve existing component designs
+- Enhance mobile responsiveness
+- Add animations and visual polish
+- Improve accessibility features
 
-- Use [Prettier](https://prettier.io/) and [ESLint](https://eslint.org/) for formatting and linting.
-- Use [DaisyUI](https://daisyui.com/) for UI components.
-- Write clear, concise commit messages.
-- Keep PRs focused and small when possible.
+### 📝 **Documentation**
 
-## Issues & Discussions
+- Improve README and setup guides
+- Write tutorials and how-to guides
+- Create video documentation
+- Translate documentation
+- Fix typos and clarity issues
 
-- Use [GitHub Issues](https://github.com/chaosweasl/cognify/issues) for bugs and feature requests.
-- For questions or ideas, open a [Discussion](https://github.com/chaosweasl/cognify/discussions).
+### 🐛 **Bug Reports**
 
-## Security
+- Report issues with detailed reproduction steps
+- Identify UI bugs and visual inconsistencies
+- Suggest improvements for error handling and user feedback
+- Report performance issues
 
-If you discover a security vulnerability, please report it privately.
+### 💡 **Feature Suggestions & Ideas**
 
-## Setting Up Supabase for Local Development
+- Suggest UI/UX improvements
+- Propose new themes or design concepts
+- Recommend accessibility enhancements
+- Ideas for better user onboarding
+- Export/import functionality suggestions
+- Minor workflow enhancement ideas
 
-To run Cognify locally, you need your own [Supabase](https://supabase.com/) project. Here’s how to configure it:
+## ❌ Areas We're NOT Accepting Contributions For
 
-**Recommended:** Use [Vercel](https://vercel.com/) and Supabase together for the smoothest experience.  
-You can link your Supabase project to your Vercel project and automatically pull environment variables using the [Vercel CLI](https://vercel.com/docs/cli).
+To maintain code quality and architectural consistency, we're **not accepting contributions** for:
 
-### Quick Setup with Vercel + Supabase
+- Core SRS (Spaced Repetition System) algorithm changes (unless well-documented and well-argued!)
+- Database schema modifications
+- Authentication system changes
+- AI integration architecture
+- Core application logic and business rules
+- Major feature additions or architectural changes
 
-1. **Deploy your fork to Vercel**
+## 📋 Before Contributing
 
-   - [Import your GitHub repo to Vercel](https://vercel.com/new).
-   - During setup, you can link your Supabase project and Vercel will auto-populate your environment variables.
+### 1. Check Existing Issues
 
-2. **Pull environment variables locally**
-   - Install the Vercel CLI:
-     ```sh
-     npm i -g vercel
-     ```
-   - Log in and link your project:
-     ```sh
-     vercel login
-     vercel link
-     ```
-   - Pull your environment variables:
-     ```sh
-     vercel env pull .env.local
-     ```
-   - Now your `.env.local` will have the correct Supabase keys and site URL.
+- Browse [existing issues](https://github.com/chaosweasl/cognify/issues) to avoid duplicates
+- Look for issues labeled `good first issue` or `help wanted`
+- Join discussions to understand requirements
 
-### Manual Setup
+### 2. Create an Issue First
 
-1. **Create a Supabase project**  
-   Go to [Supabase](https://app.supabase.com/) and create a new project.
+For any non-trivial contribution:
 
-2. **Get your API keys**
+- Create an issue describing your proposed change
+- Wait for maintainer approval before starting work
+- Discuss implementation approaches
 
-   - In your Supabase dashboard, go to **Project Settings → API**.
-   - Copy the **Project URL** and **anon public key**.
+### 3. Development Environment
 
-3. **Configure authentication redirect URLs**
+**⚠️ Important Note**: Due to Cognify's sophisticated database schema and complex infrastructure requirements, local development setup is **not practical** for most contributors.
 
-   - Go to **Authentication → URL Configuration**.
-   - Set the **Site URL** to `http://localhost:3000` (or your local dev URL).
-   - Add any additional redirect URLs you need (e.g., for Vercel previews).
+**We welcome contributions that don't require local development:**
 
-4. **Update your `.env.local`**
+- **📝 Documentation edits** (can be done directly on GitHub)
+- **🎨 Theme suggestions** (CSS snippets or design mockups)
+- **🐛 Bug reports** (no setup needed)
+- **💡 Feature suggestions** (through GitHub issues)
+- **🌍 Translations** (text-only contributions)
 
+**For advanced contributors only** (contact maintainers first):
+
+```bash
+# Complex enterprise-grade setup required
+# Requires sophisticated Supabase schema, RLS policies,
+# custom authentication flows, and extensive environment configuration
+git clone https://github.com/YOUR_USERNAME/cognify.git
+# ... extensive database setup and configuration required
+```
+
+## 🛠️ Contribution Guidelines
+
+### Non-Development Contributions
+
+Most contributions don't require local setup! You can contribute by:
+
+- **Editing documentation** directly on GitHub
+- **Suggesting themes** with CSS snippets or color palettes
+- **Reporting bugs** with detailed descriptions
+- **Proposing features** through GitHub issues
+- **Improving content** like README files, guides, and help text
+
+### For Advanced Contributors
+
+If you're working on code changes (themes, UI improvements), please:
+
+- **Contact maintainers first** to discuss the complex setup requirements
+- **Focus on CSS/styling changes** that can be reviewed without full local testing
+- **Provide detailed screenshots** of any visual changes
+- **Test across multiple browsers** if possible
+
+### Contribution Process
+
+1. **Create an Issue First**
+
+   - Describe your proposed change or report
+   - Wait for maintainer feedback before proceeding
+   - Discuss implementation approach if needed
+
+2. **For Documentation/Content Changes**
+
+   - Edit files directly on GitHub
+   - Use the web interface for simple changes
+   - Submit pull request with clear description
+
+3. **For Theme/Design Contributions**
+
+   - Provide CSS snippets or design mockups
+   - Include screenshots or previews
+   - Reference DaisyUI documentation for compatibility
+
+4. **Submit Pull Request**
+   - Use a descriptive title
+   - Include screenshots for visual changes
+   - Reference any related issues
+   - Keep description clear and concise
+
+## 🎨 Theme Contribution Guide
+
+We especially welcome new themes! Here's how to contribute:
+
+### Creating a New Theme
+
+1. **Design Your Theme**
+
+   - Create a color palette following DaisyUI conventions
+   - Ensure accessibility with sufficient contrast ratios
+   - Consider both light and dark mode preferences
+
+2. **Provide Theme Definition**
+
+   ```css
+   /* Custom DaisyUI theme example for globals.css */
+   @plugin "daisyui/theme" {
+     name: "your-theme-name";
+     color-scheme: light;
+
+     /* Base colors */
+     --color-base-100: oklch(98% 0.01 240);
+     --color-base-200: oklch(95% 0.015 240);
+     /* ...etc */
+
+     /* ...add or adjust variables as needed for your theme */
+   }
    ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   ```
 
-5. **(Optional) Enable OAuth providers**
+3. **Submit Your Theme**
+   - Create a GitHub issue with your theme
+   - Include color palette and rationale
+   - Provide screenshots or mockups if possible
+   - Maintainers will implement and test the theme
 
-   - In **Authentication → Providers**, enable GitHub or other providers you want to test.
-   - Set the callback/redirect URL to `http://localhost:3000/auth/callback`.
+### Theme Guidelines
 
-6. **(Optional) Update password/email settings**
-   - In **Authentication → Settings**, you can adjust password requirements, email confirmations, etc., to match your needs.
+- Ensure sufficient contrast for accessibility
+- Test with all component states (hover, active, disabled)
+- Consider both light and dark preferences
+- Follow semantic color naming
 
-For more details, see the [Supabase docs](https://supabase.com/docs/guides/auth).
+## 📝 Documentation Contributions
 
-## Troubleshooting
+### What We Need
 
-- **Email confirmation links go to the wrong URL:**  
-  Make sure you have set the correct "Site URL" in your Supabase Auth settings. For local development, you may need to temporarily set it to `http://localhost:3000`.
+- Step-by-step setup guides
+- Troubleshooting documentation
+- Feature explanation guides
+- Video tutorials
+- Translation to other languages
 
-- **OAuth not working locally:**  
-  Double-check that your provider callback URLs are set to your local dev URL in Supabase.
+### Documentation Style
 
-If you get stuck, open a [Discussion](https://github.com/chaosweasl/cognify/discussions) or [Issue](https://github.com/chaosweasl/cognify/issues)!
+- Use clear, simple language
+- Include code examples where helpful
+- Add screenshots for UI guidance
+- Structure with proper headings
+
+## 🐛 Bug Reports
+
+### Before Reporting
+
+- Check if the bug already exists
+- Try reproducing in different browsers
+- Clear cache and try again
+
+### Good Bug Reports Include
+
+- **Clear title** describing the issue
+- **Steps to reproduce** the problem
+- **Expected behavior** vs actual behavior
+- **Screenshots or videos** if applicable
+- **Environment details** (browser, OS, device)
+- **Console errors** if any
+
+### Bug Report Template
+
+```markdown
+**Describe the bug**
+A clear description of what the bug is.
+
+**To Reproduce**
+
+1. Go to '...'
+2. Click on '....'
+3. See error
+
+**Expected behavior**
+What you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots.
+
+**Environment:**
+
+- Browser: [e.g. Chrome 91]
+- OS: [e.g. Windows 10]
+- Device: [e.g. Desktop, iPhone 12]
+```
+
+## ✅ Contribution Checklist
+
+Before submitting your contribution:
+
+- [ ] Created an issue to discuss the change first
+- [ ] Contribution aligns with our accepted areas
+- [ ] Documentation changes are clear and helpful
+- [ ] Theme suggestions include complete color palettes
+- [ ] Bug reports include detailed reproduction steps
+- [ ] Screenshots included for visual changes
+- [ ] Related issue referenced (if applicable)
+
+## 🚫 What We Won't Accept
+
+Due to the sophisticated architecture and complex setup requirements:
+
+- Code changes to core SRS algorithm or business logic
+- Database schema or migration modifications
+- Major architectural changes or new features
+- Pull requests without prior issue discussion
+- Contributions that require extensive local testing
+- Changes that break existing functionality
+- Features that conflict with project goals
+
+## 🤔 Questions?
+
+- **Small questions**: Comment on related issues
+- **General discussion**: Use GitHub Discussions
+- **Bug reports**: Create a new issue
+- **Feature ideas**: Create an issue for discussion first
+
+## 📄 License
+
+By contributing to Cognify, you agree that your contributions will be licensed under the MIT License.
 
 ---
 
-Thank you for helping make Cognify better!
+**Thank you for helping make Cognify better!** 🙏
+
+Your contributions in themes, documentation, and quality-of-life improvements help create a better learning experience for everyone.

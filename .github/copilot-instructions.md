@@ -2,157 +2,280 @@
 
 ## Project Overview
 
-Cognify is a Next.js (App Router) platform for AI-powered flashcards, spaced repetition, and personal study management. It uses Supabase for authentication, storage, and notifications, and DaisyUI for UI. All AI and sensitive keys are user-provided.
+Cognify is an AI-powered flashcard application built with Next.js 15, React 19, TypeScript, and Supabase. It converts notes and documents into interactive flashcards using a sophisticated Spaced Repetition System (SRS) similar to Anki.
 
-## Architecture & Key Patterns
+## Core Architecture
 
-### App Directory Structure
+### Technology Stack
 
-- `app/` uses the Next.js App Router. Major features are organized as folders under `app/(main)/`:
-  - `projects/` (flashcards, SRS, project management)
-  - `dashboard/` (user dashboard, notifications)
-  - `settings/` (profile/settings)
-  - Each feature has its own `components/`, `hooks/`, and `utils/` subfolders.
-- Shared React components live in `components/` (e.g., `NotificationBell.tsx`, `header.tsx`).
-- Utility functions are in `utils/` (e.g., `supabase/`, `theme.ts`).
-- Scripts for admin/dev tasks are in `scripts/` (e.g., `pushNotification.ts`).
-- Static assets are in `public/` (e.g., `assets/nopfp.png`).
-- Documentation is in `docs/`.
+- **Frontend**: Next.js 15 with App Router, React 19, TypeScript
+- **Styling**: Tailwind CSS with DaisyUI components
+- **Database**: Supabase (PostgreSQL) with real-time subscriptions
+- **Authentication**: Supabase Auth
+- **State Management**: Zustand stores
+- **Build Tool**: Turbopack for development
+- **Package Manager**: pnpm
 
-### Authentication
+### Project Structure
 
-- Supabase handles user authentication and profiles. See `utils/supabase/client.ts` for client setup and `app/auth/` for auth routes.
-- Both OAuth and email/password are supported. Redirect URLs must match your local/dev settings (see Supabase dashboard and `.env.local`).
-- Auth logic is also present in `app/login/components/LoginForm.tsx` and related files.
+```
+app/
+├── (main)/                 # Authenticated routes
+│   ├── dashboard/          # Main dashboard
+│   ├── projects/           # Project management
+│   │   ├── [id]/          # Individual project pages
+│   │   └── components/     # Project-specific components
+│   └── settings/          # User settings
+├── api/                   # API routes
+├── auth/                  # Authentication pages
+└── login/                 # Login functionality
 
-### Flashcard Generation & SRS
+components/                # Shared UI components
+utils/supabase/           # Database utilities
+hooks/                    # Custom React hooks
+```
 
-- AI API integration is user-configurable via environment variables. No hardcoded keys—users set their own in `.env.local`.
-- Flashcard and SRS logic is in `app/(main)/projects/components/` (e.g., `FlashcardEditor.tsx`, `StudyFlashcards.tsx`, `SRSScheduler.ts`).
-- SRS state and due project logic is in `utils/supabase/srs.ts`.
-- Data normalization and comparison utilities are in `app/(main)/projects/utils/`.
+## Development Guidelines
 
-### Notifications
+### Code Standards
 
-- App-wide and SRS notifications are unified in `components/NotificationBell.tsx`.
-- Notification logic and DB access is in `utils/supabase/appNotifications.ts`.
-- Admins/devs can push notifications using scripts (see `scripts/pushNotification.ts`).
+- Use TypeScript for all new code
+- Follow Next.js App Router conventions
+- Use Tailwind CSS classes, prefer DaisyUI components
+- Implement proper error handling with try-catch blocks
+- Use Supabase client utilities for database operations
 
-### API Routes
+### Key Patterns
 
-- Next.js API routes are under `app/api/` (e.g., `app/api/projects/route.ts`).
-- API routes interact with Supabase using the client from `utils/supabase/client.ts`.
+#### Database Operations
 
-### State & Data Flow
+```typescript
+import { createClient } from "@/utils/supabase/server";
 
-- State is managed via React hooks and context only (no Redux/MobX). See `app/(main)/projects/hooks/` and `hooks/` for custom hooks.
+const supabase = createClient();
+const { data, error } = await supabase
+  .from("table_name")
+  .select("*")
+  .eq("user_id", userId);
+```
 
-### Styling
+#### Component Structure
 
-- DaisyUI (Tailwind CSS plugin) is used for UI components. Use DaisyUI classes for new UI elements. See `app/globals.css` for global styles.
-- Custom theming is handled in `utils/theme.ts`.
+- Use functional components with TypeScript interfaces
+- Implement proper loading and error states
+- Follow DaisyUI component patterns
+- Use semantic HTML with proper accessibility
 
-### Environment Variables
+#### State Management
 
-- Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`, and your AI API key. Set these in `.env.local`.
-- Never commit API keys or secrets.
+- Use Zustand for complex state (settings, user profile)
+- Prefer React state for component-local state
+- Use Supabase real-time subscriptions for live data
 
-### Scripts
+### Spaced Repetition System (SRS)
 
-- Scripts for admin/dev tasks live in `scripts/` (e.g., `pushNotification.ts` for sending notifications via Supabase).
-- Scripts use `dotenv` and require a `.env` file with Supabase keys for local execution.
+**CRITICAL**: The SRS algorithm is the core of Cognify and should NOT be modified without explicit approval.
 
-- **Authentication:**
+#### Key SRS Components
 
-  - Supabase handles user authentication and profiles. See `utils/supabase/client.ts` for client setup and `app/auth/` for auth routes.
-  - Both OAuth and email/password are supported. Redirect URLs must match your local/dev settings (see Supabase dashboard and `.env.local`).
-  - Auth logic is also present in `app/login/components/LoginForm.tsx` and related files.
+- `SRSScheduler.ts` - Core algorithm implementation
+- `StudyFlashcards.tsx` - Main study interface
+- `AnkiRatingControls.tsx` - Rating system (Again, Hard, Good, Easy)
+- Default settings follow Anki-inspired intervals
 
-- **Flashcard Generation:**
+#### SRS Features
 
-  - AI API integration is user-configurable via environment variables. No hardcoded keys—users set their own in `.env.local`.
-  - Flashcard logic is in `app/projects/components/FlashcardEditor.tsx`, `FlashcardInput.tsx`, and related files.
-  - Data normalization and comparison utilities are in `app/projects/utils/`.
+- New cards progress through learning steps
+- Review cards use SM-2 algorithm with ease factors
+- Failed cards enter relearning mode
+- Daily limits for new cards and reviews
+- Customizable settings in user preferences
 
-- **API Routes:**
+### Selective Open Source Approach
 
-  - Next.js API routes are under `app/api/`. Example: `app/api/projects/route.ts` for project-related endpoints.
-  - API routes interact with Supabase using the client from `utils/supabase/client.ts`.
+#### Areas Open for Contribution
 
-- **State & Data Flow:**
+- **Themes & UI**: DaisyUI themes, component styling, animations
+- **Documentation**: Guides, tutorials, API docs
+- **QoL Features**: Small improvements, accessibility, UX enhancements
+- **Bug Fixes**: UI bugs, error handling, performance issues
 
-  - State is managed via React hooks and context only (no Redux/MobX). See `app/projects/hooks/` for project-specific hooks like `useProjectManager.ts` and `useUnsavedChangesWarning.ts`.
+#### Protected Areas (Core Logic)
 
-- **Styling:**
+- SRS algorithm and scheduling logic
+- Database schema and migrations
+- Authentication flows
+- AI integration architecture
+- Payment/billing system (future)
+- Core business logic
 
-  - DaisyUI (Tailwind CSS plugin) is used for UI components. Use DaisyUI classes for new UI elements. See `app/globals.css` for global styles.
-  - Custom theming is handled in `utils/theme.ts`.
+### When Working on Cognify
 
-- **Environment Variables:**
+#### For UI/Theme Contributions
 
-  - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`, and your AI API key. Set these in `.env.local`.
-  - Never commit API keys or secrets.
+- Follow existing DaisyUI patterns
+- Test across different screen sizes
+- Ensure accessibility compliance
+- Maintain consistent spacing and typography
+- Test theme switching functionality
 
-- **Styling:**
+#### For Documentation
 
-## Developer Workflows
+- Use clear, beginner-friendly language
+- Include code examples and screenshots
+- Update both inline comments and external docs
+- Consider non-technical users
 
-- **Install dependencies:**
-  - Use `pnpm install` (preferred), or `npm install`/`yarn install`.
-- **Run locally:**
-  - Use `pnpm dev` (or `npm run dev`/`yarn dev`).
-- **Environment setup:**
-  - Create `.env.local` with Supabase keys, site URL, and your AI API key. For scripts, also create a `.env` file with the same keys.
-- **Linting:**
-  - Run `pnpm lint` (uses ESLint config in `eslint.config.mjs`). Fix issues as reported; most can be auto-fixed with `pnpm lint --fix`.
-- **Formatting:**
-  - Prettier is recommended (no config file; use defaults). Format on save in your editor.
-- **Scripts:**
-  - Run scripts with `npx tsx scripts/pushNotification.ts` (see script for details).
-- **Troubleshooting:**
-  - If authentication fails, check Supabase redirect URLs and `.env.local`/`.env` values.
-  - For AI API errors, verify your key and endpoint in `.env.local`.
-  - For DaisyUI issues, ensure Tailwind and DaisyUI are installed and configured in `postcss.config.mjs` and `app/globals.css`.
+#### For Bug Fixes
 
-## Project-Specific Conventions
+- Reproduce the issue first
+- Add proper error handling
+- Test edge cases
+- Ensure fix doesn't break other functionality
+- Add console logging for debugging if needed
 
-- **Feature Folders:**
-  - Each major feature (projects, dashboard, settings) is a folder under `app/(main)/` with its own `components/`, `hooks/`, and `utils/`.
-- **Hooks & Utils:**
-  - Place feature-specific hooks in `app/(main)/[feature]/hooks/` and utilities in `app/(main)/[feature]/utils/`. Example: `useProjects.ts` manages project state and actions.
-- **No global state management library:**
-  - State is managed via React hooks and context only.
-- **Bring Your Own AI Key:**
-  - Never commit API keys. Users set their own in `.env.local`.
-- **Supabase Integration:**
-  - All DB/auth logic goes through Supabase client in `utils/supabase/client.ts`. Use this client in API routes, React components, and scripts for DB access.
-- **UI Library:**
-  - Use DaisyUI classes for new UI components. Example: `<button className="btn btn-primary">` for a styled button.
-- **Notifications:**
-  - Use the `NotificationBell` component for all in-app and SRS notifications. Push notifications via scripts or admin tools.
+### Component Guidelines
 
-## Integration Points
+#### Flashcard Components
 
-- **Supabase:**
-  - Used for authentication, storage, user profiles, SRS state, and notifications. All DB/auth logic goes through `utils/supabase/client.ts`.
-- **AI API:**
-  - User-provided key for flashcard generation. No backend proxying; all requests are client-side using the user's key.
-- **Next.js API Routes:**
-  - Extend API by adding files under `app/api/`. Use Supabase client for DB operations.
-- **Notifications:**
-  - Use `utils/supabase/appNotifications.ts` for notification logic. Push via scripts or admin UI.
-- **Scripts:**
-  - Use scripts in `scripts/` for admin/dev tasks (e.g., push notifications).
+- `FlashcardDisplay.tsx` - Card presentation
+- `FlashcardEditor.tsx` - Card creation/editing
+- `ProjectCard.tsx` - Project overview cards
+- Follow consistent prop interfaces and error handling
 
-## Examples
+#### Study Session Components
 
-- To add a new feature, create a folder under `app/(main)/` (e.g., `app/(main)/notes/`). Add local `components/`, `hooks/`, and `utils/` as needed.
-- For authentication changes, update Supabase settings in the dashboard and adjust logic in `utils/supabase/client.ts` and `app/auth/`.
-- To add a new API route, create a file under `app/api/` and use the Supabase client for DB access.
-- For new UI, use DaisyUI classes (see their docs for patterns). Example: `<input className="input input-bordered" />` for a styled input.
-- For notifications, use the `NotificationBell` component and push notifications via `scripts/pushNotification.ts`.
-- For troubleshooting, check `.env.local`, `.env`, Supabase dashboard, and console errors for hints.
+- Maintain separation between UI and SRS logic
+- Handle loading states gracefully
+- Implement keyboard shortcuts (spacebar to flip, 1-4 for ratings)
+- Show progress indicators
 
----
+### Database Patterns
 
-For more details, see `README.md` and `CONTRIBUTING.md`. If conventions are unclear, ask for feedback or check recent PRs for examples.
+#### User Data
+
+- All user data tied to `user_id` from Supabase Auth
+- Implement RLS (Row Level Security) policies
+- Use proper foreign key relationships
+
+#### Project Structure
+
+```sql
+projects (id, user_id, name, description, created_at)
+flashcards (id, project_id, front, back, created_at)
+srs_states (id, user_id, flashcard_id, state, due, interval, ease, etc.)
+```
+
+### Styling Guidelines
+
+#### Tailwind CSS Usage
+
+- Use utility classes over custom CSS
+- Prefer DaisyUI component classes
+- Follow responsive design principles
+- Use CSS variables for theme customization
+
+#### DaisyUI Components
+
+- Button variants: `btn`, `btn-primary`, `btn-outline`
+- Cards: `card`, `card-body`, `card-title`
+- Forms: `input`, `textarea`, `select`
+- Themes: Support multiple themes via data-theme
+
+### Performance Considerations
+
+#### Optimization Strategies
+
+- Use React.memo for expensive components
+- Implement proper loading states
+- Debounce database writes (SRS state updates)
+- Use Supabase real-time subscriptions efficiently
+- Optimize bundle size with proper imports
+
+#### Study Session Performance
+
+- Batch SRS state updates
+- Minimize re-renders during study
+- Preload next cards when possible
+- Cache computed values
+
+### Error Handling
+
+#### User-Facing Errors
+
+- Use toast notifications for feedback
+- Provide clear error messages
+- Implement retry mechanisms
+- Graceful degradation for network issues
+
+#### Developer Errors
+
+- Use proper try-catch blocks
+- Log errors for debugging
+- Validate data at boundaries
+- Handle edge cases
+
+### Testing Approach
+
+#### Manual Testing Requirements
+
+- Test theme switching
+- Verify mobile responsiveness
+- Check study session flow
+- Validate SRS scheduling accuracy
+- Test with various content types
+
+#### Areas to Test
+
+- Authentication flows
+- Flashcard creation and editing
+- Study session functionality
+- Settings persistence
+- Project management
+
+### AI Integration
+
+**Note**: AI features are in development and architecture may change.
+
+#### Current Approach
+
+- User-provided API keys (stored securely)
+- Configurable AI models
+- Content analysis for flashcard generation
+- No server-side AI processing
+
+### Future Considerations
+
+#### Planned Features
+
+- Enhanced AI integration options
+- Mobile app development
+- Advanced analytics
+- Import/export functionality
+- Community features
+
+#### Technical Debt
+
+- Improve TypeScript coverage
+- Add comprehensive testing
+- Optimize bundle size
+- Enhance error monitoring
+
+## Development Workflow
+
+### Getting Started
+
+1. Clone and install dependencies with `pnpm install`
+2. Set up Supabase environment variables
+3. Run development server with `pnpm dev`
+4. Focus on approved contribution areas
+
+### Before Contributing
+
+1. Check existing issues and discussions
+2. Create issue for non-trivial changes
+3. Follow coding standards and patterns
+4. Test thoroughly across devices
+5. Update documentation as needed
+
+Remember: Cognify aims to be a high-quality, focused learning platform. Maintain the balance between open collaboration and protected core functionality.

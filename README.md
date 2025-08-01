@@ -1,115 +1,140 @@
 # Cognify
 
-**Cognify** is an open-source platform that helps you turn your notes into flashcards using AI, and reminds you to restudy them using spaced repetition. You control your data and your AI: bring your own API key.
+**Transform Your Notes Into Smart Flashcards**
 
-## Features
+Cognify is an AI-powered learning platform that automatically converts your notes, documents, and study materials into interactive flashcards. Study smarter with personalized spaced repetition that adapts to your learning pace.
 
-- ✨ **AI-Powered Flashcard Generation**: Automatically extract key concepts from your notes and generate targeted flashcards.
-- 📄 **Multiple Input Formats**: Upload text, paste content, or upload PDF files.
-- 🗄️ **Personal Study Database**: All flashcards are stored securely for your account.
-- 🔑 **Your Own API**: Use your own AI API key (OpenAI, etc.) for privacy and control.
-- ⏰ **Spaced Repetition Reminders**: Get reminders to review your flashcards for optimal learning.
-- 🔒 **Open Source & Self-Hostable**: 100% open-source, no vendor lock-in, no hidden fees.
-- 🛡️ **User Authentication**: Secure sign-up, login, and user management.
-- 🖼️ **User Profiles**: Upload profile pictures, change usernames, and manage your account.
-- 🌐 **OAuth Support**: Sign in with Google, GitHub, and more.
+## ✨ Features
 
-## Getting Started
+- **🤖 AI-Powered Generation**: Advanced AI automatically extracts key concepts from your notes and creates targeted flashcards for optimal learning
+- **📄 Multiple Input Formats**: Upload text, paste content directly, or upload PDF files - Cognify handles various content types seamlessly
+- **🧠 Intelligent Spaced Repetition**: Anki-inspired SRS algorithm with customizable learning steps, intervals, and difficulty ratings
+- **📊 Personal Study Database**: All your flashcards are stored securely in your personal database, accessible anytime for review sessions
+- **🔑 Bring Your Own API**: Use your own AI API token for complete control and privacy - no subscription fees, just bring your preferred AI service
+- **⚙️ Customizable Settings**: Adjust daily card limits, learning steps, graduation intervals, and ease factors to match your learning style
+- **📈 Progress Tracking**: Detailed study statistics, session analytics, and performance insights
+- **🎯 Smart Scheduling**: Automatic reminders for due cards and optimized review sessions
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/) or [pnpm](https://pnpm.io/) (for package management)
-- [Supabase](https://supabase.com/) account (for authentication and database)
-- An AI API key (e.g., OpenAI). You can also test with a local model using LMStudio or any other local AI (not recommended for actually creating flashcards)
+- Node.js 18+ and pnpm
+- Supabase account for database
+- AI API key (OpenAI, Anthropic, etc.) for flashcard generation
 
 ### Installation
 
-1. **Clone the repository:**
+1. **Clone the repository**
 
-   ```sh
+   ```bash
    git clone https://github.com/chaosweasl/cognify.git
    cd cognify
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies**
 
-   ```sh
-   npm install
-   # or
-   yarn install
-   # or
+   ```bash
    pnpm install
    ```
 
-3. **Set up environment variables:**
+3. **Set up environment variables**
 
-   Create a `.env.local` file in the root directory:
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   # Or set to your deployed URL if not running locally
-   # Add your AI API key as needed
+   ```bash
+   cp .env.example .env.local
    ```
 
-   > **Note:**  
-   > Do **not** use `https://cognify-chaosweasl.vercel.app` unless you are deploying to the official instance.  
-   > Use your own local or deployment URL for `NEXT_PUBLIC_SITE_URL`.
+   Fill in your Supabase credentials and other required environment variables.
 
-4. **Run the development server:**
+4. **Run the development server**
 
-   ```sh
-   npm run dev
-   # or
-   yarn dev
-   # or
+   ```bash
    pnpm dev
    ```
 
-5. **Update Supabase Authentication Settings:**
+5. **Open your browser**
+   Navigate to `http://localhost:3000` to start using Cognify.
 
-   In your [Supabase](https://supabase.com/) project dashboard, go to **Authentication → URL Configuration**.  
-   Set the **Site URL** to `http://localhost:3000` (or the URL you use for local testing).  
-   This ensures authentication redirects work correctly during development.
+## 🛠️ Technology Stack
 
-6. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, DaisyUI
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **State Management**: Zustand
+- **Animations**: Framer Motion
+- **Deployment**: Vercel-ready
 
-## Project Structure
+## 📚 How It Works
 
-```
-app/                # Next.js app directory (routes, pages, layouts)
-components/         # React components
-utils/              # Utility functions (Supabase client, helpers)
-public/             # Static assets
-docs/               # Documentation and TODOs
-```
+1. **Create a Project**: Start by creating a new study project
+2. **Add Content**: Upload documents, paste notes, or manually create flashcards
+3. **AI Generation**: Let AI analyze your content and generate smart flashcards
+4. **Study Sessions**: Review flashcards using the spaced repetition system
+5. **Rate Performance**: Use Anki-style ratings (Again, Hard, Good, Easy) to optimize scheduling
+6. **Track Progress**: Monitor your learning progress with detailed analytics
 
-## Roadmap
+## 🎯 Spaced Repetition System
 
-- [x] Email/password authentication
-- [ ] OAuth login (Google, GitHub, etc.)
-- [ ] User profile management (avatars, usernames)
-- [ ] Flashcard creation and storage
-- [ ] AI-powered flashcard generation (bring your own API key)
-- [ ] PDF parsing and import
-- [ ] Spaced repetition reminders
-- [ ] Mobile-friendly UI
-- [ ] Community/shared decks
+Cognify implements a sophisticated SRS algorithm inspired by Anki, featuring:
 
-See [`docs/todo.md`](docs/todo.md) for more details.
+- **Learning Steps**: Customizable intervals for new cards (default: 1m, 10m, 1d)
+- **Graduation**: Cards move to review status after completing learning steps
+- **SM-2 Algorithm**: Mature cards use spaced repetition based on performance
+- **Relearning**: Failed cards enter relearning mode with adjusted intervals
+- **Daily Limits**: Control how many new cards and reviews you study per day
 
-## Contributing
+## ⚙️ Configuration
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines and tutorials on how to contribute.
+Customize your learning experience through the settings page:
 
-## License
+- **Daily Limits**: New cards per day, maximum reviews
+- **Learning Steps**: Intervals for new card progression
+- **Ease Settings**: Starting ease, minimum ease, bonus multipliers
+- **AI Integration**: Configure your preferred AI service and model
 
-[MIT](LICENSE)
+## 📖 Documentation
+
+- [Study System Guide](docs/study-system.md) - Learn how the SRS algorithm works
+- [AI Integration](docs/ai-setup.md) - Set up AI-powered flashcard generation
+- [API Reference](docs/api.md) - Technical documentation for developers
+
+## 🤝 Contributing
+
+We welcome contributions in specific areas! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+
+- 🎨 **Themes & UI**: Help make Cognify more beautiful
+- 📝 **Documentation**: Improve guides and help content
+- 🐛 **Bug Reports**: Report issues and help fix them
+- 💡 **Feature Suggestions**: Propose new improvements
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔒 Privacy & Security
+
+- **Local Control**: Your AI API keys are stored securely in your browser
+- **Data Ownership**: All your study data belongs to you
+- **No Tracking**: We don't track your study habits or personal information
+- **Open Source**: Transparent codebase you can audit and self-host
+
+## 🚧 Development Status
+
+Cognify is actively developed with regular updates. Current focus areas:
+
+- Enhanced AI integration options
+- Mobile-responsive improvements
+- Advanced analytics dashboard
+- Import/export functionality
+- Community themes and templates
+
+## 💬 Support
+
+- **Issues**: Report bugs or request features via GitHub Issues
+- **Discussions**: Join community discussions for help and ideas
+- **Documentation**: Check our comprehensive guides and FAQ
 
 ---
 
-**Cognify** is built to empower learners everywhere. You own your data, your AI, and your learning journey.
-
-You can watch live development at [https://cognify-chaosweasl.vercel.app/](https://cognify-chaosweasl.vercel.app/)
+**Start learning smarter today with Cognify!** 🧠✨
