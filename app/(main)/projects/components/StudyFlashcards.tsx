@@ -76,6 +76,9 @@ export default function StudyFlashcards({
   const [flipped, setFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
 
+  // Prevent rating spam
+  const [ratingLoading, setRatingLoading] = useState(false);
+
   // Session statistics
   const [sessionStats, setSessionStats] = useState({
     again: 0,
@@ -120,8 +123,8 @@ export default function StudyFlashcards({
 
   const handleRate = useCallback(
     (rating: SRSRating) => {
-      if (!currentCard || !currentCardState) return;
-
+      if (!currentCard || !currentCardState || ratingLoading) return;
+      setRatingLoading(true);
       const now = Date.now();
 
       // Update session stats
@@ -172,9 +175,17 @@ export default function StudyFlashcards({
             timeSpent: Math.round((now - sessionStartTime) / 1000 / 60),
           }));
         }
+        setRatingLoading(false);
       }, 300);
     },
-    [currentCard, currentCardState, srsState, studySession, sessionStartTime]
+    [
+      currentCard,
+      currentCardState,
+      srsState,
+      studySession,
+      sessionStartTime,
+      ratingLoading,
+    ]
   );
 
   // Effects
@@ -281,7 +292,11 @@ export default function StudyFlashcards({
         onFlip={handleFlip}
       />
 
-      <AnkiRatingControls flipped={flipped} handleRate={handleRate} />
+      <AnkiRatingControls
+        flipped={flipped}
+        handleRate={handleRate}
+        ratingLoading={ratingLoading}
+      />
 
       <SessionProgress
         reviewed={sessionStats.reviewed}
