@@ -15,18 +15,49 @@ import {
   deleteUserNotification,
 } from "@/utils/supabase/userNotifications";
 
+// Notification types
+interface UserNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+  trigger_at?: string;
+  url?: string;
+}
+
+interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  trigger_at?: string;
+  url?: string;
+}
+
+interface AppNotificationRead {
+  notification_id: string;
+}
+
 export function NotificationBell() {
   const userId = useUserId();
-  const [userNotifications, setUserNotifications] = useState<any[]>([]);
-  const [appNotifications, setAppNotifications] = useState<any[]>([]);
+  const [userNotifications, setUserNotifications] = useState<
+    UserNotification[]
+  >([]);
+  const [appNotifications, setAppNotifications] = useState<AppNotification[]>(
+    []
+  );
 
   // Only show notifications whose trigger_at is in the past
   const now = Date.now();
   const filteredUserNotifications = userNotifications.filter(
-    (n) => !n.trigger_at || new Date(n.trigger_at).getTime() <= now
+    (n: UserNotification) =>
+      !n.trigger_at || new Date(n.trigger_at).getTime() <= now
   );
   const filteredAppNotifications = appNotifications.filter(
-    (n) => !n.trigger_at || new Date(n.trigger_at).getTime() <= now
+    (n: AppNotification) =>
+      !n.trigger_at || new Date(n.trigger_at).getTime() <= now
   );
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"user" | "app">("user");
@@ -36,18 +67,23 @@ export function NotificationBell() {
   useEffect(() => {
     if (!userId) return;
     console.log("[Supabase] getUserNotifications", userId);
-    getUserNotifications(userId).then(({ data, error }) => {
-      if (error) console.error("[Supabase] getUserNotifications error", error);
-      if (data) setUserNotifications(data);
-    });
+    getUserNotifications(userId).then(
+      ({ data, error }: { data: UserNotification[] | null; error: any }) => {
+        if (error)
+          console.error("[Supabase] getUserNotifications error", error);
+        if (data) setUserNotifications(data);
+      }
+    );
   }, [userId]);
 
   useEffect(() => {
     console.log("[Supabase] getAppNotifications");
-    getAppNotifications().then(({ data, error }) => {
-      if (error) console.error("[Supabase] getAppNotifications error", error);
-      if (data) setAppNotifications(data);
-    });
+    getAppNotifications().then(
+      ({ data, error }: { data: AppNotification[] | null; error: any }) => {
+        if (error) console.error("[Supabase] getAppNotifications error", error);
+        if (data) setAppNotifications(data);
+      }
+    );
   }, []);
 
   // Fetch app notification reads for this user
@@ -56,7 +92,10 @@ export function NotificationBell() {
     getAppNotificationReads(userId).then(({ data, error }) => {
       if (error)
         console.error("[Supabase] getAppNotificationReads error", error);
-      if (data) setReadAppIds(data.map((row: any) => row.notification_id));
+      if (data)
+        setReadAppIds(
+          data.map((row: AppNotificationRead) => row.notification_id)
+        );
     });
   }, [userId, appNotifications.length]);
 
@@ -66,13 +105,13 @@ export function NotificationBell() {
       open &&
       activeTab === "user" &&
       userId &&
-      filteredUserNotifications.some((n: any) => !n.read)
+      filteredUserNotifications.some((n: UserNotification) => !n.read)
     ) {
       const unreadVisible = filteredUserNotifications.filter(
-        (n: any) => !n.read
+        (n: UserNotification) => !n.read
       );
       Promise.all(
-        unreadVisible.map((n: any) => {
+        unreadVisible.map((n: UserNotification) => {
           console.log("[Supabase] markNotificationRead", n.id);
           return markNotificationRead(n.id);
         })
@@ -88,7 +127,6 @@ export function NotificationBell() {
         });
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeTab, userId, filteredUserNotifications]);
 
   // Mark all app notifications as read when app tab is opened
@@ -97,13 +135,13 @@ export function NotificationBell() {
       open &&
       activeTab === "app" &&
       userId &&
-      appNotifications.some((n: any) => !readAppIds.includes(n.id))
+      appNotifications.some((n: AppNotification) => !readAppIds.includes(n.id))
     ) {
       const unreadAppNotifications = appNotifications.filter(
-        (n: any) => !readAppIds.includes(n.id)
+        (n: AppNotification) => !readAppIds.includes(n.id)
       );
       Promise.all(
-        unreadAppNotifications.map((n: any) => {
+        unreadAppNotifications.map((n: AppNotification) => {
           console.log("[Supabase] markAppNotificationRead", userId, n.id);
           return markAppNotificationRead(userId, n.id);
         })
@@ -115,18 +153,20 @@ export function NotificationBell() {
         getAppNotificationReads(userId).then(({ data, error }) => {
           if (error)
             console.error("[Supabase] getAppNotificationReads error", error);
-          if (data) setReadAppIds(data.map((row: any) => row.notification_id));
+          if (data)
+            setReadAppIds(
+              data.map((row: AppNotificationRead) => row.notification_id)
+            );
         });
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeTab, userId, appNotifications, readAppIds]);
 
   const unreadAppCount = filteredAppNotifications.filter(
-    (n: any) => !readAppIds.includes(n.id)
+    (n: AppNotification) => !readAppIds.includes(n.id)
   ).length;
   const notificationCount =
-    filteredUserNotifications.filter((n: any) => !n.read).length +
+    filteredUserNotifications.filter((n: UserNotification) => !n.read).length +
     unreadAppCount;
 
   return (
@@ -185,7 +225,7 @@ export function NotificationBell() {
               <>
                 {filteredUserNotifications.length > 0 ? (
                   <div className="divide-y divide-base-200">
-                    {filteredUserNotifications.map((n: any) => (
+                    {filteredUserNotifications.map((n: UserNotification) => (
                       <div
                         key={n.id}
                         className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
@@ -260,7 +300,7 @@ export function NotificationBell() {
               <>
                 {filteredAppNotifications.length > 0 ? (
                   <div className="divide-y divide-base-200">
-                    {filteredAppNotifications.map((n: any) => (
+                    {filteredAppNotifications.map((n: AppNotification) => (
                       <div
                         key={n.id}
                         className={`relative group p-3 hover:bg-base-200/50 transition-colors ${

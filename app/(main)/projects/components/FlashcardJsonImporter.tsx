@@ -106,9 +106,9 @@ export function FlashcardJsonImporter({
 
       const itemObj = item as Record<string, unknown>;
       // Try different property names
-      let question =
+      const question =
         itemObj.question || itemObj.front || itemObj.q || itemObj.prompt;
-      let answer =
+      const answer =
         itemObj.answer || itemObj.back || itemObj.a || itemObj.response;
 
       // Convert to string and validate

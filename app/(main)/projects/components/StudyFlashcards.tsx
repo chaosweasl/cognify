@@ -16,7 +16,6 @@ import {
   SRSRating,
   SRSCardState,
   StudySession,
-  DEFAULT_SRS_SETTINGS,
 } from "./SRSScheduler";
 
 // Import sub-components
@@ -61,7 +60,7 @@ export default function StudyFlashcards({
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
-  const { srsSettings, loadSettings } = useSettingsStore();
+  const { loadSettings } = useSettingsStore();
 
   // Load settings on mount
   useEffect(() => {
