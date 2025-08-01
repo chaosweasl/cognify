@@ -68,7 +68,13 @@ export function NotificationBell() {
     if (!userId) return;
     console.log("[Supabase] getUserNotifications", userId);
     getUserNotifications(userId).then(
-      ({ data, error }: { data: UserNotification[] | null; error: any }) => {
+      ({
+        data,
+        error,
+      }: {
+        data: UserNotification[] | null;
+        error: Error | null;
+      }) => {
         if (error)
           console.error("[Supabase] getUserNotifications error", error);
         if (data) setUserNotifications(data);
@@ -79,7 +85,13 @@ export function NotificationBell() {
   useEffect(() => {
     console.log("[Supabase] getAppNotifications");
     getAppNotifications().then(
-      ({ data, error }: { data: AppNotification[] | null; error: any }) => {
+      ({
+        data,
+        error,
+      }: {
+        data: AppNotification[] | null;
+        error: Error | null;
+      }) => {
         if (error) console.error("[Supabase] getAppNotifications error", error);
         if (data) setAppNotifications(data);
       }
