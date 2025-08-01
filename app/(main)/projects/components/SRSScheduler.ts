@@ -679,13 +679,21 @@ export function getStudyStats(
     (card) => card.state === "learning" || card.state === "relearning"
   ).length;
   const reviewCards = allCards.filter((card) => card.state === "review").length;
-  const dueCards = allCards.filter((card) => card.due <= now).length;
+
+  // Use session-aware logic for dueCards (respects daily limits)
+  // Assume a fresh session (no cards studied yet)
+  const session = {
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+    learningCardsInQueue: [],
+  };
+  const stats = getSessionAwareStudyStats(cardStates, session, DEFAULT_SRS_SETTINGS, now);
 
   return {
     newCards,
     learningCards,
     reviewCards,
-    dueCards,
+    dueCards: stats.dueCards,
     totalCards: allCards.length,
   };
 }
