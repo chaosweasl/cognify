@@ -1,7 +1,7 @@
 // SRS Database Utilities for Supabase
 // Handles loading and saving SRS states to/from the database
 
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
 import { SRSCardState, initSRSState } from "./SRSScheduler";
 
 // Database type for SRS states table
@@ -94,10 +94,19 @@ export async function loadSRSStates(
     const srsStates: Record<string, SRSCardState> = {};
     const existingCardIds = new Set<string>();
 
-    if (existingStates) {
+    if (Array.isArray(existingStates)) {
       for (const dbState of existingStates) {
-        srsStates[dbState.card_id] = databaseToSRSState(dbState);
-        existingCardIds.add(dbState.card_id);
+        // Type guard: ensure dbState is DatabaseSRSState
+        if (
+          typeof dbState === "object" &&
+          dbState !== null &&
+          typeof dbState.card_id === "string"
+        ) {
+          srsStates[dbState.card_id] = databaseToSRSState(
+            dbState as DatabaseSRSState
+          );
+          existingCardIds.add(dbState.card_id);
+        }
       }
     }
 
@@ -232,9 +241,9 @@ export async function getUserStudyStats(
       return null;
     }
 
-    if (!states) return null;
+    if (!Array.isArray(states)) return null;
 
-    const now = new Date().toISOString();
+    const now = new Date();
     const stats = {
       totalCards: states.length,
       newCards: 0,
@@ -251,8 +260,13 @@ export async function getUserStudyStats(
         stats.learningCards++;
       else if (state.state === "review") stats.reviewCards++;
 
-      // Count due cards
-      if (state.due <= now) stats.dueCards++;
+      // Count due cards (compare as dates)
+      if (
+        typeof state.due === "string" &&
+        new Date(state.due).getTime() <= now.getTime()
+      ) {
+        stats.dueCards++;
+      }
 
       // Count leeches
       if (state.is_leech) stats.leeches++;
@@ -277,17 +291,24 @@ export async function getCardsDueForProject(
     const now = new Date().toISOString();
     const { data: states, error } = await supabase
       .from("srs_states")
-      .select("card_id")
+      .select("card_id, due")
       .eq("user_id", userId)
-      .eq("project_id", projectId)
-      .lte("due", now);
+      .eq("project_id", projectId);
 
     if (error) {
       console.error("Error getting cards due:", error);
       return [];
     }
 
-    return states ? states.map((s) => s.card_id) : [];
+    if (!Array.isArray(states)) return [];
+
+    // Only return cards that are actually due
+    const nowTime = new Date(now).getTime();
+    return states
+      .filter(
+        (s) => typeof s.due === "string" && new Date(s.due).getTime() <= nowTime
+      )
+      .map((s) => s.card_id);
   } catch (error) {
     console.error("Error in getCardsDueForProject:", error);
     return [];

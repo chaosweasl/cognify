@@ -89,7 +89,6 @@ export default function StudyFlashcards({
     () => Object.fromEntries(cards.map((c) => [c.id, c])),
     [cards]
   );
-
   const currentCard = currentCardId ? cardMap[currentCardId] : null;
   const currentCardState = currentCardId ? srsState[currentCardId] : null;
 
@@ -573,59 +572,3 @@ export default function StudyFlashcards({
     </div>
   );
 }
-{
-  /* Title */
-}
-<div>
-  <h2 className="text-2xl font-bold text-base-content mb-2">
-    Study Session Complete!
-  </h2>
-  <p className="text-base-content/70">
-    Great work! You've completed all due cards.
-  </p>
-</div>;
-
-{
-  /* Session Stats */
-}
-<div className="bg-base-100 rounded-xl border border-base-300 p-6">
-  <h3 className="text-lg font-semibold text-base-content mb-4">
-    Session Summary
-  </h3>
-
-  {/* Total Reviewed and Time */}
-  <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b border-base-300">
-    <div className="text-center">
-      <div className="text-2xl font-bold text-primary mb-1">
-        {sessionStats.reviewed}
-      </div>
-      <div className="text-sm text-base-content/70">Cards Reviewed</div>
-    </div>
-    <div className="text-center">
-      <div className="text-2xl font-bold text-info mb-1">
-        {sessionStats.timeSpent}m
-      </div>
-      <div className="text-sm text-base-content/70">Time Spent</div>
-    </div>
-  </div>
-
-  {/* Rating Breakdown */}
-  <div className="grid grid-cols-2 gap-4">
-    <div className="text-center">
-      <div className="text-xl font-bold text-success">{sessionStats.easy}</div>
-      <div className="text-sm text-base-content/70">Easy</div>
-    </div>
-    <div className="text-center">
-      <div className="text-xl font-bold text-info">{sessionStats.good}</div>
-      <div className="text-sm text-base-content/70">Good</div>
-    </div>
-    <div className="text-center">
-      <div className="text-xl font-bold text-warning">{sessionStats.hard}</div>
-      <div className="text-sm text-base-content/70">Hard</div>
-    </div>
-    <div className="text-center">
-      <div className="text-xl font-bold text-error">{sessionStats.again}</div>
-      <div className="text-sm text-base-content/70">Again</div>
-    </div>
-  </div>
-</div>;

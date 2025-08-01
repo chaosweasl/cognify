@@ -396,9 +396,10 @@ export function getNextCardToStudy(
   }
 
   // 2. Second priority: Review cards that are due (if under daily limit)
+  // If MAX_REVIEWS_PER_DAY is 0, allow unlimited reviews
   if (
-    session.reviewsCompleted < SRS_SETTINGS.MAX_REVIEWS_PER_DAY ||
-    SRS_SETTINGS.MAX_REVIEWS_PER_DAY === 0
+    SRS_SETTINGS.MAX_REVIEWS_PER_DAY === 0 ||
+    session.reviewsCompleted < SRS_SETTINGS.MAX_REVIEWS_PER_DAY
   ) {
     const reviewCards = allCards.filter(
       (card) => card.state === "review" && card.due <= now
