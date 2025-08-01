@@ -18,6 +18,7 @@ export async function pushAppNotificationOnce({
   published = true,
 }: AppNotificationInput) {
   // Check for existing notification with the same title
+  console.log(`[Supabase] pushAppNotificationOnce for title: ${title}`);
   const { data: existing, error: selectError } = await supabase
     .from("app_notifications")
     .select("id")
@@ -38,6 +39,7 @@ export async function pushAppNotificationOnce({
 }
 
 export async function getAppNotifications() {
+  console.log(`[Supabase] getAppNotifications`);
   return supabase
     .from("app_notifications")
     .select("*")

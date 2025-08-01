@@ -29,6 +29,9 @@ export async function scheduleSRSReminder({
     return new Date(utc.getTime() - 5 * 60 * 60 * 1000);
   }
   const trigger_at = getNext4AMEST(due).toISOString();
+  console.log(
+    `[Supabase] scheduleSRSReminder for user_id: ${user_id}, project_id: ${project_id}, due: ${due}`
+  );
   const { error } = await supabase.from("user_notifications").insert([
     {
       user_id,

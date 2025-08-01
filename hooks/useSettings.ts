@@ -193,14 +193,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         .select("*")
         .eq("user_id", user.id)
         .single();
+      console.log(`[Supabase] getUserSettings for user_id: ${user.id}`);
 
       if (error) {
         if (error.code === "PGRST116") {
           // No settings found, create default settings
+          console.log(
+            `[Supabase] insert default user_settings for user_id: ${user.id}`
+          );
           const { error: insertError } = await supabase
             .from("user_settings")
             .insert({ user_id: user.id });
-
           if (insertError) throw insertError;
 
           set({
@@ -257,6 +260,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         .from("user_settings")
         .update(updateData)
         .eq("user_id", user.id);
+      console.log(
+        `[Supabase] update SRS settings for user_id: ${user.id}`,
+        updateData
+      );
 
       if (error) throw error;
 
@@ -294,6 +301,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         .from("user_settings")
         .update(updateData)
         .eq("user_id", user.id);
+      console.log(
+        `[Supabase] update user settings for user_id: ${user.id}`,
+        updateData
+      );
 
       if (error) throw error;
 
@@ -339,6 +350,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         .from("user_settings")
         .update(updateData)
         .eq("user_id", user.id);
+      console.log(
+        `[Supabase] reset settings for user_id: ${user.id}`,
+        updateData
+      );
 
       if (error) throw error;
 
