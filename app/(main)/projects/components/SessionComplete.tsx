@@ -21,14 +21,12 @@ interface SessionCompleteProps {
   sessionStats: SessionStats;
   studyStats: StudyStats;
   nextReview: number | null;
-  onReset: () => void;
 }
 
 export function SessionComplete({
   sessionStats,
   studyStats,
   nextReview,
-  onReset,
 }: SessionCompleteProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
@@ -152,11 +150,33 @@ export function SessionComplete({
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="pt-2">
-          <button className="btn btn-primary btn-wide" onClick={onReset}>
-            Study Again
-          </button>
+        {/* Action Buttons */}
+        <div className="pt-2 space-y-3">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-base-content/70">
+              Daily study session complete! Come back tomorrow or adjust your
+              limits in Settings.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => (window.location.href = "/projects")}
+              >
+                Back to Projects
+              </button>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() =>
+                  (window.location.href = window.location.pathname.replace(
+                    "/study",
+                    "/edit"
+                  ))
+                }
+              >
+                Edit Project
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

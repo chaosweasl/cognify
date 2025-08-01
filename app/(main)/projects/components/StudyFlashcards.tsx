@@ -7,12 +7,13 @@ import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
 import { saveSRSStates } from "./SRSDBUtils";
 import {
-  initSRSState,
-  scheduleSRSCard,
-  getNextCardToStudy,
+  initSRSStateWithSettings,
+  scheduleSRSCardWithSettings,
+  getNextCardToStudyWithSettings,
   initStudySession,
   updateStudySession,
   getStudyStats,
+  getSessionAwareStudyStats,
   SRSRating,
   SRSCardState,
   StudySession,
@@ -60,7 +61,7 @@ export default function StudyFlashcards({
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
-  const { loadSettings } = useSettingsStore();
+  const { loadSettings, srsSettings } = useSettingsStore();
 
   // Load settings on mount
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function StudyFlashcards({
     const cardIds = (flashcards?.length > 0 ? flashcards : demoFlashcards).map(
       (c) => c.id
     );
-    return initSRSState(cardIds);
+    return initSRSStateWithSettings(cardIds, srsSettings);
   });
 
   // Study session state
@@ -139,28 +140,22 @@ export default function StudyFlashcards({
   // Recalculate study stats on every SRS state change
   const studyStats = React.useMemo(() => getStudyStats(srsState), [srsState]);
 
+  // Session-aware stats for display (shows only available cards for today)
+  const availableStats = React.useMemo(
+    () => getSessionAwareStudyStats(srsState, studySession, srsSettings),
+    [srsState, studySession, srsSettings]
+  );
+
   // Event handlers
   const handleFlip = () => setFlipped((f) => !f);
 
   const handleReset = useCallback(() => {
-    const cardIds = cards.map((c) => c.id);
-    const newSRSState = initSRSState(cardIds);
-    setSRSState(newSRSState);
-    setStudySession(initStudySession());
+    // Don't reset the entire session, just continue with available cards
     setSessionComplete(false);
     setFlipped(false);
     setCurrentCardId(null);
-    setSessionStats({
-      again: 0,
-      hard: 0,
-      good: 0,
-      easy: 0,
-      reviewed: 0,
-      timeSpent: 0,
-    });
-    // Save reset state to database immediately (not debounced)
-    saveSRSStatesToDB(newSRSState);
-  }, [cards, saveSRSStatesToDB]);
+    // Keep existing SRS state and study session progress
+  }, []);
 
   const handleRate = useCallback(
     (rating: SRSRating) => {
@@ -179,7 +174,12 @@ export default function StudyFlashcards({
       });
 
       // Schedule the card
-      const newCardState = scheduleSRSCard(currentCardState, rating, now);
+      const newCardState = scheduleSRSCardWithSettings(
+        currentCardState,
+        rating,
+        srsSettings,
+        now
+      );
 
       // Update SRS state and save to database
       setSRSState((prev) => {
@@ -200,9 +200,10 @@ export default function StudyFlashcards({
       setTimeout(() => {
         setSRSState((currentSRSState) => {
           setStudySession((currentSession) => {
-            const nextCardId = getNextCardToStudy(
+            const nextCardId = getNextCardToStudyWithSettings(
               currentSRSState,
               currentSession,
+              srsSettings,
               now
             );
 
@@ -229,6 +230,7 @@ export default function StudyFlashcards({
       sessionStartTime,
       ratingLoading,
       debouncedSave,
+      srsSettings,
     ]
   );
 
@@ -252,13 +254,17 @@ export default function StudyFlashcards({
 
   useEffect(() => {
     if (!currentCardId && !sessionComplete) {
-      const nextCardId = getNextCardToStudy(srsState, studySession);
+      const nextCardId = getNextCardToStudyWithSettings(
+        srsState,
+        studySession,
+        srsSettings
+      );
       setCurrentCardId(nextCardId);
       if (!nextCardId) {
         setSessionComplete(true);
       }
     }
-  }, [srsState, studySession, currentCardId, sessionComplete]);
+  }, [srsState, studySession, currentCardId, sessionComplete, srsSettings]);
 
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
@@ -305,7 +311,6 @@ export default function StudyFlashcards({
         sessionStats={sessionStats}
         studyStats={studyStats}
         nextReview={nextReview}
-        onReset={handleReset}
       />
     );
   }
@@ -325,10 +330,10 @@ export default function StudyFlashcards({
 
       <div className="w-full max-w-2xl">
         <StudyStats
-          newCards={studyStats.newCards}
-          learningCards={studyStats.learningCards}
-          reviewCards={studyStats.reviewCards}
-          dueCards={studyStats.dueCards}
+          newCards={availableStats.availableNewCards}
+          learningCards={availableStats.dueLearningCards}
+          reviewCards={availableStats.dueReviewCards}
+          dueCards={availableStats.dueCards}
         />
 
         <DailyLimitsProgress

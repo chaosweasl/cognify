@@ -98,24 +98,34 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       {/* Actions */}
       <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
         {hasFlashcards ? (
-          <Link href={`/projects/${project.id}`}>
-            <button
-              className={`btn btn-md gap-2 flex-auto max-w-[6rem] ${
-                srsStats && srsStats.dueCards > 0
-                  ? "btn-error"
+          srsStats && (srsStats.dueCards > 0 || srsStats.newCards > 0) ? (
+            <Link href={`/projects/${project.id}`}>
+              <button
+                className={`btn btn-md gap-2 flex-auto max-w-[6rem] ${
+                  srsStats && srsStats.dueCards > 0
+                    ? "btn-error"
+                    : srsStats && srsStats.newCards > 0
+                    ? "btn-primary"
+                    : "btn-success"
+                }`}
+              >
+                <Play className="w-4 h-4" />
+                {srsStats && srsStats.dueCards > 0
+                  ? "Review"
                   : srsStats && srsStats.newCards > 0
-                  ? "btn-primary"
-                  : "btn-success"
-              }`}
+                  ? "Study"
+                  : "Practice"}
+              </button>
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="btn btn-md btn-disabled gap-2 flex-auto max-w-[8rem]"
+              title="All caught up! No cards due for review."
             >
-              <Play className="w-4 h-4" />
-              {srsStats && srsStats.dueCards > 0
-                ? "Review"
-                : srsStats && srsStats.newCards > 0
-                ? "Study"
-                : "Practice"}
+              <span className="text-xs text-success">✓ All caught up</span>
             </button>
-          </Link>
+          )
         ) : (
           <button
             disabled

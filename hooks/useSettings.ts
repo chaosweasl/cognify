@@ -15,6 +15,8 @@ export interface SRSSettings {
   HARD_INTERVAL_FACTOR: number;
   EASY_INTERVAL_FACTOR: number;
   LAPSE_RECOVERY_FACTOR: number;
+  LAPSE_EASE_PENALTY: number;
+  INTERVAL_MODIFIER: number;
   LEECH_THRESHOLD: number;
   LEECH_ACTION: "suspend" | "tag";
 }
@@ -67,6 +69,8 @@ const defaultSRSSettings: SRSSettings = {
   HARD_INTERVAL_FACTOR: 1.2,
   EASY_INTERVAL_FACTOR: 1.3,
   LAPSE_RECOVERY_FACTOR: 0.2,
+  LAPSE_EASE_PENALTY: 0.2,
+  INTERVAL_MODIFIER: 1.0,
   LEECH_THRESHOLD: 8,
   LEECH_ACTION: "suspend",
 };
@@ -97,6 +101,8 @@ function dbRowToSettings(row: UserSettingsRow): {
       HARD_INTERVAL_FACTOR: row.hard_interval_factor,
       EASY_INTERVAL_FACTOR: row.easy_interval_factor,
       LAPSE_RECOVERY_FACTOR: row.lapse_recovery_factor,
+      LAPSE_EASE_PENALTY: row.lapse_recovery_factor, // Use same default for now
+      INTERVAL_MODIFIER: 1.0, // Default value for now
       LEECH_THRESHOLD: row.leech_threshold,
       LEECH_ACTION: row.leech_action as "suspend" | "tag",
     },
