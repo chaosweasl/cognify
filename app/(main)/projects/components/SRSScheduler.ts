@@ -35,9 +35,6 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   LEECH_ACTION: "suspend", // What to do with leeches
 };
 
-// Backwards compatibility
-export const SRS_SETTINGS = DEFAULT_SRS_SETTINGS;
-
 // Additional constants not in user settings
 const MINIMUM_INTERVAL = 1;
 const MAXIMUM_INTERVAL = 36500;
@@ -128,13 +125,6 @@ export function initSRSStateWithSettings(
 }
 
 /**
- * Initialize SRS state for new cards (backwards compatibility)
- */
-export function initSRSState(cardIds: string[]): Record<string, SRSCardState> {
-  return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
-}
-
-/**
  * Main scheduling function with settings support
  */
 export function scheduleSRSCardWithSettings(
@@ -145,17 +135,6 @@ export function scheduleSRSCardWithSettings(
 ): SRSCardState {
   // Use settings-aware scheduling
   return scheduleSRSCardInternal(card, rating, settings, now);
-}
-
-/**
- * Main scheduling function (backwards compatibility)
- */
-export function scheduleSRSCard(
-  card: SRSCardState,
-  rating: SRSRating,
-  now: number = Date.now()
-): SRSCardState {
-  return scheduleSRSCardInternal(card, rating, DEFAULT_SRS_SETTINGS, now);
 }
 
 /**
@@ -211,42 +190,42 @@ function scheduleNewCard(
       interval: settings.LEARNING_STEPS[0],
     };
   } else if (rating === 2) {
-    // Good - advance to step 2 of learning (Anki: advance one step)
-    const nextStep = 1; // Move to second learning step
-    if (nextStep >= settings.LEARNING_STEPS.length) {
-      // If no more steps, graduate - scheduled for future, not immediately available
+    // Good - advance to step 2 of learning (Anki: start at step 1, not 0)
+    if (settings.LEARNING_STEPS.length > 1) {
+      // Move to second learning step
+      const stepInterval = settings.LEARNING_STEPS[1];
+      return {
+        ...card,
+        state: "learning",
+        learningStep: 1,
+        due: addMinutes(now, stepInterval),
+        interval: stepInterval,
+      };
+    } else {
+      // Only one learning step, graduate immediately
       console.log(
         `🎓 Card ${card.id} graduating from learning to review, scheduled for ${settings.GRADUATING_INTERVAL} days`
       );
       return {
         ...card,
         state: "review",
-        repetitions: 0, // Don't count graduation as a review yet
+        repetitions: 1, // First repetition upon graduation
         interval: settings.GRADUATING_INTERVAL,
-        due: addDays(now, settings.GRADUATING_INTERVAL), // Scheduled for future
+        due: addDays(now, settings.GRADUATING_INTERVAL),
         learningStep: 0,
-      };
-    } else {
-      const stepInterval = settings.LEARNING_STEPS[nextStep];
-      return {
-        ...card,
-        state: "learning",
-        learningStep: nextStep,
-        due: addMinutes(now, stepInterval),
-        interval: stepInterval,
       };
     }
   } else {
-    // Easy - skip all learning steps and graduate immediately - scheduled for future
+    // Easy - skip all learning steps and graduate immediately with EASY_INTERVAL
     console.log(
       `🚀 Card ${card.id} marked Easy, graduating directly to ${settings.EASY_INTERVAL} days`
     );
     return {
       ...card,
       state: "review",
-      repetitions: 0, // Don't count graduation as a review yet
+      repetitions: 1, // First repetition upon graduation
       interval: settings.EASY_INTERVAL,
-      due: addDays(now, settings.EASY_INTERVAL), // Scheduled for future, not immediately available
+      due: addDays(now, settings.EASY_INTERVAL),
       learningStep: 0,
     };
   }
@@ -293,9 +272,9 @@ function scheduleLearningCard(
       return {
         ...card,
         state: "review",
-        repetitions: 0, // Don't count graduation as a review yet
+        repetitions: 1, // First repetition upon graduation
         interval: settings.GRADUATING_INTERVAL,
-        due: addDays(now, settings.GRADUATING_INTERVAL), // Scheduled for future
+        due: addDays(now, settings.GRADUATING_INTERVAL),
         learningStep: 0,
       };
     } else {
@@ -309,48 +288,18 @@ function scheduleLearningCard(
       };
     }
   } else {
-    // Easy - only skip to graduation if this is the first learning step
-    if (card.learningStep === 0) {
-      // First step: skip all learning steps and graduate immediately
-      console.log(
-        `🚀 Learning card ${card.id} marked Easy on first step, graduating to ${settings.EASY_INTERVAL} days`
-      );
-      return {
-        ...card,
-        state: "review",
-        repetitions: 0, // Don't count graduation as a review yet
-        interval: settings.EASY_INTERVAL,
-        due: addDays(now, settings.EASY_INTERVAL), // Scheduled for future
-        learningStep: 0,
-      };
-    } else {
-      // After first step: treat "Easy" the same as "Good" (advance one step)
-      console.log(
-        `📚 Learning card ${card.id} marked Easy on step ${card.learningStep}, treating as Good`
-      );
-      const nextStep = card.learningStep + 1;
-
-      if (nextStep >= settings.LEARNING_STEPS.length) {
-        // Graduate to review queue
-        return {
-          ...card,
-          state: "review",
-          repetitions: 0, // Don't count graduation as a review yet
-          interval: settings.GRADUATING_INTERVAL,
-          due: addDays(now, settings.GRADUATING_INTERVAL), // Scheduled for future
-          learningStep: 0,
-        };
-      } else {
-        // Move to next learning step
-        const stepInterval = settings.LEARNING_STEPS[nextStep];
-        return {
-          ...card,
-          learningStep: nextStep,
-          due: addMinutes(now, stepInterval),
-          interval: stepInterval,
-        };
-      }
-    }
+    // Easy - ALWAYS skip remaining steps and graduate immediately (Anki behavior)
+    console.log(
+      `🚀 Learning card ${card.id} marked Easy, graduating to ${settings.EASY_INTERVAL} days`
+    );
+    return {
+      ...card,
+      state: "review",
+      repetitions: 1, // First repetition upon graduation
+      interval: settings.EASY_INTERVAL,
+      due: addDays(now, settings.EASY_INTERVAL),
+      learningStep: 0,
+    };
   }
 }
 
@@ -523,19 +472,18 @@ export function getNextCardToStudyWithSettings(
     learningQueueSize: session.learningCardsInQueue.length,
   });
 
-  // 1. First priority: Learning/Relearning cards that are due
+  // 1. First priority: ALL Learning/Relearning cards (ignore due time for session flow)
+  // In Anki, learning steps happen in the same session regardless of scheduled intervals
   const learningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      card.due <= now
-    // Note: We study ALL due learning cards, regardless of queue status
+    (card) => card.state === "learning" || card.state === "relearning"
+    // This keeps "Again" cards in the session even if scheduled for later
   );
 
   if (learningCards.length > 0) {
-    // Sort by due time (earliest first)
+    // Sort by due time (earliest first), but include ALL learning cards
     learningCards.sort((a, b) => a.due - b.due);
     console.log(
-      `📚 Found ${learningCards.length} learning cards due, selecting:`,
+      `📚 Found ${learningCards.length} learning cards, selecting earliest:`,
       learningCards[0].id
     );
     return learningCards[0].id;
@@ -568,9 +516,7 @@ export function getNextCardToStudyWithSettings(
 
   // 3. Third priority: New cards (if under daily limit)
   if (session.newCardsStudied < settings.NEW_CARDS_PER_DAY) {
-    const newCards = allCards.filter(
-      (card) => card.state === "new" && card.due <= now
-    );
+    const newCards = allCards.filter((card) => card.state === "new");
 
     if (newCards.length > 0) {
       // For new cards, we can randomize or use creation order
@@ -588,22 +534,6 @@ export function getNextCardToStudyWithSettings(
 
   console.log(`❌ No cards available for study`);
   return null;
-}
-
-/**
- * Get the next card to study, respecting daily limits and card priorities
- */
-export function getNextCardToStudy(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  now: number = Date.now()
-): string | null {
-  return getNextCardToStudyWithSettings(
-    cardStates,
-    session,
-    DEFAULT_SRS_SETTINGS,
-    now
-  );
 }
 
 /**
@@ -633,12 +563,8 @@ export function updateStudySession(
     updatedSession.newCardsStudied++;
   }
 
-  // Track reviews completed (review cards and graduating learning cards)
-  if (
-    card.state === "review" ||
-    (card.state === "learning" && newCardState.state === "review") ||
-    (card.state === "relearning" && newCardState.state === "review")
-  ) {
+  // Track reviews completed (ONLY actual review cards, not learning graduations)
+  if (card.state === "review") {
     updatedSession.reviewsCompleted++;
   }
 
@@ -657,45 +583,6 @@ export function updateStudySession(
   }
 
   return updatedSession;
-}
-
-/**
- * Get study statistics
- */
-export function getStudyStats(
-  cardStates: Record<string, SRSCardState>,
-  now: number = Date.now()
-): {
-  newCards: number;
-  learningCards: number;
-  reviewCards: number;
-  dueCards: number;
-  totalCards: number;
-} {
-  const allCards = Object.values(cardStates);
-
-  const newCards = allCards.filter((card) => card.state === "new").length;
-  const learningCards = allCards.filter(
-    (card) => card.state === "learning" || card.state === "relearning"
-  ).length;
-  const reviewCards = allCards.filter((card) => card.state === "review").length;
-
-  // Use session-aware logic for dueCards (respects daily limits)
-  // Assume a fresh session (no cards studied yet)
-  const session = {
-    newCardsStudied: 0,
-    reviewsCompleted: 0,
-    learningCardsInQueue: [],
-  };
-  const stats = getSessionAwareStudyStats(cardStates, session, DEFAULT_SRS_SETTINGS, now);
-
-  return {
-    newCards,
-    learningCards,
-    reviewCards,
-    dueCards: stats.dueCards,
-    totalCards: allCards.length,
-  };
 }
 
 /**
@@ -720,16 +607,12 @@ export function getSessionAwareStudyStats(
     0,
     settings.NEW_CARDS_PER_DAY - session.newCardsStudied
   );
-  const newCardsTotal = allCards.filter(
-    (card) => card.state === "new" && card.due <= now
-  ).length;
+  const newCardsTotal = allCards.filter((card) => card.state === "new").length;
   const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
 
-  // Learning cards that are due now
+  // Learning cards (always available in session, ignore due time)
   const dueLearningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      card.due <= now
+    (card) => card.state === "learning" || card.state === "relearning"
   ).length;
 
   // Review cards that are due now (considering daily limit)
@@ -745,7 +628,8 @@ export function getSessionAwareStudyStats(
       ? reviewCardsTotal
       : Math.min(reviewCardsTotal, remainingReviewSlots);
 
-  const dueCards = availableNewCards + dueLearningCards + dueReviewCards;
+  // DUE = learning + review (NOT new cards)
+  const dueCards = dueLearningCards + dueReviewCards;
 
   return {
     availableNewCards,
@@ -753,5 +637,57 @@ export function getSessionAwareStudyStats(
     dueReviewCards,
     dueCards,
     totalCards: allCards.length,
+  };
+}
+
+/**
+ * Check if the study session should end (Anki-style logic)
+ * Session ends when no more cards are available for study today
+ */
+export function shouldEndStudySession(
+  cardStates: Record<string, SRSCardState>,
+  session: StudySession,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS,
+  now: number = Date.now()
+): boolean {
+  // Use the same logic as getNextCardToStudyWithSettings to check if any cards are available
+  const nextCard = getNextCardToStudyWithSettings(
+    cardStates,
+    session,
+    settings,
+    now
+  );
+  return nextCard === null;
+}
+
+/**
+ * Get study session summary for UI display
+ */
+export function getStudySessionSummary(
+  cardStates: Record<string, SRSCardState>,
+  session: StudySession,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS,
+  now: number = Date.now()
+): {
+  isComplete: boolean;
+  availableCards: number;
+  newCardsRemaining: number;
+  reviewsRemaining: number;
+  learningCardsWaiting: number;
+} {
+  const sessionStats = getSessionAwareStudyStats(
+    cardStates,
+    session,
+    settings,
+    now
+  );
+  const isComplete = shouldEndStudySession(cardStates, session, settings, now);
+
+  return {
+    isComplete,
+    availableCards: sessionStats.dueCards,
+    newCardsRemaining: sessionStats.availableNewCards,
+    reviewsRemaining: sessionStats.dueReviewCards,
+    learningCardsWaiting: sessionStats.dueLearningCards,
   };
 }

@@ -2,7 +2,11 @@
 // Handles loading and saving SRS states to/from the database
 
 import { createClient } from "@/utils/supabase/client";
-import { SRSCardState, initSRSState } from "./SRSScheduler";
+import {
+  SRSCardState,
+  initSRSStateWithSettings,
+  DEFAULT_SRS_SETTINGS,
+} from "./SRSScheduler";
 
 // Database type for SRS states table
 type DatabaseSRSState = {
@@ -87,7 +91,7 @@ export async function loadSRSStates(
     if (error) {
       console.error("Error loading SRS states:", error);
       // Fallback to initializing new states
-      return initSRSState(cardIds);
+      return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
     }
 
     // Convert database format to SRS format
@@ -113,14 +117,17 @@ export async function loadSRSStates(
     // Initialize states for new cards that don't exist in database
     const newCardIds = cardIds.filter((id) => !existingCardIds.has(id));
     if (newCardIds.length > 0) {
-      const newStates = initSRSState(newCardIds);
+      const newStates = initSRSStateWithSettings(
+        newCardIds,
+        DEFAULT_SRS_SETTINGS
+      );
       Object.assign(srsStates, newStates);
     }
 
     return srsStates;
   } catch (error) {
     console.error("Error in loadSRSStates:", error);
-    return initSRSState(cardIds);
+    return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
   }
 }
 

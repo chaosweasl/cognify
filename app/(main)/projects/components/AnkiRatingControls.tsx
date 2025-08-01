@@ -1,5 +1,5 @@
 import React from "react";
-import { SRSRating, SRSCardState, SRS_SETTINGS } from "./SRSScheduler";
+import { SRSRating, SRSCardState, DEFAULT_SRS_SETTINGS } from "./SRSScheduler";
 
 interface AnkiRatingControlsProps {
   flipped: boolean;
@@ -18,43 +18,50 @@ function getNextIntervalDisplay(
     switch (rating) {
       case 0: // Again
       case 1: // Hard
-        return `${SRS_SETTINGS.LEARNING_STEPS[0]}m`;
+        return `${DEFAULT_SRS_SETTINGS.LEARNING_STEPS[0]}m`;
       case 2: // Good
-        if (SRS_SETTINGS.LEARNING_STEPS.length > 1) {
-          return `${SRS_SETTINGS.LEARNING_STEPS[1]}m`;
+        if (DEFAULT_SRS_SETTINGS.LEARNING_STEPS.length > 1) {
+          return `${DEFAULT_SRS_SETTINGS.LEARNING_STEPS[1]}m`;
         }
-        return `${SRS_SETTINGS.GRADUATING_INTERVAL}d`;
+        return `${DEFAULT_SRS_SETTINGS.GRADUATING_INTERVAL}d`;
       case 3: // Easy
-        return `${SRS_SETTINGS.EASY_INTERVAL}d`;
+        return `${DEFAULT_SRS_SETTINGS.EASY_INTERVAL}d`;
     }
   } else if (cardState.state === "learning") {
     switch (rating) {
       case 0: // Again
-        return `${SRS_SETTINGS.LEARNING_STEPS[0]}m`;
+        return `${DEFAULT_SRS_SETTINGS.LEARNING_STEPS[0]}m`;
       case 1: // Hard
-        return `${SRS_SETTINGS.LEARNING_STEPS[cardState.learningStep]}m`;
+        return `${
+          DEFAULT_SRS_SETTINGS.LEARNING_STEPS[cardState.learningStep]
+        }m`;
       case 2: // Good
-        if (cardState.learningStep + 1 >= SRS_SETTINGS.LEARNING_STEPS.length) {
-          return `${SRS_SETTINGS.GRADUATING_INTERVAL}d`;
+        if (
+          cardState.learningStep + 1 >=
+          DEFAULT_SRS_SETTINGS.LEARNING_STEPS.length
+        ) {
+          return `${DEFAULT_SRS_SETTINGS.GRADUATING_INTERVAL}d`;
         }
-        return `${SRS_SETTINGS.LEARNING_STEPS[cardState.learningStep + 1]}m`;
+        return `${
+          DEFAULT_SRS_SETTINGS.LEARNING_STEPS[cardState.learningStep + 1]
+        }m`;
       case 3: // Easy
-        return `${SRS_SETTINGS.EASY_INTERVAL}d`;
+        return `${DEFAULT_SRS_SETTINGS.EASY_INTERVAL}d`;
     }
   } else if (cardState.state === "review") {
     const ease = cardState.ease;
     switch (rating) {
       case 0: // Again
-        return `${SRS_SETTINGS.RELEARNING_STEPS[0]}m`;
+        return `${DEFAULT_SRS_SETTINGS.RELEARNING_STEPS[0]}m`;
       case 1: // Hard
         return `${Math.round(
-          cardState.interval * SRS_SETTINGS.HARD_INTERVAL_FACTOR
+          cardState.interval * DEFAULT_SRS_SETTINGS.HARD_INTERVAL_FACTOR
         )}d`;
       case 2: // Good
         return `${Math.round(cardState.interval * ease)}d`;
       case 3: // Easy
         return `${Math.round(
-          cardState.interval * ease * SRS_SETTINGS.EASY_INTERVAL_FACTOR
+          cardState.interval * ease * DEFAULT_SRS_SETTINGS.EASY_INTERVAL_FACTOR
         )}d`;
     }
   }

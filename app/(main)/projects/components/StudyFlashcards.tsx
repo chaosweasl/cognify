@@ -10,9 +10,9 @@ import {
   initSRSStateWithSettings,
   scheduleSRSCardWithSettings,
   getNextCardToStudyWithSettings,
+  shouldEndStudySession,
   initStudySession,
   updateStudySession,
-  getStudyStats,
   getSessionAwareStudyStats,
   SRSRating,
   SRSCardState,
@@ -137,10 +137,7 @@ export default function StudyFlashcards({
   const currentCard = currentCardId ? cardMap[currentCardId] : null;
   const currentCardState = currentCardId ? srsState[currentCardId] : null;
 
-  // Recalculate study stats on every SRS state change
-  const studyStats = React.useMemo(() => getStudyStats(srsState), [srsState]);
-
-  // Session-aware stats for display (shows only available cards for today)
+  // Recalculate session-aware stats on every SRS state change
   const availableStats = React.useMemo(
     () => getSessionAwareStudyStats(srsState, studySession, srsSettings),
     [srsState, studySession, srsSettings]
@@ -210,6 +207,7 @@ export default function StudyFlashcards({
             if (nextCardId) {
               setCurrentCardId(nextCardId);
             } else {
+              // No next card available - session should end
               setSessionComplete(true);
               setCurrentCardId(null);
               setSessionStats((prev) => ({
@@ -260,12 +258,13 @@ export default function StudyFlashcards({
         srsSettings
       );
       setCurrentCardId(nextCardId);
+
+      // If no card is available, session should end
       if (!nextCardId) {
         setSessionComplete(true);
       }
     }
   }, [srsState, studySession, currentCardId, sessionComplete, srsSettings]);
-
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
       const nextDue = Math.min(
@@ -309,7 +308,11 @@ export default function StudyFlashcards({
     return (
       <SessionComplete
         sessionStats={sessionStats}
-        studyStats={studyStats}
+        studyStats={{
+          newCards: availableStats.availableNewCards,
+          learningCards: availableStats.dueLearningCards,
+          reviewCards: availableStats.dueReviewCards,
+        }}
         nextReview={nextReview}
       />
     );

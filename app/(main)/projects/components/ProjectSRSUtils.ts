@@ -1,6 +1,10 @@
 // Utility to get SRS statistics for projects
 import { createClient } from "@/utils/supabase/client";
-import { getStudyStats } from "./SRSScheduler";
+import {
+  getSessionAwareStudyStats,
+  initStudySession,
+  DEFAULT_SRS_SETTINGS,
+} from "./SRSScheduler";
 import { loadSRSStates } from "./SRSDBUtils";
 
 export interface ProjectSRSInfo {
@@ -31,20 +35,37 @@ export async function getProjectSRSStats(
   try {
     const supabase = createClient();
     const srsStates = await loadSRSStates(supabase, userId, projectId, cardIds);
-    const stats = getStudyStats(srsStates);
+
+    // Use session-aware stats to respect daily limits
+    const freshSession = initStudySession();
+    const stats = getSessionAwareStudyStats(
+      srsStates,
+      freshSession,
+      DEFAULT_SRS_SETTINGS
+    );
 
     return {
       projectId,
-      ...stats,
+      newCards: stats.availableNewCards,
+      learningCards: stats.dueLearningCards,
+      reviewCards: stats.dueReviewCards,
+      dueCards: stats.dueCards,
+      totalCards: stats.totalCards,
     };
   } catch (error) {
     console.error(`Error loading SRS stats for project ${projectId}:`, error);
     return {
       projectId,
-      newCards: cardIds.length, // Fallback: treat all as new
+      newCards: Math.min(
+        cardIds.length,
+        DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY
+      ), // Cap at daily limit
       learningCards: 0,
       reviewCards: 0,
-      dueCards: cardIds.length,
+      dueCards: Math.min(
+        cardIds.length,
+        DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY
+      ),
       totalCards: cardIds.length,
     };
   }
