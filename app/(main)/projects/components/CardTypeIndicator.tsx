@@ -1,13 +1,16 @@
 "use client";
 import React from "react";
 import { RotateCcw, BookOpen, Target, Zap } from "lucide-react";
-import { SRSCardState, SRS_SETTINGS } from "./SRSScheduler";
+import { SRSCardState } from "./SRSScheduler";
+import { useSettingsStore } from "@/hooks/useSettings";
 
 interface CardTypeIndicatorProps {
   cardState: SRSCardState;
 }
 
 export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
+  const { srsSettings } = useSettingsStore();
+
   const getCardTypeInfo = (state: SRSCardState) => {
     switch (state.state) {
       case "new":
@@ -15,7 +18,7 @@ export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
       case "learning":
         return {
           label: `Learning (${state.learningStep + 1}/${
-            SRS_SETTINGS.LEARNING_STEPS.length
+            srsSettings.LEARNING_STEPS.length
           })`,
           color: "text-orange-600",
           icon: Target,
@@ -23,7 +26,7 @@ export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
       case "relearning":
         return {
           label: `Relearning (${state.learningStep + 1}/${
-            SRS_SETTINGS.RELEARNING_STEPS.length
+            srsSettings.RELEARNING_STEPS.length
           })`,
           color: "text-red-600",
           icon: RotateCcw,

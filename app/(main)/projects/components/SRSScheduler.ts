@@ -1,45 +1,45 @@
 // Complete Anki-like SRS Scheduler
 // Implements proper learning steps, daily limits, card queues, and graduation system
+import { SRSSettings } from "@/hooks/useSettings";
 
-// --- SRS SETTINGS CONSTANTS (will be user-configurable later) ---
-export const SRS_SETTINGS = {
+// --- DEFAULT SRS SETTINGS (fallback when user settings aren't available) ---
+export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   // Daily card limits
   NEW_CARDS_PER_DAY: 20, // Maximum new cards to introduce per day
   MAX_REVIEWS_PER_DAY: 200, // Maximum reviews per day (0 = unlimited)
 
-  // Learning steps (in minutes) - cards cycle through these when clicked "Again" in learning
-  LEARNING_STEPS: [10, 1440], // 10 minutes, then 1 day (1440 minutes) - more realistic for real study
+  // Learning steps (in minutes) - Anki-like progression
+  LEARNING_STEPS: [1, 10, 1440], // 1 min → 10 min → 1 day (more Anki-like)
 
-  // Relearning steps (in minutes) - for cards that fail review (Again on mature cards)
+  // Relearning steps (in minutes) - for cards that fail review
   RELEARNING_STEPS: [10], // 10 minutes before going back to review queue
 
   // Graduation settings
   GRADUATING_INTERVAL: 1, // Days after completing learning steps
   EASY_INTERVAL: 4, // Days when "Easy" is pressed on new card
-  GOOD_INTERVAL: 1, // Days when "Good" is pressed on new card (Anki default)
 
-  // Interval limits
-  MINIMUM_INTERVAL: 1, // Minimum interval in days
-  MAXIMUM_INTERVAL: 36500, // Maximum interval in days (~100 years)
-
-  // Ease settings
+  // Ease settings (SM-2 algorithm)
   STARTING_EASE: 2.5, // Starting ease factor for new cards
   MINIMUM_EASE: 1.3, // Minimum ease factor
   EASY_BONUS: 1.3, // Multiplier for "Easy" button
 
-  // Ease adjustments
-  AGAIN_EASE_PENALTY: -0.2, // Ease reduction for "Again"
-  HARD_EASE_PENALTY: -0.15, // Ease reduction for "Hard"
-  EASY_EASE_BONUS: 0.15, // Ease increase for "Easy"
-
-  // Interval modifiers
+  // SM-2 interval modifiers (Anki-style)
   HARD_INTERVAL_FACTOR: 1.2, // Multiplier for "Hard" intervals
-  INTERVAL_MODIFIER: 1.0, // Global interval modifier
+  EASY_INTERVAL_FACTOR: 1.3, // Multiplier for "Easy" intervals
 
-  // Leech detection
+  // Lapse settings
+  LAPSE_RECOVERY_FACTOR: 0.2, // Recovery multiplier after relearning
   LEECH_THRESHOLD: 8, // Number of lapses before marking as leech
-  LEECH_ACTION: "suspend" as "suspend" | "tag", // What to do with leeches
-} as const;
+  LEECH_ACTION: "suspend", // What to do with leeches
+};
+
+// Backwards compatibility
+export const SRS_SETTINGS = DEFAULT_SRS_SETTINGS;
+
+// Additional constants not in user settings
+const MINIMUM_INTERVAL = 1;
+const MAXIMUM_INTERVAL = 36500;
+const INTERVAL_MODIFIER = 1.0;
 
 // --- TYPES ---
 export type SRSRating = 0 | 1 | 2 | 3; // 0=Again, 1=Hard, 2=Good, 3=Easy
@@ -80,12 +80,37 @@ function isToday(timestamp: number): boolean {
   return today.toDateString() === date.toDateString();
 }
 
+/**
+ * Calculate new ease factor using SM-2 algorithm
+ * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy
+ * Anki formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
+ * Adapted for 4-point scale (0-3) by mapping to 5-point scale (2-5)
+ */
+function calculateNewEase(
+  currentEase: number,
+  quality: SRSRating,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+): number {
+  // Map our 4-point scale (0-3) to Anki's 5-point scale (2-5)
+  const ankiQuality = quality + 2;
+
+  // SM-2 formula
+  const newEase =
+    currentEase + (0.1 - (5 - ankiQuality) * (0.08 + (5 - ankiQuality) * 0.02));
+
+  // Ensure minimum ease factor
+  return Math.max(settings.MINIMUM_EASE, newEase);
+}
+
 // --- CORE SRS FUNCTIONS ---
 
 /**
- * Initialize SRS state for new cards
+ * Initialize SRS state for new cards (with settings support)
  */
-export function initSRSState(cardIds: string[]): Record<string, SRSCardState> {
+export function initSRSStateWithSettings(
+  cardIds: string[],
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+): Record<string, SRSCardState> {
   const now = Date.now();
   const initial: Record<string, SRSCardState> = {};
 
@@ -94,7 +119,7 @@ export function initSRSState(cardIds: string[]): Record<string, SRSCardState> {
       id,
       state: "new",
       interval: 0,
-      ease: SRS_SETTINGS.STARTING_EASE,
+      ease: settings.STARTING_EASE,
       due: now, // New cards are immediately available
       lastReviewed: 0,
       repetitions: 0,
@@ -105,6 +130,13 @@ export function initSRSState(cardIds: string[]): Record<string, SRSCardState> {
   }
 
   return initial;
+}
+
+/**
+ * Initialize SRS state for new cards (backwards compatibility)
+ */
+export function initSRSState(cardIds: string[]): Record<string, SRSCardState> {
+  return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
 }
 
 /**
@@ -132,7 +164,21 @@ export function scheduleSRSCard(
 }
 
 /**
- * Handle new cards (first time seeing the card)
+ * Main scheduling function with settings support (future enhancement)
+ */
+export function scheduleSRSCardWithSettings(
+  card: SRSCardState,
+  rating: SRSRating,
+  settings: SRSSettings,
+  now: number = Date.now()
+): SRSCardState {
+  // For now, just use the default behavior
+  // TODO: Refactor internal functions to use settings parameter
+  return scheduleSRSCard(card, rating, now);
+}
+
+/**
+ * Handle new cards (first time seeing the card) - Anki-style
  */
 function scheduleNewCard(
   card: SRSCardState,
@@ -140,7 +186,7 @@ function scheduleNewCard(
   now: number
 ): SRSCardState {
   if (rating === 0) {
-    // Again - enter learning queue
+    // Again - enter learning queue at step 1
     return {
       ...card,
       state: "learning",
@@ -149,7 +195,7 @@ function scheduleNewCard(
       interval: SRS_SETTINGS.LEARNING_STEPS[0],
     };
   } else if (rating === 1) {
-    // Hard - enter learning queue
+    // Hard - enter learning queue at step 1
     return {
       ...card,
       state: "learning",
@@ -158,17 +204,30 @@ function scheduleNewCard(
       interval: SRS_SETTINGS.LEARNING_STEPS[0],
     };
   } else if (rating === 2) {
-    // Good - graduate directly to review with 1 day interval (Anki behavior)
-    return {
-      ...card,
-      state: "review",
-      repetitions: 1,
-      interval: SRS_SETTINGS.GOOD_INTERVAL,
-      due: addDays(now, SRS_SETTINGS.GOOD_INTERVAL),
-      learningStep: 0,
-    };
+    // Good - advance to step 2 of learning (Anki: advance one step)
+    const nextStep = 1; // Move to second learning step
+    if (nextStep >= SRS_SETTINGS.LEARNING_STEPS.length) {
+      // If no more steps, graduate
+      return {
+        ...card,
+        state: "review",
+        repetitions: 1,
+        interval: SRS_SETTINGS.GRADUATING_INTERVAL,
+        due: addDays(now, SRS_SETTINGS.GRADUATING_INTERVAL),
+        learningStep: 0,
+      };
+    } else {
+      const stepInterval = SRS_SETTINGS.LEARNING_STEPS[nextStep];
+      return {
+        ...card,
+        state: "learning",
+        learningStep: nextStep,
+        due: addMinutes(now, stepInterval),
+        interval: stepInterval,
+      };
+    }
   } else {
-    // Easy - graduate immediately to review with longer interval
+    // Easy - skip all learning steps and graduate immediately
     return {
       ...card,
       state: "review",
@@ -246,7 +305,7 @@ function scheduleLearningCard(
 }
 
 /**
- * Handle review cards (mature cards using SM-2 algorithm)
+ * Handle review cards (mature cards using SM-2 algorithm) - Anki-style
  */
 function scheduleReviewCard(
   card: SRSCardState,
@@ -254,12 +313,9 @@ function scheduleReviewCard(
   now: number
 ): SRSCardState {
   if (rating === 0) {
-    // Again - send to relearning
+    // Again - send to relearning (lapse)
     const newLapses = card.lapses + 1;
-    const newEase = Math.max(
-      SRS_SETTINGS.MINIMUM_EASE,
-      card.ease + SRS_SETTINGS.AGAIN_EASE_PENALTY
-    );
+    const newEase = calculateNewEase(card.ease, rating);
 
     return {
       ...card,
@@ -274,32 +330,26 @@ function scheduleReviewCard(
   }
 
   // For Hard, Good, Easy - calculate new interval using SM-2
-  let newEase = card.ease;
+  const newEase = calculateNewEase(card.ease, rating);
   let intervalMultiplier = 1;
 
   if (rating === 1) {
-    // Hard
-    newEase = Math.max(
-      SRS_SETTINGS.MINIMUM_EASE,
-      card.ease + SRS_SETTINGS.HARD_EASE_PENALTY
-    );
-    intervalMultiplier = SRS_SETTINGS.HARD_INTERVAL_FACTOR;
+    // Hard - reduce interval
+    intervalMultiplier = SRS_SETTINGS.HARD_INTERVAL_FACTOR; // 0.8
   } else if (rating === 2) {
-    // Good
-    // Ease stays the same
-    intervalMultiplier = card.ease;
+    // Good - normal progression
+    intervalMultiplier = newEase; // Use ease factor as multiplier
   } else {
-    // Easy
-    newEase = card.ease + SRS_SETTINGS.EASY_EASE_BONUS;
-    intervalMultiplier = card.ease * SRS_SETTINGS.EASY_BONUS;
+    // Easy - increase interval more
+    intervalMultiplier = newEase * SRS_SETTINGS.EASY_INTERVAL_FACTOR; // ease * 1.3
   }
 
   // Calculate new interval
   let newInterval = Math.round(
-    card.interval * intervalMultiplier * SRS_SETTINGS.INTERVAL_MODIFIER
+    card.interval * intervalMultiplier * INTERVAL_MODIFIER
   );
-  newInterval = Math.max(SRS_SETTINGS.MINIMUM_INTERVAL, newInterval);
-  newInterval = Math.min(SRS_SETTINGS.MAXIMUM_INTERVAL, newInterval);
+  newInterval = Math.max(MINIMUM_INTERVAL, newInterval);
+  newInterval = Math.min(MAXIMUM_INTERVAL, newInterval);
 
   return {
     ...card,
@@ -311,7 +361,7 @@ function scheduleReviewCard(
 }
 
 /**
- * Handle relearning cards (failed review cards going through relearning steps)
+ * Handle relearning cards (failed review cards going through relearning steps) - Anki-style
  */
 function scheduleRelearningCard(
   card: SRSCardState,
@@ -343,8 +393,11 @@ function scheduleRelearningCard(
     const nextStep = card.learningStep + 1;
 
     if (nextStep >= SRS_SETTINGS.RELEARNING_STEPS.length) {
-      // Graduate back to review queue with reduced interval
-      const newInterval = Math.max(1, Math.round(card.interval * 0.7)); // Reduce interval by 30%
+      // Graduate back to review queue with recovery factor applied (Anki-style)
+      const newInterval = Math.max(
+        MINIMUM_INTERVAL,
+        Math.round(card.interval * SRS_SETTINGS.LAPSE_RECOVERY_FACTOR)
+      );
       return {
         ...card,
         state: "review",
@@ -363,7 +416,7 @@ function scheduleRelearningCard(
       };
     }
   } else {
-    // Easy - graduate back to review with normal interval
+    // Easy - graduate back to review with normal interval (no recovery penalty)
     return {
       ...card,
       state: "review",

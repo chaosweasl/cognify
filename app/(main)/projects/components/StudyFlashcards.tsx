@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
+import { useSettingsStore } from "@/hooks/useSettings";
 import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
 import { saveSRSStates } from "./SRSDBUtils";
@@ -15,6 +16,7 @@ import {
   SRSRating,
   SRSCardState,
   StudySession,
+  DEFAULT_SRS_SETTINGS,
 } from "./SRSScheduler";
 
 // Import sub-components
@@ -59,6 +61,15 @@ export default function StudyFlashcards({
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
+  const { srsSettings, loadSettings } = useSettingsStore();
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  // Use effective settings (user settings or defaults)
+  const effectiveSettings = srsSettings || DEFAULT_SRS_SETTINGS;
 
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
@@ -345,6 +356,7 @@ export default function StudyFlashcards({
         flipped={flipped}
         handleRate={handleRate}
         ratingLoading={ratingLoading}
+        cardState={currentCardState}
       />
 
       <SessionProgress

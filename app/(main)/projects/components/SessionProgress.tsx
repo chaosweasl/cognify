@@ -18,7 +18,8 @@ export function SessionProgress({
         </div>
         {learningQueueCount > 0 && (
           <div className="text-xs text-orange-600 mt-1">
-            {learningQueueCount} card{learningQueueCount === 1 ? '' : 's'} in learning queue
+            {learningQueueCount} card{learningQueueCount === 1 ? "" : "s"} in
+            learning queue
           </div>
         )}
         {reviewed > 0 && learningQueueCount === 0 && (
