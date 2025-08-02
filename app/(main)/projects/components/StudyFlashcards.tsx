@@ -18,6 +18,8 @@ import {
   updateStudySession,
   getSessionAwareStudyStats,
   StudySession,
+  hasLearningCards,
+  isStudySessionComplete,
 } from "./SRSSession";
 
 // Import sub-components
@@ -216,15 +218,24 @@ export default function StudyFlashcards({
             if (nextCardId) {
               setCurrentCardId(nextCardId);
             } else {
-              // No next card available - session should end
-              setSessionComplete(true);
-              setCurrentCardId(null);
-              setSessionStats((prev) => ({
-                ...prev,
-                timeSpent: Math.round(
-                  (updatedNow - sessionStartTime) / 1000 / 60
-                ),
-              }));
+              // Use the proper session completion check
+              if (
+                isStudySessionComplete(
+                  currentSRSState,
+                  currentSession,
+                  srsSettings,
+                  updatedNow
+                )
+              ) {
+                setSessionComplete(true);
+                setCurrentCardId(null);
+                setSessionStats((prev) => ({
+                  ...prev,
+                  timeSpent: Math.round(
+                    (updatedNow - sessionStartTime) / 1000 / 60
+                  ),
+                }));
+              }
             }
             return currentSession;
           });
@@ -273,27 +284,29 @@ export default function StudyFlashcards({
       );
       setCurrentCardId(nextCardId);
 
-      // If no card is available, session should end
-      if (!nextCardId) {
+      // Use the proper session completion check
+      if (isStudySessionComplete(srsState, studySession, srsSettings, now)) {
         setSessionComplete(true);
       }
     }
   }, [srsState, studySession, currentCardId, sessionComplete, srsSettings]);
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
-      const nextDue = Math.min(
-        ...Object.values(srsState)
-          .map((c) => c.due)
-          .filter((d) => d > Date.now())
-      );
-
-      if (nextDue && nextDue < Infinity) {
-        scheduleSRSReminderForProject({
-          user_id: userId,
-          project_id: projectId,
-          project_name: projectName,
-          due: nextDue,
-        });
+      // Only schedule reminders if there are NO learning cards left
+      if (!hasLearningCards(srsState)) {
+        const nextDue = Math.min(
+          ...Object.values(srsState)
+            .map((c) => c.due)
+            .filter((d) => d > Date.now())
+        );
+        if (nextDue && nextDue < Infinity) {
+          scheduleSRSReminderForProject({
+            user_id: userId,
+            project_id: projectId,
+            project_name: projectName,
+            due: nextDue,
+          });
+        }
       }
     }
   }, [sessionComplete, userId, projectId, projectName, srsState]);

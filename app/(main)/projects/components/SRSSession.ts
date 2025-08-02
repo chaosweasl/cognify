@@ -170,6 +170,40 @@ export function initStudySession(): StudySession {
 }
 
 /**
+ * Check if there are any learning or relearning cards remaining
+ * This should be used to determine if a study session can truly complete
+ */
+export function hasLearningCards(
+  cardStates: Record<string, SRSCardState>
+): boolean {
+  return Object.values(cardStates).some(
+    (c) => c.state === "learning" || c.state === "relearning"
+  );
+}
+
+/**
+ * Check if a study session should be considered complete
+ * Session is only complete when there are no available cards AND no learning cards remain
+ */
+export function isStudySessionComplete(
+  cardStates: Record<string, SRSCardState>,
+  session: StudySession,
+  settings: SRSSettings,
+  now: number = Date.now()
+): boolean {
+  const nextCard = getNextCardToStudyWithSettings(
+    cardStates,
+    session,
+    settings,
+    now
+  );
+  const learningCardsRemain = hasLearningCards(cardStates);
+
+  // Session is complete only if no cards are available AND no learning cards remain
+  return !nextCard && !learningCardsRemain;
+}
+
+/**
  * Get the next card to study, respecting daily limits and card priorities (with settings)
  * Fixed learning queue behavior to prevent infinite loops and match Anki behavior
  *
