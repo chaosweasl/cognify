@@ -3,7 +3,6 @@
 
 import {
   SRSCardState,
-  SRSRating,
   DEFAULT_SRS_SETTINGS,
   scheduleSRSCardWithSettings,
   initSRSStateWithSettings,
@@ -22,8 +21,8 @@ const TEST_SETTINGS: SRSSettings = {
 interface TestResult {
   name: string;
   passed: boolean;
-  expected: any;
-  actual: any;
+  expected: unknown;
+  actual: unknown;
   description: string;
 }
 
@@ -324,7 +323,7 @@ export function runBugValidationTests(): boolean {
   ];
 
   let passedTests = 0;
-  let totalTests = allTests.length;
+  const totalTests = allTests.length;
 
   console.log("Bug Test Results:");
   console.log("================");

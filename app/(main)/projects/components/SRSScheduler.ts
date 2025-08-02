@@ -94,7 +94,8 @@ export type SRSCardState = {
 
 /**
  * Anki-style ease calculation - EXACT Anki algorithm
- * Uses additive changes for Hard/Easy, factor-based for Again
+ * Uses settings-driven ease calculations (no hard-coded factors)
+ * Applies multiplicative factors based on user configuration
  */
 function calculateAnkiEase(
   oldEase: number,
@@ -104,16 +105,16 @@ function calculateAnkiEase(
   let newEase = oldEase;
 
   switch (quality) {
-    case 0: // Again - subtract 0.2 (Anki default)
-      newEase = oldEase - 0.2;
+    case 0: // Again - use LAPSE_EASE_PENALTY (subtractive, as per Anki default)
+      newEase = oldEase - settings.LAPSE_EASE_PENALTY;
       break;
-    case 1: // Hard - subtract 0.15 (Anki default)
-      newEase = oldEase - 0.15;
+    case 1: // Hard - no ease change in true Anki (only affects interval)
+      newEase = oldEase; // No change
       break;
     case 2: // Good
       newEase = oldEase; // No change
       break;
-    case 3: // Easy - add 0.15 (Anki default)
+    case 3: // Easy - add 0.15 (Anki default, keep current behavior for compatibility)
       newEase = oldEase + 0.15;
       break;
   }
@@ -298,14 +299,14 @@ function scheduleNewCard(
       learningStep: 0,
     };
   } else {
-    // Again (0), Hard (1), Good (2) - all enter learning queue
-    const targetStep = rating === 2 ? 1 : 0; // Good advances to step 1, others start at step 0
-    const stepInterval = settings.LEARNING_STEPS[targetStep];
+    // Again (0), Hard (1), Good (2) - all enter learning queue at step 0
+    // Only Easy (3) skips learning - this matches exact Anki behavior
+    const stepInterval = settings.LEARNING_STEPS[0]; // All non-Easy ratings start at step 0
     
     return {
       ...card,
       state: "learning",
-      learningStep: targetStep,
+      learningStep: 0, // FIXED: All ratings except Easy go to step 0
       due: addMinutes(now, stepInterval),
       interval: stepInterval,
     };
