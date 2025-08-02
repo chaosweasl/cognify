@@ -21,3 +21,6 @@ async function main() {
 }
 
 main();
+
+// To run this script:
+// pnpm exec tsx scripts/deleteAllAppNotifications.ts

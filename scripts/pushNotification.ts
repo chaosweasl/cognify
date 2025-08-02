@@ -40,3 +40,6 @@ async function main() {
 }
 
 main();
+
+// To run this script:
+// pnpm exec tsx scripts/pushNotification.ts

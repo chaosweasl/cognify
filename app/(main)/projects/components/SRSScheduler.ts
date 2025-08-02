@@ -1,5 +1,17 @@
 // Complete Anki-like SRS Scheduler - Core Scheduling Logic
 // Implements proper learning steps, SM-2 algorithm, and card state transitions
+//
+// Key Features:
+// - True SM-2 ease factor calculation with proper formula
+// - Anki-compatible learning/relearning steps
+// - Proper state transitions: new → learning → review → relearning
+// - Suspension safeguards and leech detection
+// - Configurable settings with sensible defaults
+//
+// Units Clarification:
+// - interval: minutes for learning/relearning cards, days for review cards
+// - due: always timestamp in milliseconds
+// - This mixed-unit approach matches Anki's internal behavior
 import { SRSSettings } from "@/hooks/useSettings";
 import { addMinutes, addDays } from "./SRSSession";
 
@@ -44,6 +56,14 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
 
 // Additional constants not in user settings
 const MINIMUM_INTERVAL = 1;
+const DEBUG_LOGGING = false; // Set to true for development debugging
+
+// Helper function for conditional debug logging
+function debugLog(message: string, ...args: any[]) {
+  if (DEBUG_LOGGING) {
+    console.log(message, ...args);
+  }
+}
 
 // --- TYPES ---
 export type SRSRating = 0 | 1 | 2 | 3; // 0=Again, 1=Hard, 2=Good, 3=Easy
@@ -69,7 +89,8 @@ export type SRSCardState = {
 };
 
 /**
- * Calculate new ease factor using official Anki SM-2 values
+ * Calculate new ease factor using official SM-2 algorithm
+ * Based on SuperMemo SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
  * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy
  */
 function calculateNewEase(
@@ -77,24 +98,14 @@ function calculateNewEase(
   quality: SRSRating,
   settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): number {
-  let newEase = currentEase;
+  // Convert our 0-3 scale to SM-2's 0-5 scale
+  // 0=Again->0, 1=Hard->2, 2=Good->3, 3=Easy->5
+  const q = quality === 0 ? 0 : quality === 1 ? 2 : quality === 2 ? 3 : 5;
 
-  switch (quality) {
-    case 0: // Again - decrease ease significantly
-      newEase = currentEase - 0.2;
-      break;
-    case 1: // Hard - decrease ease (official Anki: -0.20)
-      newEase = currentEase - 0.2;
-      break;
-    case 2: // Good - increase ease slightly
-      newEase = currentEase + 0.15;
-      break;
-    case 3: // Easy - no change (Anki behavior)
-      newEase = currentEase;
-      break;
-  }
+  // Official SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
+  const newEase = currentEase + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
 
-  // Ensure minimum ease factor
+  // Ensure minimum ease factor (SM-2 minimum is typically 1.3)
   return Math.max(settings.MINIMUM_EASE, newEase);
 }
 
@@ -144,6 +155,12 @@ export function scheduleSRSCardWithSettings(
   settings: SRSSettings,
   now: number = Date.now()
 ): SRSCardState {
+  // Don't schedule suspended cards - return unchanged
+  if (card.isSuspended) {
+    console.warn(`⚠️ Attempted to schedule suspended card ${card.id}`);
+    return card;
+  }
+
   // Use settings-aware scheduling
   return scheduleSRSCardInternal(card, rating, settings, now);
 }
@@ -182,36 +199,9 @@ function scheduleNewCard(
   settings: SRSSettings,
   now: number
 ): SRSCardState {
-  if (rating === 0) {
-    // Again - enter learning queue at step 1
-    return {
-      ...card,
-      state: "learning",
-      learningStep: 0,
-      due: addMinutes(now, settings.LEARNING_STEPS[0]),
-      interval: settings.LEARNING_STEPS[0],
-    };
-  } else if (rating === 1) {
-    // Hard - enter learning queue at step 1
-    return {
-      ...card,
-      state: "learning",
-      learningStep: 0,
-      due: addMinutes(now, settings.LEARNING_STEPS[0]),
-      interval: settings.LEARNING_STEPS[0],
-    };
-  } else if (rating === 2) {
-    // Good - start at first learning step (Anki behavior)
-    return {
-      ...card,
-      state: "learning",
-      learningStep: 0,
-      due: addMinutes(now, settings.LEARNING_STEPS[0]),
-      interval: settings.LEARNING_STEPS[0],
-    };
-  } else {
+  if (rating === 3) {
     // Easy - skip all learning steps and graduate immediately with EASY_INTERVAL
-    console.log(
+    debugLog(
       `🚀 Card ${card.id} marked Easy, graduating directly to ${settings.EASY_INTERVAL} days`
     );
     return {
@@ -221,6 +211,15 @@ function scheduleNewCard(
       interval: settings.EASY_INTERVAL,
       due: addDays(now, settings.EASY_INTERVAL),
       learningStep: 0,
+    };
+  } else {
+    // Again (0), Hard (1), Good (2) - all enter learning queue at step 1
+    return {
+      ...card,
+      state: "learning",
+      learningStep: 0,
+      due: addMinutes(now, settings.LEARNING_STEPS[0]),
+      interval: settings.LEARNING_STEPS[0],
     };
   }
 }
@@ -235,7 +234,7 @@ function scheduleLearningCard(
   now: number
 ): SRSCardState {
   if (rating === 0) {
-    // Again - restart learning
+    // Again - restart learning from beginning
     return {
       ...card,
       learningStep: 0,
@@ -260,7 +259,7 @@ function scheduleLearningCard(
 
     if (nextStep >= settings.LEARNING_STEPS.length) {
       // Graduate to review queue using GRADUATING_INTERVAL consistently (Anki behavior)
-      console.log(
+      debugLog(
         `🎓 Learning card ${card.id} graduating to review, scheduled for ${settings.GRADUATING_INTERVAL} days`
       );
       return {
@@ -283,7 +282,7 @@ function scheduleLearningCard(
     }
   } else {
     // Easy - ALWAYS skip remaining steps and graduate immediately (Anki behavior)
-    console.log(
+    debugLog(
       `🚀 Learning card ${card.id} marked Easy, graduating to ${settings.EASY_INTERVAL} days`
     );
     return {
@@ -373,7 +372,7 @@ function scheduleRelearningCard(
   now: number
 ): SRSCardState {
   if (rating === 0) {
-    // Again - restart relearning
+    // Again - restart relearning from beginning
     return {
       ...card,
       learningStep: 0,
@@ -381,7 +380,7 @@ function scheduleRelearningCard(
       interval: settings.RELEARNING_STEPS[0],
     };
   } else if (rating === 1) {
-    // Hard - repeat current step
+    // Hard - repeat current relearning step
     const currentStep = Math.min(
       card.learningStep,
       settings.RELEARNING_STEPS.length - 1
@@ -393,7 +392,7 @@ function scheduleRelearningCard(
       interval: stepInterval,
     };
   } else if (rating === 2) {
-    // Good - advance to next step or graduate
+    // Good - advance to next relearning step or graduate back to review
     const nextStep = card.learningStep + 1;
 
     if (nextStep >= settings.RELEARNING_STEPS.length) {
@@ -446,6 +445,8 @@ export function unsuspendCard(card: SRSCardState): SRSCardState {
 /**
  * MVP: Simple note template support
  * Generate multiple cards from a single note based on template
+ * Note: This is MVP-level field substitution - production version should handle:
+ * - Escaped braces, conditional fields, nested templates, cloze deletions
  */
 export function generateCardsFromNote(
   noteId: string,
@@ -463,17 +464,30 @@ export function generateCardsFromNote(
   for (const template of templates) {
     const cardId = `${noteId}_${template.id}`;
 
-    // Simple field substitution (MVP) - processed content not stored in MVP
-    template.front.replace(
+    // Simple field substitution (MVP) - replace {{field}} with actual values
+    const processedFront = template.front.replace(
       /\{\{(\w+)\}\}/g,
-      (match, field) => fields[field] || match
+      (match, field) => fields[field] || `[Missing: ${field}]`
     );
-    template.back.replace(
+    const processedBack = template.back.replace(
       /\{\{(\w+)\}\}/g,
-      (match, field) => fields[field] || match
+      (match, field) => fields[field] || `[Missing: ${field}]`
     );
 
+    // Skip empty cards (both front and back are just missing field placeholders)
+    if (
+      processedFront.includes("[Missing:") &&
+      processedBack.includes("[Missing:") &&
+      !processedFront.replace(/\[Missing:[^\]]+\]/g, "").trim() &&
+      !processedBack.replace(/\[Missing:[^\]]+\]/g, "").trim()
+    ) {
+      debugLog(`⚠️ Skipping card ${cardId} - insufficient field data`);
+      continue;
+    }
+
     // Create SRS state for this card
+    // Note: In a full implementation, you'd store processedFront/processedBack
+    // in your flashcard content table, not in SRS state
     cards[cardId] = {
       id: cardId,
       state: "new",
