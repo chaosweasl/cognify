@@ -54,7 +54,6 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
 };
 
 // Additional constants not in user settings
-const MINIMUM_INTERVAL = 1;
 const DEBUG_LOGGING = false; // Set to true for development debugging
 
 // Helper function for conditional debug logging
@@ -94,8 +93,8 @@ export type SRSCardState = {
 };
 
 /**
- * Anki-style ease calculation (factor-based system)
- * Uses settings-driven factors for consistency with user configuration
+ * Anki-style ease calculation - EXACT Anki algorithm
+ * Uses additive changes for Hard/Easy, factor-based for Again
  */
 function calculateAnkiEase(
   oldEase: number,
@@ -105,17 +104,17 @@ function calculateAnkiEase(
   let newEase = oldEase;
 
   switch (quality) {
-    case 0: // Again - use factor-based penalty (not direct subtraction)
-      newEase = oldEase * (1 - settings.LAPSE_EASE_PENALTY);
+    case 0: // Again - subtract 0.2 (Anki default)
+      newEase = oldEase - 0.2;
       break;
-    case 1: // Hard - use configured factor (inverted for ease reduction)
-      newEase = oldEase / settings.HARD_INTERVAL_FACTOR;
+    case 1: // Hard - subtract 0.15 (Anki default)
+      newEase = oldEase - 0.15;
       break;
     case 2: // Good
       newEase = oldEase; // No change
       break;
-    case 3: // Easy - use configured factor
-      newEase = oldEase * settings.EASY_INTERVAL_FACTOR;
+    case 3: // Easy - add 0.15 (Anki default)
+      newEase = oldEase + 0.15;
       break;
   }
 
@@ -299,13 +298,16 @@ function scheduleNewCard(
       learningStep: 0,
     };
   } else {
-    // Again (0), Hard (1), Good (2) - all enter learning queue at step 1
+    // Again (0), Hard (1), Good (2) - all enter learning queue
+    const targetStep = rating === 2 ? 1 : 0; // Good advances to step 1, others start at step 0
+    const stepInterval = settings.LEARNING_STEPS[targetStep];
+    
     return {
       ...card,
       state: "learning",
-      learningStep: 0,
-      due: addMinutes(now, settings.LEARNING_STEPS[0]),
-      interval: settings.LEARNING_STEPS[0],
+      learningStep: targetStep,
+      due: addMinutes(now, stepInterval),
+      interval: stepInterval,
     };
   }
 }
@@ -400,7 +402,7 @@ function scheduleLearningCard(
 }
 
 /**
- * Handle review cards (mature cards using SM-2 algorithm) - Anki-style
+ * Handle review cards (mature cards using SM-2 algorithm) - EXACT Anki behavior
  */
 function scheduleReviewCard(
   card: SRSCardState,
@@ -434,27 +436,34 @@ function scheduleReviewCard(
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const daysLate = Math.max(0, Math.floor((now - card.due) / MS_PER_DAY));
 
-  const ease = calculateAnkiEase(card.ease, rating, settings);
   let interval: number;
 
-  // SM-2 repetition rules
-  switch (card.repetitions) {
-    case 0:
+  // SM-2 interval calculation - different for each rating
+  if (rating === 1) {
+    // Hard: use current interval * hard factor (no ease multiplication)
+    interval = Math.round(card.interval * settings.HARD_INTERVAL_FACTOR);
+    debugLog(`Hard: used interval ${card.interval} * factor ${settings.HARD_INTERVAL_FACTOR} = ${interval}`);
+  } else {
+    // Good, Easy: use standard SM-2 formula
+    if (card.interval === 1 && card.repetitions === 0) {
       interval = 1; // First review always 1 day
-      break;
-    case 1:
-      interval = Math.round(1 * ease); // Second review uses ease on base of 1
-      break;
-    default:
-      interval = Math.round(card.interval * ease); // Subsequent reviews
+    } else if (card.interval === 1 && card.repetitions === 1) {
+      interval = Math.round(1 * card.ease); // Second review uses ease on base of 1
+    } else {
+      interval = Math.round(card.interval * card.ease); // All other reviews: previous_interval * ease
+    }
+    
+    debugLog(`SM-2 interval calculation: repetitions=${card.repetitions}, oldInterval=${card.interval}, oldEase=${card.ease}, baseInterval=${interval}`);
+
+    // Apply Easy interval factor AFTER base calculation
+    if (rating === 3) {
+      interval = Math.round(interval * settings.EASY_INTERVAL_FACTOR);
+      debugLog(`Easy: applied factor ${settings.EASY_INTERVAL_FACTOR}, new interval=${interval}`);
+    }
   }
 
-  // Apply Hard/Easy interval factors
-  if (rating === 1) {
-    interval = Math.round(interval * settings.HARD_INTERVAL_FACTOR);
-  } else if (rating === 3) {
-    interval = Math.round(interval * settings.EASY_INTERVAL_FACTOR);
-  }
+  // Calculate new ease AFTER interval calculation
+  const newEase = calculateAnkiEase(card.ease, rating, settings);
 
   // Add late review bonus
   interval += daysLate;
@@ -463,7 +472,8 @@ function scheduleReviewCard(
   interval = Math.round(interval * settings.INTERVAL_MODIFIER);
 
   // Enforce minimum "+1 day" rule for non-Again reviews
-  if (rating > 0) {
+  // BUT NOT for first review (which should always be 1 day) or second review (which uses ease×1)
+  if (rating > 0 && !(card.interval === 1 && card.repetitions <= 1)) {
     interval = Math.max(interval, card.interval + 1);
   }
 
@@ -474,7 +484,7 @@ function scheduleReviewCard(
     ...card,
     state: "review",
     repetitions: card.repetitions + 1,
-    ease,
+    ease: newEase,
     interval,
     due: addDays(now, interval),
   };
