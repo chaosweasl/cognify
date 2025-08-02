@@ -3,6 +3,7 @@
 
 import {
   SRSCardState,
+  SRSRating,
   DEFAULT_SRS_SETTINGS,
   scheduleSRSCardWithSettings,
   initSRSStateWithSettings,
@@ -111,7 +112,7 @@ function testNewCardVariousLearningSteps(): boolean {
   // All ratings except Easy should go to step 0
   const ratings = [0, 1, 2]; // Again, Hard, Good
   for (const rating of ratings) {
-    const result = scheduleSRSCardWithSettings(manyStepCard, rating, manyStepsSettings);
+    const result = scheduleSRSCardWithSettings(manyStepCard, rating as SRSRating, manyStepsSettings);
     console.log(`Many steps config - Rating ${rating}: step ${result.learningStep}, state ${result.state}`);
     
     if (result.learningStep !== 0 || result.state !== "learning") {
@@ -209,7 +210,7 @@ function testBackwardCompatibility(): boolean {
   // Test that all ratings work correctly
   const ratings = [0, 1, 2, 3];
   for (const rating of ratings) {
-    const result = scheduleSRSCardWithSettings(legacyCard, rating, DEFAULT_SRS_SETTINGS);
+    const result = scheduleSRSCardWithSettings(legacyCard, rating as SRSRating, DEFAULT_SRS_SETTINGS);
     
     console.log(`Legacy card rating ${rating}: ease ${legacyCard.ease} -> ${result.ease}, interval ${legacyCard.interval} -> ${result.interval}`);
     

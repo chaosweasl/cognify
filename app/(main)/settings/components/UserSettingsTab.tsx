@@ -4,7 +4,8 @@ import { useUserProfileStore } from "@/hooks/useUserProfile";
 import { useSettingsStore } from "@/hooks/useSettings";
 import { useToast } from "@/components/toast-provider";
 import Image from "next/image";
-import nopfp from "@/public/assets/nopfp.png";
+// import nopfp from "@/public/assets/nopfp.png";
+const nopfp = "/assets/nopfp.png";
 
 export function UserSettingsTab() {
   const { userProfile, isLoading, updateUserProfile } = useUserProfileStore();
