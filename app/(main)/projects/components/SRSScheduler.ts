@@ -472,8 +472,8 @@ function scheduleReviewCard(
   interval = Math.round(interval * settings.INTERVAL_MODIFIER);
 
   // Enforce minimum "+1 day" rule for non-Again reviews
-  // BUT only if the calculated interval is not already larger
-  if (rating > 0) {
+  // BUT NOT for first review (which should always be 1 day) or second review (which uses ease×1)
+  if (rating > 0 && !(card.interval === 1 && card.repetitions <= 1)) {
     interval = Math.max(interval, card.interval + 1);
   }
 
