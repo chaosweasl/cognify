@@ -3,6 +3,10 @@
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
 
+// --- CONSTANTS ---
+const UNDO_HISTORY_LIMIT = 20; // Maximum number of reviews to keep for undo
+const ESTIMATED_SECONDS_PER_CARD = 30; // Rough estimate for time tracking
+
 // --- STUDY SESSION TYPES ---
 export type StudySession = {
   newCardsStudied: number;
@@ -46,6 +50,13 @@ export function initStudySession(): StudySession {
 /**
  * Get the next card to study, respecting daily limits and card priorities (with settings)
  * Fixed learning queue behavior to prevent infinite loops and match Anki behavior
+ * 
+ * Priority order: Learning/Relearning → Review → New
+ * Assumptions:
+ * - Daily limits are not reset here (external logic needed for day boundaries)
+ * - Buried cards are in-memory only (reset on session end)
+ * - Review ahead option allows studying future reviews
+ * - Learning cards ignore due times within session to prevent infinite loops
  */
 export function getNextCardToStudyWithSettings(
   cardStates: Record<string, SRSCardState>,
@@ -182,6 +193,8 @@ export function burySiblingsAfterReview(
   }
 
   const updatedSession = { ...session };
+  // Clone the set before mutation to maintain immutability
+  updatedSession.buriedCards = new Set(updatedSession.buriedCards);
 
   // Find all cards from the same note and bury them
   Object.values(allCardStates).forEach((card) => {
@@ -196,6 +209,13 @@ export function burySiblingsAfterReview(
 /**
  * Update study session after rating a card
  * Fixed learning queue management to maintain proper FIFO order and prevent infinite loops
+ * 
+ * Key behaviors:
+ * - Deep clones card state for undo history to prevent mutation issues
+ * - Derives counters from review history to prevent desync on undo/multiple ratings
+ * - Maintains FIFO learning queue with proper "Again" handling
+ * - Clones buriedCards Set before mutation for immutability
+ * - Undo history limited to last 20 actions
  */
 export function updateStudySession(
   session: StudySession,
@@ -207,28 +227,29 @@ export function updateStudySession(
 ): StudySession {
   const updatedSession = { ...session };
 
-  // Save review to history for undo functionality
+  // Save review to history for undo functionality - deep clone card state to prevent mutation issues
   updatedSession.reviewHistory.push({
     cardId: card.id,
-    previousState: card,
+    previousState: structuredClone(card), // Deep clone to prevent undo restoring stale/mutated state
     rating,
     timestamp: Date.now(),
   });
 
   // Keep only last 20 reviews for undo (MVP limit)
-  if (updatedSession.reviewHistory.length > 20) {
+  if (updatedSession.reviewHistory.length > UNDO_HISTORY_LIMIT) {
     updatedSession.reviewHistory.shift();
   }
 
-  // Track new cards studied
-  if (card.state === "new") {
-    updatedSession.newCardsStudied++;
-  }
+  // Derive counters from review history to prevent desync issues
+  // Count new cards that were studied (appeared as "new" in previousState)
+  updatedSession.newCardsStudied = updatedSession.reviewHistory.filter(
+    (review) => review.previousState.state === "new"
+  ).length;
 
-  // Track reviews completed (ONLY actual review cards, not learning graduations)
-  if (card.state === "review") {
-    updatedSession.reviewsCompleted++;
-  }
+  // Count reviews completed (ONLY actual review cards, not learning graduations)
+  updatedSession.reviewsCompleted = updatedSession.reviewHistory.filter(
+    (review) => review.previousState.state === "review"
+  ).length;
 
   // CRITICAL FIX: Proper learning queue management for FIFO behavior
   if (
@@ -263,6 +284,9 @@ export function updateStudySession(
 
   // Sibling burying logic (MVP: noteId-based)
   if (settings.BURY_SIBLINGS && card.noteId) {
+    // Clone the set before mutation to maintain immutability
+    updatedSession.buriedCards = new Set(updatedSession.buriedCards);
+    
     // Bury all other cards from the same note until next day
     Object.values(allCardStates).forEach((otherCard) => {
       if (otherCard.noteId === card.noteId && otherCard.id !== card.id) {
@@ -410,7 +434,7 @@ export function getDailyStats(session: StudySession): {
     newCardsStudied: session.newCardsStudied,
     reviewsCompleted: session.reviewsCompleted,
     lapses,
-    totalTimeSpent: totalReviews * 30, // Rough estimate: 30 seconds per card
+    totalTimeSpent: totalReviews * ESTIMATED_SECONDS_PER_CARD, // Rough estimate: 30 seconds per card
     accuracy: totalReviews > 0 ? (goodOrEasyReviews / totalReviews) * 100 : 0,
   };
 }
@@ -419,6 +443,11 @@ export function getDailyStats(session: StudySession): {
 
 /**
  * MVP: Undo last review action
+ * 
+ * Behavior:
+ * - Restores card to previous state from deep-cloned history
+ * - Derives session counters from updated review history to prevent desync
+ * - Limited to last action only (no full undo stack like Anki)
  */
 export function undoLastReview(
   session: StudySession,
@@ -438,19 +467,14 @@ export function undoLastReview(
   // Restore previous card state
   updatedCardStates[lastReview.cardId] = lastReview.previousState;
 
-  // Adjust session counters
-  const previousCard = lastReview.previousState;
-  if (previousCard.state === "new") {
-    updatedSession.newCardsStudied = Math.max(
-      0,
-      updatedSession.newCardsStudied - 1
-    );
-  } else if (previousCard.state === "review") {
-    updatedSession.reviewsCompleted = Math.max(
-      0,
-      updatedSession.reviewsCompleted - 1
-    );
-  }
+  // Derive counters from updated review history to prevent desync issues
+  updatedSession.newCardsStudied = updatedSession.reviewHistory.filter(
+    (review) => review.previousState.state === "new"
+  ).length;
+
+  updatedSession.reviewsCompleted = updatedSession.reviewHistory.filter(
+    (review) => review.previousState.state === "review"
+  ).length;
 
   return {
     session: updatedSession,
