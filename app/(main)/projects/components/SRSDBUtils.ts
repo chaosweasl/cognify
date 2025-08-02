@@ -26,6 +26,7 @@ type DatabaseSRSState = {
   lapses: number;
   learning_step: number;
   is_leech: boolean;
+  is_suspended: boolean;
 };
 
 /**
@@ -49,6 +50,7 @@ function srsStateToDatabase(
     lapses: cardState.lapses,
     learning_step: cardState.learningStep,
     is_leech: cardState.isLeech,
+    is_suspended: cardState.isSuspended,
   };
 }
 
@@ -67,6 +69,7 @@ function databaseToSRSState(dbState: DatabaseSRSState): SRSCardState {
     lapses: dbState.lapses,
     learningStep: dbState.learning_step,
     isLeech: dbState.is_leech,
+    isSuspended: dbState.is_suspended,
   };
 }
 

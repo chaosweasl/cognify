@@ -24,7 +24,7 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   EASY_BONUS: 1.3, // Multiplier for "Easy" button
 
   // SM-2 interval modifiers (Anki-style)
-  HARD_INTERVAL_FACTOR: 1.2, // Multiplier for "Hard" intervals
+  HARD_INTERVAL_FACTOR: 0.8, // Multiplier for "Hard" intervals (reduced from 1.2)
   EASY_INTERVAL_FACTOR: 1.3, // Multiplier for "Easy" intervals
 
   // Lapse settings
@@ -55,6 +55,7 @@ export type SRSCardState = {
   lapses: number; // number of times card has been forgotten (Again on review)
   learningStep: number; // current step in learning/relearning process
   isLeech: boolean; // whether card is marked as a leech
+  isSuspended: boolean; // whether card is suspended (MVP: simple suspend flag)
 };
 
 export type StudySession = {
@@ -73,22 +74,31 @@ function addDays(timestamp: number, days: number): number {
 }
 
 /**
- * Calculate new ease factor using SM-2 algorithm
+ * Calculate new ease factor using simplified SM-2 algorithm
  * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy
- * Anki formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
- * Adapted for 4-point scale (0-3) by mapping to 5-point scale (2-5)
+ * Simplified approach for MVP: direct adjustments based on rating
  */
 function calculateNewEase(
   currentEase: number,
   quality: SRSRating,
   settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): number {
-  // Map our 4-point scale (0-3) to Anki's 5-point scale (2-5)
-  const ankiQuality = quality + 2;
+  let newEase = currentEase;
 
-  // SM-2 formula
-  const newEase =
-    currentEase + (0.1 - (5 - ankiQuality) * (0.08 + (5 - ankiQuality) * 0.02));
+  switch (quality) {
+    case 0: // Again - decrease ease significantly
+      newEase = currentEase - 0.2;
+      break;
+    case 1: // Hard - decrease ease slightly
+      newEase = currentEase - 0.15;
+      break;
+    case 2: // Good - increase ease slightly
+      newEase = currentEase + 0.15;
+      break;
+    case 3: // Easy - no change (Anki behavior)
+      newEase = currentEase;
+      break;
+  }
 
   // Ensure minimum ease factor
   return Math.max(settings.MINIMUM_EASE, newEase);
@@ -118,6 +128,7 @@ export function initSRSStateWithSettings(
       lapses: 0,
       learningStep: 0,
       isLeech: false,
+      isSuspended: false,
     };
   }
 
@@ -190,31 +201,14 @@ function scheduleNewCard(
       interval: settings.LEARNING_STEPS[0],
     };
   } else if (rating === 2) {
-    // Good - advance to step 2 of learning (Anki: start at step 1, not 0)
-    if (settings.LEARNING_STEPS.length > 1) {
-      // Move to second learning step
-      const stepInterval = settings.LEARNING_STEPS[1];
-      return {
-        ...card,
-        state: "learning",
-        learningStep: 1,
-        due: addMinutes(now, stepInterval),
-        interval: stepInterval,
-      };
-    } else {
-      // Only one learning step, graduate immediately
-      console.log(
-        `🎓 Card ${card.id} graduating from learning to review, scheduled for ${settings.GRADUATING_INTERVAL} days`
-      );
-      return {
-        ...card,
-        state: "review",
-        repetitions: 1, // First repetition upon graduation
-        interval: settings.GRADUATING_INTERVAL,
-        due: addDays(now, settings.GRADUATING_INTERVAL),
-        learningStep: 0,
-      };
-    }
+    // Good - start at first learning step (Anki behavior)
+    return {
+      ...card,
+      state: "learning",
+      learningStep: 0,
+      due: addMinutes(now, settings.LEARNING_STEPS[0]),
+      interval: settings.LEARNING_STEPS[0],
+    };
   } else {
     // Easy - skip all learning steps and graduate immediately with EASY_INTERVAL
     console.log(
@@ -265,16 +259,23 @@ function scheduleLearningCard(
     const nextStep = card.learningStep + 1;
 
     if (nextStep >= settings.LEARNING_STEPS.length) {
-      // Graduate to review queue - scheduled for future, not immediately available
+      // Graduate to review queue using last learning step as base interval
+      const lastStepMinutes =
+        settings.LEARNING_STEPS[settings.LEARNING_STEPS.length - 1];
+      const graduationInterval =
+        lastStepMinutes >= 1440
+          ? Math.round(lastStepMinutes / 1440)
+          : settings.GRADUATING_INTERVAL;
+
       console.log(
-        `🎓 Learning card ${card.id} graduating to review, scheduled for ${settings.GRADUATING_INTERVAL} days`
+        `🎓 Learning card ${card.id} graduating to review, scheduled for ${graduationInterval} days`
       );
       return {
         ...card,
         state: "review",
         repetitions: 1, // First repetition upon graduation
-        interval: settings.GRADUATING_INTERVAL,
-        due: addDays(now, settings.GRADUATING_INTERVAL),
+        interval: graduationInterval,
+        due: addDays(now, graduationInterval),
         learningStep: 0,
       };
     } else {
@@ -320,6 +321,10 @@ function scheduleReviewCard(
       card.ease - settings.LAPSE_EASE_PENALTY
     );
 
+    // Check if card should be marked as leech and suspended
+    const isLeech = newLapses >= settings.LEECH_THRESHOLD;
+    const shouldSuspend = isLeech && settings.LEECH_ACTION === "suspend";
+
     return {
       ...card,
       state: "relearning",
@@ -328,51 +333,32 @@ function scheduleReviewCard(
       learningStep: 0,
       due: addMinutes(now, settings.RELEARNING_STEPS[0]),
       interval: settings.RELEARNING_STEPS[0],
-      isLeech: newLapses >= settings.LEECH_THRESHOLD,
+      isLeech,
+      isSuspended: shouldSuspend,
     };
   }
 
-  // For Hard, Good, Easy - calculate new interval using SM-2
-  const newEase = calculateNewEase(card.ease, rating);
-  let intervalMultiplier = 1;
-
-  if (rating === 1) {
-    // Hard - reduce interval
-    intervalMultiplier = settings.HARD_INTERVAL_FACTOR; // 0.8
-  } else if (rating === 2) {
-    // Good - normal progression
-    intervalMultiplier = newEase; // Use ease factor as multiplier
-  } else {
-    // Easy - increase interval more
-    intervalMultiplier = newEase * settings.EASY_INTERVAL_FACTOR; // ease * 1.3
-  }
-
-  // Calculate new interval
+  // For Hard, Good, Easy - calculate new interval using simplified SM-2
+  const newEase = calculateNewEase(card.ease, rating, settings);
   let newInterval: number;
 
-  // Special handling for graduated cards (first review after learning)
-  if (card.repetitions === 1) {
-    // First review after graduation - use predefined intervals based on rating
-    console.log(
-      `📚 First review of graduated card ${card.id}, rating: ${rating}`
-    );
-    if (rating === 1) {
-      // Hard - shorter than graduating interval
-      newInterval = Math.max(1, Math.round(card.interval * 0.8));
-    } else if (rating === 2) {
-      // Good - use graduating interval (typically 1 day)
-      newInterval = card.interval;
-    } else {
-      // Easy - longer than graduating interval
-      newInterval = Math.round(card.interval * 1.5);
-    }
-    console.log(`📅 Graduated card scheduled for ${newInterval} days from now`);
-  } else {
-    // Normal SM-2 calculation for established review cards
+  if (rating === 1) {
+    // Hard - reduce interval with hard factor
     newInterval = Math.round(
-      card.interval * intervalMultiplier * settings.INTERVAL_MODIFIER
+      card.interval * newEase * settings.HARD_INTERVAL_FACTOR
+    );
+  } else if (rating === 2) {
+    // Good - normal progression using ease factor
+    newInterval = Math.round(card.interval * newEase);
+  } else {
+    // Easy - increase interval more with easy bonus
+    newInterval = Math.round(
+      card.interval * newEase * settings.EASY_INTERVAL_FACTOR
     );
   }
+
+  // Apply global interval modifier
+  newInterval = Math.round(newInterval * settings.INTERVAL_MODIFIER);
 
   newInterval = Math.max(MINIMUM_INTERVAL, newInterval);
   newInterval = Math.min(MAXIMUM_INTERVAL, newInterval);
@@ -474,8 +460,11 @@ export function getNextCardToStudyWithSettings(
 
   // 1. First priority: ALL Learning/Relearning cards (ignore due time for session flow)
   // In Anki, learning steps happen in the same session regardless of scheduled intervals
+  // Skip suspended cards
   const learningCards = allCards.filter(
-    (card) => card.state === "learning" || card.state === "relearning"
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
     // This keeps "Again" cards in the session even if scheduled for later
   );
 
@@ -496,7 +485,7 @@ export function getNextCardToStudyWithSettings(
     session.reviewsCompleted < settings.MAX_REVIEWS_PER_DAY
   ) {
     const reviewCards = allCards.filter(
-      (card) => card.state === "review" && card.due <= now
+      (card) => card.state === "review" && card.due <= now && !card.isSuspended
     );
 
     if (reviewCards.length > 0) {
@@ -516,7 +505,9 @@ export function getNextCardToStudyWithSettings(
 
   // 3. Third priority: New cards (if under daily limit)
   if (session.newCardsStudied < settings.NEW_CARDS_PER_DAY) {
-    const newCards = allCards.filter((card) => card.state === "new");
+    const newCards = allCards.filter(
+      (card) => card.state === "new" && !card.isSuspended
+    );
 
     if (newCards.length > 0) {
       // For new cards, we can randomize or use creation order
@@ -602,26 +593,30 @@ export function getSessionAwareStudyStats(
 } {
   const allCards = Object.values(cardStates);
 
-  // New cards available for today (considering daily limit)
+  // New cards available for today (considering daily limit and suspension)
   const remainingNewCardSlots = Math.max(
     0,
     settings.NEW_CARDS_PER_DAY - session.newCardsStudied
   );
-  const newCardsTotal = allCards.filter((card) => card.state === "new").length;
+  const newCardsTotal = allCards.filter(
+    (card) => card.state === "new" && !card.isSuspended
+  ).length;
   const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
 
-  // Learning cards (always available in session, ignore due time)
+  // Learning cards (always available in session, ignore due time, but respect suspension)
   const dueLearningCards = allCards.filter(
-    (card) => card.state === "learning" || card.state === "relearning"
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
   ).length;
 
-  // Review cards that are due now (considering daily limit)
+  // Review cards that are due now (considering daily limit and suspension)
   const remainingReviewSlots =
     settings.MAX_REVIEWS_PER_DAY <= 0
       ? Infinity
       : Math.max(0, settings.MAX_REVIEWS_PER_DAY - session.reviewsCompleted);
   const reviewCardsTotal = allCards.filter(
-    (card) => card.state === "review" && card.due <= now
+    (card) => card.state === "review" && card.due <= now && !card.isSuspended
   ).length;
   const dueReviewCards =
     settings.MAX_REVIEWS_PER_DAY <= 0
@@ -690,4 +685,15 @@ export function getStudySessionSummary(
     reviewsRemaining: sessionStats.dueReviewCards,
     learningCardsWaiting: sessionStats.dueLearningCards,
   };
+}
+
+/**
+ * MVP: Simple card suspension/unsuspension
+ */
+export function suspendCard(card: SRSCardState): SRSCardState {
+  return { ...card, isSuspended: true };
+}
+
+export function unsuspendCard(card: SRSCardState): SRSCardState {
+  return { ...card, isSuspended: false };
 }
