@@ -13,37 +13,23 @@ export async function getProjectById(id: string): Promise<Project | null> {
 
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, flashcards")
+    .select("id, name, description, created_at")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
   if (error || !data) return null;
-  // Ensure each flashcard has an id property
-  let flashcards: Flashcard[] = Array.isArray(data.flashcards)
-    ? data.flashcards
-    : [];
-  flashcards = flashcards.map((card, idx) => ({ ...card, id: `${idx}` }));
+  
   return {
     ...data,
-    flashcards,
+    flashcards: [], // Flashcards are now loaded separately
   };
 }
 
 // Update only the flashcards array for a project
-export async function updateFlashcards(id: string, flashcards: Flashcard[]) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Not authenticated");
-
-  const { error } = await supabase
-    .from("projects")
-    .update({ flashcards })
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) throw error;
+// DEPRECATED: Use flashcard-specific actions instead
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function updateFlashcards(_id: string, _flashcards: Flashcard[]) {
+  throw new Error("updateFlashcards is deprecated. Use flashcard-specific actions instead.");
 }
 
 // --- Types ---
@@ -57,7 +43,7 @@ export type Project = {
   name: string;
   description: string;
   created_at: string;
-  flashcards?: Flashcard[];
+  flashcards: Flashcard[];
   formattedCreatedAt?: string;
 };
 
@@ -71,24 +57,22 @@ export async function getProjects(): Promise<Project[]> {
 
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, flashcards")
+    .select("id, name, description, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error || !data) return [];
   return data.map((project) => ({
     ...project,
-    flashcards: Array.isArray(project.flashcards) ? project.flashcards : [],
+    flashcards: [], // Flashcards are now loaded separately
   }));
 }
 
 export async function createProject({
   name,
   description,
-  flashcards = [],
 }: {
   name: string;
   description: string;
-  flashcards?: Flashcard[];
 }) {
   const supabase = await createClient();
   const {
@@ -104,7 +88,6 @@ export async function createProject({
         user_id: user.id,
         name,
         description,
-        flashcards,
       },
     ])
     .select("id");
@@ -116,18 +99,15 @@ export async function updateProject({
   id,
   name,
   description,
-  flashcards = [],
 }: {
   id: string;
   name: string;
   description: string;
-  flashcards?: Flashcard[];
 }) {
   console.log("projectsActions: updateProject called", {
     id,
     name,
     description,
-    flashcards,
   });
   const supabase = await createClient();
   const {
@@ -138,7 +118,7 @@ export async function updateProject({
 
   const { error } = await supabase
     .from("projects")
-    .update({ name, description, flashcards })
+    .update({ name, description })
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw error;

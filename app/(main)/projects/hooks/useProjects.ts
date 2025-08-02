@@ -88,7 +88,6 @@ export const useProjectsStore = create<ProjectsState>((set, get) => ({
         id,
         name: updates.name ?? current.name,
         description: updates.description ?? current.description,
-        flashcards: updates.flashcards ?? current.flashcards,
       });
       console.log("[useProjects] Refetching projects after update...");
       await get().fetchProjects();

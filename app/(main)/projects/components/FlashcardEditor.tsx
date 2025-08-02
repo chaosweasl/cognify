@@ -10,9 +10,12 @@ import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
+import { useFlashcardsStore } from "../hooks/useFlashcards";
+import { CreateFlashcardData } from "../types/flashcard";
 
-// Define Flashcard type locally without 'id'
-type Flashcard = {
+// Define Flashcard type locally for legacy compatibility
+type LegacyFlashcard = {
+  id?: string; // Keep optional for internal use
   question: string;
   answer: string;
 };
@@ -23,21 +26,36 @@ interface FlashcardEditorProps {
 }
 
 export function FlashcardEditor({ project }: FlashcardEditorProps) {
+  const router = useRouter();
+  const { 
+    flashcards: dbFlashcards, 
+    loading: flashcardsLoading, 
+    fetchFlashcards,
+    replaceAllFlashcards,
+    getLegacyFlashcards 
+  } = useFlashcardsStore();
+
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
-  const [flashcards, setFlashcards] = useState<Flashcard[]>(
-    Array.isArray(project.flashcards)
-      ? project.flashcards.map((fc) => ({
-          question: typeof fc.question === "string" ? fc.question : "",
-          answer: typeof fc.answer === "string" ? fc.answer : "",
-        }))
-      : []
-  );
+  const [flashcards, setFlashcards] = useState<LegacyFlashcard[]>([]);
   const [current, setCurrent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isValid, setIsValid] = useState(false);
-  const router = useRouter();
+
+  // Load flashcards on component mount
+  useEffect(() => {
+    fetchFlashcards(project.id);
+  }, [project.id, fetchFlashcards]);
+
+  // Update local flashcards when database flashcards change
+  useEffect(() => {
+    const legacyFlashcards = getLegacyFlashcards();
+    setFlashcards(legacyFlashcards);
+    if (legacyFlashcards.length > 0 && current >= legacyFlashcards.length) {
+      setCurrent(Math.max(0, legacyFlashcards.length - 1));
+    }
+  }, [dbFlashcards, getLegacyFlashcards, current]);
 
   useEffect(() => {
     // Allow saving as long as project name is present
@@ -101,27 +119,44 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   async function handleSave() {
     setSaving(true);
-    // Only save non-empty cards (at least one non-empty field)
-    const filtered = flashcards.filter(
-      (fc) =>
-        (typeof fc.question === "string" && fc.question.trim()) ||
-        (typeof fc.answer === "string" && fc.answer.trim())
-    );
-    await updateProject({
-      id: project.id,
-      name,
-      description,
-      flashcards: filtered,
-    });
-    setSaving(false);
-    router.push("/projects");
+    try {
+      // Update project info
+      await updateProject({
+        id: project.id,
+        name,
+        description,
+      });
+
+      // Only save non-empty cards (at least one non-empty field)
+      const filtered = flashcards.filter(
+        (fc) =>
+          (typeof fc.question === "string" && fc.question.trim()) ||
+          (typeof fc.answer === "string" && fc.answer.trim())
+      );
+
+      // Convert legacy format to new format
+      const flashcardData: CreateFlashcardData[] = filtered.map((card) => ({
+        front: card.question,
+        back: card.answer,
+        extra: {},
+      }));
+
+      // Save flashcards using new API
+      await replaceAllFlashcards(project.id, flashcardData);
+
+      router.push("/projects");
+    } catch (error) {
+      console.error("Error saving project:", error);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleCancel() {
     router.push("/projects");
   }
 
-  function handleImportFlashcards(importedCards: Flashcard[]) {
+  function handleImportFlashcards(importedCards: LegacyFlashcard[]) {
     // Remove any cards that are missing a non-empty question or answer
     const filtered = importedCards.filter(
       (fc) =>
@@ -143,6 +178,8 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       (typeof fc.question === "string" && fc.question.trim()) ||
       (typeof fc.answer === "string" && fc.answer.trim())
   ).length;
+
+  const isLoading = saving || flashcardsLoading;
 
   return (
     <div className="min-h-screen pt-5 bg-gradient-to-br from-base-200 to-base-300/50">
@@ -197,7 +234,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
               description={description}
               setDescription={setDescription}
               isValid={isValid}
-              saving={saving}
+              saving={isLoading}
             />
           </div>
 
@@ -223,20 +260,20 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                   <div className="flex gap-2">
                     <FlashcardJsonImporter
                       onImport={handleImportFlashcards}
-                      disabled={saving}
+                      disabled={isLoading}
                       existingFlashcards={flashcards}
                     />
                     <button
                       className="btn btn-outline btn-info"
                       onClick={() => setManageModalOpen(true)}
-                      disabled={saving || flashcards.length === 0}
+                      disabled={isLoading || flashcards.length === 0}
                     >
                       Manage Cards
                     </button>
                     <button
                       className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"
                       onClick={handleAdd}
-                      disabled={saving}
+                      disabled={isLoading}
                     >
                       <Plus className="w-4 h-4" />
                       Add Card
@@ -255,7 +292,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                 <FlashcardCardEditor
                   card={card}
                   handleChange={handleChange}
-                  saving={saving}
+                  saving={isLoading}
                 />
                 {/* Card Navigation */}
                 <FlashcardNavigation
@@ -265,7 +302,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                   onNext={() => navigate(1)}
                   onDelete={handleDelete}
                   canDelete={flashcards.length > 1}
-                  saving={saving}
+                  saving={isLoading}
                 />
               </div>
             </div>
@@ -277,7 +314,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
           <button
             className="btn btn-ghost btn-lg hover:shadow-md transition-all duration-200"
             onClick={handleCancel}
-            disabled={saving}
+            disabled={isLoading}
           >
             <X className="w-5 h-5" />
             Cancel
@@ -285,12 +322,12 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
           <button
             className={`btn btn-lg shadow-lg hover:shadow-xl transition-all duration-200 ${
-              isValid && !saving ? "btn-success" : "btn-disabled"
+              isValid && !isLoading ? "btn-success" : "btn-disabled"
             }`}
             onClick={handleSave}
-            disabled={!isValid || saving}
+            disabled={!isValid || isLoading}
           >
-            {saving ? (
+            {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Saving Project...

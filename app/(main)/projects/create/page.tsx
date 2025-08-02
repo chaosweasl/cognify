@@ -11,7 +11,6 @@ export default function CreateProjectPage() {
       const id = await createProject({
         name: "Untitled Project",
         description: "",
-        flashcards: [],
       });
       if (id) router.push(`/projects/${id}/edit`);
     }
