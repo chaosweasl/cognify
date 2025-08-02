@@ -446,9 +446,12 @@ export function testEdgeCasesAndBoundaries(): boolean {
   return allTestsPassed;
 }
 
-// Uncomment to run test in console
-// testAnkiLikeBehavior();
-// testAnkiAlgorithmCompatibility();
-// testMinimumEaseBoundary();
-// testLearningQueueBehavior();
-// testEdgeCasesAndBoundaries();
+// Run tests when this module is executed directly
+if (require.main === module || typeof window === 'undefined') {
+  console.log('=== Running SRS Tests ===\n');
+  testAnkiLikeBehavior();
+  testAnkiAlgorithmCompatibility();
+  testMinimumEaseBoundary();
+  testLearningQueueBehavior();
+  testEdgeCasesAndBoundaries();
+}
