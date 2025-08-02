@@ -89,23 +89,34 @@ export type SRSCardState = {
 };
 
 /**
- * Calculate new ease factor using official SM-2 algorithm
- * Based on SuperMemo SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
- * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy
+ * Calculate new ease factor using Anki's simplified algorithm
+ * Anki uses addition/subtraction instead of the original SM-2 formula
+ * Rating effects: Again: -0.20, Hard: -0.15, Good: no change, Easy: +0.15
  */
 function calculateNewEase(
   currentEase: number,
   quality: SRSRating,
   settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): number {
-  // Convert our 0-3 scale to SM-2's 0-5 scale
-  // 0=Again->0, 1=Hard->2, 2=Good->3, 3=Easy->5
-  const q = quality === 0 ? 0 : quality === 1 ? 2 : quality === 2 ? 3 : 5;
+  let newEase = currentEase;
 
-  // Official SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
-  const newEase = currentEase + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+  // Anki's simplified ease factor adjustments
+  switch (quality) {
+    case 0: // Again
+      newEase = currentEase - 0.20;
+      break;
+    case 1: // Hard  
+      newEase = currentEase - 0.15;
+      break;
+    case 2: // Good
+      newEase = currentEase; // No change
+      break;
+    case 3: // Easy
+      newEase = currentEase + 0.15;
+      break;
+  }
 
-  // Ensure minimum ease factor (SM-2 minimum is typically 1.3)
+  // Ensure minimum ease factor (Anki minimum is 1.30)
   return Math.max(settings.MINIMUM_EASE, newEase);
 }
 
@@ -330,12 +341,13 @@ function scheduleReviewCard(
     };
   }
 
-  // For Hard, Good, Easy - calculate new interval using simplified SM-2
+  // Calculate new ease factor first
   const newEase = calculateNewEase(card.ease, rating, settings);
   let newInterval: number;
 
   if (rating === 1) {
-    // Hard - Anki formula: interval = prev_interval * hard_factor (typically 1.2)
+    // Hard - Anki's method: interval = prev_interval * hard_factor 
+    // IMPORTANT: Does NOT multiply by ease factor (key difference from original SM-2)
     newInterval = Math.round(card.interval * settings.HARD_INTERVAL_FACTOR);
   } else if (rating === 2) {
     // Good - normal progression using ease factor

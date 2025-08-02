@@ -4,6 +4,7 @@ import {
   scheduleSRSCardWithSettings,
   SRSRating,
   DEFAULT_SRS_SETTINGS,
+  SRSCardState,
 } from "./SRSScheduler";
 
 export function testAnkiLikeBehavior() {
@@ -108,5 +109,135 @@ export function testAnkiLikeBehavior() {
   console.log("\n=== Anki-like Test Complete ===");
 }
 
+// NEW: Comprehensive test for exact Anki algorithm compatibility
+export function testAnkiAlgorithmCompatibility(): boolean {
+  console.log("\n=== ANKI ALGORITHM COMPATIBILITY TEST ===");
+  
+  let allTestsPassed = true;
+  
+  // Create a review card for testing
+  const reviewCard: SRSCardState = {
+    id: "test-review-card",
+    state: "review",
+    interval: 10,
+    ease: 2.50,
+    due: Date.now(),
+    lastReviewed: 0,
+    repetitions: 1,
+    lapses: 0,
+    learningStep: 0,
+    isLeech: false,
+    isSuspended: false,
+  };
+  
+  console.log("Testing review card with ease 2.50, interval 10 days");
+  console.log("");
+  
+  const testCases = [
+    {
+      name: "Again (lapse)",
+      rating: 0 as SRSRating,
+      expectedEase: 2.30,
+      expectedState: "relearning",
+      expectedInterval: 10 // Goes to relearning step
+    },
+    {
+      name: "Hard", 
+      rating: 1 as SRSRating,
+      expectedEase: 2.35,
+      expectedState: "review",
+      expectedInterval: 12 // 10 * 1.2, NO ease multiplication
+    },
+    {
+      name: "Good",
+      rating: 2 as SRSRating,
+      expectedEase: 2.50,
+      expectedState: "review", 
+      expectedInterval: 25 // 10 * 2.50
+    },
+    {
+      name: "Easy",
+      rating: 3 as SRSRating,
+      expectedEase: 2.65,
+      expectedState: "review",
+      expectedInterval: 34 // 10 * 2.65 * 1.3 ≈ 34
+    }
+  ];
+  
+  for (const testCase of testCases) {
+    const result = scheduleSRSCardWithSettings(
+      reviewCard,
+      testCase.rating,
+      DEFAULT_SRS_SETTINGS
+    );
+    
+    const easeMatch = Math.abs(result.ease - testCase.expectedEase) < 0.01;
+    const stateMatch = result.state === testCase.expectedState;
+    const intervalMatch = testCase.expectedState === "relearning" 
+      ? true // For relearning, we don't check exact interval
+      : Math.abs(result.interval - testCase.expectedInterval) <= 1;
+    
+    const passed = easeMatch && stateMatch && intervalMatch;
+    
+    console.log(`${testCase.name} (${testCase.rating}):`);
+    console.log(`  Result: ease=${result.ease}, interval=${result.interval}, state=${result.state}`);
+    console.log(`  Expected: ease=${testCase.expectedEase}, interval=${testCase.expectedInterval}, state=${testCase.expectedState}`);
+    console.log(`  ${passed ? '✅ PASS' : '❌ FAIL'}`);
+    
+    if (!passed) {
+      allTestsPassed = false;
+      if (!easeMatch) console.log(`    ❌ Ease mismatch: got ${result.ease}, expected ${testCase.expectedEase}`);
+      if (!stateMatch) console.log(`    ❌ State mismatch: got ${result.state}, expected ${testCase.expectedState}`);
+      if (!intervalMatch) console.log(`    ❌ Interval mismatch: got ${result.interval}, expected ${testCase.expectedInterval}`);
+    }
+    console.log("");
+  }
+  
+  if (allTestsPassed) {
+    console.log("🎉 ALL TESTS PASSED - Algorithm is Anki-compatible!");
+  } else {
+    console.log("❌ SOME TESTS FAILED - Algorithm needs fixes");
+  }
+  
+  return allTestsPassed;
+}
+
+// Test minimum ease boundary
+export function testMinimumEaseBoundary(): boolean {
+  console.log("\n=== TESTING MINIMUM EASE BOUNDARY ===");
+  
+  const cardAtMinimumEase: SRSCardState = {
+    id: "test-min-ease",
+    state: "review",
+    interval: 5,
+    ease: 1.30, // At minimum
+    due: Date.now(),
+    lastReviewed: 0,
+    repetitions: 1,
+    lapses: 7, // Near leech threshold
+    learningStep: 0,
+    isLeech: false,
+    isSuspended: false,
+  };
+  
+  // Test "Again" at minimum ease - should not go below 1.30
+  const result = scheduleSRSCardWithSettings(
+    cardAtMinimumEase,
+    0 as SRSRating,
+    DEFAULT_SRS_SETTINGS
+  );
+  
+  const passed = result.ease >= DEFAULT_SRS_SETTINGS.MINIMUM_EASE;
+  
+  console.log(`Card at minimum ease (1.30) after 'Again':`);
+  console.log(`  Ease: ${cardAtMinimumEase.ease} -> ${result.ease}`);
+  console.log(`  Should stay >= ${DEFAULT_SRS_SETTINGS.MINIMUM_EASE}`);
+  console.log(`  ${passed ? '✅ PASS' : '❌ FAIL'}`);
+  
+  return passed;
+}
+
 // Uncomment to run test in console
 // testAnkiLikeBehavior();
+// testAnkiAlgorithmCompatibility();
+// testMinimumEaseBoundary();
