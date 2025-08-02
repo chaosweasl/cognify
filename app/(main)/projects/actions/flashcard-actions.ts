@@ -136,7 +136,8 @@ export async function updateFlashcard(
     .eq("id", flashcardId)
     .single();
 
-  if (flashcardError || !flashcard || flashcard.projects.user_id !== user.id) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (flashcardError || !flashcard || (flashcard.projects as any).user_id !== user.id) {
     throw new Error("Flashcard not found or unauthorized");
   }
 
@@ -170,7 +171,8 @@ export async function deleteFlashcard(flashcardId: string): Promise<boolean> {
     .eq("id", flashcardId)
     .single();
 
-  if (flashcardError || !flashcard || flashcard.projects.user_id !== user.id) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (flashcardError || !flashcard || (flashcard.projects as any).user_id !== user.id) {
     throw new Error("Flashcard not found or unauthorized");
   }
 

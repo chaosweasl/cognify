@@ -11,10 +11,11 @@ import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "../hooks/useFlashcards";
-import { CreateFlashcardData, convertLegacyToNew } from "../types/flashcard";
+import { CreateFlashcardData } from "../types/flashcard";
 
-// Define Flashcard type locally without 'id' for legacy compatibility
+// Define Flashcard type locally for legacy compatibility
 type LegacyFlashcard = {
+  id?: string; // Keep optional for internal use
   question: string;
   answer: string;
 };
@@ -134,7 +135,11 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       );
 
       // Convert legacy format to new format
-      const flashcardData: CreateFlashcardData[] = filtered.map(convertLegacyToNew);
+      const flashcardData: CreateFlashcardData[] = filtered.map((card) => ({
+        front: card.question,
+        back: card.answer,
+        extra: {},
+      }));
 
       // Save flashcards using new API
       await replaceAllFlashcards(project.id, flashcardData);

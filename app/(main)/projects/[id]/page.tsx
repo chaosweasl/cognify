@@ -15,7 +15,10 @@ export default async function ProjectStudyPage(props: {
 
   // Load flashcards separately
   const flashcardsData = await getFlashcardsByProjectId(id);
-  const flashcards = flashcardsData.map(convertNewToLegacy);
+  const flashcards = flashcardsData.map(convertNewToLegacy).map((card, index) => ({
+    ...card,
+    id: card.id || `temp-${index}` // Ensure id is always defined
+  }));
 
   // Load existing SRS states from database
   const supabase = await createClient();
@@ -25,7 +28,7 @@ export default async function ProjectStudyPage(props: {
 
   let existingSRSStates = undefined;
   if (user && flashcards.length > 0) {
-    const cardIds = flashcards.map((card) => card.id);
+    const cardIds = flashcards.map((card) => card.id).filter(Boolean);
     existingSRSStates = await loadSRSStates(supabase, user.id, id, cardIds);
   }
 

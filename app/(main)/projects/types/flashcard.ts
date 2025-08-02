@@ -25,7 +25,7 @@ export interface UpdateFlashcardData {
 
 // Legacy flashcard format for backwards compatibility during migration
 export interface LegacyFlashcard {
-  id?: string;
+  id: string; // Changed from optional to required
   question: string;
   answer: string;
 }

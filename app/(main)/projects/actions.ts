@@ -43,7 +43,7 @@ export type Project = {
   name: string;
   description: string;
   created_at: string;
-  flashcards?: Flashcard[];
+  flashcards: Flashcard[];
   formattedCreatedAt?: string;
 };
 
