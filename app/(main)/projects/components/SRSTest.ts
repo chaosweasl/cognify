@@ -6,6 +6,12 @@ import {
   DEFAULT_SRS_SETTINGS,
   SRSCardState,
 } from "./SRSScheduler";
+import {
+  getNextCardToStudyWithSettings,
+  initStudySession,
+  updateStudySession,
+  StudySession,
+} from "./SRSSession";
 
 export function testAnkiLikeBehavior() {
   console.log("=== Testing Anki-like SRS Card Transitions ===");
@@ -237,7 +243,117 @@ export function testMinimumEaseBoundary(): boolean {
   return passed;
 }
 
+// Test learning queue FIFO behavior and infinite loop prevention
+export function testLearningQueueBehavior(): boolean {
+  console.log("\n=== TESTING LEARNING QUEUE FIFO BEHAVIOR ===");
+  
+  // Create test cards
+  const cardStates: Record<string, SRSCardState> = {
+    "card1": {
+      id: "card1",
+      state: "new",
+      interval: 0,
+      ease: DEFAULT_SRS_SETTINGS.STARTING_EASE,
+      due: Date.now(),
+      lastReviewed: 0,
+      repetitions: 0,
+      lapses: 0,
+      learningStep: 0,
+      isLeech: false,
+      isSuspended: false,
+    },
+    "card2": {
+      id: "card2", 
+      state: "new",
+      interval: 0,
+      ease: DEFAULT_SRS_SETTINGS.STARTING_EASE,
+      due: Date.now(),
+      lastReviewed: 0,
+      repetitions: 0,
+      lapses: 0,
+      learningStep: 0,
+      isLeech: false,
+      isSuspended: false,
+    }
+  };
+
+  let session = initStudySession();
+  let testsPassed = true;
+
+  console.log("Testing FIFO queue behavior with 'Again' card movement...");
+
+  // Step 1: Study card1 with "Good" - should enter learning
+  let nextCardId = getNextCardToStudyWithSettings(cardStates, session, DEFAULT_SRS_SETTINGS);
+  console.log(`1. Next card: ${nextCardId} (should be new card)`);
+  
+  if (nextCardId) {
+    const card = cardStates[nextCardId];
+    const newCard = scheduleSRSCardWithSettings(card, 2, DEFAULT_SRS_SETTINGS); // Good
+    cardStates[nextCardId] = newCard;
+    session = updateStudySession(session, card, 2, newCard, cardStates, DEFAULT_SRS_SETTINGS);
+    console.log(`   Card ${nextCardId} state: ${newCard.state}, queue: [${session.learningCardsInQueue.join(', ')}]`);
+  }
+
+  // Step 2: Study card2 with "Good" - should enter learning  
+  nextCardId = getNextCardToStudyWithSettings(cardStates, session, DEFAULT_SRS_SETTINGS);
+  console.log(`2. Next card: ${nextCardId} (should be next new card)`);
+  
+  if (nextCardId) {
+    const card = cardStates[nextCardId];
+    const newCard = scheduleSRSCardWithSettings(card, 2, DEFAULT_SRS_SETTINGS); // Good
+    cardStates[nextCardId] = newCard;
+    session = updateStudySession(session, card, 2, newCard, cardStates, DEFAULT_SRS_SETTINGS);
+    console.log(`   Card ${nextCardId} state: ${newCard.state}, queue: [${session.learningCardsInQueue.join(', ')}]`);
+  }
+
+  // Step 3: Should now get a learning card (first in queue)
+  nextCardId = getNextCardToStudyWithSettings(cardStates, session, DEFAULT_SRS_SETTINGS);
+  console.log(`3. Next card: ${nextCardId} (should be first learning card)`);
+  
+  if (nextCardId) {
+    const card = cardStates[nextCardId];
+    // Rate "Again" to test queue reordering
+    const newCard = scheduleSRSCardWithSettings(card, 0, DEFAULT_SRS_SETTINGS); // Again
+    cardStates[nextCardId] = newCard;
+    session = updateStudySession(session, card, 0, newCard, cardStates, DEFAULT_SRS_SETTINGS);
+    console.log(`   Card ${nextCardId} after 'Again', queue: [${session.learningCardsInQueue.join(', ')}]`);
+    console.log(`   Card that got 'Again' should be moved to back of queue`);
+  }
+
+  // Test for infinite loop prevention - try to complete session
+  console.log("\n=== TESTING INFINITE LOOP PREVENTION ===");
+  let iterations = 0;
+  const maxIterations = 50;
+  
+  while (iterations < maxIterations) {
+    const nextId = getNextCardToStudyWithSettings(cardStates, session, DEFAULT_SRS_SETTINGS);
+    if (!nextId) {
+      console.log(`✅ Session completed after ${iterations} study actions - no infinite loop`);
+      break;
+    }
+    
+    // Rate all remaining cards as "Good" to progress them
+    const cardToStudy = cardStates[nextId];
+    const updatedCard = scheduleSRSCardWithSettings(cardToStudy, 2, DEFAULT_SRS_SETTINGS); // Good
+    cardStates[nextId] = updatedCard;
+    session = updateStudySession(session, cardToStudy, 2, updatedCard, cardStates, DEFAULT_SRS_SETTINGS);
+    
+    iterations++;
+    
+    if (iterations >= maxIterations) {
+      console.log(`❌ INFINITE LOOP DETECTED - reached ${maxIterations} iterations`);
+      console.log(`   Final queue: [${session.learningCardsInQueue.join(', ')}]`);
+      testsPassed = false;
+      break;
+    }
+  }
+  
+  console.log(`${testsPassed ? '✅ FIFO and infinite loop tests PASSED' : '❌ FIFO or infinite loop tests FAILED'}`);
+  return testsPassed;
+}
+
 // Uncomment to run test in console
 // testAnkiLikeBehavior();
 // testAnkiAlgorithmCompatibility();
 // testMinimumEaseBoundary();
+// testLearningQueueBehavior();
