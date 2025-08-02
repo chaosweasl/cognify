@@ -11,14 +11,14 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, flashcards")
+    .select("id, name, description, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error || !data) return NextResponse.json([]);
   return NextResponse.json(
     data.map((project) => ({
       ...project,
-      flashcards: Array.isArray(project.flashcards) ? project.flashcards : [],
+      flashcards: [], // Flashcards are now loaded separately
     }))
   );
 }
