@@ -196,25 +196,19 @@ export function getNextCardToStudyWithSettings(
     learningQueueSize: session.learningCardsInQueue.length,
   });
 
-  // 1. First priority: Learning/Relearning cards (ALWAYS available within session)
-  // CRITICAL FIX: Learning cards are immediately available after rating, ignore due times within session
-  // This prevents infinite loops where cards disappear/reappear based on due time
+  // 1. First priority: Learning/Relearning cards (only available when due)
+  // FIX: Only show learning cards when due <= now, regardless of queue membership
   const learningCards = allCards.filter((card) => {
     const isLearning = card.state === "learning" || card.state === "relearning";
     if (!isLearning || card.isSuspended) return false;
-
-    const inQueue = session.learningCardsInQueue.includes(card.id);
-    return inQueue || card.due <= now;
+    return card.due <= now;
   });
 
   if (learningCards.length > 0) {
-    // ANKI BEHAVIOR: Use the learning queue to maintain proper FIFO order
-    // Cards in the learning queue should be prioritized in queue order, not by due time
-
-    // First, try to find a card that's in the learning queue (maintain FIFO order)
+    // Prioritize cards in the learning queue (FIFO), but only if due
     for (const queuedCardId of session.learningCardsInQueue) {
       const queuedCard = learningCards.find((card) => card.id === queuedCardId);
-      if (queuedCard && queuedCard.due <= now) {
+      if (queuedCard) {
         console.log(
           `📚 Found due learning card in queue:`,
           queuedCard.id,
@@ -225,7 +219,6 @@ export function getNextCardToStudyWithSettings(
     }
 
     // If no queued cards found, take the earliest due learning card
-    // This handles cards that are learning but not yet in the session queue
     learningCards.sort((a, b) => a.due - b.due);
     const nextCard = learningCards[0];
     console.log(
