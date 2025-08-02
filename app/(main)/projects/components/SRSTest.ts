@@ -10,7 +10,6 @@ import {
   getNextCardToStudyWithSettings,
   initStudySession,
   updateStudySession,
-  StudySession,
 } from "./SRSSession";
 
 export function testAnkiLikeBehavior() {

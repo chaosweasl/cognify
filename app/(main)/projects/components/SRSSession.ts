@@ -1,7 +1,7 @@
 // SRS Session Management and Statistics
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
-import { SRSCardState, SRSRating, CardState } from "./SRSScheduler";
+import { SRSCardState, SRSRating } from "./SRSScheduler";
 
 // --- STUDY SESSION TYPES ---
 export type StudySession = {

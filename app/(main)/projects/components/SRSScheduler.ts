@@ -59,7 +59,7 @@ const MINIMUM_INTERVAL = 1;
 const DEBUG_LOGGING = false; // Set to true for development debugging
 
 // Helper function for conditional debug logging
-function debugLog(message: string, ...args: any[]) {
+function debugLog(message: string, ...args: unknown[]) {
   if (DEBUG_LOGGING) {
     console.log(message, ...args);
   }

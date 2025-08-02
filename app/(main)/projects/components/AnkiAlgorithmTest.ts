@@ -2,7 +2,6 @@
 // This test verifies that our implementation matches Anki's exact behavior
 
 import {
-  initSRSStateWithSettings,
   scheduleSRSCardWithSettings,
   SRSRating,
   SRSCardState,
@@ -111,7 +110,7 @@ function runSingleTest(testCase: TestCase): boolean {
   // Create test card with specified starting state
   const startingCard: SRSCardState = {
     id: "test-card",
-    state: testCase.startingCard.state as any || "new",
+    state: (testCase.startingCard.state as SRSCardState["state"]) || "new",
     interval: testCase.startingCard.interval || 0,
     ease: testCase.startingCard.ease || DEFAULT_SRS_SETTINGS.STARTING_EASE,
     due: Date.now(),
