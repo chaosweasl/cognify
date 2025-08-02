@@ -1,10 +1,7 @@
 // Utility to get SRS statistics for projects
 import { createClient } from "@/utils/supabase/client";
-import {
-  getSessionAwareStudyStats,
-  initStudySession,
-  DEFAULT_SRS_SETTINGS,
-} from "./SRSScheduler";
+import { DEFAULT_SRS_SETTINGS } from "./SRSScheduler";
+import { getSessionAwareStudyStats, initStudySession } from "./SRSSession";
 import { loadSRSStates } from "./SRSDBUtils";
 
 export interface ProjectSRSInfo {

@@ -9,14 +9,16 @@ import { saveSRSStates } from "./SRSDBUtils";
 import {
   initSRSStateWithSettings,
   scheduleSRSCardWithSettings,
+  SRSRating,
+  SRSCardState,
+} from "./SRSScheduler";
+import {
   getNextCardToStudyWithSettings,
   initStudySession,
   updateStudySession,
   getSessionAwareStudyStats,
-  SRSRating,
-  SRSCardState,
   StudySession,
-} from "./SRSScheduler";
+} from "./SRSSession";
 
 // Import sub-components
 import { StudyHeader } from "./StudyHeader";
