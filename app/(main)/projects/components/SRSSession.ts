@@ -7,6 +7,36 @@ import { SRSCardState, SRSRating } from "./SRSScheduler";
 const UNDO_HISTORY_LIMIT = 20; // Maximum number of reviews to keep for undo
 const ESTIMATED_SECONDS_PER_CARD = 30; // Rough estimate for time tracking
 
+// Performance optimization: Cache for noteId to cards mapping
+let noteIdToCardsCache: Map<string, string[]> | null = null;
+
+/**
+ * Build a performance-optimized map from noteId to card IDs
+ * This avoids O(n) iteration for each bury operation on large decks
+ */
+function buildNoteIdToCardsMap(allCardStates: Record<string, SRSCardState>): Map<string, string[]> {
+  const noteMap = new Map<string, string[]>();
+  
+  Object.values(allCardStates).forEach(card => {
+    if (card.noteId) {
+      if (!noteMap.has(card.noteId)) {
+        noteMap.set(card.noteId, []);
+      }
+      noteMap.get(card.noteId)!.push(card.id);
+    }
+  });
+  
+  return noteMap;
+}
+
+/**
+ * Invalidate the noteId to cards cache when card states change
+ * Call this when cards are added, removed, or their noteId changes
+ */
+export function invalidateNoteIdCache(): void {
+  noteIdToCardsCache = null;
+}
+
 // --- STUDY SESSION TYPES ---
 export type StudySession = {
   newCardsStudied: number;
@@ -181,6 +211,7 @@ export function getNextCardToStudyWithSettings(
 
 /**
  * MVP: Handle sibling burying after reviewing a card
+ * Optimized for large decks using noteId to cards mapping
  */
 export function burySiblingsAfterReview(
   session: StudySession,
@@ -196,12 +227,20 @@ export function burySiblingsAfterReview(
   // Clone the set before mutation to maintain immutability
   updatedSession.buriedCards = new Set(updatedSession.buriedCards);
 
-  // Find all cards from the same note and bury them
-  Object.values(allCardStates).forEach((card) => {
-    if (card.noteId === reviewedCard.noteId && card.id !== reviewedCard.id) {
-      updatedSession.buriedCards.add(card.id);
-    }
-  });
+  // Performance optimization: Use noteId mapping instead of iterating all cards
+  // This reduces complexity from O(n) to O(siblings) for large decks
+  if (!noteIdToCardsCache) {
+    noteIdToCardsCache = buildNoteIdToCardsMap(allCardStates);
+  }
+
+  const siblingCardIds = noteIdToCardsCache.get(reviewedCard.noteId);
+  if (siblingCardIds) {
+    siblingCardIds.forEach(cardId => {
+      if (cardId !== reviewedCard.id) {
+        updatedSession.buriedCards.add(cardId);
+      }
+    });
+  }
 
   return updatedSession;
 }
@@ -216,6 +255,11 @@ export function burySiblingsAfterReview(
  * - Maintains FIFO learning queue with proper "Again" handling
  * - Clones buriedCards Set before mutation for immutability
  * - Undo history limited to last 20 actions
+ * 
+ * Memory Usage Warning:
+ * - Uses structuredClone() for safe undo history, which may increase memory usage with large card objects
+ * - Consider monitoring memory usage if cards contain extensive data (images, audio, large text)
+ * - Undo history is automatically limited to prevent excessive memory consumption
  */
 export function updateStudySession(
   session: StudySession,

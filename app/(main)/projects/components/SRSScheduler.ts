@@ -14,6 +14,97 @@
 import { SRSSettings } from "@/hooks/useSettings";
 import { addMinutes, addDays } from "./SRSSession";
 
+// --- SETTINGS VALIDATION ---
+/**
+ * Validates and sanitizes SRS settings to prevent crashes from undefined or malformed values
+ */
+function validateSettings(settings: SRSSettings): SRSSettings {
+  // Create a validated copy with fallbacks
+  const validated: SRSSettings = { ...settings };
+
+  // Validate LEARNING_STEPS
+  if (!Array.isArray(validated.LEARNING_STEPS) || validated.LEARNING_STEPS.length === 0) {
+    console.warn("⚠️ Invalid LEARNING_STEPS, using default [1, 10]");
+    validated.LEARNING_STEPS = [1, 10];
+  }
+
+  // Validate RELEARNING_STEPS
+  if (!Array.isArray(validated.RELEARNING_STEPS) || validated.RELEARNING_STEPS.length === 0) {
+    console.warn("⚠️ Invalid RELEARNING_STEPS, using default [10, 1440]");
+    validated.RELEARNING_STEPS = [10, 1440];
+  }
+
+  // Validate LAPSE_EASE_PENALTY
+  if (typeof validated.LAPSE_EASE_PENALTY !== 'number' || isNaN(validated.LAPSE_EASE_PENALTY)) {
+    console.warn("⚠️ Invalid LAPSE_EASE_PENALTY, using default 0.2");
+    validated.LAPSE_EASE_PENALTY = 0.2;
+  }
+
+  // Validate other critical numeric settings
+  if (typeof validated.STARTING_EASE !== 'number' || isNaN(validated.STARTING_EASE)) {
+    console.warn("⚠️ Invalid STARTING_EASE, using default 2.5");
+    validated.STARTING_EASE = 2.5;
+  }
+
+  if (typeof validated.MINIMUM_EASE !== 'number' || isNaN(validated.MINIMUM_EASE)) {
+    console.warn("⚠️ Invalid MINIMUM_EASE, using default 1.3");
+    validated.MINIMUM_EASE = 1.3;
+  }
+
+  if (typeof validated.GRADUATING_INTERVAL !== 'number' || isNaN(validated.GRADUATING_INTERVAL)) {
+    console.warn("⚠️ Invalid GRADUATING_INTERVAL, using default 1");
+    validated.GRADUATING_INTERVAL = 1;
+  }
+
+  return validated;
+}
+
+/**
+ * Safely accesses learning steps with bounds checking
+ */
+function getLearningStep(steps: number[], stepIndex: number): number {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    console.warn("⚠️ Empty learning steps, using fallback 1 minute");
+    return 1;
+  }
+
+  if (stepIndex < 0 || stepIndex >= steps.length) {
+    console.warn(`⚠️ Learning step index ${stepIndex} out of bounds, using last step`);
+    return steps[steps.length - 1];
+  }
+
+  const step = steps[stepIndex];
+  if (typeof step !== 'number' || isNaN(step) || step <= 0) {
+    console.warn(`⚠️ Invalid learning step at index ${stepIndex}, using fallback 1 minute`);
+    return 1;
+  }
+
+  return step;
+}
+
+/**
+ * Safely accesses relearning steps with bounds checking
+ */
+function getRelearningStep(steps: number[], stepIndex: number): number {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    console.warn("⚠️ Empty relearning steps, using fallback 10 minutes");
+    return 10;
+  }
+
+  if (stepIndex < 0 || stepIndex >= steps.length) {
+    console.warn(`⚠️ Relearning step index ${stepIndex} out of bounds, using last step`);
+    return steps[steps.length - 1];
+  }
+
+  const step = steps[stepIndex];
+  if (typeof step !== 'number' || isNaN(step) || step <= 0) {
+    console.warn(`⚠️ Invalid relearning step at index ${stepIndex}, using fallback 10 minutes`);
+    return 10;
+  }
+
+  return step;
+}
+
 // --- DEFAULT SRS SETTINGS (fallback when user settings aren't available) ---
 export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   // Daily card limits
@@ -102,11 +193,13 @@ function calculateAnkiEase(
   quality: SRSRating,
   settings: SRSSettings
 ): number {
+  // Validate settings to prevent crashes
+  const validatedSettings = validateSettings(settings);
   let newEase = oldEase;
 
   switch (quality) {
     case 0: // Again - use LAPSE_EASE_PENALTY (subtractive, as per Anki default)
-      newEase = oldEase - settings.LAPSE_EASE_PENALTY;
+      newEase = oldEase - validatedSettings.LAPSE_EASE_PENALTY;
       break;
     case 1: // Hard - no ease change in true Anki (only affects interval)
       newEase = oldEase; // No change
@@ -175,8 +268,9 @@ export function scheduleSRSCardWithSettings(
     return card;
   }
 
-  // Use settings-aware scheduling
-  return scheduleSRSCardInternal(card, rating, settings, now);
+  // Validate settings first to prevent crashes from malformed configuration
+  const validatedSettings = validateSettings(settings);
+  return scheduleSRSCardInternal(card, rating, validatedSettings, now);
 }
 
 /**
@@ -301,7 +395,7 @@ function scheduleNewCard(
   } else {
     // Again (0), Hard (1), Good (2) - all enter learning queue at step 0
     // Only Easy (3) skips learning - this matches exact Anki behavior
-    const stepInterval = settings.LEARNING_STEPS[0]; // All non-Easy ratings start at step 0
+    const stepInterval = getLearningStep(settings.LEARNING_STEPS, 0); // Safe access to step 0
     
     return {
       ...card,
@@ -324,19 +418,20 @@ function scheduleLearningCard(
 ): SRSCardState {
   if (rating === 0) {
     // Again - restart learning from beginning
+    const stepInterval = getLearningStep(settings.LEARNING_STEPS, 0);
     return {
       ...card,
       learningStep: 0,
-      due: addMinutes(now, settings.LEARNING_STEPS[0]),
-      interval: settings.LEARNING_STEPS[0],
+      due: addMinutes(now, stepInterval),
+      interval: stepInterval,
     };
   } else if (rating === 1) {
     // Hard - repeat current step
     const currentStep = Math.min(
       card.learningStep,
-      settings.LEARNING_STEPS.length - 1
+      Math.max(0, settings.LEARNING_STEPS.length - 1)
     );
-    const stepInterval = settings.LEARNING_STEPS[currentStep];
+    const stepInterval = getLearningStep(settings.LEARNING_STEPS, currentStep);
     return {
       ...card,
       due: addMinutes(now, stepInterval),
@@ -369,7 +464,7 @@ function scheduleLearningCard(
       };
     } else {
       // Move to next learning step
-      const stepInterval = settings.LEARNING_STEPS[nextStep];
+      const stepInterval = getLearningStep(settings.LEARNING_STEPS, nextStep);
       return {
         ...card,
         learningStep: nextStep,
@@ -420,14 +515,15 @@ function scheduleReviewCard(
     const isLeech = newLapses >= settings.LEECH_THRESHOLD;
     const shouldSuspend = isLeech && settings.LEECH_ACTION === "suspend";
 
+    const firstRelearningStep = getRelearningStep(settings.RELEARNING_STEPS, 0);
     return {
       ...card,
       state: "relearning",
       lapses: newLapses,
       ease: newEase,
       learningStep: 0,
-      due: addMinutes(now, settings.RELEARNING_STEPS[0]),
-      interval: settings.RELEARNING_STEPS[0],
+      due: addMinutes(now, firstRelearningStep),
+      interval: firstRelearningStep,
       isLeech,
       isSuspended: shouldSuspend,
     };
@@ -502,19 +598,20 @@ function scheduleRelearningCard(
 ): SRSCardState {
   if (rating === 0) {
     // Again - restart relearning from beginning
+    const firstRelearningStep = getRelearningStep(settings.RELEARNING_STEPS, 0);
     return {
       ...card,
       learningStep: 0,
-      due: addMinutes(now, settings.RELEARNING_STEPS[0]),
-      interval: settings.RELEARNING_STEPS[0],
+      due: addMinutes(now, firstRelearningStep),
+      interval: firstRelearningStep,
     };
   } else if (rating === 1) {
     // Hard - repeat current relearning step
     const currentStep = Math.min(
       card.learningStep,
-      settings.RELEARNING_STEPS.length - 1
+      Math.max(0, settings.RELEARNING_STEPS.length - 1)
     );
-    const stepInterval = settings.RELEARNING_STEPS[currentStep];
+    const stepInterval = getRelearningStep(settings.RELEARNING_STEPS, currentStep);
     return {
       ...card,
       due: addMinutes(now, stepInterval),
@@ -552,7 +649,7 @@ function scheduleRelearningCard(
       };
     } else {
       // Move to next relearning step
-      const stepInterval = settings.RELEARNING_STEPS[nextStep];
+      const stepInterval = getRelearningStep(settings.RELEARNING_STEPS, nextStep);
       return {
         ...card,
         learningStep: nextStep,
