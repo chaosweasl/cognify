@@ -24,7 +24,7 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   EASY_BONUS: 1.3, // Multiplier for "Easy" button
 
   // SM-2 interval modifiers (Anki-style)
-  HARD_INTERVAL_FACTOR: 0.8, // Multiplier for "Hard" intervals (reduced from 1.2)
+  HARD_INTERVAL_FACTOR: 1.2, // Multiplier for "Hard" intervals (Anki default)
   EASY_INTERVAL_FACTOR: 1.3, // Multiplier for "Easy" intervals
 
   // Lapse settings
@@ -282,23 +282,16 @@ function scheduleLearningCard(
     const nextStep = card.learningStep + 1;
 
     if (nextStep >= settings.LEARNING_STEPS.length) {
-      // Graduate to review queue using last learning step as base interval
-      const lastStepMinutes =
-        settings.LEARNING_STEPS[settings.LEARNING_STEPS.length - 1];
-      const graduationInterval =
-        lastStepMinutes >= 1440
-          ? Math.round(lastStepMinutes / 1440)
-          : settings.GRADUATING_INTERVAL;
-
+      // Graduate to review queue using GRADUATING_INTERVAL consistently (Anki behavior)
       console.log(
-        `🎓 Learning card ${card.id} graduating to review, scheduled for ${graduationInterval} days`
+        `🎓 Learning card ${card.id} graduating to review, scheduled for ${settings.GRADUATING_INTERVAL} days`
       );
       return {
         ...card,
         state: "review",
         repetitions: 1, // First repetition upon graduation
-        interval: graduationInterval,
-        due: addDays(now, graduationInterval),
+        interval: settings.GRADUATING_INTERVAL,
+        due: addDays(now, settings.GRADUATING_INTERVAL),
         learningStep: 0,
       };
     } else {
@@ -366,11 +359,8 @@ function scheduleReviewCard(
   let newInterval: number;
 
   if (rating === 1) {
-    // Hard - Anki formula: interval = prev_interval * 1.2 (but capped at prev * ease * 0.5)
-    newInterval = Math.round(card.interval * 1.2);
-    // Cap at what good would give * 0.5 (Anki behavior)
-    const goodInterval = Math.round(card.interval * newEase);
-    newInterval = Math.min(newInterval, Math.round(goodInterval * 0.5));
+    // Hard - Anki formula: interval = prev_interval * hard_factor (typically 1.2)
+    newInterval = Math.round(card.interval * settings.HARD_INTERVAL_FACTOR);
   } else if (rating === 2) {
     // Good - normal progression using ease factor
     newInterval = Math.round(card.interval * newEase);
@@ -583,6 +573,31 @@ export function initStudySession(): StudySession {
 }
 
 /**
+ * MVP: Handle sibling burying after reviewing a card
+ */
+export function burySiblingsAfterReview(
+  session: StudySession,
+  reviewedCard: SRSCardState,
+  allCardStates: Record<string, SRSCardState>,
+  settings: SRSSettings
+): StudySession {
+  if (!settings.BURY_SIBLINGS || !reviewedCard.noteId) {
+    return session;
+  }
+
+  const updatedSession = { ...session };
+
+  // Find all cards from the same note and bury them
+  Object.values(allCardStates).forEach((card) => {
+    if (card.noteId === reviewedCard.noteId && card.id !== reviewedCard.id) {
+      updatedSession.buriedCards.add(card.id);
+    }
+  });
+
+  return updatedSession;
+}
+
+/**
  * Update study session after rating a card
  */
 export function updateStudySession(
@@ -590,6 +605,7 @@ export function updateStudySession(
   card: SRSCardState,
   rating: SRSRating,
   newCardState: SRSCardState,
+  allCardStates: Record<string, SRSCardState>,
   settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): StudySession {
   const updatedSession = { ...session };
@@ -631,10 +647,14 @@ export function updateStudySession(
       updatedSession.learningCardsInQueue.filter((id) => id !== card.id);
   }
 
-  // Sibling burying logic (MVP: simple noteId-based)
+  // Sibling burying logic (MVP: noteId-based)
   if (settings.BURY_SIBLINGS && card.noteId) {
-    // This would need to be implemented based on actual note/card relationships
-    // For MVP, we just mark the current card as processed
+    // Bury all other cards from the same note until next day
+    Object.values(allCardStates).forEach((otherCard) => {
+      if (otherCard.noteId === card.noteId && otherCard.id !== card.id) {
+        updatedSession.buriedCards.add(otherCard.id);
+      }
+    });
   }
 
   return updatedSession;

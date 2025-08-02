@@ -188,7 +188,14 @@ export default function StudyFlashcards({
 
       // Update study session
       setStudySession((prev) =>
-        updateStudySession(prev, currentCardState, rating, newCardState)
+        updateStudySession(
+          prev,
+          currentCardState,
+          rating,
+          newCardState,
+          srsState,
+          srsSettings
+        )
       );
 
       setFlipped(false);
