@@ -75,10 +75,10 @@ export function getNextCardToStudyWithSettings(
   if (learningCards.length > 0) {
     // ANKI BEHAVIOR: Use the learning queue to maintain proper FIFO order
     // Cards in the learning queue should be prioritized in queue order, not by due time
-    
+
     // First, try to find a card that's in the learning queue (maintain FIFO order)
     for (const queuedCardId of session.learningCardsInQueue) {
-      const queuedCard = learningCards.find(card => card.id === queuedCardId);
+      const queuedCard = learningCards.find((card) => card.id === queuedCardId);
       if (queuedCard) {
         console.log(
           `📚 Found queued learning card:`,
@@ -88,7 +88,7 @@ export function getNextCardToStudyWithSettings(
         return queuedCard.id;
       }
     }
-    
+
     // If no queued cards found, take the earliest due learning card
     // This handles cards that are learning but not yet in the session queue
     learningCards.sort((a, b) => a.due - b.due);
@@ -236,7 +236,7 @@ export function updateStudySession(
     newCardState.state === "relearning"
   ) {
     // Card is entering or staying in learning queue
-    
+
     if (card.state === "new") {
       // New card entering learning - add to END of queue
       if (!updatedSession.learningCardsInQueue.includes(card.id)) {
@@ -247,9 +247,8 @@ export function updateStudySession(
       rating === 0
     ) {
       // "Again" on learning card - move to BACK of queue (FIFO behavior)
-      updatedSession.learningCardsInQueue = updatedSession.learningCardsInQueue.filter(
-        (id) => id !== card.id
-      );
+      updatedSession.learningCardsInQueue =
+        updatedSession.learningCardsInQueue.filter((id) => id !== card.id);
       updatedSession.learningCardsInQueue.push(card.id); // Add to back
     } else if (!updatedSession.learningCardsInQueue.includes(card.id)) {
       // Learning card not in queue yet - add to end
