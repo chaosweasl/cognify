@@ -4,28 +4,23 @@ import { useProjectsStore } from "../hooks/useProjects";
 
 export function ProjectList() {
   const { projects, deleteProjectById } = useProjectsStore();
-  console.log("[ProjectList] Rendering ProjectList with projects:", projects);
+  // Projects now include flashcardCount from API.
   return (
     <>
-      {projects.map((project) => {
-        console.log(
-          "[ProjectList] Rendering ProjectCard for project:",
-          project
-        );
-        return (
-          <ProjectCard
-            key={project.id}
-            project={{
-              ...project,
-              formattedCreatedAt: project.formattedCreatedAt ?? "",
-            }}
-            onDelete={async (id: string) => {
-              deleteProjectById(id);
-              return Promise.resolve();
-            }}
-          />
-        );
-      })}
+      {projects.map((project) => (
+        <ProjectCard
+          key={project.id}
+          project={{
+            ...project,
+            formattedCreatedAt: project.formattedCreatedAt ?? "",
+          }}
+          flashcardCount={project.flashcardCount ?? 0}
+          onDelete={async (id: string) => {
+            deleteProjectById(id);
+            return Promise.resolve();
+          }}
+        />
+      ))}
     </>
   );
 }

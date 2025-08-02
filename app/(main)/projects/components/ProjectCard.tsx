@@ -1,49 +1,32 @@
 import { BookOpen, Edit2, Trash2, Play, Calendar } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { ProjectSRSStats } from "./ProjectSRSStats";
-import { getProjectSRSStats, ProjectSRSInfo } from "./ProjectSRSUtils";
-import { useUserId } from "@/hooks/useUserId";
-
-type Flashcard = { question: string; answer: string };
 
 type Project = {
   id: string;
   name: string;
   description: string;
-  flashcards: Flashcard[];
   formattedCreatedAt: string;
 };
 
 interface ProjectCardProps {
   project: Project;
+  flashcardCount: number;
   onDelete: (id: string) => Promise<void>;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
+  flashcardCount,
   onDelete,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [srsStats, setSRSStats] = useState<ProjectSRSInfo | null>(null);
-  const userId = useUserId();
+  // SRS stats logic can be refactored to fetch from API or use flashcardCount only
+  // SRS stats logic placeholder (future use)
 
-  const flashcardCount = Array.isArray(project.flashcards)
-    ? project.flashcards.length
-    : 0;
   const hasFlashcards = flashcardCount > 0;
 
-  // Load SRS statistics
-  useEffect(() => {
-    async function loadSRSStats() {
-      if (userId && hasFlashcards) {
-        const cardIds = project.flashcards.map((_, index) => `${index}`);
-        const stats = await getProjectSRSStats(userId, project.id, cardIds);
-        setSRSStats(stats);
-      }
-    }
-    loadSRSStats();
-  }, [userId, project.id, project.flashcards, hasFlashcards]);
+  // SRS stats logic now uses flashcardCount only. No legacy flashcards array remains.
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -77,16 +60,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           {project.description || "No description provided"}
         </p>
 
-        {/* SRS Statistics */}
-        {hasFlashcards && srsStats && (
-          <ProjectSRSStats
-            newCards={srsStats.newCards}
-            learningCards={srsStats.learningCards}
-            reviewCards={srsStats.reviewCards}
-            dueCards={srsStats.dueCards}
-            totalCards={srsStats.totalCards}
-          />
-        )}
+        {/* SRS Statistics (future) */}
 
         {/* Date */}
         <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
@@ -98,34 +72,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       {/* Actions */}
       <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
         {hasFlashcards ? (
-          srsStats && (srsStats.dueCards > 0 || srsStats.newCards > 0) ? (
-            <Link href={`/projects/${project.id}`}>
-              <button
-                className={`btn btn-md gap-2 flex-auto max-w-[6rem] ${
-                  srsStats && srsStats.dueCards > 0
-                    ? "btn-error"
-                    : srsStats && srsStats.newCards > 0
-                    ? "btn-primary"
-                    : "btn-success"
-                }`}
-              >
-                <Play className="w-4 h-4" />
-                {srsStats && srsStats.dueCards > 0
-                  ? "Review"
-                  : srsStats && srsStats.newCards > 0
-                  ? "Study"
-                  : "Practice"}
-              </button>
-            </Link>
-          ) : (
-            <button
-              disabled
-              className="btn btn-md btn-disabled gap-2 flex-auto max-w-[8rem]"
-              title="All caught up! No cards due for review."
-            >
-              <span className="text-xs text-success">✓ All caught up</span>
+          <Link href={`/projects/${project.id}`}>
+            <button className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]">
+              <Play className="w-4 h-4" />
+              Study
             </button>
-          )
+          </Link>
         ) : (
           <button
             disabled

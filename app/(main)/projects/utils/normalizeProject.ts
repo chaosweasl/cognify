@@ -9,6 +9,7 @@ export type RawProject = {
   name: string;
   description: string;
   flashcards?: string | Omit<Flashcard, "id">[];
+  flashcardCount?: number;
   created_at: string;
   formattedCreatedAt?: string;
 };
@@ -18,6 +19,7 @@ export type Project = {
   name: string;
   description: string;
   flashcards: Flashcard[];
+  flashcardCount?: number;
   created_at: string;
   formattedCreatedAt?: string;
 };
@@ -45,5 +47,6 @@ export function normalizeProject(raw: RawProject | Project): Project {
   return {
     ...raw,
     flashcards: parseFlashcards((raw as RawProject).flashcards),
+    flashcardCount: (raw as RawProject).flashcardCount ?? 0,
   };
 }

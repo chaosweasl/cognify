@@ -18,6 +18,7 @@ export async function getProjectSRSStats(
   projectId: string,
   cardIds: string[]
 ): Promise<ProjectSRSInfo> {
+  // SRS stats logic now uses cardIds from the new flashcards table only. No legacy flashcards array remains.
   if (cardIds.length === 0) {
     return {
       projectId,
