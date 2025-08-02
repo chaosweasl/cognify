@@ -409,10 +409,22 @@ function scheduleRelearningCard(
 
     if (nextStep >= settings.RELEARNING_STEPS.length) {
       // Graduate back to review queue with recovery factor applied (Anki-style)
-      const newInterval = Math.max(
-        MINIMUM_INTERVAL,
-        Math.round(card.interval * settings.LAPSE_RECOVERY_FACTOR)
-      );
+      // CRITICAL FIX: The current card.interval is a relearning step (minutes), not the original review interval
+      // We need to calculate a reasonable recovery interval based on the card's history
+      let recoveryInterval: number;
+      
+      if (card.interval < 60) { // If interval is less than 60 minutes, it's definitely a step interval
+        // Calculate a reasonable interval based on repetitions and ease
+        // This approximates what the interval would have been before the lapse
+        const baseInterval = Math.max(1, card.repetitions * 2); // Rough approximation
+        recoveryInterval = Math.round(baseInterval * settings.LAPSE_RECOVERY_FACTOR);
+      } else {
+        // Use the current interval if it seems reasonable (days)
+        recoveryInterval = Math.round(card.interval * settings.LAPSE_RECOVERY_FACTOR);
+      }
+      
+      const newInterval = Math.max(MINIMUM_INTERVAL, recoveryInterval);
+      
       return {
         ...card,
         state: "review",

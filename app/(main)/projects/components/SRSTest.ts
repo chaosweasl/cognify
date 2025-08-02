@@ -352,8 +352,104 @@ export function testLearningQueueBehavior(): boolean {
   return testsPassed;
 }
 
+// Test edge cases and boundary conditions  
+export function testEdgeCasesAndBoundaries(): boolean {
+  console.log("\n=== TESTING EDGE CASES AND BOUNDARY CONDITIONS ===");
+  
+  let allTestsPassed = true;
+  
+  // Test 1: Leech detection and suspension
+  console.log("1. Testing leech detection...");
+  const leechCard: SRSCardState = {
+    id: "leech-test",
+    state: "review",
+    interval: 5,
+    ease: 1.40,
+    due: Date.now(),
+    lastReviewed: 0,
+    repetitions: 5,
+    lapses: 7, // Just below threshold
+    learningStep: 0,
+    isLeech: false,
+    isSuspended: false,
+  };
+  
+  const leechResult = scheduleSRSCardWithSettings(leechCard, 0, DEFAULT_SRS_SETTINGS); // Again
+  const shouldBeLeech = leechResult.lapses >= DEFAULT_SRS_SETTINGS.LEECH_THRESHOLD;
+  console.log(`   Leech card after lapse: lapses=${leechResult.lapses}, isLeech=${leechResult.isLeech}, suspended=${leechResult.isSuspended}`);
+  console.log(`   ${shouldBeLeech && leechResult.isLeech ? '✅ PASS' : '❌ FAIL'} - Leech detection`);
+  if (!(shouldBeLeech && leechResult.isLeech)) allTestsPassed = false;
+  
+  // Test 2: Maximum interval boundary
+  console.log("\n2. Testing maximum interval boundary...");
+  const highIntervalCard: SRSCardState = {
+    id: "high-interval-test",
+    state: "review", 
+    interval: 35000, // Near max
+    ease: 3.0,
+    due: Date.now(),
+    lastReviewed: 0,
+    repetitions: 20,
+    lapses: 0,
+    learningStep: 0,
+    isLeech: false,
+    isSuspended: false,
+  };
+  
+  const maxResult = scheduleSRSCardWithSettings(highIntervalCard, 3, DEFAULT_SRS_SETTINGS); // Easy
+  const withinMaxInterval = maxResult.interval <= DEFAULT_SRS_SETTINGS.MAX_INTERVAL;
+  console.log(`   High interval card after Easy: ${highIntervalCard.interval} -> ${maxResult.interval}`);
+  console.log(`   Max allowed: ${DEFAULT_SRS_SETTINGS.MAX_INTERVAL}`);
+  console.log(`   ${withinMaxInterval ? '✅ PASS' : '❌ FAIL'} - Maximum interval boundary`);
+  if (!withinMaxInterval) allTestsPassed = false;
+  
+  // Test 3: Relearning recovery factor
+  console.log("\n3. Testing relearning recovery factor...");
+  const relearnCard: SRSCardState = {
+    id: "relearn-test",
+    state: "relearning",
+    interval: 10, // Minutes (relearning step)
+    ease: 2.0,
+    due: Date.now(),
+    lastReviewed: 0,
+    repetitions: 3,
+    lapses: 1,
+    learningStep: 1, // Final relearning step
+    isLeech: false,
+    isSuspended: false,
+  };
+  
+  const recoveryResult = scheduleSRSCardWithSettings(relearnCard, 2, DEFAULT_SRS_SETTINGS); // Good (graduate)
+  const hasReasonableInterval = recoveryResult.interval >= 1 && recoveryResult.interval <= 5;
+  console.log(`   Relearning card graduation: state=${recoveryResult.state}, interval=${recoveryResult.interval} days`);
+  console.log(`   ${hasReasonableInterval ? '✅ PASS' : '❌ FAIL'} - Recovery interval reasonable`);
+  if (!hasReasonableInterval) allTestsPassed = false;
+  
+  // Test 4: Daily limits enforcement
+  console.log("\n4. Testing daily limits...");
+  const session = initStudySession();
+  session.newCardsStudied = DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY; // At limit
+  session.reviewsCompleted = DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY; // At limit
+  
+  const limitTestCards: Record<string, SRSCardState> = {
+    "new1": { id: "new1", state: "new", interval: 0, ease: 2.5, due: Date.now(), lastReviewed: 0, repetitions: 0, lapses: 0, learningStep: 0, isLeech: false, isSuspended: false },
+    "review1": { id: "review1", state: "review", interval: 5, ease: 2.5, due: Date.now(), lastReviewed: 0, repetitions: 3, lapses: 0, learningStep: 0, isLeech: false, isSuspended: false },
+    "learning1": { id: "learning1", state: "learning", interval: 10, ease: 2.5, due: Date.now(), lastReviewed: 0, repetitions: 0, lapses: 0, learningStep: 1, isLeech: false, isSuspended: false }
+  };
+  
+  const nextCardWithLimits = getNextCardToStudyWithSettings(limitTestCards, session, DEFAULT_SRS_SETTINGS);
+  const shouldBeLearningCard = nextCardWithLimits === "learning1"; // Only learning cards should be available
+  console.log(`   Next card with limits reached: ${nextCardWithLimits} (should be learning card)`);
+  console.log(`   ${shouldBeLearningCard ? '✅ PASS' : '❌ FAIL'} - Daily limits enforcement`);
+  if (!shouldBeLearningCard) allTestsPassed = false;
+  
+  console.log(`\n${allTestsPassed ? '✅ ALL EDGE CASE TESTS PASSED' : '❌ SOME EDGE CASE TESTS FAILED'}`);
+  return allTestsPassed;
+}
+
 // Uncomment to run test in console
 // testAnkiLikeBehavior();
 // testAnkiAlgorithmCompatibility();
 // testMinimumEaseBoundary();
 // testLearningQueueBehavior();
+// testEdgeCasesAndBoundaries();
