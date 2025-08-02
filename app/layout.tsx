@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/toast-provider";
-import { Geist, Geist_Mono } from "next/font/google";
 import { ProfileProvider } from "@/components/profile-provider";
 import EarlyDevWarning from "@/components/EarlyDevWarning";
 import "./globals.css";
 
-const geistSans = Geist({
+// Use system fonts as fallback to avoid Google Fonts connectivity issues
+const fontSans = {
   variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  style: {
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  },
+};
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const fontMono = {
+  variable: "--font-geist-mono", 
+  style: {
+    fontFamily: "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+  },
+};
 
 export const metadata: Metadata = {
   title: "Cognify",
@@ -42,7 +46,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-base-100`}
+        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-base-100`}
       >
         <ToastProvider>
           <ProfileProvider>

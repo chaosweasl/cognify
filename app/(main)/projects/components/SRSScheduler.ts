@@ -16,93 +16,208 @@ import { addMinutes, addDays } from "./SRSSession";
 
 // --- SETTINGS VALIDATION ---
 /**
+ * Validates array of step values (for learning/relearning steps)
+ * Enhanced validation that checks array contents, not just presence
+ */
+function validateStepArray(steps: number[], defaultSteps: number[], settingName: string): number[] {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    console.warn(`⚠️ Invalid ${settingName}, using default ${JSON.stringify(defaultSteps)}`);
+    return defaultSteps;
+  }
+
+  // Check if all elements are valid positive numbers
+  const validSteps = steps.filter(step => 
+    typeof step === 'number' && !isNaN(step) && step > 0
+  );
+
+  if (validSteps.length === 0) {
+    console.warn(`⚠️ No valid steps in ${settingName}, using default ${JSON.stringify(defaultSteps)}`);
+    return defaultSteps;
+  }
+
+  if (validSteps.length !== steps.length) {
+    console.warn(`⚠️ Some invalid steps in ${settingName}, filtered to ${JSON.stringify(validSteps)}`);
+  }
+
+  return validSteps;
+}
+
+/**
  * Validates and sanitizes SRS settings to prevent crashes from undefined or malformed values
+ * Enhanced with comprehensive validation and error recovery
  */
 function validateSettings(settings: SRSSettings): SRSSettings {
+  if (!settings || typeof settings !== 'object') {
+    console.error("❌ Invalid settings object, using defaults");
+    return { ...DEFAULT_SRS_SETTINGS };
+  }
+
   // Create a validated copy with fallbacks
   const validated: SRSSettings = { ...settings };
 
-  // Validate LEARNING_STEPS
-  if (!Array.isArray(validated.LEARNING_STEPS) || validated.LEARNING_STEPS.length === 0) {
-    console.warn("⚠️ Invalid LEARNING_STEPS, using default [1, 10]");
-    validated.LEARNING_STEPS = [1, 10];
+  // Validate LEARNING_STEPS with content validation
+  validated.LEARNING_STEPS = validateStepArray(
+    validated.LEARNING_STEPS, 
+    [1, 10], 
+    "LEARNING_STEPS"
+  );
+
+  // Validate RELEARNING_STEPS with content validation
+  validated.RELEARNING_STEPS = validateStepArray(
+    validated.RELEARNING_STEPS, 
+    [10, 1440], 
+    "RELEARNING_STEPS"
+  );
+
+  // Enhanced numeric validation with bounds checking
+  const validateNumericSetting = (
+    value: number, 
+    defaultValue: number, 
+    settingName: string, 
+    min?: number, 
+    max?: number
+  ): number => {
+    if (typeof value !== 'number' || isNaN(value)) {
+      console.warn(`⚠️ Invalid ${settingName}, using default ${defaultValue}`);
+      return defaultValue;
+    }
+    
+    if (min !== undefined && value < min) {
+      console.warn(`⚠️ ${settingName} below minimum (${min}), using ${Math.max(value, defaultValue)}`);
+      return Math.max(defaultValue, min);
+    }
+    
+    if (max !== undefined && value > max) {
+      console.warn(`⚠️ ${settingName} above maximum (${max}), using ${Math.min(value, defaultValue)}`);
+      return Math.min(defaultValue, max);
+    }
+    
+    return value;
+  };
+
+  // Validate numeric settings with bounds
+  validated.LAPSE_EASE_PENALTY = validateNumericSetting(
+    validated.LAPSE_EASE_PENALTY, 0.2, "LAPSE_EASE_PENALTY", 0, 1
+  );
+
+  validated.STARTING_EASE = validateNumericSetting(
+    validated.STARTING_EASE, 2.5, "STARTING_EASE", 1.3, 5.0
+  );
+
+  validated.MINIMUM_EASE = validateNumericSetting(
+    validated.MINIMUM_EASE, 1.3, "MINIMUM_EASE", 1.0, 3.0
+  );
+
+  validated.GRADUATING_INTERVAL = validateNumericSetting(
+    validated.GRADUATING_INTERVAL, 1, "GRADUATING_INTERVAL", 1
+  );
+
+  validated.NEW_CARDS_PER_DAY = validateNumericSetting(
+    validated.NEW_CARDS_PER_DAY, 20, "NEW_CARDS_PER_DAY", 0
+  );
+
+  validated.MAX_REVIEWS_PER_DAY = validateNumericSetting(
+    validated.MAX_REVIEWS_PER_DAY, 200, "MAX_REVIEWS_PER_DAY", 0
+  );
+
+  validated.EASY_INTERVAL = validateNumericSetting(
+    validated.EASY_INTERVAL, 4, "EASY_INTERVAL", 1
+  );
+
+  validated.EASY_BONUS = validateNumericSetting(
+    validated.EASY_BONUS, 1.3, "EASY_BONUS", 1.0, 3.0
+  );
+
+  validated.HARD_INTERVAL_FACTOR = validateNumericSetting(
+    validated.HARD_INTERVAL_FACTOR, 1.2, "HARD_INTERVAL_FACTOR", 0.5, 2.0
+  );
+
+  validated.EASY_INTERVAL_FACTOR = validateNumericSetting(
+    validated.EASY_INTERVAL_FACTOR, 1.3, "EASY_INTERVAL_FACTOR", 1.0, 3.0
+  );
+
+  validated.LAPSE_RECOVERY_FACTOR = validateNumericSetting(
+    validated.LAPSE_RECOVERY_FACTOR, 0.2, "LAPSE_RECOVERY_FACTOR", 0, 1
+  );
+
+  validated.INTERVAL_MODIFIER = validateNumericSetting(
+    validated.INTERVAL_MODIFIER, 1.0, "INTERVAL_MODIFIER", 0.1, 3.0
+  );
+
+  validated.LEECH_THRESHOLD = validateNumericSetting(
+    validated.LEECH_THRESHOLD, 8, "LEECH_THRESHOLD", 1
+  );
+
+  validated.MAX_INTERVAL = validateNumericSetting(
+    validated.MAX_INTERVAL, 36500, "MAX_INTERVAL", 1
+  );
+
+  // Validate string/enum settings
+  if (!["random", "fifo"].includes(validated.NEW_CARD_ORDER)) {
+    console.warn(`⚠️ Invalid NEW_CARD_ORDER "${validated.NEW_CARD_ORDER}", using default "random"`);
+    validated.NEW_CARD_ORDER = "random";
   }
 
-  // Validate RELEARNING_STEPS
-  if (!Array.isArray(validated.RELEARNING_STEPS) || validated.RELEARNING_STEPS.length === 0) {
-    console.warn("⚠️ Invalid RELEARNING_STEPS, using default [10, 1440]");
-    validated.RELEARNING_STEPS = [10, 1440];
+  if (!["suspend", "tag"].includes(validated.LEECH_ACTION)) {
+    console.warn(`⚠️ Invalid LEECH_ACTION "${validated.LEECH_ACTION}", using default "suspend"`);
+    validated.LEECH_ACTION = "suspend";
   }
 
-  // Validate LAPSE_EASE_PENALTY
-  if (typeof validated.LAPSE_EASE_PENALTY !== 'number' || isNaN(validated.LAPSE_EASE_PENALTY)) {
-    console.warn("⚠️ Invalid LAPSE_EASE_PENALTY, using default 0.2");
-    validated.LAPSE_EASE_PENALTY = 0.2;
+  // Validate boolean settings
+  if (typeof validated.REVIEW_AHEAD !== 'boolean') {
+    console.warn(`⚠️ Invalid REVIEW_AHEAD, using default false`);
+    validated.REVIEW_AHEAD = false;
   }
 
-  // Validate other critical numeric settings
-  if (typeof validated.STARTING_EASE !== 'number' || isNaN(validated.STARTING_EASE)) {
-    console.warn("⚠️ Invalid STARTING_EASE, using default 2.5");
-    validated.STARTING_EASE = 2.5;
-  }
-
-  if (typeof validated.MINIMUM_EASE !== 'number' || isNaN(validated.MINIMUM_EASE)) {
-    console.warn("⚠️ Invalid MINIMUM_EASE, using default 1.3");
-    validated.MINIMUM_EASE = 1.3;
-  }
-
-  if (typeof validated.GRADUATING_INTERVAL !== 'number' || isNaN(validated.GRADUATING_INTERVAL)) {
-    console.warn("⚠️ Invalid GRADUATING_INTERVAL, using default 1");
-    validated.GRADUATING_INTERVAL = 1;
+  if (typeof validated.BURY_SIBLINGS !== 'boolean') {
+    console.warn(`⚠️ Invalid BURY_SIBLINGS, using default false`);
+    validated.BURY_SIBLINGS = false;
   }
 
   return validated;
 }
 
 /**
- * Safely accesses learning steps with bounds checking
+ * Generic step accessor with bounds checking and validation
+ * DRY: Consolidated getLearningStep and getRelearningStep into single function
  */
-function getLearningStep(steps: number[], stepIndex: number): number {
+function getStepValue(
+  steps: number[], 
+  stepIndex: number, 
+  defaultValue: number, 
+  stepType: string = "step"
+): number {
   if (!Array.isArray(steps) || steps.length === 0) {
-    console.warn("⚠️ Empty learning steps, using fallback 1 minute");
-    return 1;
+    console.warn(`⚠️ Empty ${stepType} array, using fallback ${defaultValue} minute(s)`);
+    return defaultValue;
   }
 
   if (stepIndex < 0 || stepIndex >= steps.length) {
-    console.warn(`⚠️ Learning step index ${stepIndex} out of bounds, using last step`);
+    console.warn(`⚠️ ${stepType} index ${stepIndex} out of bounds, using last step`);
     return steps[steps.length - 1];
   }
 
   const step = steps[stepIndex];
   if (typeof step !== 'number' || isNaN(step) || step <= 0) {
-    console.warn(`⚠️ Invalid learning step at index ${stepIndex}, using fallback 1 minute`);
-    return 1;
+    console.warn(`⚠️ Invalid ${stepType} at index ${stepIndex}, using fallback ${defaultValue} minute(s)`);
+    return defaultValue;
   }
 
   return step;
 }
 
 /**
+ * Safely accesses learning steps with bounds checking
+ */
+function getLearningStep(steps: number[], stepIndex: number): number {
+  return getStepValue(steps, stepIndex, 1, "learning step");
+}
+
+/**
  * Safely accesses relearning steps with bounds checking
  */
 function getRelearningStep(steps: number[], stepIndex: number): number {
-  if (!Array.isArray(steps) || steps.length === 0) {
-    console.warn("⚠️ Empty relearning steps, using fallback 10 minutes");
-    return 10;
-  }
-
-  if (stepIndex < 0 || stepIndex >= steps.length) {
-    console.warn(`⚠️ Relearning step index ${stepIndex} out of bounds, using last step`);
-    return steps[steps.length - 1];
-  }
-
-  const step = steps[stepIndex];
-  if (typeof step !== 'number' || isNaN(step) || step <= 0) {
-    console.warn(`⚠️ Invalid relearning step at index ${stepIndex}, using fallback 10 minutes`);
-    return 10;
-  }
-
-  return step;
+  return getStepValue(steps, stepIndex, 10, "relearning step");
 }
 
 // --- DEFAULT SRS SETTINGS (fallback when user settings aren't available) ---
@@ -254,7 +369,8 @@ export function initSRSStateWithSettings(
 }
 
 /**
- * Main scheduling function with settings support
+ * Enhanced card scheduling with comprehensive error recovery
+ * Wraps the internal scheduler with additional safety checks
  */
 export function scheduleSRSCardWithSettings(
   card: SRSCardState,
@@ -268,9 +384,15 @@ export function scheduleSRSCardWithSettings(
     return card;
   }
 
-  // Validate settings first to prevent crashes from malformed configuration
-  const validatedSettings = validateSettings(settings);
-  return scheduleSRSCardInternal(card, rating, validatedSettings, now);
+  try {
+    // Validate settings first to prevent crashes from malformed configuration
+    const validatedSettings = validateSettings(settings);
+    return scheduleSRSCardInternal(card, rating, validatedSettings, now);
+  } catch (error) {
+    console.error(`❌ Failed to schedule card ${card.id}:`, error);
+    // Return card unchanged rather than crashing the entire session
+    return { ...card, lastReviewed: now };
+  }
 }
 
 /**
