@@ -15,18 +15,21 @@ const ESTIMATED_SECONDS_PER_CARD = 30; // Rough estimate for time tracking
 function safeDeepClone<T>(obj: T): T {
   try {
     // For modern browsers that support structuredClone, prefer it for accuracy
-    if (typeof structuredClone !== 'undefined') {
+    if (typeof structuredClone !== "undefined") {
       return structuredClone(obj);
     }
   } catch {
     // Fall through to JSON method
   }
-  
+
   try {
     // JSON method - faster and more compatible, works fine for SRSCardState objects
     return JSON.parse(JSON.stringify(obj));
   } catch (error) {
-    console.error("❌ Failed to clone object, returning original (may cause undo issues):", error);
+    console.error(
+      "❌ Failed to clone object, returning original (may cause undo issues):",
+      error
+    );
     return obj;
   }
 }
@@ -40,11 +43,13 @@ class NoteIdCardsCache {
   /**
    * Get or build the noteId to cards mapping with automatic invalidation
    */
-  getOrBuild(allCardStates: Record<string, SRSCardState>): Map<string, string[]> {
+  getOrBuild(
+    allCardStates: Record<string, SRSCardState>
+  ): Map<string, string[]> {
     const now = Date.now();
-    
+
     // Auto-invalidate stale cache
-    if (this.cache && (now - this.lastBuildTime > this.CACHE_TTL)) {
+    if (this.cache && now - this.lastBuildTime > this.CACHE_TTL) {
       console.log("🗑️ Auto-invalidating stale noteId cache");
       this.cache = null;
     }
@@ -69,13 +74,17 @@ class NoteIdCardsCache {
    * Check if cache exists and is fresh
    */
   isCacheValid(): boolean {
-    return this.cache !== null && (Date.now() - this.lastBuildTime <= this.CACHE_TTL);
+    return (
+      this.cache !== null && Date.now() - this.lastBuildTime <= this.CACHE_TTL
+    );
   }
 
-  private buildNoteIdToCardsMap(allCardStates: Record<string, SRSCardState>): Map<string, string[]> {
+  private buildNoteIdToCardsMap(
+    allCardStates: Record<string, SRSCardState>
+  ): Map<string, string[]> {
     const noteMap = new Map<string, string[]>();
-    
-    Object.values(allCardStates).forEach(card => {
+
+    Object.values(allCardStates).forEach((card) => {
       if (card.noteId) {
         if (!noteMap.has(card.noteId)) {
           noteMap.set(card.noteId, []);
@@ -83,7 +92,7 @@ class NoteIdCardsCache {
         noteMap.get(card.noteId)!.push(card.id);
       }
     });
-    
+
     return noteMap;
   }
 }
@@ -95,7 +104,9 @@ const noteIdCache = new NoteIdCardsCache();
  * Performance optimization: Get cached noteId to cards mapping
  * Now with automatic cache management to reduce bugs from manual invalidation
  */
-function getNoteIdToCardsMap(allCardStates: Record<string, SRSCardState>): Map<string, string[]> {
+function getNoteIdToCardsMap(
+  allCardStates: Record<string, SRSCardState>
+): Map<string, string[]> {
   return noteIdCache.getOrBuild(allCardStates);
 }
 
@@ -161,7 +172,7 @@ export function initStudySession(): StudySession {
 /**
  * Get the next card to study, respecting daily limits and card priorities (with settings)
  * Fixed learning queue behavior to prevent infinite loops and match Anki behavior
- * 
+ *
  * Priority order: Learning/Relearning → Review → New
  * Assumptions:
  * - Daily limits are not reset here (external logic needed for day boundaries)
@@ -188,11 +199,13 @@ export function getNextCardToStudyWithSettings(
   // 1. First priority: Learning/Relearning cards (ALWAYS available within session)
   // CRITICAL FIX: Learning cards are immediately available after rating, ignore due times within session
   // This prevents infinite loops where cards disappear/reappear based on due time
-  const learningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended
-  );
+  const learningCards = allCards.filter((card) => {
+    const isLearning = card.state === "learning" || card.state === "relearning";
+    if (!isLearning || card.isSuspended) return false;
+
+    const inQueue = session.learningCardsInQueue.includes(card.id);
+    return inQueue || card.due <= now;
+  });
 
   if (learningCards.length > 0) {
     // ANKI BEHAVIOR: Use the learning queue to maintain proper FIFO order
@@ -201,9 +214,9 @@ export function getNextCardToStudyWithSettings(
     // First, try to find a card that's in the learning queue (maintain FIFO order)
     for (const queuedCardId of session.learningCardsInQueue) {
       const queuedCard = learningCards.find((card) => card.id === queuedCardId);
-      if (queuedCard) {
+      if (queuedCard && queuedCard.due <= now) {
         console.log(
-          `📚 Found queued learning card:`,
+          `📚 Found due learning card in queue:`,
           queuedCard.id,
           `(step ${queuedCard.learningStep + 1})`
         );
@@ -313,7 +326,7 @@ export function burySiblingsAfterReview(
 
   const siblingCardIds = noteIdToCardsMap.get(reviewedCard.noteId);
   if (siblingCardIds) {
-    siblingCardIds.forEach(cardId => {
+    siblingCardIds.forEach((cardId) => {
       if (cardId !== reviewedCard.id) {
         updatedSession.buriedCards.add(cardId);
       }
@@ -326,7 +339,7 @@ export function burySiblingsAfterReview(
 /**
  * Update study session after rating a card
  * Enhanced with optimized counter management and improved cloning
- * 
+ *
  * Key behaviors:
  * - Uses compatible deep clone with structuredClone fallback for undo history
  * - Optimized incremental counter management to avoid O(n) operations
@@ -334,7 +347,7 @@ export function burySiblingsAfterReview(
  * - Clones buriedCards Set before mutation for immutability
  * - Undo history limited to last 20 actions
  * - Automatic cache management for sibling burying
- * 
+ *
  * Performance improvements:
  * - Incremental counters avoid repeated history filtering (O(n) → O(1))
  * - Compatible deep clone reduces memory overhead
@@ -366,7 +379,7 @@ export function updateStudySession(
   // Update counters incrementally for better performance
   const wasNewCard = card.state === "new";
   const wasReviewCard = card.state === "review";
-  
+
   // Initialize counters if missing (backwards compatibility)
   if (!updatedSession._incrementalCounters) {
     updatedSession._incrementalCounters = {
@@ -375,7 +388,7 @@ export function updateStudySession(
       lastHistoryLength: session.reviewHistory.length,
     };
   }
-  
+
   // Increment counters based on the card that was just reviewed
   const counters = updatedSession._incrementalCounters;
   if (wasNewCard) {
@@ -385,7 +398,7 @@ export function updateStudySession(
     counters.reviewsFromHistory++;
   }
   counters.lastHistoryLength = updatedSession.reviewHistory.length;
-  
+
   // Update session counters from incremental tracking
   updatedSession.newCardsStudied = counters.newCardsFromHistory;
   updatedSession.reviewsCompleted = counters.reviewsFromHistory;
@@ -425,7 +438,7 @@ export function updateStudySession(
   if (settings.BURY_SIBLINGS && card.noteId) {
     // Clone the set before mutation to maintain immutability
     updatedSession.buriedCards = new Set(updatedSession.buriedCards);
-    
+
     // Bury all other cards from the same note until next day
     Object.values(allCardStates).forEach((otherCard) => {
       if (otherCard.noteId === card.noteId && otherCard.id !== card.id) {
@@ -583,7 +596,7 @@ export function getDailyStats(session: StudySession): {
 /**
  * MVP: Undo last review action
  * Enhanced with optimized counter management
- * 
+ *
  * Behavior:
  * - Restores card to previous state from deep-cloned history
  * - Uses optimized incremental counter updates instead of full recalculation
@@ -621,7 +634,7 @@ export function undoLastReview(
   }
 
   const counters = updatedSession._incrementalCounters;
-  
+
   // Decrement counters based on what was undone
   if (wasNewCard && counters.newCardsFromHistory > 0) {
     counters.newCardsFromHistory--;

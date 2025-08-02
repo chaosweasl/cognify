@@ -19,24 +19,38 @@ import { addMinutes, addDays } from "./SRSSession";
  * Validates array of step values (for learning/relearning steps)
  * Enhanced validation that checks array contents, not just presence
  */
-function validateStepArray(steps: number[], defaultSteps: number[], settingName: string): number[] {
+function validateStepArray(
+  steps: number[],
+  defaultSteps: number[],
+  settingName: string
+): number[] {
   if (!Array.isArray(steps) || steps.length === 0) {
-    console.warn(`⚠️ Invalid ${settingName}, using default ${JSON.stringify(defaultSteps)}`);
+    console.warn(
+      `⚠️ Invalid ${settingName}, using default ${JSON.stringify(defaultSteps)}`
+    );
     return defaultSteps;
   }
 
   // Check if all elements are valid positive numbers
-  const validSteps = steps.filter(step => 
-    typeof step === 'number' && !isNaN(step) && step > 0
+  const validSteps = steps.filter(
+    (step) => typeof step === "number" && !isNaN(step) && step > 0
   );
 
   if (validSteps.length === 0) {
-    console.warn(`⚠️ No valid steps in ${settingName}, using default ${JSON.stringify(defaultSteps)}`);
+    console.warn(
+      `⚠️ No valid steps in ${settingName}, using default ${JSON.stringify(
+        defaultSteps
+      )}`
+    );
     return defaultSteps;
   }
 
   if (validSteps.length !== steps.length) {
-    console.warn(`⚠️ Some invalid steps in ${settingName}, filtered to ${JSON.stringify(validSteps)}`);
+    console.warn(
+      `⚠️ Some invalid steps in ${settingName}, filtered to ${JSON.stringify(
+        validSteps
+      )}`
+    );
   }
 
   return validSteps;
@@ -47,7 +61,7 @@ function validateStepArray(steps: number[], defaultSteps: number[], settingName:
  * Enhanced with comprehensive validation and error recovery
  */
 function validateSettings(settings: SRSSettings): SRSSettings {
-  if (!settings || typeof settings !== 'object') {
+  if (!settings || typeof settings !== "object") {
     console.error("❌ Invalid settings object, using defaults");
     return { ...DEFAULT_SRS_SETTINGS };
   }
@@ -57,119 +71,183 @@ function validateSettings(settings: SRSSettings): SRSSettings {
 
   // Validate LEARNING_STEPS with content validation
   validated.LEARNING_STEPS = validateStepArray(
-    validated.LEARNING_STEPS, 
-    [1, 10], 
+    validated.LEARNING_STEPS,
+    [1, 10],
     "LEARNING_STEPS"
   );
 
   // Validate RELEARNING_STEPS with content validation
   validated.RELEARNING_STEPS = validateStepArray(
-    validated.RELEARNING_STEPS, 
-    [10, 1440], 
+    validated.RELEARNING_STEPS,
+    [10, 1440],
     "RELEARNING_STEPS"
   );
 
   // Enhanced numeric validation with bounds checking
   const validateNumericSetting = (
-    value: number, 
-    defaultValue: number, 
-    settingName: string, 
-    min?: number, 
+    value: number,
+    defaultValue: number,
+    settingName: string,
+    min?: number,
     max?: number
   ): number => {
-    if (typeof value !== 'number' || isNaN(value)) {
+    if (typeof value !== "number" || isNaN(value)) {
       console.warn(`⚠️ Invalid ${settingName}, using default ${defaultValue}`);
       return defaultValue;
     }
-    
+
     if (min !== undefined && value < min) {
-      console.warn(`⚠️ ${settingName} below minimum (${min}), using ${Math.max(value, defaultValue)}`);
+      console.warn(
+        `⚠️ ${settingName} below minimum (${min}), using ${Math.max(
+          value,
+          defaultValue
+        )}`
+      );
       return Math.max(defaultValue, min);
     }
-    
+
     if (max !== undefined && value > max) {
-      console.warn(`⚠️ ${settingName} above maximum (${max}), using ${Math.min(value, defaultValue)}`);
+      console.warn(
+        `⚠️ ${settingName} above maximum (${max}), using ${Math.min(
+          value,
+          defaultValue
+        )}`
+      );
       return Math.min(defaultValue, max);
     }
-    
+
     return value;
   };
 
   // Validate numeric settings with bounds
   validated.LAPSE_EASE_PENALTY = validateNumericSetting(
-    validated.LAPSE_EASE_PENALTY, 0.2, "LAPSE_EASE_PENALTY", 0, 1
+    validated.LAPSE_EASE_PENALTY,
+    0.2,
+    "LAPSE_EASE_PENALTY",
+    0,
+    1
   );
 
   validated.STARTING_EASE = validateNumericSetting(
-    validated.STARTING_EASE, 2.5, "STARTING_EASE", 1.3, 5.0
+    validated.STARTING_EASE,
+    2.5,
+    "STARTING_EASE",
+    1.3,
+    5.0
   );
 
   validated.MINIMUM_EASE = validateNumericSetting(
-    validated.MINIMUM_EASE, 1.3, "MINIMUM_EASE", 1.0, 3.0
+    validated.MINIMUM_EASE,
+    1.3,
+    "MINIMUM_EASE",
+    1.0,
+    3.0
   );
 
   validated.GRADUATING_INTERVAL = validateNumericSetting(
-    validated.GRADUATING_INTERVAL, 1, "GRADUATING_INTERVAL", 1
+    validated.GRADUATING_INTERVAL,
+    1,
+    "GRADUATING_INTERVAL",
+    1
   );
 
   validated.NEW_CARDS_PER_DAY = validateNumericSetting(
-    validated.NEW_CARDS_PER_DAY, 20, "NEW_CARDS_PER_DAY", 0
+    validated.NEW_CARDS_PER_DAY,
+    20,
+    "NEW_CARDS_PER_DAY",
+    0
   );
 
   validated.MAX_REVIEWS_PER_DAY = validateNumericSetting(
-    validated.MAX_REVIEWS_PER_DAY, 200, "MAX_REVIEWS_PER_DAY", 0
+    validated.MAX_REVIEWS_PER_DAY,
+    200,
+    "MAX_REVIEWS_PER_DAY",
+    0
   );
 
   validated.EASY_INTERVAL = validateNumericSetting(
-    validated.EASY_INTERVAL, 4, "EASY_INTERVAL", 1
+    validated.EASY_INTERVAL,
+    4,
+    "EASY_INTERVAL",
+    1
   );
 
   validated.EASY_BONUS = validateNumericSetting(
-    validated.EASY_BONUS, 1.3, "EASY_BONUS", 1.0, 3.0
+    validated.EASY_BONUS,
+    1.3,
+    "EASY_BONUS",
+    1.0,
+    3.0
   );
 
   validated.HARD_INTERVAL_FACTOR = validateNumericSetting(
-    validated.HARD_INTERVAL_FACTOR, 1.2, "HARD_INTERVAL_FACTOR", 0.5, 2.0
+    validated.HARD_INTERVAL_FACTOR,
+    1.2,
+    "HARD_INTERVAL_FACTOR",
+    0.5,
+    2.0
   );
 
   validated.EASY_INTERVAL_FACTOR = validateNumericSetting(
-    validated.EASY_INTERVAL_FACTOR, 1.3, "EASY_INTERVAL_FACTOR", 1.0, 3.0
+    validated.EASY_INTERVAL_FACTOR,
+    1.3,
+    "EASY_INTERVAL_FACTOR",
+    1.0,
+    3.0
   );
 
   validated.LAPSE_RECOVERY_FACTOR = validateNumericSetting(
-    validated.LAPSE_RECOVERY_FACTOR, 0.2, "LAPSE_RECOVERY_FACTOR", 0, 1
+    validated.LAPSE_RECOVERY_FACTOR,
+    0.2,
+    "LAPSE_RECOVERY_FACTOR",
+    0,
+    1
   );
 
   validated.INTERVAL_MODIFIER = validateNumericSetting(
-    validated.INTERVAL_MODIFIER, 1.0, "INTERVAL_MODIFIER", 0.1, 3.0
+    validated.INTERVAL_MODIFIER,
+    1.0,
+    "INTERVAL_MODIFIER",
+    0.1,
+    3.0
   );
 
   validated.LEECH_THRESHOLD = validateNumericSetting(
-    validated.LEECH_THRESHOLD, 8, "LEECH_THRESHOLD", 1
+    validated.LEECH_THRESHOLD,
+    8,
+    "LEECH_THRESHOLD",
+    1
   );
 
   validated.MAX_INTERVAL = validateNumericSetting(
-    validated.MAX_INTERVAL, 36500, "MAX_INTERVAL", 1
+    validated.MAX_INTERVAL,
+    36500,
+    "MAX_INTERVAL",
+    1
   );
 
   // Validate string/enum settings
   if (!["random", "fifo"].includes(validated.NEW_CARD_ORDER)) {
-    console.warn(`⚠️ Invalid NEW_CARD_ORDER "${validated.NEW_CARD_ORDER}", using default "random"`);
+    console.warn(
+      `⚠️ Invalid NEW_CARD_ORDER "${validated.NEW_CARD_ORDER}", using default "random"`
+    );
     validated.NEW_CARD_ORDER = "random";
   }
 
   if (!["suspend", "tag"].includes(validated.LEECH_ACTION)) {
-    console.warn(`⚠️ Invalid LEECH_ACTION "${validated.LEECH_ACTION}", using default "suspend"`);
+    console.warn(
+      `⚠️ Invalid LEECH_ACTION "${validated.LEECH_ACTION}", using default "suspend"`
+    );
     validated.LEECH_ACTION = "suspend";
   }
 
   // Validate boolean settings
-  if (typeof validated.REVIEW_AHEAD !== 'boolean') {
+  if (typeof validated.REVIEW_AHEAD !== "boolean") {
     console.warn(`⚠️ Invalid REVIEW_AHEAD, using default false`);
     validated.REVIEW_AHEAD = false;
   }
 
-  if (typeof validated.BURY_SIBLINGS !== 'boolean') {
+  if (typeof validated.BURY_SIBLINGS !== "boolean") {
     console.warn(`⚠️ Invalid BURY_SIBLINGS, using default false`);
     validated.BURY_SIBLINGS = false;
   }
@@ -182,24 +260,30 @@ function validateSettings(settings: SRSSettings): SRSSettings {
  * DRY: Consolidated getLearningStep and getRelearningStep into single function
  */
 function getStepValue(
-  steps: number[], 
-  stepIndex: number, 
-  defaultValue: number, 
+  steps: number[],
+  stepIndex: number,
+  defaultValue: number,
   stepType: string = "step"
 ): number {
   if (!Array.isArray(steps) || steps.length === 0) {
-    console.warn(`⚠️ Empty ${stepType} array, using fallback ${defaultValue} minute(s)`);
+    console.warn(
+      `⚠️ Empty ${stepType} array, using fallback ${defaultValue} minute(s)`
+    );
     return defaultValue;
   }
 
   if (stepIndex < 0 || stepIndex >= steps.length) {
-    console.warn(`⚠️ ${stepType} index ${stepIndex} out of bounds, using last step`);
+    console.warn(
+      `⚠️ ${stepType} index ${stepIndex} out of bounds, using last step`
+    );
     return steps[steps.length - 1];
   }
 
   const step = steps[stepIndex];
-  if (typeof step !== 'number' || isNaN(step) || step <= 0) {
-    console.warn(`⚠️ Invalid ${stepType} at index ${stepIndex}, using fallback ${defaultValue} minute(s)`);
+  if (typeof step !== "number" || isNaN(step) || step <= 0) {
+    console.warn(
+      `⚠️ Invalid ${stepType} at index ${stepIndex}, using fallback ${defaultValue} minute(s)`
+    );
     return defaultValue;
   }
 
@@ -308,26 +392,17 @@ function calculateAnkiEase(
   quality: SRSRating,
   settings: SRSSettings
 ): number {
-  // Validate settings to prevent crashes
   const validatedSettings = validateSettings(settings);
-  let newEase = oldEase;
 
-  switch (quality) {
-    case 0: // Again - use LAPSE_EASE_PENALTY (subtractive, as per Anki default)
-      newEase = oldEase - validatedSettings.LAPSE_EASE_PENALTY;
-      break;
-    case 1: // Hard - no ease change in true Anki (only affects interval)
-      newEase = oldEase; // No change
-      break;
-    case 2: // Good
-      newEase = oldEase; // No change
-      break;
-    case 3: // Easy - add 0.15 (Anki default, keep current behavior for compatibility)
-      newEase = oldEase + 0.15;
-      break;
-  }
+  // FIXED: Proper linear mapping from 4-button (0-3) to SM-2 scale (0-5)
+  // 0 -> 0, 1 -> 2, 2 -> 4, 3 -> 5 (preserves difficulty progression)
+  const q = quality === 0 ? 0 : quality === 1 ? 2 : quality === 2 ? 4 : 5;
 
-  return Math.max(settings.MINIMUM_EASE, newEase);
+  // SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
+  let newEase = oldEase + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+
+  // Apply minimum ease constraint
+  return Math.max(validatedSettings.MINIMUM_EASE, newEase);
 }
 
 // --- CORE SRS FUNCTIONS ---
@@ -515,14 +590,12 @@ function scheduleNewCard(
       learningStep: 0,
     };
   } else {
-    // Again (0), Hard (1), Good (2) - all enter learning queue at step 0
-    // Only Easy (3) skips learning - this matches exact Anki behavior
-    const stepInterval = getLearningStep(settings.LEARNING_STEPS, 0); // Safe access to step 0
-    
+    const stepInterval = getLearningStep(settings.LEARNING_STEPS, 0);
+
     return {
       ...card,
       state: "learning",
-      learningStep: 0, // FIXED: All ratings except Easy go to step 0
+      learningStep: 0,
       due: addMinutes(now, stepInterval),
       interval: stepInterval,
     };
@@ -563,15 +636,13 @@ function scheduleLearningCard(
     // Good - advance to next step or graduate
     const nextStep = card.learningStep + 1;
 
-    if (nextStep >= settings.LEARNING_STEPS.length) {
-      // Graduate to review queue using GRADUATING_INTERVAL consistently (Anki behavior)
-      const graduatingInterval = Math.round(
-        settings.GRADUATING_INTERVAL * settings.INTERVAL_MODIFIER
-      );
-      const finalInterval = Math.max(
+    if (nextStep >= settings.RELEARNING_STEPS.length) {
+      // Graduate to review queue - use GRADUATING_INTERVAL as base
+      const graduatingInterval = Math.max(
         1,
-        Math.min(graduatingInterval, settings.MAX_INTERVAL)
+        Math.round(settings.GRADUATING_INTERVAL * settings.INTERVAL_MODIFIER)
       );
+      const finalInterval = Math.min(graduatingInterval, settings.MAX_INTERVAL);
 
       debugLog(
         `🎓 Learning card ${card.id} graduating to review, scheduled for ${finalInterval} days`
@@ -579,7 +650,7 @@ function scheduleLearningCard(
       return {
         ...card,
         state: "review",
-        repetitions: 1, // First repetition upon graduation
+        repetitions: 0, // Start at 0 so first review increments to 1
         interval: finalInterval,
         due: addDays(now, finalInterval),
         learningStep: 0,
@@ -617,6 +688,8 @@ function scheduleLearningCard(
       learningStep: 0,
     };
   }
+  // Default: return unchanged card if no branch matched
+  return card;
 }
 
 /**
@@ -656,33 +729,45 @@ function scheduleReviewCard(
   const daysLate = Math.max(0, Math.floor((now - card.due) / MS_PER_DAY));
 
   let interval: number;
+  let newEase = card.ease;
 
-  // SM-2 interval calculation - different for each rating
+  // FIXED: Proper SM-2 interval calculation
   if (rating === 1) {
-    // Hard: use current interval * hard factor (no ease multiplication)
-    interval = Math.round(card.interval * settings.HARD_INTERVAL_FACTOR);
-    debugLog(`Hard: used interval ${card.interval} * factor ${settings.HARD_INTERVAL_FACTOR} = ${interval}`);
-  } else {
-    // Good, Easy: use standard SM-2 formula
-    if (card.interval === 1 && card.repetitions === 0) {
-      interval = 1; // First review always 1 day
-    } else if (card.interval === 1 && card.repetitions === 1) {
-      interval = Math.round(1 * card.ease); // Second review uses ease on base of 1
+    // Hard: Calculate SM-2 interval first, THEN apply hard factor
+    if (card.repetitions === 0) {
+      interval = 1;
+    } else if (card.repetitions === 1) {
+      interval = 6; // SM-2 standard: second review is always 6 days
     } else {
-      interval = Math.round(card.interval * card.ease); // All other reviews: previous_interval * ease
+      interval = Math.round(card.interval * card.ease);
     }
-    
-    debugLog(`SM-2 interval calculation: repetitions=${card.repetitions}, oldInterval=${card.interval}, oldEase=${card.ease}, baseInterval=${interval}`);
 
-    // Apply Easy interval factor AFTER base calculation
+    // Apply hard factor AFTER SM-2 calculation
+    interval = Math.round(interval * settings.HARD_INTERVAL_FACTOR);
+
+    // Hard reduces ease factor
+    newEase = calculateAnkiEase(card.ease, rating, settings);
+  } else {
+    // Good (2) and Easy (3): Standard SM-2 formula
+    if (card.repetitions === 0) {
+      interval = 1; // First review always 1 day
+    } else if (card.repetitions === 1) {
+      interval = 6; // FIXED: Second review is always 6 days (not 6 * ease)
+    } else {
+      interval = Math.round(card.interval * card.ease); // Standard SM-2
+    }
+
+    // Calculate new ease AFTER base interval
+    newEase = calculateAnkiEase(card.ease, rating, settings);
+
+    // Apply Easy bonus AFTER base calculation
     if (rating === 3) {
       interval = Math.round(interval * settings.EASY_INTERVAL_FACTOR);
-      debugLog(`Easy: applied factor ${settings.EASY_INTERVAL_FACTOR}, new interval=${interval}`);
+      debugLog(
+        `Easy: applied factor ${settings.EASY_INTERVAL_FACTOR}, new interval=${interval}`
+      );
     }
   }
-
-  // Calculate new ease AFTER interval calculation
-  const newEase = calculateAnkiEase(card.ease, rating, settings);
 
   // Add late review bonus
   interval += daysLate;
@@ -690,9 +775,8 @@ function scheduleReviewCard(
   // Apply global interval modifier
   interval = Math.round(interval * settings.INTERVAL_MODIFIER);
 
-  // Enforce minimum "+1 day" rule for non-Again reviews
-  // BUT NOT for first review (which should always be 1 day) or second review (which uses ease×1)
-  if (rating > 0 && !(card.interval === 1 && card.repetitions <= 1)) {
+  // Enforce minimum "+1 day" rule for non-Again reviews (except first two reviews)
+  if (rating > 0 && card.repetitions >= 2) {
     interval = Math.max(interval, card.interval + 1);
   }
 
@@ -733,7 +817,10 @@ function scheduleRelearningCard(
       card.learningStep,
       Math.max(0, settings.RELEARNING_STEPS.length - 1)
     );
-    const stepInterval = getRelearningStep(settings.RELEARNING_STEPS, currentStep);
+    const stepInterval = getRelearningStep(
+      settings.RELEARNING_STEPS,
+      currentStep
+    );
     return {
       ...card,
       due: addMinutes(now, stepInterval),
@@ -743,9 +830,8 @@ function scheduleRelearningCard(
     // Good - advance to next relearning step or graduate back to review
     const nextStep = card.learningStep + 1;
 
-    if (nextStep >= settings.RELEARNING_STEPS.length) {
+    if (nextStep >= settings.LEARNING_STEPS.length) {
       // Graduate back to review queue with proper recovery calculation
-      // Use the card's ease and previous repetition history to calculate recovery interval
       const baseInterval = Math.max(1, card.repetitions || 1);
       let recoveryInterval = Math.round(
         baseInterval * card.ease * settings.LAPSE_RECOVERY_FACTOR
@@ -756,22 +842,27 @@ function scheduleRelearningCard(
         recoveryInterval * settings.INTERVAL_MODIFIER
       );
 
-      // Apply min/max clamps
       const finalInterval = Math.max(
         1,
         Math.min(recoveryInterval, settings.MAX_INTERVAL)
       );
-
+      debugLog(
+        `🎓 Learning card ${card.id} graduating to review, scheduled for ${finalInterval} days`
+      );
       return {
         ...card,
         state: "review",
+        repetitions: 0, // FIXED: Start at 0 so first review increments to 1
         interval: finalInterval,
         due: addDays(now, finalInterval),
         learningStep: 0,
       };
     } else {
       // Move to next relearning step
-      const stepInterval = getRelearningStep(settings.RELEARNING_STEPS, nextStep);
+      const stepInterval = getRelearningStep(
+        settings.RELEARNING_STEPS,
+        nextStep
+      );
       return {
         ...card,
         learningStep: nextStep,
