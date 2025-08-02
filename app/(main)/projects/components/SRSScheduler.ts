@@ -472,41 +472,24 @@ export function getNextCardToStudyWithSettings(
     learningQueueSize: session.learningCardsInQueue.length,
   });
 
-  // 1. First priority: Learning/Relearning cards that are due (enforce due time for proper delays)
-  // This fixes the bug where "Again" and "Hard" cards immediately re-appear
+  // 1. First priority: Learning/Relearning cards (always available within session)
+  // Learning steps are completed in the same session - due times only matter between sessions
+  // This is core Anki behavior: "Again" and "Hard" cards stay in the session queue
   const learningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended &&
-      card.due <= now // ← only pick those whose due time has arrived
+      !card.isSuspended
   );
-
-  // Debug: log not-yet-due learning cards
-  const waitingLearningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended &&
-      card.due > now
-  );
-  if (waitingLearningCards.length > 0) {
-    const nextDue = Math.min(...waitingLearningCards.map((c) => c.due));
-    const waitMs = nextDue - now;
-    console.log(
-      `⏳ ${
-        waitingLearningCards.length
-      } learning cards waiting (next in ${Math.round(waitMs / 1000)}s)`
-    );
-  }
 
   if (learningCards.length > 0) {
-    // Sort by due time (earliest first)
+    // Sort by due time (earliest first) - this maintains proper queue order
+    // In Anki, cards are shown in the order they entered learning queue
     learningCards.sort((a, b) => a.due - b.due);
     const nextCard = learningCards[0];
-    const waitTimeMs = Math.max(0, nextCard.due - now);
     console.log(
-      `📚 Found ${learningCards.length} due learning cards, selecting:`,
+      `📚 Found ${learningCards.length} learning cards, selecting:`,
       nextCard.id,
-      `(wait: ${Math.round(waitTimeMs / 1000)}s)`
+      `(step ${nextCard.learningStep + 1})`
     );
     return nextCard.id;
   }
@@ -706,12 +689,11 @@ export function getSessionAwareStudyStats(
   ).length;
   const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
 
-  // Learning cards that are actually due (respect due time for proper delays)
+  // Learning cards (always available within session - ignore due time)
   const dueLearningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended &&
-      card.due <= now
+      !card.isSuspended
   ).length;
 
   // Review cards that are due now (considering daily limit and suspension)
