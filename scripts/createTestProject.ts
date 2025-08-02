@@ -9,19 +9,19 @@ if (!userId) throw new Error("Please set TEST_USER_ID in your .env file.");
 
 const flashcardsPath = path.resolve(
   __dirname,
-  "../(main)/projects/components/testflashcards.json"
+  "../app/(main)/projects/components/testflashcards.json"
 );
 const flashcards: Array<{ question: string; answer: string }> = JSON.parse(
   fs.readFileSync(flashcardsPath, "utf8")
 );
 
 async function main() {
-  // Create the project
   if (!supabase)
     throw new Error(
       "SuperClient could not be created. Check your env variables."
     );
 
+  // Create the project
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
@@ -39,12 +39,16 @@ async function main() {
   }
   console.log("Created project:", project);
 
-  // Insert flashcards
+  // Insert flashcards using new schema
+  // Schema: flashcards (id, project_id, front, back, extra, created_at, updated_at)
+  const now = new Date().toISOString();
   const flashcardRows = flashcards.map((fc) => ({
     project_id: project.id,
     front: fc.question,
     back: fc.answer,
-    created_at: new Date().toISOString(),
+    extra: {}, // empty object for extra field (jsonb)
+    created_at: now,
+    updated_at: now,
   }));
 
   const { error: flashcardError } = await supabase
