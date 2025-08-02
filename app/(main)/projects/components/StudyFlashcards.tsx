@@ -10,7 +10,6 @@ import {
   initSRSStateWithSettings,
   scheduleSRSCardWithSettings,
   getNextCardToStudyWithSettings,
-  shouldEndStudySession,
   initStudySession,
   updateStudySession,
   getSessionAwareStudyStats,
@@ -236,6 +235,7 @@ export default function StudyFlashcards({
       ratingLoading,
       debouncedSave,
       srsSettings,
+      srsState,
     ]
   );
 

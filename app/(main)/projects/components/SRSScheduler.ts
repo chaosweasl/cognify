@@ -802,12 +802,12 @@ export function generateCardsFromNote(
   for (const template of templates) {
     const cardId = `${noteId}_${template.id}`;
 
-    // Simple field substitution (MVP)
-    const front = template.front.replace(
+    // Simple field substitution (MVP) - processed content not stored in MVP
+    template.front.replace(
       /\{\{(\w+)\}\}/g,
       (match, field) => fields[field] || match
     );
-    const back = template.back.replace(
+    template.back.replace(
       /\{\{(\w+)\}\}/g,
       (match, field) => fields[field] || match
     );
@@ -894,11 +894,7 @@ export function undoLastReview(
 /**
  * MVP: Get daily study statistics
  */
-export function getDailyStats(
-  session: StudySession,
-  cardStates: Record<string, SRSCardState>,
-  settings: SRSSettings = DEFAULT_SRS_SETTINGS
-): {
+export function getDailyStats(session: StudySession): {
   newCardsStudied: number;
   reviewsCompleted: number;
   lapses: number;
