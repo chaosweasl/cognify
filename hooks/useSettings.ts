@@ -19,6 +19,11 @@ export interface SRSSettings {
   INTERVAL_MODIFIER: number;
   LEECH_THRESHOLD: number;
   LEECH_ACTION: "suspend" | "tag";
+  // Deck options for MVP
+  NEW_CARD_ORDER: "random" | "fifo";
+  REVIEW_AHEAD: boolean;
+  BURY_SIBLINGS: boolean;
+  MAX_INTERVAL: number;
 }
 
 // User settings interface
@@ -60,7 +65,7 @@ const defaultSRSSettings: SRSSettings = {
   NEW_CARDS_PER_DAY: 20,
   MAX_REVIEWS_PER_DAY: 100,
   LEARNING_STEPS: [1, 10, 1440],
-  RELEARNING_STEPS: [10],
+  RELEARNING_STEPS: [10, 1440],
   GRADUATING_INTERVAL: 1,
   EASY_INTERVAL: 4,
   STARTING_EASE: 2.5,
@@ -73,6 +78,11 @@ const defaultSRSSettings: SRSSettings = {
   INTERVAL_MODIFIER: 1.0,
   LEECH_THRESHOLD: 8,
   LEECH_ACTION: "suspend",
+  // Deck options for MVP
+  NEW_CARD_ORDER: "random",
+  REVIEW_AHEAD: false,
+  BURY_SIBLINGS: false,
+  MAX_INTERVAL: 36500,
 };
 
 const defaultUserSettings: UserSettings = {
@@ -105,6 +115,11 @@ function dbRowToSettings(row: UserSettingsRow): {
       INTERVAL_MODIFIER: 1.0, // Default value for now
       LEECH_THRESHOLD: row.leech_threshold,
       LEECH_ACTION: row.leech_action as "suspend" | "tag",
+      // MVP deck options - use defaults since not in DB yet
+      NEW_CARD_ORDER: "random" as const,
+      REVIEW_AHEAD: false,
+      BURY_SIBLINGS: false,
+      MAX_INTERVAL: 36500,
     },
     user: {
       theme: row.theme as "light" | "dark" | "system",

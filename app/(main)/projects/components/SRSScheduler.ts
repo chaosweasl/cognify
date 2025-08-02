@@ -12,7 +12,7 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   LEARNING_STEPS: [1, 10, 1440], // 1 min → 10 min → 1 day (more Anki-like)
 
   // Relearning steps (in minutes) - for cards that fail review
-  RELEARNING_STEPS: [10], // 10 minutes before going back to review queue
+  RELEARNING_STEPS: [10, 1440], // 10 minutes → 1 day before going back to review queue
 
   // Graduation settings
   GRADUATING_INTERVAL: 1, // Days after completing learning steps
@@ -33,11 +33,16 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   INTERVAL_MODIFIER: 1.0, // Global interval modifier (Anki-style)
   LEECH_THRESHOLD: 8, // Number of lapses before marking as leech
   LEECH_ACTION: "suspend", // What to do with leeches
+
+  // Deck options for MVP
+  NEW_CARD_ORDER: "random", // "random" or "fifo" (first-in-first-out)
+  REVIEW_AHEAD: false, // Allow reviewing future-due cards
+  BURY_SIBLINGS: false, // Bury new/review cards from same note after review
+  MAX_INTERVAL: 36500, // Maximum interval in days (100 years)
 };
 
 // Additional constants not in user settings
 const MINIMUM_INTERVAL = 1;
-const MAXIMUM_INTERVAL = 36500;
 
 // --- TYPES ---
 export type SRSRating = 0 | 1 | 2 | 3; // 0=Again, 1=Hard, 2=Good, 3=Easy
@@ -56,12 +61,25 @@ export type SRSCardState = {
   learningStep: number; // current step in learning/relearning process
   isLeech: boolean; // whether card is marked as a leech
   isSuspended: boolean; // whether card is suspended (MVP: simple suspend flag)
+  // Note/field metadata for MVP
+  noteId?: string; // ID of the parent note
+  templateId?: string; // Template used to generate this card
+  tags?: string[]; // Tags associated with the card
 };
 
 export type StudySession = {
   newCardsStudied: number;
   reviewsCompleted: number;
   learningCardsInQueue: string[]; // Cards currently in learning queue
+  // Review history for undo functionality
+  reviewHistory: Array<{
+    cardId: string;
+    previousState: SRSCardState;
+    rating: SRSRating;
+    timestamp: number;
+  }>;
+  // Buried cards (sibling burying)
+  buriedCards: Set<string>;
 };
 
 // --- UTILITY FUNCTIONS ---
@@ -74,9 +92,8 @@ function addDays(timestamp: number, days: number): number {
 }
 
 /**
- * Calculate new ease factor using simplified SM-2 algorithm
+ * Calculate new ease factor using official Anki SM-2 values
  * Quality (q): 0=Again, 1=Hard, 2=Good, 3=Easy
- * Simplified approach for MVP: direct adjustments based on rating
  */
 function calculateNewEase(
   currentEase: number,
@@ -89,8 +106,8 @@ function calculateNewEase(
     case 0: // Again - decrease ease significantly
       newEase = currentEase - 0.2;
       break;
-    case 1: // Hard - decrease ease slightly
-      newEase = currentEase - 0.15;
+    case 1: // Hard - decrease ease (official Anki: -0.20)
+      newEase = currentEase - 0.2;
       break;
     case 2: // Good - increase ease slightly
       newEase = currentEase + 0.15;
@@ -111,7 +128,10 @@ function calculateNewEase(
  */
 export function initSRSStateWithSettings(
   cardIds: string[],
-  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS,
+  noteId?: string,
+  templateId?: string,
+  tags?: string[]
 ): Record<string, SRSCardState> {
   const now = Date.now();
   const initial: Record<string, SRSCardState> = {};
@@ -129,6 +149,9 @@ export function initSRSStateWithSettings(
       learningStep: 0,
       isLeech: false,
       isSuspended: false,
+      noteId,
+      templateId,
+      tags: tags ? [...tags] : undefined,
     };
   }
 
@@ -343,10 +366,11 @@ function scheduleReviewCard(
   let newInterval: number;
 
   if (rating === 1) {
-    // Hard - reduce interval with hard factor
-    newInterval = Math.round(
-      card.interval * newEase * settings.HARD_INTERVAL_FACTOR
-    );
+    // Hard - Anki formula: interval = prev_interval * 1.2 (but capped at prev * ease * 0.5)
+    newInterval = Math.round(card.interval * 1.2);
+    // Cap at what good would give * 0.5 (Anki behavior)
+    const goodInterval = Math.round(card.interval * newEase);
+    newInterval = Math.min(newInterval, Math.round(goodInterval * 0.5));
   } else if (rating === 2) {
     // Good - normal progression using ease factor
     newInterval = Math.round(card.interval * newEase);
@@ -361,7 +385,7 @@ function scheduleReviewCard(
   newInterval = Math.round(newInterval * settings.INTERVAL_MODIFIER);
 
   newInterval = Math.max(MINIMUM_INTERVAL, newInterval);
-  newInterval = Math.min(MAXIMUM_INTERVAL, newInterval);
+  newInterval = Math.min(settings.MAX_INTERVAL, newInterval);
 
   return {
     ...card,
@@ -480,13 +504,18 @@ export function getNextCardToStudyWithSettings(
 
   // 2. Second priority: Review cards that are due (if under daily limit)
   // If MAX_REVIEWS_PER_DAY is 0 or less, allow unlimited reviews
+  // Support review ahead option
   if (
     settings.MAX_REVIEWS_PER_DAY <= 0 ||
     session.reviewsCompleted < settings.MAX_REVIEWS_PER_DAY
   ) {
-    const reviewCards = allCards.filter(
-      (card) => card.state === "review" && card.due <= now && !card.isSuspended
-    );
+    const reviewCards = allCards.filter((card) => {
+      if (card.state !== "review" || card.isSuspended) return false;
+      if (session.buriedCards.has(card.id)) return false;
+
+      // Normal due check or review ahead
+      return settings.REVIEW_AHEAD || card.due <= now;
+    });
 
     if (reviewCards.length > 0) {
       // Sort by due time (earliest first)
@@ -506,16 +535,29 @@ export function getNextCardToStudyWithSettings(
   // 3. Third priority: New cards (if under daily limit)
   if (session.newCardsStudied < settings.NEW_CARDS_PER_DAY) {
     const newCards = allCards.filter(
-      (card) => card.state === "new" && !card.isSuspended
+      (card) =>
+        card.state === "new" &&
+        !card.isSuspended &&
+        !session.buriedCards.has(card.id)
     );
 
     if (newCards.length > 0) {
-      // For new cards, we can randomize or use creation order
-      console.log(
-        `🆕 Found ${newCards.length} new cards, selecting:`,
-        newCards[0].id
-      );
-      return newCards[0].id;
+      // Apply new card ordering
+      if (settings.NEW_CARD_ORDER === "random") {
+        const randomIndex = Math.floor(Math.random() * newCards.length);
+        console.log(
+          `🆕 Found ${newCards.length} new cards, selecting random:`,
+          newCards[randomIndex].id
+        );
+        return newCards[randomIndex].id;
+      } else {
+        // FIFO - use first card (assumes cards are ordered by creation)
+        console.log(
+          `🆕 Found ${newCards.length} new cards, selecting first:`,
+          newCards[0].id
+        );
+        return newCards[0].id;
+      }
     }
   } else {
     console.log(
@@ -535,6 +577,8 @@ export function initStudySession(): StudySession {
     newCardsStudied: 0,
     reviewsCompleted: 0,
     learningCardsInQueue: [],
+    reviewHistory: [],
+    buriedCards: new Set(),
   };
 }
 
@@ -545,9 +589,23 @@ export function updateStudySession(
   session: StudySession,
   card: SRSCardState,
   rating: SRSRating,
-  newCardState: SRSCardState
+  newCardState: SRSCardState,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): StudySession {
   const updatedSession = { ...session };
+
+  // Save review to history for undo functionality
+  updatedSession.reviewHistory.push({
+    cardId: card.id,
+    previousState: card,
+    rating,
+    timestamp: Date.now(),
+  });
+
+  // Keep only last 20 reviews for undo (MVP limit)
+  if (updatedSession.reviewHistory.length > 20) {
+    updatedSession.reviewHistory.shift();
+  }
 
   // Track new cards studied
   if (card.state === "new") {
@@ -571,6 +629,12 @@ export function updateStudySession(
     // Remove from learning queue if graduated
     updatedSession.learningCardsInQueue =
       updatedSession.learningCardsInQueue.filter((id) => id !== card.id);
+  }
+
+  // Sibling burying logic (MVP: simple noteId-based)
+  if (settings.BURY_SIBLINGS && card.noteId) {
+    // This would need to be implemented based on actual note/card relationships
+    // For MVP, we just mark the current card as processed
   }
 
   return updatedSession;
@@ -696,4 +760,145 @@ export function suspendCard(card: SRSCardState): SRSCardState {
 
 export function unsuspendCard(card: SRSCardState): SRSCardState {
   return { ...card, isSuspended: false };
+}
+
+/**
+ * MVP: Simple note template support
+ * Generate multiple cards from a single note based on template
+ */
+export function generateCardsFromNote(
+  noteId: string,
+  fields: Record<string, string>,
+  templates: Array<{
+    id: string;
+    name: string;
+    front: string;
+    back: string;
+  }>,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+): Record<string, SRSCardState> {
+  const cards: Record<string, SRSCardState> = {};
+
+  for (const template of templates) {
+    const cardId = `${noteId}_${template.id}`;
+
+    // Simple field substitution (MVP)
+    const front = template.front.replace(
+      /\{\{(\w+)\}\}/g,
+      (match, field) => fields[field] || match
+    );
+    const back = template.back.replace(
+      /\{\{(\w+)\}\}/g,
+      (match, field) => fields[field] || match
+    );
+
+    // Create SRS state for this card
+    cards[cardId] = {
+      id: cardId,
+      state: "new",
+      interval: 0,
+      ease: settings.STARTING_EASE,
+      due: Date.now(),
+      lastReviewed: 0,
+      repetitions: 0,
+      lapses: 0,
+      learningStep: 0,
+      isLeech: false,
+      isSuspended: false,
+      noteId,
+      templateId: template.id,
+      tags: [], // Can be populated from note metadata
+    };
+  }
+
+  return cards;
+}
+
+/**
+ * MVP: Manual interval override
+ */
+export function setCardInterval(
+  card: SRSCardState,
+  intervalDays: number,
+  now: number = Date.now()
+): SRSCardState {
+  return {
+    ...card,
+    interval: intervalDays,
+    due: addDays(now, intervalDays),
+    state: intervalDays > 0 ? "review" : card.state,
+  };
+}
+
+/**
+ * MVP: Undo last review action
+ */
+export function undoLastReview(
+  session: StudySession,
+  cardStates: Record<string, SRSCardState>
+): {
+  session: StudySession;
+  cardStates: Record<string, SRSCardState>;
+} | null {
+  if (session.reviewHistory.length === 0) {
+    return null; // Nothing to undo
+  }
+
+  const updatedSession = { ...session };
+  const lastReview = updatedSession.reviewHistory.pop()!;
+  const updatedCardStates = { ...cardStates };
+
+  // Restore previous card state
+  updatedCardStates[lastReview.cardId] = lastReview.previousState;
+
+  // Adjust session counters
+  const previousCard = lastReview.previousState;
+  if (previousCard.state === "new") {
+    updatedSession.newCardsStudied = Math.max(
+      0,
+      updatedSession.newCardsStudied - 1
+    );
+  } else if (previousCard.state === "review") {
+    updatedSession.reviewsCompleted = Math.max(
+      0,
+      updatedSession.reviewsCompleted - 1
+    );
+  }
+
+  return {
+    session: updatedSession,
+    cardStates: updatedCardStates,
+  };
+}
+
+/**
+ * MVP: Get daily study statistics
+ */
+export function getDailyStats(
+  session: StudySession,
+  cardStates: Record<string, SRSCardState>,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+): {
+  newCardsStudied: number;
+  reviewsCompleted: number;
+  lapses: number;
+  totalTimeSpent: number; // Estimate based on cards
+  accuracy: number; // Percentage of Good/Easy ratings
+} {
+  const totalReviews = session.reviewHistory.length;
+  const goodOrEasyReviews = session.reviewHistory.filter(
+    (review) => review.rating >= 2
+  ).length;
+
+  const lapses = session.reviewHistory.filter(
+    (review) => review.rating === 0
+  ).length;
+
+  return {
+    newCardsStudied: session.newCardsStudied,
+    reviewsCompleted: session.reviewsCompleted,
+    lapses,
+    totalTimeSpent: totalReviews * 30, // Rough estimate: 30 seconds per card
+    accuracy: totalReviews > 0 ? (goodOrEasyReviews / totalReviews) * 100 : 0,
+  };
 }
