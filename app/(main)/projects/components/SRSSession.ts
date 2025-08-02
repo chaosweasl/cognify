@@ -1,7 +1,7 @@
 // SRS Session Management and Statistics
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
-import { SRSCardState, SRSRating, CardState } from "./SRSScheduler";
+import { SRSCardState, SRSRating } from "./SRSScheduler";
 
 // --- STUDY SESSION TYPES ---
 export type StudySession = {
@@ -45,6 +45,7 @@ export function initStudySession(): StudySession {
 
 /**
  * Get the next card to study, respecting daily limits and card priorities (with settings)
+ * Fixed learning queue behavior to prevent infinite loops and match Anki behavior
  */
 export function getNextCardToStudyWithSettings(
   cardStates: Record<string, SRSCardState>,
@@ -62,9 +63,9 @@ export function getNextCardToStudyWithSettings(
     learningQueueSize: session.learningCardsInQueue.length,
   });
 
-  // 1. First priority: Learning/Relearning cards (always available within session)
-  // Learning steps are completed in the same session - due times only matter between sessions
-  // This is core Anki behavior: "Again" and "Hard" cards stay in the session queue
+  // 1. First priority: Learning/Relearning cards (ALWAYS available within session)
+  // CRITICAL FIX: Learning cards are immediately available after rating, ignore due times within session
+  // This prevents infinite loops where cards disappear/reappear based on due time
   const learningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
@@ -72,8 +73,24 @@ export function getNextCardToStudyWithSettings(
   );
 
   if (learningCards.length > 0) {
-    // Sort by due time (earliest first) - this maintains proper queue order
-    // In Anki, cards are shown in the order they entered learning queue
+    // ANKI BEHAVIOR: Use the learning queue to maintain proper FIFO order
+    // Cards in the learning queue should be prioritized in queue order, not by due time
+    
+    // First, try to find a card that's in the learning queue (maintain FIFO order)
+    for (const queuedCardId of session.learningCardsInQueue) {
+      const queuedCard = learningCards.find(card => card.id === queuedCardId);
+      if (queuedCard) {
+        console.log(
+          `📚 Found queued learning card:`,
+          queuedCard.id,
+          `(step ${queuedCard.learningStep + 1})`
+        );
+        return queuedCard.id;
+      }
+    }
+    
+    // If no queued cards found, take the earliest due learning card
+    // This handles cards that are learning but not yet in the session queue
     learningCards.sort((a, b) => a.due - b.due);
     const nextCard = learningCards[0];
     console.log(
@@ -178,6 +195,7 @@ export function burySiblingsAfterReview(
 
 /**
  * Update study session after rating a card
+ * Fixed learning queue management to maintain proper FIFO order and prevent infinite loops
  */
 export function updateStudySession(
   session: StudySession,
@@ -212,16 +230,34 @@ export function updateStudySession(
     updatedSession.reviewsCompleted++;
   }
 
-  // Manage learning queue
+  // CRITICAL FIX: Proper learning queue management for FIFO behavior
   if (
     newCardState.state === "learning" ||
     newCardState.state === "relearning"
   ) {
-    if (!updatedSession.learningCardsInQueue.includes(card.id)) {
+    // Card is entering or staying in learning queue
+    
+    if (card.state === "new") {
+      // New card entering learning - add to END of queue
+      if (!updatedSession.learningCardsInQueue.includes(card.id)) {
+        updatedSession.learningCardsInQueue.push(card.id);
+      }
+    } else if (
+      (card.state === "learning" || card.state === "relearning") &&
+      rating === 0
+    ) {
+      // "Again" on learning card - move to BACK of queue (FIFO behavior)
+      updatedSession.learningCardsInQueue = updatedSession.learningCardsInQueue.filter(
+        (id) => id !== card.id
+      );
+      updatedSession.learningCardsInQueue.push(card.id); // Add to back
+    } else if (!updatedSession.learningCardsInQueue.includes(card.id)) {
+      // Learning card not in queue yet - add to end
       updatedSession.learningCardsInQueue.push(card.id);
     }
+    // If card was already in learning and got Good/Hard, it stays in its current queue position
   } else {
-    // Remove from learning queue if graduated
+    // Card graduated from learning - remove from queue
     updatedSession.learningCardsInQueue =
       updatedSession.learningCardsInQueue.filter((id) => id !== card.id);
   }

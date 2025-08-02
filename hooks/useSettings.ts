@@ -111,7 +111,7 @@ function dbRowToSettings(row: UserSettingsRow): {
       HARD_INTERVAL_FACTOR: row.hard_interval_factor,
       EASY_INTERVAL_FACTOR: row.easy_interval_factor,
       LAPSE_RECOVERY_FACTOR: row.lapse_recovery_factor,
-      LAPSE_EASE_PENALTY: row.lapse_recovery_factor, // Use same default for now
+      LAPSE_EASE_PENALTY: 0.2, // Anki standard: 0.2 (20% ease reduction)
       INTERVAL_MODIFIER: 1.0, // Default value for now
       LEECH_THRESHOLD: row.leech_threshold,
       LEECH_ACTION: row.leech_action as "suspend" | "tag",
