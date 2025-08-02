@@ -201,13 +201,14 @@ export default function StudyFlashcards({
 
       // Find next card after a short delay
       setTimeout(() => {
+        const updatedNow = Date.now(); // Use current time for next card selection
         setSRSState((currentSRSState) => {
           setStudySession((currentSession) => {
             const nextCardId = getNextCardToStudyWithSettings(
               currentSRSState,
               currentSession,
               srsSettings,
-              now
+              updatedNow // Pass consistent timestamp
             );
 
             if (nextCardId) {
@@ -218,7 +219,9 @@ export default function StudyFlashcards({
               setCurrentCardId(null);
               setSessionStats((prev) => ({
                 ...prev,
-                timeSpent: Math.round((now - sessionStartTime) / 1000 / 60),
+                timeSpent: Math.round(
+                  (updatedNow - sessionStartTime) / 1000 / 60
+                ),
               }));
             }
             return currentSession;
@@ -259,10 +262,12 @@ export default function StudyFlashcards({
 
   useEffect(() => {
     if (!currentCardId && !sessionComplete) {
+      const now = Date.now(); // Use current timestamp
       const nextCardId = getNextCardToStudyWithSettings(
         srsState,
         studySession,
-        srsSettings
+        srsSettings,
+        now // Pass consistent timestamp
       );
       setCurrentCardId(nextCardId);
 
