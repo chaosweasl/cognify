@@ -636,7 +636,7 @@ function scheduleLearningCard(
     // Good - advance to next step or graduate
     const nextStep = card.learningStep + 1;
 
-    if (nextStep >= settings.RELEARNING_STEPS.length) {
+    if (nextStep >= settings.LEARNING_STEPS.length) {
       // Graduate to review queue - use GRADUATING_INTERVAL as base
       const graduatingInterval = Math.max(
         1,

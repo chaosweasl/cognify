@@ -183,7 +183,7 @@ export function hasLearningCards(
 
 /**
  * Check if a study session should be considered complete
- * Session is only complete when there are no available cards AND no learning cards remain
+ * Session is complete when there are no cards available for study right now
  */
 export function isStudySessionComplete(
   cardStates: Record<string, SRSCardState>,
@@ -197,10 +197,9 @@ export function isStudySessionComplete(
     settings,
     now
   );
-  const learningCardsRemain = hasLearningCards(cardStates);
 
-  // Session is complete only if no cards are available AND no learning cards remain
-  return !nextCard && !learningCardsRemain;
+  // Session is complete when no cards are available for study right now
+  return !nextCard;
 }
 
 /**
@@ -506,11 +505,12 @@ export function getSessionAwareStudyStats(
   ).length;
   const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
 
-  // Learning cards (always available within session - ignore due time)
+  // Learning cards that are actually due now (consistent with card selection logic)
   const dueLearningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended
+      !card.isSuspended &&
+      card.due <= now
   ).length;
 
   // Review cards that are due now (considering daily limit and suspension)
