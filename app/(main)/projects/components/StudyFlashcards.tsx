@@ -337,7 +337,7 @@ export default function StudyFlashcards({
         sessionStats={sessionStats}
         studyStats={{
           newCards: availableStats.availableNewCards,
-          learningCards: availableStats.dueLearningCards,
+          learningCards: availableStats.totalLearningCards,
           reviewCards: availableStats.dueReviewCards,
         }}
         nextReview={nextReview}
@@ -361,7 +361,7 @@ export default function StudyFlashcards({
       <div className="w-full max-w-2xl">
         <StudyStats
           newCards={availableStats.availableNewCards}
-          learningCards={availableStats.dueLearningCards}
+          learningCards={availableStats.totalLearningCards}
           reviewCards={availableStats.dueReviewCards}
           dueCards={availableStats.dueCards}
         />

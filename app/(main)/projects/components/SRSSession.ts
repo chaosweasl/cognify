@@ -227,35 +227,35 @@ export function getNextCardToStudyWithSettings(
     reviewsCompleted: session.reviewsCompleted,
     reviewLimit: settings.MAX_REVIEWS_PER_DAY,
     learningQueueSize: session.learningCardsInQueue.length,
+    learningQueue: session.learningCardsInQueue.map((id) => id.slice(0, 8)),
   });
 
-  // 1. First priority: Learning/Relearning cards (only available when due)
-  // FIX: Only show learning cards when due <= now, regardless of queue membership
+  // 1. First priority: Learning/Relearning cards (only when actually due)
+  // Following genuine Anki behavior: learning cards must wait for their due time
   const learningCards = allCards.filter((card) => {
     const isLearning = card.state === "learning" || card.state === "relearning";
     if (!isLearning || card.isSuspended) return false;
+
+    // Learning cards are only available when their due time has arrived
+    // This follows the genuine SM-2/Anki algorithm
     return card.due <= now;
   });
 
   if (learningCards.length > 0) {
-    // Prioritize cards in the learning queue (FIFO), but only if due
-    for (const queuedCardId of session.learningCardsInQueue) {
-      const queuedCard = learningCards.find((card) => card.id === queuedCardId);
-      if (queuedCard) {
-        console.log(
-          `📚 Found due learning card in queue:`,
-          queuedCard.id,
-          `(step ${queuedCard.learningStep + 1})`
-        );
-        return queuedCard.id;
-      }
-    }
+    console.log(
+      `📚 Found ${learningCards.length} learning cards due:`,
+      learningCards.map((c) => ({
+        id: c.id.slice(0, 8),
+        step: c.learningStep,
+        due: new Date(c.due).toLocaleTimeString(),
+      }))
+    );
 
-    // If no queued cards found, take the earliest due learning card
+    // Select the earliest due learning card (genuine SM-2 behavior)
     learningCards.sort((a, b) => a.due - b.due);
     const nextCard = learningCards[0];
     console.log(
-      `📚 Found ${learningCards.length} learning cards, selecting:`,
+      `📚 Selecting earliest due learning card:`,
       nextCard.id,
       `(step ${nextCard.learningStep + 1})`
     );
@@ -429,31 +429,16 @@ export function updateStudySession(
   updatedSession.newCardsStudied = counters.newCardsFromHistory;
   updatedSession.reviewsCompleted = counters.reviewsFromHistory;
 
-  // CRITICAL FIX: Proper learning queue management for FIFO behavior
+  // Learning queue management (simplified for genuine SM-2 behavior)
   if (
     newCardState.state === "learning" ||
     newCardState.state === "relearning"
   ) {
-    // Card is entering or staying in learning queue
-
-    if (card.state === "new") {
-      // New card entering learning - add to END of queue
-      if (!updatedSession.learningCardsInQueue.includes(card.id)) {
-        updatedSession.learningCardsInQueue.push(card.id);
-      }
-    } else if (
-      (card.state === "learning" || card.state === "relearning") &&
-      rating === 0
-    ) {
-      // "Again" on learning card - move to BACK of queue (FIFO behavior)
-      updatedSession.learningCardsInQueue =
-        updatedSession.learningCardsInQueue.filter((id) => id !== card.id);
-      updatedSession.learningCardsInQueue.push(card.id); // Add to back
-    } else if (!updatedSession.learningCardsInQueue.includes(card.id)) {
-      // Learning card not in queue yet - add to end
+    // Card is entering or staying in learning state
+    if (!updatedSession.learningCardsInQueue.includes(card.id)) {
+      // Add to learning queue if not already there
       updatedSession.learningCardsInQueue.push(card.id);
     }
-    // If card was already in learning and got Good/Hard, it stays in its current queue position
   } else {
     // Card graduated from learning - remove from queue
     updatedSession.learningCardsInQueue =
@@ -480,6 +465,7 @@ export function updateStudySession(
 
 /**
  * Get session-aware study statistics (shows only cards available for study)
+ * Following genuine Anki behavior for accurate statistics
  */
 export function getSessionAwareStudyStats(
   cardStates: Record<string, SRSCardState>,
@@ -492,6 +478,7 @@ export function getSessionAwareStudyStats(
   dueReviewCards: number;
   dueCards: number;
   totalCards: number;
+  totalLearningCards: number; // All learning cards (due + not due)
 } {
   const allCards = Object.values(cardStates);
 
@@ -505,12 +492,19 @@ export function getSessionAwareStudyStats(
   ).length;
   const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
 
-  // Learning cards that are actually due now (consistent with card selection logic)
+  // Learning cards that are actually due right now (genuine Anki behavior)
   const dueLearningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
       !card.isSuspended &&
       card.due <= now
+  ).length;
+
+  // Total learning cards (for UI display of cards in learning state)
+  const totalLearningCards = allCards.filter(
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
   ).length;
 
   // Review cards that are due now (considering daily limit and suspension)
@@ -526,7 +520,7 @@ export function getSessionAwareStudyStats(
       ? reviewCardsTotal
       : Math.min(reviewCardsTotal, remainingReviewSlots);
 
-  // DUE = learning + review (NOT new cards)
+  // DUE NOW = learning cards due now + review cards due now (NOT new cards)
   const dueCards = dueLearningCards + dueReviewCards;
 
   return {
@@ -535,6 +529,7 @@ export function getSessionAwareStudyStats(
     dueReviewCards,
     dueCards,
     totalCards: allCards.length,
+    totalLearningCards,
   };
 }
 
