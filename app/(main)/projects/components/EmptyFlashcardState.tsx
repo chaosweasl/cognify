@@ -88,8 +88,8 @@ export function EmptyFlashcardState({
             Daily limit reached
           </div>
           <div className="text-base-content/70 mb-4">
-            You've completed all available cards for today. Come back tomorrow
-            for more study!
+            You&apos;ve completed all available cards for today. Come back
+            tomorrow for more study!
           </div>
           {onReset && (
             <button className="btn btn-primary" onClick={onReset}>

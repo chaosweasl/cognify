@@ -135,7 +135,7 @@ export default function ProjectResetComponent({
             <h3 className="font-bold text-lg text-error">Confirm Reset</h3>
             <p className="py-4">
               Are you sure you want to reset all SRS data for{" "}
-              <span className="font-semibold">"{projectName}"</span>?
+              <span className="font-semibold">&quot;{projectName}&quot;</span>?
             </p>
             <p className="text-sm text-base-content/70 mb-4">
               This will permanently delete all learning progress and cannot be
