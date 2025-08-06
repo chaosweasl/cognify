@@ -2,10 +2,10 @@
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
-import { 
-  getDailyStudyStats, 
-  updateDailyStudyStats, 
-  incrementDailyStudyCounters 
+import {
+  getDailyStudyStats,
+  updateDailyStudyStats,
+  incrementDailyStudyCounters,
 } from "@/utils/supabase/dailyStudyStats";
 
 // --- CONSTANTS ---
@@ -158,18 +158,20 @@ export function addDays(timestamp: number, days: number): number {
  * Get today's date string for daily limit tracking
  */
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
 /**
  * Get daily study counts from database
  * Returns counts for today only, resets for new days
  */
-async function getDailyStudyCountsFromDB(userId: string): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
+async function getDailyStudyCountsFromDB(
+  userId: string
+): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
   try {
     return await getDailyStudyStats(userId);
   } catch (error) {
-    console.warn('Failed to load daily study counts from database:', error);
+    console.warn("Failed to load daily study counts from database:", error);
     return { newCardsStudied: 0, reviewsCompleted: 0 };
   }
 }
@@ -178,14 +180,14 @@ async function getDailyStudyCountsFromDB(userId: string): Promise<{ newCardsStud
  * Save daily study counts to database
  */
 async function saveDailyStudyCountsToDB(
-  userId: string, 
-  newCardsStudied: number, 
+  userId: string,
+  newCardsStudied: number,
   reviewsCompleted: number
 ): Promise<void> {
   try {
     await updateDailyStudyStats(userId, newCardsStudied, reviewsCompleted);
   } catch (error) {
-    console.warn('Failed to save daily study counts to database:', error);
+    console.warn("Failed to save daily study counts to database:", error);
   }
 }
 
@@ -193,27 +195,32 @@ async function saveDailyStudyCountsToDB(
  * Migrate localStorage daily study data to database (one-time migration)
  * Call this when user first logs in to preserve their progress
  */
-export async function migrateDailyStudyDataToDatabase(userId: string): Promise<void> {
+export async function migrateDailyStudyDataToDatabase(
+  userId: string
+): Promise<void> {
   try {
     const today = getTodayDateString();
     const stored = localStorage.getItem(`daily-study-${today}`);
-    
+
     if (stored) {
       const parsed = JSON.parse(stored);
       const newCardsStudied = parsed.newCardsStudied || 0;
       const reviewsCompleted = parsed.reviewsCompleted || 0;
-      
+
       // Only migrate if there's actual progress to preserve
       if (newCardsStudied > 0 || reviewsCompleted > 0) {
         await updateDailyStudyStats(userId, newCardsStudied, reviewsCompleted);
-        console.log('Migrated daily study data to database:', { newCardsStudied, reviewsCompleted });
-        
+        console.log("Migrated daily study data to database:", {
+          newCardsStudied,
+          reviewsCompleted,
+        });
+
         // Optionally clear localStorage after successful migration
         localStorage.removeItem(`daily-study-${today}`);
       }
     }
   } catch (error) {
-    console.warn('Failed to migrate daily study data to database:', error);
+    console.warn("Failed to migrate daily study data to database:", error);
   }
 }
 
@@ -221,27 +228,32 @@ export async function migrateDailyStudyDataToDatabase(userId: string): Promise<v
  * Initialize study session with fallback to localStorage for backward compatibility
  * This allows graceful migration from localStorage to database
  */
-export async function initStudySessionWithFallback(userId?: string): Promise<StudySession> {
+export async function initStudySessionWithFallback(
+  userId?: string
+): Promise<StudySession> {
   if (userId) {
     try {
       return await initStudySession(userId);
     } catch (error) {
-      console.warn('Failed to load from database, falling back to localStorage:', error);
+      console.warn(
+        "Failed to load from database, falling back to localStorage:",
+        error
+      );
     }
   }
-  
+
   // Fallback to localStorage for backward compatibility
   try {
     const today = getTodayDateString();
     const stored = localStorage.getItem(`daily-study-${today}`);
-    
+
     if (stored) {
       const parsed = JSON.parse(stored);
       const dailyCounts = {
         newCardsStudied: parsed.newCardsStudied || 0,
-        reviewsCompleted: parsed.reviewsCompleted || 0
+        reviewsCompleted: parsed.reviewsCompleted || 0,
       };
-      
+
       return {
         newCardsStudied: dailyCounts.newCardsStudied,
         reviewsCompleted: dailyCounts.reviewsCompleted,
@@ -256,9 +268,9 @@ export async function initStudySessionWithFallback(userId?: string): Promise<Stu
       };
     }
   } catch (error) {
-    console.warn('Failed to load from localStorage:', error);
+    console.warn("Failed to load from localStorage:", error);
   }
-  
+
   // Final fallback: empty session
   return {
     newCardsStudied: 0,
@@ -272,6 +284,51 @@ export async function initStudySessionWithFallback(userId?: string): Promise<Stu
       lastHistoryLength: 0,
     },
   };
+}
+
+/**
+ * Promote learning cards that have been waiting too long to review state
+ * This prevents cards from getting stuck in learning indefinitely
+ */
+export function promoteStuckLearningCards(
+  cardStates: Record<string, SRSCardState>,
+  settings: SRSSettings,
+  now: number = Date.now()
+): Record<string, SRSCardState> {
+  const updatedCardStates = { ...cardStates };
+  let promotedCount = 0;
+
+  Object.values(updatedCardStates).forEach((card) => {
+    if (
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
+    ) {
+      const timeUntilDue = card.due - now;
+      const minutesUntilDue = timeUntilDue / (60 * 1000);
+
+      // If card is scheduled more than 15 minutes in the future, promote it
+      if (minutesUntilDue > 15) {
+        updatedCardStates[card.id] = {
+          ...card,
+          state: "review",
+          interval: Math.max(1, Math.round(minutesUntilDue / (60 * 24))), // Convert to days
+          due: card.due, // Keep the same due time
+          lastReviewed: now,
+          repetitions: Math.max(1, card.repetitions),
+          learningStep: 0, // Reset learning step
+        };
+        promotedCount++;
+      }
+    }
+  });
+
+  if (promotedCount > 0) {
+    console.log(
+      `🎓 Promoted ${promotedCount} stuck learning cards to review state`
+    );
+  }
+
+  return updatedCardStates;
 }
 
 /**
@@ -293,7 +350,8 @@ export function getProjectStudyStats(
   const dueCards = allCards.filter(
     (card) =>
       !card.isSuspended &&
-      ((card.state === "learning" || card.state === "relearning") ||
+      (card.state === "learning" ||
+        card.state === "relearning" ||
         card.state === "review") &&
       card.due <= now
   ).length;
@@ -325,7 +383,7 @@ export function getProjectStudyStats(
  */
 export async function initStudySession(userId: string): Promise<StudySession> {
   const dailyCounts = await getDailyStudyCountsFromDB(userId);
-  
+
   return {
     newCardsStudied: dailyCounts.newCardsStudied,
     reviewsCompleted: dailyCounts.reviewsCompleted,
@@ -521,10 +579,19 @@ export function getNextCardToStudyWithSettings(
     console.log(`🔄 No cards due, checking learning ahead...`);
 
     // Find learning cards that are close to being due (within 10 minutes)
+    // OR cards that have been in learning state for more than 10 minutes total
     const learningAheadCards = allLearningCards.filter((card) => {
       const timeUntilDue = card.due - now;
       const minutesUntilDue = timeUntilDue / (60 * 1000);
-      return minutesUntilDue <= 10; // Study up to 10 minutes ahead
+
+      // Allow studying cards that are due within 10 minutes
+      const isDueSoon = minutesUntilDue <= 10;
+
+      // Also allow cards that have been waiting in learning state for more than 10 minutes
+      // This prevents cards from getting stuck in learning indefinitely
+      const hasBeenWaitingTooLong = timeUntilDue > 10 * 60 * 1000; // More than 10 minutes away
+
+      return isDueSoon || hasBeenWaitingTooLong;
     });
 
     if (learningAheadCards.length > 0) {
@@ -534,9 +601,17 @@ export function getNextCardToStudyWithSettings(
       const minutesAhead =
         Math.round(((nextCard.due - now) / (60 * 1000)) * 10) / 10;
 
-      console.log(
-        `📚 Learning ahead: Selecting card ${nextCard.id} (due in ${minutesAhead} min)`
-      );
+      if (minutesAhead > 10) {
+        console.log(
+          `📚 Learning promotion: Selecting card ${
+            nextCard.id
+          } (waiting too long: ${Math.abs(minutesAhead)} min)`
+        );
+      } else {
+        console.log(
+          `📚 Learning ahead: Selecting card ${nextCard.id} (due in ${minutesAhead} min)`
+        );
+      }
       return nextCard.id;
     }
   }
@@ -622,8 +697,12 @@ export async function updateStudySession(
   }
 
   // Update counters incrementally for better performance
+  // IMPORTANT: Only count cards as "new" if they were actually in "new" state before
+  // Learning cards (even if studied early) should NOT count toward new card limit
   const wasNewCard = card.state === "new";
   const wasReviewCard = card.state === "review";
+  const wasLearningCard =
+    card.state === "learning" || card.state === "relearning";
 
   // Initialize counters if missing (backwards compatibility)
   if (!updatedSession._incrementalCounters) {
@@ -636,12 +715,17 @@ export async function updateStudySession(
 
   // Increment counters based on the card that was just reviewed
   const counters = updatedSession._incrementalCounters;
+
+  // Only count as new card if it was actually in "new" state
   if (wasNewCard) {
     counters.newCardsFromHistory++;
   }
-  if (wasReviewCard) {
+
+  // Count as review if it was review OR learning/relearning (since learning cards are reviews in progress)
+  if (wasReviewCard || wasLearningCard) {
     counters.reviewsFromHistory++;
   }
+
   counters.lastHistoryLength = updatedSession.reviewHistory.length;
 
   // Update session counters from incremental tracking
@@ -653,8 +737,8 @@ export async function updateStudySession(
     userId,
     updatedSession.newCardsStudied,
     updatedSession.reviewsCompleted
-  ).catch(error => {
-    console.warn('Failed to persist daily counts to database:', error);
+  ).catch((error) => {
+    console.warn("Failed to persist daily counts to database:", error);
   });
 
   // Learning queue management (simplified for genuine SM-2 behavior)

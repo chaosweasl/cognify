@@ -254,14 +254,14 @@ export async function getProjectStudyStats(
       return { dueCards: 0, newCards: 0, learningCards: 0 };
     }
 
-    const flashcardIds = flashcards.map(f => f.id);
+    const flashcardIds = flashcards.map((f) => f.id);
 
     // Get SRS states for these flashcards
     const { data: states, error: statesError } = await supabase
       .from("srs_states")
       .select("state, due, is_suspended")
       .eq("user_id", userId)
-      .in("flashcard_id", flashcardIds);
+      .in("card_id", flashcardIds);
 
     if (statesError) {
       console.error("Error getting project SRS states:", statesError);
@@ -277,11 +277,11 @@ export async function getProjectStudyStats(
     let newCards = 0;
     let learningCards = 0;
 
-    states.forEach(state => {
+    states.forEach((state) => {
       if (state.is_suspended) return;
 
       const dueDate = new Date(state.due);
-      
+
       if (state.state === "new") {
         newCards++;
       } else if (state.state === "learning" || state.state === "relearning") {
