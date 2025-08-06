@@ -2,6 +2,11 @@
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
+import { 
+  getDailyStudyStats, 
+  updateDailyStudyStats, 
+  incrementDailyStudyCounters 
+} from "@/utils/supabase/dailyStudyStats";
 
 // --- CONSTANTS ---
 const UNDO_HISTORY_LIMIT = 20; // Maximum number of reviews to keep for undo
@@ -149,12 +154,112 @@ export function addDays(timestamp: number, days: number): number {
   return timestamp + days * 24 * 60 * 60 * 1000;
 }
 
-// --- SESSION MANAGEMENT FUNCTIONS ---
+/**
+ * Get today's date string for daily limit tracking
+ */
+function getTodayDateString(): string {
+  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+}
 
 /**
- * Initialize a new study session
+ * Get daily study counts from database
+ * Returns counts for today only, resets for new days
  */
-export function initStudySession(): StudySession {
+async function getDailyStudyCountsFromDB(userId: string): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
+  try {
+    return await getDailyStudyStats(userId);
+  } catch (error) {
+    console.warn('Failed to load daily study counts from database:', error);
+    return { newCardsStudied: 0, reviewsCompleted: 0 };
+  }
+}
+
+/**
+ * Save daily study counts to database
+ */
+async function saveDailyStudyCountsToDB(
+  userId: string, 
+  newCardsStudied: number, 
+  reviewsCompleted: number
+): Promise<void> {
+  try {
+    await updateDailyStudyStats(userId, newCardsStudied, reviewsCompleted);
+  } catch (error) {
+    console.warn('Failed to save daily study counts to database:', error);
+  }
+}
+
+/**
+ * Migrate localStorage daily study data to database (one-time migration)
+ * Call this when user first logs in to preserve their progress
+ */
+export async function migrateDailyStudyDataToDatabase(userId: string): Promise<void> {
+  try {
+    const today = getTodayDateString();
+    const stored = localStorage.getItem(`daily-study-${today}`);
+    
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const newCardsStudied = parsed.newCardsStudied || 0;
+      const reviewsCompleted = parsed.reviewsCompleted || 0;
+      
+      // Only migrate if there's actual progress to preserve
+      if (newCardsStudied > 0 || reviewsCompleted > 0) {
+        await updateDailyStudyStats(userId, newCardsStudied, reviewsCompleted);
+        console.log('Migrated daily study data to database:', { newCardsStudied, reviewsCompleted });
+        
+        // Optionally clear localStorage after successful migration
+        localStorage.removeItem(`daily-study-${today}`);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to migrate daily study data to database:', error);
+  }
+}
+
+/**
+ * Initialize study session with fallback to localStorage for backward compatibility
+ * This allows graceful migration from localStorage to database
+ */
+export async function initStudySessionWithFallback(userId?: string): Promise<StudySession> {
+  if (userId) {
+    try {
+      return await initStudySession(userId);
+    } catch (error) {
+      console.warn('Failed to load from database, falling back to localStorage:', error);
+    }
+  }
+  
+  // Fallback to localStorage for backward compatibility
+  try {
+    const today = getTodayDateString();
+    const stored = localStorage.getItem(`daily-study-${today}`);
+    
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const dailyCounts = {
+        newCardsStudied: parsed.newCardsStudied || 0,
+        reviewsCompleted: parsed.reviewsCompleted || 0
+      };
+      
+      return {
+        newCardsStudied: dailyCounts.newCardsStudied,
+        reviewsCompleted: dailyCounts.reviewsCompleted,
+        learningCardsInQueue: [],
+        reviewHistory: [],
+        buriedCards: new Set(),
+        _incrementalCounters: {
+          newCardsFromHistory: dailyCounts.newCardsStudied,
+          reviewsFromHistory: dailyCounts.reviewsCompleted,
+          lastHistoryLength: 0,
+        },
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to load from localStorage:', error);
+  }
+  
+  // Final fallback: empty session
   return {
     newCardsStudied: 0,
     reviewsCompleted: 0,
@@ -164,6 +269,72 @@ export function initStudySession(): StudySession {
     _incrementalCounters: {
       newCardsFromHistory: 0,
       reviewsFromHistory: 0,
+      lastHistoryLength: 0,
+    },
+  };
+}
+
+/**
+ * Get project-level study statistics for display on project cards
+ * Returns Due/New/Learning counts for a specific project
+ */
+export function getProjectStudyStats(
+  cardStates: Record<string, SRSCardState>,
+  settings: SRSSettings,
+  now: number = Date.now()
+): {
+  dueCards: number;
+  newCards: number;
+  learningCards: number;
+} {
+  const allCards = Object.values(cardStates);
+
+  // Due cards = learning cards due now + review cards due now
+  const dueCards = allCards.filter(
+    (card) =>
+      !card.isSuspended &&
+      ((card.state === "learning" || card.state === "relearning") ||
+        card.state === "review") &&
+      card.due <= now
+  ).length;
+
+  // New cards = cards not yet introduced
+  const newCards = allCards.filter(
+    (card) => card.state === "new" && !card.isSuspended
+  ).length;
+
+  // Learning cards = cards in learning/relearning state (regardless of due time)
+  const learningCards = allCards.filter(
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
+  ).length;
+
+  return {
+    dueCards,
+    newCards,
+    learningCards,
+  };
+}
+
+// --- SESSION MANAGEMENT FUNCTIONS ---
+
+/**
+ * Initialize a new study session with persistent daily limits from database
+ * Loads today's new cards and reviews count from database
+ */
+export async function initStudySession(userId: string): Promise<StudySession> {
+  const dailyCounts = await getDailyStudyCountsFromDB(userId);
+  
+  return {
+    newCardsStudied: dailyCounts.newCardsStudied,
+    reviewsCompleted: dailyCounts.reviewsCompleted,
+    learningCardsInQueue: [],
+    reviewHistory: [],
+    buriedCards: new Set(),
+    _incrementalCounters: {
+      newCardsFromHistory: dailyCounts.newCardsStudied,
+      reviewsFromHistory: dailyCounts.reviewsCompleted,
       lastHistoryLength: 0,
     },
   };
@@ -254,26 +425,12 @@ export function getNextCardToStudyWithSettings(
     return card.due <= now;
   });
 
-  // Debug: Show all learning cards and their due times
+  // Debug: Show all learning cards and their due times (can be removed in production)
   const allLearningCards = allCards.filter(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
       !card.isSuspended
   );
-  if (allLearningCards.length > 0) {
-    console.log(
-      `📚 All learning cards in system (${allLearningCards.length}):`
-    );
-    allLearningCards.forEach((c, index) => {
-      const dueInSeconds = Math.round((c.due - now) / 1000);
-      const isDue = c.due <= now;
-      console.log(
-        `  ${index + 1}. ${c.id.slice(0, 8)} - Step ${
-          c.learningStep + 1
-        } - Due in ${dueInSeconds}s - ${isDue ? "READY" : "WAITING"}`
-      );
-    });
-  }
 
   if (learningCards.length > 0) {
     console.log(
@@ -424,6 +581,7 @@ export function burySiblingsAfterReview(
 /**
  * Update study session after rating a card
  * Enhanced with optimized counter management and improved cloning
+ * Now saves daily progress to database instead of localStorage
  *
  * Key behaviors:
  * - Uses compatible deep clone with structuredClone fallback for undo history
@@ -432,20 +590,22 @@ export function burySiblingsAfterReview(
  * - Clones buriedCards Set before mutation for immutability
  * - Undo history limited to last 20 actions
  * - Automatic cache management for sibling burying
+ * - Persists daily progress to database for cross-device sync
  *
  * Performance improvements:
  * - Incremental counters avoid repeated history filtering (O(n) → O(1))
  * - Compatible deep clone reduces memory overhead
  * - Automatic cache invalidation prevents stale data bugs
  */
-export function updateStudySession(
+export async function updateStudySession(
   session: StudySession,
   card: SRSCardState,
   rating: SRSRating,
   newCardState: SRSCardState,
   allCardStates: Record<string, SRSCardState>,
-  settings: SRSSettings
-): StudySession {
+  settings: SRSSettings,
+  userId: string
+): Promise<StudySession> {
   const updatedSession = { ...session };
 
   // Save review to history for undo functionality - use compatible deep clone
@@ -487,6 +647,15 @@ export function updateStudySession(
   // Update session counters from incremental tracking
   updatedSession.newCardsStudied = counters.newCardsFromHistory;
   updatedSession.reviewsCompleted = counters.reviewsFromHistory;
+
+  // Persist daily counts to database (async, non-blocking)
+  saveDailyStudyCountsToDB(
+    userId,
+    updatedSession.newCardsStudied,
+    updatedSession.reviewsCompleted
+  ).catch(error => {
+    console.warn('Failed to persist daily counts to database:', error);
+  });
 
   // Learning queue management (simplified for genuine SM-2 behavior)
   if (

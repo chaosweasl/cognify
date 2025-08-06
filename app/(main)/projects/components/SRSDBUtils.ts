@@ -227,6 +227,81 @@ export async function cleanupSRSStates(
 }
 
 /**
+ * Get study statistics for a specific project
+ */
+export async function getProjectStudyStats(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  projectId: string
+): Promise<{
+  dueCards: number;
+  newCards: number;
+  learningCards: number;
+} | null> {
+  try {
+    // Get flashcard IDs for this project
+    const { data: flashcards, error: flashcardsError } = await supabase
+      .from("flashcards")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (flashcardsError) {
+      console.error("Error getting project flashcards:", flashcardsError);
+      return null;
+    }
+
+    if (!flashcards || flashcards.length === 0) {
+      return { dueCards: 0, newCards: 0, learningCards: 0 };
+    }
+
+    const flashcardIds = flashcards.map(f => f.id);
+
+    // Get SRS states for these flashcards
+    const { data: states, error: statesError } = await supabase
+      .from("srs_states")
+      .select("state, due, is_suspended")
+      .eq("user_id", userId)
+      .in("flashcard_id", flashcardIds);
+
+    if (statesError) {
+      console.error("Error getting project SRS states:", statesError);
+      return null;
+    }
+
+    if (!Array.isArray(states)) {
+      return { dueCards: 0, newCards: 0, learningCards: 0 };
+    }
+
+    const now = new Date();
+    let dueCards = 0;
+    let newCards = 0;
+    let learningCards = 0;
+
+    states.forEach(state => {
+      if (state.is_suspended) return;
+
+      const dueDate = new Date(state.due);
+      
+      if (state.state === "new") {
+        newCards++;
+      } else if (state.state === "learning" || state.state === "relearning") {
+        learningCards++;
+        if (dueDate <= now) {
+          dueCards++;
+        }
+      } else if (state.state === "review" && dueDate <= now) {
+        dueCards++;
+      }
+    });
+
+    return { dueCards, newCards, learningCards };
+  } catch (error) {
+    console.error("Error in getProjectStudyStats:", error);
+    return null;
+  }
+}
+
+/**
  * Get study statistics across all projects for a user
  */
 export async function getUserStudyStats(

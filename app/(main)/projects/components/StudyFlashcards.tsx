@@ -14,12 +14,13 @@ import {
 } from "./SRSScheduler";
 import {
   getNextCardToStudyWithSettings,
-  initStudySession,
+  initStudySessionWithFallback,
   updateStudySession,
   getSessionAwareStudyStats,
   StudySession,
   hasLearningCards,
   isStudySessionComplete,
+  migrateDailyStudyDataToDatabase,
 } from "./SRSSession";
 
 // Import sub-components
@@ -71,6 +72,29 @@ export default function StudyFlashcards({
     loadSettings();
   }, [loadSettings]);
 
+  // Initialize study session asynchronously
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        // Migrate localStorage data to database if user is logged in
+        if (userId) {
+          await migrateDailyStudyDataToDatabase(userId);
+        }
+
+        // Initialize session with database or fallback to localStorage
+        const session = await initStudySessionWithFallback(userId || undefined);
+        setStudySession(session);
+        setSessionInitialized(true);
+      } catch (error) {
+        console.error("Failed to initialize study session:", error);
+        // Use default session on error
+        setSessionInitialized(true);
+      }
+    };
+
+    initSession();
+  }, [userId]);
+
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
     if (existingSRSStates && Object.keys(existingSRSStates).length > 0) {
@@ -82,10 +106,20 @@ export default function StudyFlashcards({
     return initSRSStateWithSettings(cardIds, srsSettings);
   });
 
-  // Study session state
-  const [studySession, setStudySession] = useState<StudySession>(() =>
-    initStudySession()
-  );
+  // Study session state - initialize with empty session, load async
+  const [studySession, setStudySession] = useState<StudySession>({
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+    learningCardsInQueue: [],
+    reviewHistory: [],
+    buriedCards: new Set(),
+    _incrementalCounters: {
+      newCardsFromHistory: 0,
+      reviewsFromHistory: 0,
+      lastHistoryLength: 0,
+    },
+  });
+  const [sessionInitialized, setSessionInitialized] = useState(false);
   const [currentCardId, setCurrentCardId] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -158,7 +192,7 @@ export default function StudyFlashcards({
   }, []);
 
   const handleRate = useCallback(
-    (rating: SRSRating) => {
+    async (rating: SRSRating) => {
       if (!currentCard || !currentCardState || ratingLoading) return;
       setRatingLoading(true);
       const now = Date.now();
@@ -189,17 +223,21 @@ export default function StudyFlashcards({
         return newSRSState;
       });
 
-      // Update study session
-      setStudySession((prev) =>
-        updateStudySession(
-          prev,
+      // Update study session (async)
+      try {
+        const updatedSession = await updateStudySession(
+          studySession,
           currentCardState,
           rating,
           newCardState,
           srsState,
-          srsSettings
-        )
-      );
+          srsSettings,
+          userId || ""
+        );
+        setStudySession(updatedSession);
+      } catch (error) {
+        console.error("Failed to update study session:", error);
+      }
 
       setFlipped(false);
 
@@ -252,6 +290,8 @@ export default function StudyFlashcards({
       debouncedSave,
       srsSettings,
       srsState,
+      studySession,
+      userId,
     ]
   );
 

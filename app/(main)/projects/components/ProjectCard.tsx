@@ -12,12 +12,18 @@ type Project = {
 interface ProjectCardProps {
   project: Project;
   flashcardCount: number;
+  srsStats?: {
+    dueCards: number;
+    newCards: number;
+    learningCards: number;
+  };
   onDelete: (id: string) => Promise<void>;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   flashcardCount,
+  srsStats,
   onDelete,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -60,7 +66,29 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           {project.description || "No description provided"}
         </p>
 
-        {/* SRS Statistics (future) */}
+        {/* SRS Statistics */}
+        {srsStats && (
+          <div className="flex items-center justify-center gap-4 p-3 bg-base-200/50 rounded-lg border border-base-300/50">
+            <div className="text-center">
+              <div className={`text-lg font-bold ${srsStats.dueCards > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                {srsStats.dueCards}
+              </div>
+              <div className="text-xs text-base-content/70">Due</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-lg font-bold ${srsStats.newCards > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+                {srsStats.newCards}
+              </div>
+              <div className="text-xs text-base-content/70">New</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-lg font-bold ${srsStats.learningCards > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                {srsStats.learningCards}
+              </div>
+              <div className="text-xs text-base-content/70">Learning</div>
+            </div>
+          </div>
+        )}
 
         {/* Date */}
         <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
