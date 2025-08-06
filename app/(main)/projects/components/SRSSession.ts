@@ -219,14 +219,13 @@ export function isStudySessionComplete(
 
 /**
  * Get the next card to study, respecting daily limits and card priorities (with settings)
- * Fixed learning queue behavior to prevent infinite loops and match Anki behavior
+ * Fixed to properly implement Anki behavior with daily limits
  *
  * Priority order: Learning/Relearning → Review → New
- * Assumptions:
- * - Daily limits are not reset here (external logic needed for day boundaries)
- * - Buried cards are in-memory only (reset on session end)
- * - Review ahead option allows studying future reviews
- * - Learning cards ignore due times within session to prevent infinite loops
+ * Key Anki rules:
+ * - Learning cards are NEVER subject to daily limits (must be completed)
+ * - Review cards respect the review daily limit
+ * - New card limit only applies to introducing NEW cards (not learning cards)
  */
 export function getNextCardToStudyWithSettings(
   cardStates: Record<string, SRSCardState>,
@@ -245,20 +244,40 @@ export function getNextCardToStudyWithSettings(
     learningQueue: session.learningCardsInQueue.map((id) => id.slice(0, 8)),
   });
 
-  // 1. First priority: Learning/Relearning cards (only when actually due)
-  // Following genuine Anki behavior: learning cards must wait for their due time
+  // 1. HIGHEST PRIORITY: Learning/Relearning cards (NEVER subject to daily limits)
+  // These must be completed regardless of any daily limits - this is core Anki behavior
   const learningCards = allCards.filter((card) => {
     const isLearning = card.state === "learning" || card.state === "relearning";
     if (!isLearning || card.isSuspended) return false;
 
     // Learning cards are only available when their due time has arrived
-    // This follows the genuine SM-2/Anki algorithm
     return card.due <= now;
   });
 
+  // Debug: Show all learning cards and their due times
+  const allLearningCards = allCards.filter(
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
+  );
+  if (allLearningCards.length > 0) {
+    console.log(
+      `📚 All learning cards in system (${allLearningCards.length}):`
+    );
+    allLearningCards.forEach((c, index) => {
+      const dueInSeconds = Math.round((c.due - now) / 1000);
+      const isDue = c.due <= now;
+      console.log(
+        `  ${index + 1}. ${c.id.slice(0, 8)} - Step ${
+          c.learningStep + 1
+        } - Due in ${dueInSeconds}s - ${isDue ? "READY" : "WAITING"}`
+      );
+    });
+  }
+
   if (learningCards.length > 0) {
     console.log(
-      `📚 Found ${learningCards.length} learning cards due:`,
+      `📚 Found ${learningCards.length} learning cards due (ignoring daily limits):`,
       learningCards.map((c) => ({
         id: c.id.slice(0, 8),
         step: c.learningStep,
@@ -266,7 +285,7 @@ export function getNextCardToStudyWithSettings(
       }))
     );
 
-    // Select the earliest due learning card (genuine SM-2 behavior)
+    // Select the earliest due learning card
     learningCards.sort((a, b) => a.due - b.due);
     const nextCard = learningCards[0];
     console.log(
@@ -277,9 +296,7 @@ export function getNextCardToStudyWithSettings(
     return nextCard.id;
   }
 
-  // 2. Second priority: Review cards that are due (if under daily limit)
-  // If MAX_REVIEWS_PER_DAY is 0 or less, allow unlimited reviews
-  // Support review ahead option
+  // 2. Second priority: Review cards that are due (subject to review daily limit)
   if (
     settings.MAX_REVIEWS_PER_DAY <= 0 ||
     session.reviewsCompleted < settings.MAX_REVIEWS_PER_DAY
@@ -307,7 +324,8 @@ export function getNextCardToStudyWithSettings(
     );
   }
 
-  // 3. Third priority: New cards (if under daily limit)
+  // 3. LOWEST PRIORITY: New cards (subject to new card daily limit)
+  // Only introduce new cards if under the daily limit
   if (session.newCardsStudied < settings.NEW_CARDS_PER_DAY) {
     const newCards = allCards.filter(
       (card) =>
@@ -338,6 +356,32 @@ export function getNextCardToStudyWithSettings(
     console.log(
       `⏸️ New card limit reached: ${session.newCardsStudied}/${settings.NEW_CARDS_PER_DAY}`
     );
+  }
+
+  // 4. LEARNING AHEAD: If no other cards available, study learning cards early
+  // This follows Anki's "Learning Ahead" feature for better UX
+  if (allLearningCards.length > 0) {
+    console.log(`🔄 No cards due, checking learning ahead...`);
+
+    // Find learning cards that are close to being due (within 10 minutes)
+    const learningAheadCards = allLearningCards.filter((card) => {
+      const timeUntilDue = card.due - now;
+      const minutesUntilDue = timeUntilDue / (60 * 1000);
+      return minutesUntilDue <= 10; // Study up to 10 minutes ahead
+    });
+
+    if (learningAheadCards.length > 0) {
+      // Sort by due time (earliest first)
+      learningAheadCards.sort((a, b) => a.due - b.due);
+      const nextCard = learningAheadCards[0];
+      const minutesAhead =
+        Math.round(((nextCard.due - now) / (60 * 1000)) * 10) / 10;
+
+      console.log(
+        `📚 Learning ahead: Selecting card ${nextCard.id} (due in ${minutesAhead} min)`
+      );
+      return nextCard.id;
+    }
   }
 
   console.log(`❌ No cards available for study`);
@@ -522,7 +566,7 @@ export function getSessionAwareStudyStats(
       !card.isSuspended
   ).length;
 
-  // Review cards that are due now (considering daily limit and suspension)
+  // Review cards that are due (considering daily limit and suspension)
   const remainingReviewSlots =
     settings.MAX_REVIEWS_PER_DAY <= 0
       ? Infinity
@@ -535,7 +579,8 @@ export function getSessionAwareStudyStats(
       ? reviewCardsTotal
       : Math.min(reviewCardsTotal, remainingReviewSlots);
 
-  // DUE NOW = learning cards due now + review cards due now (NOT new cards)
+  // DUE = learning cards due RIGHT NOW + review cards due RIGHT NOW (NOT new cards)
+  // This follows genuine Anki terminology: "due" means available for study right now
   const dueCards = dueLearningCards + dueReviewCards;
 
   return {

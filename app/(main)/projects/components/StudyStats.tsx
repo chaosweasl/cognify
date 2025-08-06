@@ -24,7 +24,7 @@ export function StudyStats({
         >
           {dueCards}
         </div>
-        <div className="text-xs text-base-content/70">Due Now</div>
+        <div className="text-xs text-base-content/70">Due</div>
       </div>
       <div className="bg-base-100 rounded-lg p-3 text-center border">
         <div
