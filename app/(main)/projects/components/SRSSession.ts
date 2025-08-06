@@ -183,7 +183,7 @@ export function hasLearningCards(
 
 /**
  * Check if a study session should be considered complete
- * Session is complete when there are no cards available for study right now
+ * Session is complete when there are no more cards to study today (genuine Anki behavior)
  */
 export function isStudySessionComplete(
   cardStates: Record<string, SRSCardState>,
@@ -191,6 +191,7 @@ export function isStudySessionComplete(
   settings: SRSSettings,
   now: number = Date.now()
 ): boolean {
+  // Check if there are cards available right now
   const nextCard = getNextCardToStudyWithSettings(
     cardStates,
     session,
@@ -198,8 +199,22 @@ export function isStudySessionComplete(
     now
   );
 
-  // Session is complete when no cards are available for study right now
-  return !nextCard;
+  // If there are cards available now, session is not complete
+  if (nextCard) {
+    return false;
+  }
+
+  // If no cards available now, check if there are learning cards that will become available later
+  // In genuine Anki, the session continues until all learning cards are processed
+  const hasWaitingLearningCards = Object.values(cardStates).some(
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended &&
+      card.due > now
+  );
+
+  // Session is only complete if no cards are available AND no learning cards are waiting
+  return !hasWaitingLearningCards;
 }
 
 /**

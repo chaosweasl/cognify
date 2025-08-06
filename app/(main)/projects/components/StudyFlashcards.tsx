@@ -273,6 +273,40 @@ export default function StudyFlashcards({
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentCardId, flipped, srsState, handleRate, currentCard, handleReset]);
 
+  // Auto-refresh for learning cards becoming due
+  useEffect(() => {
+    if (!currentCardId && !sessionComplete) {
+      // Find the next learning card due time
+      const waitingLearningCards = Object.values(srsState).filter(
+        (card) =>
+          (card.state === "learning" || card.state === "relearning") &&
+          !card.isSuspended &&
+          card.due > Date.now()
+      );
+
+      if (waitingLearningCards.length > 0) {
+        const nextDue = Math.min(...waitingLearningCards.map((c) => c.due));
+        const timeUntilNext = nextDue - Date.now();
+
+        // Set a timer to refresh when the next card is due (plus small buffer)
+        const timer = setTimeout(() => {
+          const now = Date.now();
+          const nextCardId = getNextCardToStudyWithSettings(
+            srsState,
+            studySession,
+            srsSettings,
+            now
+          );
+          if (nextCardId) {
+            setCurrentCardId(nextCardId);
+          }
+        }, Math.min(Math.max(100, timeUntilNext + 100), 30000)); // Max 30 seconds, min 100ms
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentCardId, sessionComplete, srsState, studySession, srsSettings]);
+
   useEffect(() => {
     if (!currentCardId && !sessionComplete) {
       const now = Date.now(); // Use current timestamp
@@ -346,6 +380,26 @@ export default function StudyFlashcards({
   }
 
   if (!currentCard || !currentCardState) {
+    // Check if we're waiting for learning cards
+    const waitingLearningCards = Object.values(srsState).filter(
+      (card) =>
+        (card.state === "learning" || card.state === "relearning") &&
+        !card.isSuspended &&
+        card.due > Date.now()
+    );
+
+    if (waitingLearningCards.length > 0) {
+      // Find the next learning card due
+      const nextDue = Math.min(...waitingLearningCards.map((c) => c.due));
+      return (
+        <EmptyFlashcardState
+          type="waiting-for-learning"
+          nextLearningCardDue={nextDue}
+          onReset={handleReset}
+        />
+      );
+    }
+
     return <EmptyFlashcardState type="no-due-cards" onReset={handleReset} />;
   }
 
