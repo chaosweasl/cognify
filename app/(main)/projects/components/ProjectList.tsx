@@ -21,6 +21,7 @@ export function ProjectList() {
         dueCards: number;
         newCards: number;
         learningCards: number;
+        nextReviewDate?: Date | null;
       }
     >
   >({});
@@ -66,12 +67,27 @@ export function ProjectList() {
           srsSettings
         );
 
+        // Calculate next review date
+        let nextReviewDate: Date | null = null;
+        const currentTime = Date.now();
+
+        // Get all future due dates from SRS states
+        const futureDueDates = Object.values(srsStates)
+          .map((state) => state.due)
+          .filter((due) => due > currentTime)
+          .sort((a, b) => a - b);
+
+        if (futureDueDates.length > 0) {
+          nextReviewDate = new Date(futureDueDates[0]);
+        }
+
         return {
           projectId: project.id,
           stats: {
             dueCards: sessionStats.dueCards,
             newCards: sessionStats.availableNewCards, // This respects daily limits
             learningCards: sessionStats.totalLearningCards,
+            nextReviewDate,
           },
         };
       });
@@ -79,7 +95,12 @@ export function ProjectList() {
       const results = await Promise.all(statsPromises);
       const statsMap: Record<
         string,
-        { dueCards: number; newCards: number; learningCards: number }
+        {
+          dueCards: number;
+          newCards: number;
+          learningCards: number;
+          nextReviewDate?: Date | null;
+        }
       > = {};
 
       results.forEach(({ projectId, stats }) => {

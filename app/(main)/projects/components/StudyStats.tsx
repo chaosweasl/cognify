@@ -14,18 +14,11 @@ export function StudyStats({
   reviewCards,
   dueCards,
 }: StudyStatsProps) {
+  // Combine due cards and review cards since due cards are just review cards that are ready
+  const totalReviewCards = (reviewCards || 0) + (dueCards || 0);
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
-        <div
-          className={`text-lg font-bold ${
-            dueCards > 0 ? "text-red-600" : "text-gray-400"
-          }`}
-        >
-          {dueCards}
-        </div>
-        <div className="text-xs text-base-content/70">Due</div>
-      </div>
+    <div className="grid grid-cols-3 gap-4 mb-4">
       <div className="bg-base-100 rounded-lg p-3 text-center border">
         <div
           className={`text-lg font-bold ${
@@ -49,10 +42,10 @@ export function StudyStats({
       <div className="bg-base-100 rounded-lg p-3 text-center border">
         <div
           className={`text-lg font-bold ${
-            reviewCards > 0 ? "text-green-600" : "text-gray-400"
+            totalReviewCards > 0 ? "text-green-600" : "text-gray-400"
           }`}
         >
-          {reviewCards}
+          {totalReviewCards}
         </div>
         <div className="text-xs text-base-content/70">Review</div>
       </div>

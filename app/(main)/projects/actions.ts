@@ -18,7 +18,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
     .eq("user_id", user.id)
     .single();
   if (error || !data) return null;
-  
+
   return {
     ...data,
     flashcards: [], // Flashcards are now loaded separately
@@ -29,7 +29,9 @@ export async function getProjectById(id: string): Promise<Project | null> {
 // DEPRECATED: Use flashcard-specific actions instead
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function updateFlashcards(_id: string, _flashcards: Flashcard[]) {
-  throw new Error("updateFlashcards is deprecated. Use flashcard-specific actions instead.");
+  throw new Error(
+    "updateFlashcards is deprecated. Use flashcard-specific actions instead."
+  );
 }
 
 // --- Types ---
@@ -133,10 +135,38 @@ export async function deleteProject(id: string) {
   } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("Not authenticated");
 
-  const { error } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) throw error;
+  // Start a transaction-like operation to clean up related data
+  try {
+    // 1. Delete user notifications that might reference this project
+    // Check both title (project name) and URL (project ID) fields
+    const notificationDeletePromises = [
+      // Delete notifications with project ID in title
+      supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .ilike("title", `%${id}%`),
+
+      // Delete notifications with project ID in URL (like SRS reminders)
+      supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .ilike("url", `%/projects/${id}%`),
+    ];
+
+    await Promise.all(notificationDeletePromises);
+
+    // 2. Delete the project (this will cascade delete flashcards and srs_states)
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    throw error;
+  }
 }

@@ -12,6 +12,7 @@ import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "../hooks/useFlashcards";
 import { CreateFlashcardData } from "../types/flashcard";
+import ProjectResetComponent from "./ProjectResetComponent";
 
 // Define Flashcard type locally for legacy compatibility
 type LegacyFlashcard = {
@@ -27,12 +28,12 @@ interface FlashcardEditorProps {
 
 export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const router = useRouter();
-  const { 
-    flashcards: dbFlashcards, 
-    loading: flashcardsLoading, 
+  const {
+    flashcards: dbFlashcards,
+    loading: flashcardsLoading,
     fetchFlashcards,
     replaceAllFlashcards,
-    getLegacyFlashcards 
+    getLegacyFlashcards,
   } = useFlashcardsStore();
 
   const [manageModalOpen, setManageModalOpen] = useState(false);
@@ -227,7 +228,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Project Info Form */}
-          <div className="xl:col-span-1">
+          <div className="xl:col-span-1 space-y-6">
             <ProjectInfoForm
               name={name}
               setName={setName}
@@ -235,6 +236,16 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
               setDescription={setDescription}
               isValid={isValid}
               saving={isLoading}
+            />
+
+            {/* Reset SRS Data Section */}
+            <ProjectResetComponent
+              projectId={project.id}
+              projectName={project.name}
+              onResetComplete={() => {
+                // Optionally refresh the page or show additional feedback
+                window.location.reload();
+              }}
             />
           </div>
 

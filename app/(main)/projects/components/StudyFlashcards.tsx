@@ -438,7 +438,17 @@ export default function StudyFlashcards({
       );
     }
 
-    return <EmptyFlashcardState type="no-due-cards" onReset={handleReset} />;
+    // Check if daily limits are reached and no learning/review cards available
+    const hasAvailableCards =
+      availableStats.dueCards > 0 || availableStats.availableNewCards > 0;
+
+    if (!hasAvailableCards) {
+      return (
+        <EmptyFlashcardState type="daily-limit-reached" onReset={handleReset} />
+      );
+    }
+
+    return <EmptyFlashcardState type="no-review-cards" onReset={handleReset} />;
   }
 
   // Main study interface

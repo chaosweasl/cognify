@@ -3,7 +3,11 @@ import React, { useState, useEffect } from "react";
 import { BookOpen, Clock } from "lucide-react";
 
 interface EmptyStateProps {
-  type: "no-cards" | "no-due-cards" | "waiting-for-learning";
+  type:
+    | "no-cards"
+    | "no-review-cards"
+    | "waiting-for-learning"
+    | "daily-limit-reached";
   onReset?: () => void;
   nextLearningCardDue?: number; // Timestamp for next learning card
 }
@@ -75,15 +79,37 @@ export function EmptyFlashcardState({
     );
   }
 
+  if (type === "daily-limit-reached") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh]">
+        <div className="text-center">
+          <Clock className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+          <div className="text-xl font-bold text-base-content mb-2">
+            Daily limit reached
+          </div>
+          <div className="text-base-content/70 mb-4">
+            You've completed all available cards for today. Come back tomorrow
+            for more study!
+          </div>
+          {onReset && (
+            <button className="btn btn-primary" onClick={onReset}>
+              Study All Cards
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh]">
       <div className="text-center">
         <Clock className="w-16 h-16 text-base-content/50 mx-auto mb-4" />
         <div className="text-xl font-bold text-base-content mb-2">
-          No cards due for review
+          No cards to review
         </div>
         <div className="text-base-content/70 mb-4">
-          Come back later when cards are due!
+          Come back later when cards are ready for review!
         </div>
         {onReset && (
           <button className="btn btn-primary" onClick={onReset}>

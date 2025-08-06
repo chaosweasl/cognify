@@ -16,6 +16,7 @@ interface ProjectCardProps {
     dueCards: number;
     newCards: number;
     learningCards: number;
+    nextReviewDate?: Date | null;
   };
   onDelete: (id: string) => Promise<void>;
 }
@@ -32,7 +33,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   const hasFlashcards = flashcardCount > 0;
 
-  // SRS stats logic now uses flashcardCount only. No legacy flashcards array remains.
+  // Check if there are any cards available for study (respecting daily limits)
+  const hasCardsToStudy = srsStats
+    ? srsStats.dueCards > 0 ||
+      srsStats.newCards > 0 ||
+      srsStats.learningCards > 0
+    : hasFlashcards;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -77,7 +83,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               >
                 {srsStats.dueCards}
               </div>
-              <div className="text-xs text-base-content/70">Due</div>
+              <div className="text-xs text-base-content/70">Review</div>
             </div>
             <div className="text-center">
               <div
@@ -104,16 +110,29 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         )}
 
-        {/* Date */}
-        <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
-          <Calendar className="w-4 h-4" />
-          <span>{project.formattedCreatedAt}</span>
-        </div>
+        {/* Next Review Date or Creation Date */}
+        {srsStats?.nextReviewDate ? (
+          <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
+            <Calendar className="w-4 h-4" />
+            <span>
+              Next review: {srsStats.nextReviewDate.toLocaleDateString()} at{" "}
+              {srsStats.nextReviewDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+        ) : hasFlashcards ? (
+          <div className="flex items-center gap-2 text-sm text-green-600 pt-2 border-t border-base-300/50 mt-2">
+            <Calendar className="w-4 h-4" />
+            <span>Ready for review!</span>
+          </div>
+        ) : null}
       </div>
 
       {/* Actions */}
       <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
-        {hasFlashcards ? (
+        {hasCardsToStudy ? (
           <Link href={`/projects/${project.id}`}>
             <button className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]">
               <Play className="w-4 h-4" />
@@ -125,7 +144,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             disabled
             className="btn btn-md btn-disabled gap-2 flex-auto max-w-[8rem]"
           >
-            <span className="text-xs text-warning">No flashcards</span>
+            <span className="text-xs text-warning">
+              {!hasFlashcards
+                ? "No flashcards"
+                : srsStats &&
+                  srsStats.dueCards === 0 &&
+                  srsStats.newCards === 0 &&
+                  srsStats.learningCards === 0
+                ? "Daily limit reached"
+                : "No cards due"}
+            </span>
           </button>
         )}
 
