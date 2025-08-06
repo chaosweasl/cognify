@@ -29,14 +29,35 @@ export function ProjectList() {
   // Fetch SRS statistics for all projects with session-aware calculations
   useEffect(() => {
     async function fetchProjectStats() {
-      if (!userId || projects.length === 0) return;
+      if (!userId || projects.length === 0) {
+        console.log(
+          `[ProjectList] fetchProjectStats - Skipping: userId=${!!userId}, projectCount=${
+            projects.length
+          }`
+        );
+        return;
+      }
 
+      console.log(
+        `[ProjectList] fetchProjectStats - Starting for ${projects.length} projects`
+      );
       const supabase = createClient();
 
       // Get current study session to calculate available new cards
       const currentSession = await initStudySessionWithFallback(userId);
+      console.log(
+        `[ProjectList] fetchProjectStats - Current session daily stats:`,
+        {
+          newCards: currentSession.newCardsStudied,
+          reviews: currentSession.reviewsCompleted,
+        }
+      );
 
       const statsPromises = projects.map(async (project) => {
+        console.log(
+          `[ProjectList] fetchProjectStats - Processing project: ${project.name} (${project.id})`
+        );
+
         // Get flashcards for this project
         const { data: flashcards } = await supabase
           .from("flashcards")
@@ -44,12 +65,23 @@ export function ProjectList() {
           .eq("project_id", project.id);
 
         if (!flashcards || flashcards.length === 0) {
+          console.log(
+            `[ProjectList] fetchProjectStats - Project ${project.name} has no flashcards`
+          );
           return {
             projectId: project.id,
-            stats: { dueCards: 0, newCards: 0, learningCards: 0 },
+            stats: {
+              dueCards: 0,
+              newCards: 0,
+              learningCards: 0,
+              nextReviewDate: null,
+            },
           };
         }
 
+        console.log(
+          `[ProjectList] fetchProjectStats - Project ${project.name} has ${flashcards.length} flashcards`
+        );
         const flashcardIds = flashcards.map((f) => f.id);
 
         // Load SRS states for this project
@@ -65,6 +97,15 @@ export function ProjectList() {
           srsStates,
           currentSession,
           srsSettings
+        );
+
+        console.log(
+          `[ProjectList] fetchProjectStats - Project ${project.name} stats:`,
+          {
+            due: sessionStats.dueCards,
+            new: sessionStats.availableNewCards,
+            learning: sessionStats.totalLearningCards,
+          }
         );
 
         // Calculate next review date

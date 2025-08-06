@@ -82,8 +82,15 @@ export async function loadSRSStates(
   projectId: string,
   cardIds: string[]
 ): Promise<Record<string, SRSCardState>> {
+  console.log(
+    `[SRS-DB] loadSRSStates called for user: ${userId}, project: ${projectId}, cards: ${cardIds.length}`
+  );
+
   try {
     // Fetch existing SRS states from database
+    console.log(
+      `[SRS-DB] loadSRSStates - Fetching existing states from database`
+    );
     const { data: existingStates, error } = await supabase
       .from("srs_states")
       .select("*")
@@ -92,10 +99,16 @@ export async function loadSRSStates(
       .in("card_id", cardIds);
 
     if (error) {
-      console.error("Error loading SRS states:", error);
-      // Fallback to initializing new states
+      console.error("[SRS-DB] loadSRSStates - Database error:", error);
+      console.log("[SRS-DB] loadSRSStates - Falling back to default states");
       return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
     }
+
+    console.log(
+      `[SRS-DB] loadSRSStates - Found ${
+        existingStates?.length || 0
+      } existing states in database`
+    );
 
     // Convert database format to SRS format
     const srsStates: Record<string, SRSCardState> = {};
@@ -113,6 +126,11 @@ export async function loadSRSStates(
             dbState as DatabaseSRSState
           );
           existingCardIds.add(dbState.card_id);
+          console.log(
+            `[SRS-DB] loadSRSStates - Loaded state for card: ${
+              dbState.card_id
+            }, state: ${(dbState as DatabaseSRSState).state}`
+          );
         }
       }
     }
@@ -120,6 +138,9 @@ export async function loadSRSStates(
     // Initialize states for new cards that don't exist in database
     const newCardIds = cardIds.filter((id) => !existingCardIds.has(id));
     if (newCardIds.length > 0) {
+      console.log(
+        `[SRS-DB] loadSRSStates - Initializing ${newCardIds.length} new card states`
+      );
       const newStates = initSRSStateWithSettings(
         newCardIds,
         DEFAULT_SRS_SETTINGS
@@ -127,6 +148,11 @@ export async function loadSRSStates(
       Object.assign(srsStates, newStates);
     }
 
+    console.log(
+      `[SRS-DB] loadSRSStates - Successfully loaded/initialized ${
+        Object.keys(srsStates).length
+      } total states`
+    );
     return srsStates;
   } catch (error) {
     console.error("Error in loadSRSStates:", error);
@@ -143,23 +169,35 @@ export async function saveSRSStates(
   projectId: string,
   srsStates: Record<string, SRSCardState>
 ): Promise<boolean> {
+  console.log(
+    `[SRS-DB] saveSRSStates called for user: ${userId}, project: ${projectId}, states: ${
+      Object.keys(srsStates).length
+    }`
+  );
+
   try {
     const dbStates = Object.values(srsStates).map((cardState) =>
       srsStateToDatabase(cardState, userId, projectId)
     );
 
+    console.log(
+      `[SRS-DB] saveSRSStates - Upserting ${dbStates.length} states to database`
+    );
     const { error } = await supabase.from("srs_states").upsert(dbStates, {
       onConflict: "user_id,project_id,card_id",
     });
 
     if (error) {
-      console.error("Error saving SRS states:", error);
+      console.error("[SRS-DB] saveSRSStates - Database error:", error);
       return false;
     }
 
+    console.log(
+      `[SRS-DB] saveSRSStates - Successfully saved ${dbStates.length} states`
+    );
     return true;
   } catch (error) {
-    console.error("Error in saveSRSStates:", error);
+    console.error("[SRS-DB] saveSRSStates - Error:", error);
     return false;
   }
 }

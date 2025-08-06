@@ -12,6 +12,8 @@ import { createClient } from "@/utils/supabase/server";
 export async function resetProjectSRSData(
   projectId: string
 ): Promise<{ success: boolean; error?: string }> {
+  console.log(`[ProjectReset] Starting reset for project: ${projectId}`);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,11 +21,15 @@ export async function resetProjectSRSData(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    console.log(`[ProjectReset] User not authenticated:`, userError);
     return { success: false, error: "Not authenticated" };
   }
 
+  console.log(`[ProjectReset] Authenticated user: ${user.id}`);
+
   try {
     // Verify the user owns this project
+    console.log(`[ProjectReset] Verifying project ownership`);
     const { data: project, error: projectError } = await supabase
       .from("projects")
       .select("id")

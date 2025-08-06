@@ -11,8 +11,15 @@ export default async function ProjectStudyPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
+  console.log(`[StudyPage] Loading study page for project: ${id}`);
+
   const project = await getProjectById(id);
-  if (!project) return notFound();
+  if (!project) {
+    console.log(`[StudyPage] Project not found: ${id}`);
+    return notFound();
+  }
+
+  console.log(`[StudyPage] Project found: ${project.name}`);
 
   // Load flashcards separately
   const flashcardsData = await getFlashcardsByProjectId(id);
@@ -23,8 +30,11 @@ export default async function ProjectStudyPage(props: {
       id: card.id || `temp-${index}`, // Ensure id is always defined
     }));
 
+  console.log(`[StudyPage] Loaded ${flashcards.length} flashcards`);
+
   // If no flashcards, redirect to edit page
   if (flashcards.length === 0) {
+    console.log(`[StudyPage] No flashcards found, redirecting to edit page`);
     redirect(`/projects/${id}/edit`);
   }
 
@@ -36,14 +46,22 @@ export default async function ProjectStudyPage(props: {
 
   let existingSRSStates = undefined;
   if (user && flashcards.length > 0) {
+    console.log(`[StudyPage] Loading SRS states for user: ${user.id}`);
     const cardIds = flashcards.map((card) => card.id).filter(Boolean);
     existingSRSStates = await loadSRSStates(supabase, user.id, id, cardIds);
 
     // Check if user has reached daily limits and no cards are available
     if (user) {
+      console.log(`[StudyPage] Checking daily limits and card availability`);
       const dailyStats = await getDailyStudyStats(user.id);
       const NEW_CARDS_PER_DAY = 20; // TODO: Get from user settings
       const MAX_REVIEWS_PER_DAY = 200; // TODO: Get from user settings
+
+      console.log(`[StudyPage] Daily stats:`, {
+        newCardsStudied: dailyStats.newCardsStudied,
+        reviewsCompleted: dailyStats.reviewsCompleted,
+        limits: { NEW_CARDS_PER_DAY, MAX_REVIEWS_PER_DAY },
+      });
 
       // Count available cards
       const currentTime = Date.now();
@@ -69,15 +87,32 @@ export default async function ProjectStudyPage(props: {
           !state.isSuspended
       ).length;
 
+      console.log(`[StudyPage] Card availability:`, {
+        dueCards,
+        newCards,
+        availableNewCards,
+        learningCards,
+        totalStates: cardStates.length,
+      });
+
       const hasCardsToStudy =
         dueCards > 0 || availableNewCards > 0 || learningCards > 0;
 
+      console.log(`[StudyPage] Cards available for study: ${hasCardsToStudy}`);
+
       // If no cards available for study, redirect back to projects
       if (!hasCardsToStudy) {
+        console.log(
+          `[StudyPage] No cards available for study, redirecting to projects list`
+        );
         redirect("/projects");
       }
     }
   }
+
+  console.log(
+    `[StudyPage] Starting study session for project: ${project.name}`
+  );
 
   return (
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8 overflow-auto">

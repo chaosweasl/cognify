@@ -206,6 +206,11 @@ export default function StudyFlashcards({
       });
 
       // Schedule the card
+      console.log(
+        `[StudyFlashcards] Scheduling card ${currentCard.id} with rating ${rating}`
+      );
+      console.log(`[StudyFlashcards] Previous state:`, currentCardState);
+
       const newCardState = scheduleSRSCardWithSettings(
         currentCardState,
         rating,
@@ -213,9 +218,16 @@ export default function StudyFlashcards({
         now
       );
 
+      console.log(`[StudyFlashcards] New card state:`, newCardState);
+
       // Update SRS state and save to database
       setSRSState((prev) => {
         const newSRSState = { ...prev, [currentCard.id]: newCardState };
+        console.log(
+          `[StudyFlashcards] Saving SRS states to database (${
+            Object.keys(newSRSState).length
+          } total states)`
+        );
         // Debounced save to database
         debouncedSave(newSRSState);
         return newSRSState;
