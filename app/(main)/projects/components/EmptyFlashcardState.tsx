@@ -13,6 +13,16 @@ export function EmptyFlashcardState({
   onReset,
   nextLearningCardDue,
 }: EmptyStateProps) {
+  // Always declare hooks at the top level
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  useEffect(() => {
+    if (type !== "waiting-for-learning") return;
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [type]);
+
   if (type === "no-cards") {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
@@ -30,17 +40,6 @@ export function EmptyFlashcardState({
   }
 
   if (type === "waiting-for-learning") {
-    const [currentTime, setCurrentTime] = useState(Date.now());
-
-    // Update countdown every second
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setCurrentTime(Date.now());
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }, []);
-
     const timeUntilNext = nextLearningCardDue
       ? nextLearningCardDue - currentTime
       : 0;

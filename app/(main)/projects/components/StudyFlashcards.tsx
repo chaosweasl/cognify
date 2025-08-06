@@ -84,11 +84,9 @@ export default function StudyFlashcards({
         // Initialize session with database or fallback to localStorage
         const session = await initStudySessionWithFallback(userId || undefined);
         setStudySession(session);
-        setSessionInitialized(true);
       } catch (error) {
         console.error("Failed to initialize study session:", error);
         // Use default session on error
-        setSessionInitialized(true);
       }
     };
 
@@ -119,7 +117,7 @@ export default function StudyFlashcards({
       lastHistoryLength: 0,
     },
   });
-  const [sessionInitialized, setSessionInitialized] = useState(false);
+  // Removed unused sessionInitialized state
   const [currentCardId, setCurrentCardId] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);

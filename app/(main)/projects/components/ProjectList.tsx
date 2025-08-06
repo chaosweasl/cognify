@@ -77,7 +77,10 @@ export function ProjectList() {
       });
 
       const results = await Promise.all(statsPromises);
-      const statsMap: Record<string, any> = {};
+      const statsMap: Record<
+        string,
+        { dueCards: number; newCards: number; learningCards: number }
+      > = {};
 
       results.forEach(({ projectId, stats }) => {
         if (stats) {

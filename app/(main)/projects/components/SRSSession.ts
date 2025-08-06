@@ -5,7 +5,7 @@ import { SRSCardState, SRSRating } from "./SRSScheduler";
 import {
   getDailyStudyStats,
   updateDailyStudyStats,
-  incrementDailyStudyCounters,
+  // incrementDailyStudyCounters, // removed unused import
 } from "@/utils/supabase/dailyStudyStats";
 
 // --- CONSTANTS ---
