@@ -1,6 +1,7 @@
 import { getProjectById } from "../actions";
 import { notFound, redirect } from "next/navigation";
 import StudyFlashcards from "../components/StudyFlashcards";
+import DebugSRS from "../components/DebugSRS";
 import { createClient } from "@/utils/supabase/server";
 import { loadSRSStates } from "../components/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
@@ -100,7 +101,6 @@ export default async function ProjectStudyPage(props: {
 
       console.log(`[StudyPage] Cards available for study: ${hasCardsToStudy}`);
 
-      // If no cards available for study, redirect back to projects
       if (!hasCardsToStudy) {
         console.log(
           `[StudyPage] No cards available for study, redirecting to projects list`
@@ -116,6 +116,7 @@ export default async function ProjectStudyPage(props: {
 
   return (
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8 overflow-auto">
+      <DebugSRS projectId={project.id} />
       <StudyFlashcards
         flashcards={flashcards}
         projectName={project.name}

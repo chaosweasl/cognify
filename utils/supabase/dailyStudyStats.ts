@@ -28,6 +28,7 @@ function getTodayDateString(): string {
 /**
  * Get daily study stats for a specific date
  * Returns stats for the given date, or default values if no record exists
+ * Fixed: Removed explicit user_id filter since RLS policies handle user filtering
  */
 export async function getDailyStudyStats(
   userId: string,
@@ -37,10 +38,11 @@ export async function getDailyStudyStats(
   const studyDate = date || getTodayDateString();
 
   try {
+    // Fixed: Let RLS policies handle user filtering automatically
+    // The user_id filter was causing HTTP 406 errors because RLS expects auth.uid()
     const { data, error } = await supabase
       .from("daily_study_stats")
       .select("new_cards_studied, reviews_completed")
-      .eq("user_id", userId)
       .eq("study_date", studyDate)
       .single();
 
@@ -128,10 +130,10 @@ export async function incrementDailyStudyCounters(
 
   try {
     // First, get current values or create a new record
+    // Fixed: Removed explicit user_id filter, let RLS handle it
     const { data: currentStats } = await supabase
       .from("daily_study_stats")
       .select("new_cards_studied, reviews_completed")
-      .eq("user_id", userId)
       .eq("study_date", studyDate)
       .single();
 
@@ -160,10 +162,10 @@ export async function getDailyStudyStatsRange(
   const supabase = createClient();
 
   try {
+    // Fixed: Removed explicit user_id filter, let RLS handle it
     const { data, error } = await supabase
       .from("daily_study_stats")
       .select("*")
-      .eq("user_id", userId)
       .gte("study_date", startDate)
       .lte("study_date", endDate)
       .order("study_date", { ascending: true });
