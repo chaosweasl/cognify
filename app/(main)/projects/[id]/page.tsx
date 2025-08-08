@@ -75,7 +75,9 @@ export default async function ProjectStudyPage(props: {
           !state.isSuspended
       ).length;
 
-      const newCards = flashcards.length - cardStates.length; // Cards without SRS state
+      const newCards = cardStates.filter(
+        (state) => state.state === "new"
+      ).length; // Cards in "new" state
       const availableNewCards = Math.max(
         0,
         Math.min(newCards, NEW_CARDS_PER_DAY - dailyStats.newCardsStudied)

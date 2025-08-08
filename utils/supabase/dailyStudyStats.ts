@@ -28,7 +28,7 @@ function getTodayDateString(): string {
 /**
  * Get daily study stats for a specific date
  * Returns stats for the given date, or default values if no record exists
- * Fixed: Removed explicit user_id filter since RLS policies handle user filtering
+ * Fixed: Improved auth handling and error logging for HTTP 406 issues
  */
 export async function getDailyStudyStats(
   userId: string,
@@ -37,32 +37,66 @@ export async function getDailyStudyStats(
   const supabase = createClient();
   const studyDate = date || getTodayDateString();
 
+  console.log(
+    `[DailyStats] Fetching stats for date: ${studyDate}, user: ${userId}`
+  );
+
   try {
-    // Fixed: Let RLS policies handle user filtering automatically
-    // The user_id filter was causing HTTP 406 errors because RLS expects auth.uid()
+    // Check if user is authenticated first
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn(`[DailyStats] No active session found, returning defaults`);
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    console.log(`[DailyStats] Session found, user ID: ${session.user.id}`);
+
+    // Debug: Log the exact request we're about to make
+    console.log(`[DailyStats] Making request to daily_study_stats table`);
+    console.log(
+      `[DailyStats] Query: select=new_cards_studied,reviews_completed&study_date=eq.${studyDate}`
+    );
+
+    // Fixed: Use .maybeSingle() instead of .single() to handle missing records gracefully
+    // .single() throws HTTP 406 when no records found, .maybeSingle() returns null
     const { data, error } = await supabase
       .from("daily_study_stats")
       .select("new_cards_studied, reviews_completed")
       .eq("study_date", studyDate)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows returned
-      console.error("Error fetching daily study stats:", error);
+    if (error) {
+      console.error(`[DailyStats] Error fetching daily stats:`, error);
+      console.error(`[DailyStats] Error details:`, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
 
     if (!data) {
       // No record exists for this date, return default values
+      console.log(
+        `[DailyStats] No stats found for ${studyDate}, returning defaults`
+      );
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
+
+    console.log(`[DailyStats] Retrieved stats for ${studyDate}:`, {
+      newCardsStudied: data.new_cards_studied,
+      reviewsCompleted: data.reviews_completed,
+    });
 
     return {
       newCardsStudied: data.new_cards_studied,
       reviewsCompleted: data.reviews_completed,
     };
   } catch (error) {
-    console.error("Failed to fetch daily study stats:", error);
+    console.error(`[DailyStats] Failed to fetch daily study stats:`, error);
     return { newCardsStudied: 0, reviewsCompleted: 0 };
   }
 }
