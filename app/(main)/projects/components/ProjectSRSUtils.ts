@@ -1,7 +1,10 @@
 // Utility to get SRS statistics for projects
 import { createClient } from "@/utils/supabase/client";
 import { DEFAULT_SRS_SETTINGS } from "./SRSScheduler";
-import { getSessionAwareStudyStats, initStudySession } from "./SRSSession";
+import {
+  getSessionAwareStudyStats,
+  initStudySessionWithFallback,
+} from "./SRSSession";
 import { loadSRSStates } from "./SRSDBUtils";
 
 export interface ProjectSRSInfo {
@@ -35,7 +38,7 @@ export async function getProjectSRSStats(
     const srsStates = await loadSRSStates(supabase, userId, projectId, cardIds);
 
     // Use session-aware stats to respect daily limits
-    const freshSession = initStudySession();
+    const freshSession = await initStudySessionWithFallback(userId);
     const stats = getSessionAwareStudyStats(
       srsStates,
       freshSession,

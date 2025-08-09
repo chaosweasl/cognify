@@ -1,22 +1,48 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { 
-  Flashcard, 
-  CreateFlashcardData, 
-  UpdateFlashcardData 
+import {
+  Flashcard,
+  CreateFlashcardData,
+  UpdateFlashcardData,
 } from "../types/flashcard";
+import { validateUUID, validateFlashcardContent } from "@/utils/security";
 
 // Get all flashcards for a project
-export async function getFlashcardsByProjectId(projectId: string): Promise<Flashcard[]> {
+export async function getFlashcardsByProjectId(
+  projectId: string
+): Promise<Flashcard[]> {
+  console.log(
+    `[Flashcards] getFlashcardsByProjectId called for project: ${projectId}`
+  );
+
+  // Validate project ID format
+  const projectIdValidation = validateUUID(projectId);
+  if (!projectIdValidation.isValid) {
+    console.log(
+      `[Flashcards] getFlashcardsByProjectId - Invalid project ID format: ${projectId}`
+    );
+    return [];
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
-  if (userError || !user) return [];
+
+  if (userError || !user) {
+    console.log(
+      `[Flashcards] getFlashcardsByProjectId - User not authenticated:`,
+      userError
+    );
+    return [];
+  }
 
   // First verify the user owns this project
+  console.log(
+    `[Flashcards] getFlashcardsByProjectId - Verifying project ownership for user: ${user.id}`
+  );
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id")
@@ -24,8 +50,17 @@ export async function getFlashcardsByProjectId(projectId: string): Promise<Flash
     .eq("user_id", user.id)
     .single();
 
-  if (projectError || !project) return [];
+  if (projectError || !project) {
+    console.log(
+      `[Flashcards] getFlashcardsByProjectId - Project not found or unauthorized:`,
+      projectError
+    );
+    return [];
+  }
 
+  console.log(
+    `[Flashcards] getFlashcardsByProjectId - Fetching flashcards for project: ${projectId}`
+  );
   const { data, error } = await supabase
     .from("flashcards")
     .select("*")
@@ -33,26 +68,69 @@ export async function getFlashcardsByProjectId(projectId: string): Promise<Flash
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Error fetching flashcards:", error);
+    console.error(
+      "[Flashcards] getFlashcardsByProjectId - Error fetching flashcards:",
+      error
+    );
     return [];
   }
 
+  console.log(
+    `[Flashcards] getFlashcardsByProjectId - Successfully retrieved ${
+      data?.length || 0
+    } flashcards`
+  );
   return data || [];
 }
 
 // Create a new flashcard
 export async function createFlashcard(
-  projectId: string, 
+  projectId: string,
   flashcardData: CreateFlashcardData
 ): Promise<Flashcard | null> {
+  console.log(`[Flashcards] createFlashcard called for project: ${projectId}`, {
+    front: flashcardData.front.length,
+    back: flashcardData.back.length,
+  });
+
+  // Validate inputs
+  const projectIdValidation = validateUUID(projectId);
+  if (!projectIdValidation.isValid) {
+    console.log(
+      `[Flashcards] createFlashcard - Invalid project ID: ${projectId}`
+    );
+    throw new Error("Invalid project ID format");
+  }
+
+  const contentValidation = validateFlashcardContent(
+    flashcardData.front,
+    flashcardData.back
+  );
+  if (!contentValidation.isValid) {
+    console.log(
+      `[Flashcards] createFlashcard - Invalid content: ${contentValidation.error}`
+    );
+    throw new Error(contentValidation.error || "Invalid flashcard content");
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Not authenticated");
+
+  if (userError || !user) {
+    console.log(
+      `[Flashcards] createFlashcard - User not authenticated:`,
+      userError
+    );
+    throw new Error("Not authenticated");
+  }
 
   // Verify the user owns this project
+  console.log(
+    `[Flashcards] createFlashcard - Verifying project ownership for user: ${user.id}`
+  );
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id")
@@ -60,28 +138,47 @@ export async function createFlashcard(
     .eq("user_id", user.id)
     .single();
 
-  if (projectError || !project) throw new Error("Project not found or unauthorized");
+  if (projectError || !project) {
+    console.log(
+      `[Flashcards] createFlashcard - Project not found or unauthorized:`,
+      projectError
+    );
+    throw new Error("Project not found or unauthorized");
+  }
 
+  console.log(
+    `[Flashcards] createFlashcard - Creating flashcard in project: ${projectId}`
+  );
   const { data, error } = await supabase
     .from("flashcards")
     .insert([
       {
         project_id: projectId,
-        front: flashcardData.front,
-        back: flashcardData.back,
+        front: contentValidation.sanitizedFront,
+        back: contentValidation.sanitizedBack,
         extra: flashcardData.extra || {},
       },
     ])
     .select("*")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error(
+      "[Flashcards] createFlashcard - Error creating flashcard:",
+      error
+    );
+    throw error;
+  }
+
+  console.log(
+    `[Flashcards] createFlashcard - Successfully created flashcard with ID: ${data.id}`
+  );
   return data;
 }
 
 // Create multiple flashcards at once
 export async function createFlashcards(
-  projectId: string, 
+  projectId: string,
   flashcardsData: CreateFlashcardData[]
 ): Promise<Flashcard[]> {
   const supabase = await createClient();
@@ -99,9 +196,10 @@ export async function createFlashcards(
     .eq("user_id", user.id)
     .single();
 
-  if (projectError || !project) throw new Error("Project not found or unauthorized");
+  if (projectError || !project)
+    throw new Error("Project not found or unauthorized");
 
-  const flashcardsToInsert = flashcardsData.map(card => ({
+  const flashcardsToInsert = flashcardsData.map((card) => ({
     project_id: projectId,
     front: card.front,
     back: card.back,
@@ -119,7 +217,7 @@ export async function createFlashcards(
 
 // Update a flashcard
 export async function updateFlashcard(
-  flashcardId: string, 
+  flashcardId: string,
   updateData: UpdateFlashcardData
 ): Promise<Flashcard | null> {
   const supabase = await createClient();
@@ -136,8 +234,13 @@ export async function updateFlashcard(
     .eq("id", flashcardId)
     .single();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (flashcardError || !flashcard || (flashcard.projects as any).user_id !== user.id) {
+  if (
+    flashcardError ||
+    !flashcard ||
+    !Array.isArray(flashcard.projects) ||
+    flashcard.projects.length === 0 ||
+    flashcard.projects[0].user_id !== user.id
+  ) {
     throw new Error("Flashcard not found or unauthorized");
   }
 
@@ -171,8 +274,13 @@ export async function deleteFlashcard(flashcardId: string): Promise<boolean> {
     .eq("id", flashcardId)
     .single();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (flashcardError || !flashcard || (flashcard.projects as any).user_id !== user.id) {
+  if (
+    flashcardError ||
+    !flashcard ||
+    !Array.isArray(flashcard.projects) ||
+    flashcard.projects.length === 0 ||
+    flashcard.projects[0].user_id !== user.id
+  ) {
     throw new Error("Flashcard not found or unauthorized");
   }
 
@@ -186,7 +294,9 @@ export async function deleteFlashcard(flashcardId: string): Promise<boolean> {
 }
 
 // Delete all flashcards for a project
-export async function deleteAllFlashcardsForProject(projectId: string): Promise<boolean> {
+export async function deleteAllFlashcardsForProject(
+  projectId: string
+): Promise<boolean> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -202,7 +312,8 @@ export async function deleteAllFlashcardsForProject(projectId: string): Promise<
     .eq("user_id", user.id)
     .single();
 
-  if (projectError || !project) throw new Error("Project not found or unauthorized");
+  if (projectError || !project)
+    throw new Error("Project not found or unauthorized");
 
   const { error } = await supabase
     .from("flashcards")
@@ -215,7 +326,7 @@ export async function deleteAllFlashcardsForProject(projectId: string): Promise<
 
 // Replace all flashcards for a project (used by editor save)
 export async function replaceAllFlashcardsForProject(
-  projectId: string, 
+  projectId: string,
   flashcardsData: CreateFlashcardData[]
 ): Promise<Flashcard[]> {
   const supabase = await createClient();
@@ -233,7 +344,8 @@ export async function replaceAllFlashcardsForProject(
     .eq("user_id", user.id)
     .single();
 
-  if (projectError || !project) throw new Error("Project not found or unauthorized");
+  if (projectError || !project)
+    throw new Error("Project not found or unauthorized");
 
   // Delete all existing flashcards
   await deleteAllFlashcardsForProject(projectId);

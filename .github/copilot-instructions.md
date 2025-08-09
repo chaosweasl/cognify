@@ -39,11 +39,15 @@ hooks/                    # Custom React hooks
 
 ### Code Standards
 
-- Use TypeScript for all new code
+- Use TypeScript for all new code with strict type safety
+- **Never use `any` or `unknown` types** - always specify proper interfaces/types
+- **Clean up unused imports and variables** - maintain zero linting warnings
 - Follow Next.js App Router conventions
 - Use Tailwind CSS classes, prefer DaisyUI components
 - Implement proper error handling with try-catch blocks
 - Use Supabase client utilities for database operations
+- **Add console.log statements liberally for debugging** - they help track data flow and identify issues
+- Remove console.logs only when explicitly asked or in production builds
 
 ### Key Patterns
 

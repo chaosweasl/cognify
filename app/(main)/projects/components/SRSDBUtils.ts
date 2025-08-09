@@ -82,8 +82,15 @@ export async function loadSRSStates(
   projectId: string,
   cardIds: string[]
 ): Promise<Record<string, SRSCardState>> {
+  console.log(
+    `[SRS-DB] loadSRSStates called for user: ${userId}, project: ${projectId}, cards: ${cardIds.length}`
+  );
+
   try {
     // Fetch existing SRS states from database
+    console.log(
+      `[SRS-DB] loadSRSStates - Fetching existing states from database`
+    );
     const { data: existingStates, error } = await supabase
       .from("srs_states")
       .select("*")
@@ -92,10 +99,16 @@ export async function loadSRSStates(
       .in("card_id", cardIds);
 
     if (error) {
-      console.error("Error loading SRS states:", error);
-      // Fallback to initializing new states
+      console.error("[SRS-DB] loadSRSStates - Database error:", error);
+      console.log("[SRS-DB] loadSRSStates - Falling back to default states");
       return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
     }
+
+    console.log(
+      `[SRS-DB] loadSRSStates - Found ${
+        existingStates?.length || 0
+      } existing states in database`
+    );
 
     // Convert database format to SRS format
     const srsStates: Record<string, SRSCardState> = {};
@@ -113,6 +126,11 @@ export async function loadSRSStates(
             dbState as DatabaseSRSState
           );
           existingCardIds.add(dbState.card_id);
+          console.log(
+            `[SRS-DB] loadSRSStates - Loaded state for card: ${
+              dbState.card_id
+            }, state: ${(dbState as DatabaseSRSState).state}`
+          );
         }
       }
     }
@@ -120,6 +138,9 @@ export async function loadSRSStates(
     // Initialize states for new cards that don't exist in database
     const newCardIds = cardIds.filter((id) => !existingCardIds.has(id));
     if (newCardIds.length > 0) {
+      console.log(
+        `[SRS-DB] loadSRSStates - Initializing ${newCardIds.length} new card states`
+      );
       const newStates = initSRSStateWithSettings(
         newCardIds,
         DEFAULT_SRS_SETTINGS
@@ -127,6 +148,11 @@ export async function loadSRSStates(
       Object.assign(srsStates, newStates);
     }
 
+    console.log(
+      `[SRS-DB] loadSRSStates - Successfully loaded/initialized ${
+        Object.keys(srsStates).length
+      } total states`
+    );
     return srsStates;
   } catch (error) {
     console.error("Error in loadSRSStates:", error);
@@ -143,23 +169,35 @@ export async function saveSRSStates(
   projectId: string,
   srsStates: Record<string, SRSCardState>
 ): Promise<boolean> {
+  console.log(
+    `[SRS-DB] saveSRSStates called for user: ${userId}, project: ${projectId}, states: ${
+      Object.keys(srsStates).length
+    }`
+  );
+
   try {
     const dbStates = Object.values(srsStates).map((cardState) =>
       srsStateToDatabase(cardState, userId, projectId)
     );
 
+    console.log(
+      `[SRS-DB] saveSRSStates - Upserting ${dbStates.length} states to database`
+    );
     const { error } = await supabase.from("srs_states").upsert(dbStates, {
       onConflict: "user_id,project_id,card_id",
     });
 
     if (error) {
-      console.error("Error saving SRS states:", error);
+      console.error("[SRS-DB] saveSRSStates - Database error:", error);
       return false;
     }
 
+    console.log(
+      `[SRS-DB] saveSRSStates - Successfully saved ${dbStates.length} states`
+    );
     return true;
   } catch (error) {
-    console.error("Error in saveSRSStates:", error);
+    console.error("[SRS-DB] saveSRSStates - Error:", error);
     return false;
   }
 }
@@ -223,6 +261,81 @@ export async function cleanupSRSStates(
   } catch (error) {
     console.error("Error in cleanupSRSStates:", error);
     return false;
+  }
+}
+
+/**
+ * Get study statistics for a specific project
+ */
+export async function getProjectStudyStats(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  projectId: string
+): Promise<{
+  dueCards: number;
+  newCards: number;
+  learningCards: number;
+} | null> {
+  try {
+    // Get flashcard IDs for this project
+    const { data: flashcards, error: flashcardsError } = await supabase
+      .from("flashcards")
+      .select("id")
+      .eq("project_id", projectId);
+
+    if (flashcardsError) {
+      console.error("Error getting project flashcards:", flashcardsError);
+      return null;
+    }
+
+    if (!flashcards || flashcards.length === 0) {
+      return { dueCards: 0, newCards: 0, learningCards: 0 };
+    }
+
+    const flashcardIds = flashcards.map((f) => f.id);
+
+    // Get SRS states for these flashcards
+    const { data: states, error: statesError } = await supabase
+      .from("srs_states")
+      .select("state, due, is_suspended")
+      .eq("user_id", userId)
+      .in("card_id", flashcardIds);
+
+    if (statesError) {
+      console.error("Error getting project SRS states:", statesError);
+      return null;
+    }
+
+    if (!Array.isArray(states)) {
+      return { dueCards: 0, newCards: 0, learningCards: 0 };
+    }
+
+    const now = new Date();
+    let dueCards = 0;
+    let newCards = 0;
+    let learningCards = 0;
+
+    states.forEach((state) => {
+      if (state.is_suspended) return;
+
+      const dueDate = new Date(state.due);
+
+      if (state.state === "new") {
+        newCards++;
+      } else if (state.state === "learning" || state.state === "relearning") {
+        learningCards++;
+        if (dueDate <= now) {
+          dueCards++;
+        }
+      } else if (state.state === "review" && dueDate <= now) {
+        dueCards++;
+      }
+    });
+
+    return { dueCards, newCards, learningCards };
+  } catch (error) {
+    console.error("Error in getProjectStudyStats:", error);
+    return null;
   }
 }
 

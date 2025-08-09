@@ -14,10 +14,13 @@ import {
 } from "./SRSScheduler";
 import {
   getNextCardToStudyWithSettings,
-  initStudySession,
+  initStudySessionWithFallback,
   updateStudySession,
   getSessionAwareStudyStats,
   StudySession,
+  hasLearningCards,
+  isStudySessionComplete,
+  migrateDailyStudyDataToDatabase,
 } from "./SRSSession";
 
 // Import sub-components
@@ -69,6 +72,27 @@ export default function StudyFlashcards({
     loadSettings();
   }, [loadSettings]);
 
+  // Initialize study session asynchronously
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        // Migrate localStorage data to database if user is logged in
+        if (userId) {
+          await migrateDailyStudyDataToDatabase(userId);
+        }
+
+        // Initialize session with database or fallback to localStorage
+        const session = await initStudySessionWithFallback(userId || undefined);
+        setStudySession(session);
+      } catch (error) {
+        console.error("Failed to initialize study session:", error);
+        // Use default session on error
+      }
+    };
+
+    initSession();
+  }, [userId]);
+
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
     if (existingSRSStates && Object.keys(existingSRSStates).length > 0) {
@@ -80,10 +104,20 @@ export default function StudyFlashcards({
     return initSRSStateWithSettings(cardIds, srsSettings);
   });
 
-  // Study session state
-  const [studySession, setStudySession] = useState<StudySession>(() =>
-    initStudySession()
-  );
+  // Study session state - initialize with empty session, load async
+  const [studySession, setStudySession] = useState<StudySession>({
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+    learningCardsInQueue: [],
+    reviewHistory: [],
+    buriedCards: new Set(),
+    _incrementalCounters: {
+      newCardsFromHistory: 0,
+      reviewsFromHistory: 0,
+      lastHistoryLength: 0,
+    },
+  });
+  // Removed unused sessionInitialized state
   const [currentCardId, setCurrentCardId] = useState<string | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
@@ -156,7 +190,7 @@ export default function StudyFlashcards({
   }, []);
 
   const handleRate = useCallback(
-    (rating: SRSRating) => {
+    async (rating: SRSRating) => {
       if (!currentCard || !currentCardState || ratingLoading) return;
       setRatingLoading(true);
       const now = Date.now();
@@ -172,6 +206,11 @@ export default function StudyFlashcards({
       });
 
       // Schedule the card
+      console.log(
+        `[StudyFlashcards] Scheduling card ${currentCard.id} with rating ${rating}`
+      );
+      console.log(`[StudyFlashcards] Previous state:`, currentCardState);
+
       const newCardState = scheduleSRSCardWithSettings(
         currentCardState,
         rating,
@@ -179,25 +218,36 @@ export default function StudyFlashcards({
         now
       );
 
+      console.log(`[StudyFlashcards] New card state:`, newCardState);
+
       // Update SRS state and save to database
       setSRSState((prev) => {
         const newSRSState = { ...prev, [currentCard.id]: newCardState };
+        console.log(
+          `[StudyFlashcards] Saving SRS states to database (${
+            Object.keys(newSRSState).length
+          } total states)`
+        );
         // Debounced save to database
         debouncedSave(newSRSState);
         return newSRSState;
       });
 
-      // Update study session
-      setStudySession((prev) =>
-        updateStudySession(
-          prev,
+      // Update study session (async)
+      try {
+        const updatedSession = await updateStudySession(
+          studySession,
           currentCardState,
           rating,
           newCardState,
           srsState,
-          srsSettings
-        )
-      );
+          srsSettings,
+          userId || ""
+        );
+        setStudySession(updatedSession);
+      } catch (error) {
+        console.error("Failed to update study session:", error);
+      }
 
       setFlipped(false);
 
@@ -216,15 +266,24 @@ export default function StudyFlashcards({
             if (nextCardId) {
               setCurrentCardId(nextCardId);
             } else {
-              // No next card available - session should end
-              setSessionComplete(true);
-              setCurrentCardId(null);
-              setSessionStats((prev) => ({
-                ...prev,
-                timeSpent: Math.round(
-                  (updatedNow - sessionStartTime) / 1000 / 60
-                ),
-              }));
+              // Use the proper session completion check
+              if (
+                isStudySessionComplete(
+                  currentSRSState,
+                  currentSession,
+                  srsSettings,
+                  updatedNow
+                )
+              ) {
+                setSessionComplete(true);
+                setCurrentCardId(null);
+                setSessionStats((prev) => ({
+                  ...prev,
+                  timeSpent: Math.round(
+                    (updatedNow - sessionStartTime) / 1000 / 60
+                  ),
+                }));
+              }
             }
             return currentSession;
           });
@@ -241,6 +300,8 @@ export default function StudyFlashcards({
       debouncedSave,
       srsSettings,
       srsState,
+      studySession,
+      userId,
     ]
   );
 
@@ -262,6 +323,40 @@ export default function StudyFlashcards({
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentCardId, flipped, srsState, handleRate, currentCard, handleReset]);
 
+  // Auto-refresh for learning cards becoming due
+  useEffect(() => {
+    if (!currentCardId && !sessionComplete) {
+      // Find the next learning card due time
+      const waitingLearningCards = Object.values(srsState).filter(
+        (card) =>
+          (card.state === "learning" || card.state === "relearning") &&
+          !card.isSuspended &&
+          card.due > Date.now()
+      );
+
+      if (waitingLearningCards.length > 0) {
+        const nextDue = Math.min(...waitingLearningCards.map((c) => c.due));
+        const timeUntilNext = nextDue - Date.now();
+
+        // Set a timer to refresh when the next card is due (plus small buffer)
+        const timer = setTimeout(() => {
+          const now = Date.now();
+          const nextCardId = getNextCardToStudyWithSettings(
+            srsState,
+            studySession,
+            srsSettings,
+            now
+          );
+          if (nextCardId) {
+            setCurrentCardId(nextCardId);
+          }
+        }, Math.min(Math.max(100, timeUntilNext + 100), 30000)); // Max 30 seconds, min 100ms
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentCardId, sessionComplete, srsState, studySession, srsSettings]);
+
   useEffect(() => {
     if (!currentCardId && !sessionComplete) {
       const now = Date.now(); // Use current timestamp
@@ -273,27 +368,29 @@ export default function StudyFlashcards({
       );
       setCurrentCardId(nextCardId);
 
-      // If no card is available, session should end
-      if (!nextCardId) {
+      // Use the proper session completion check
+      if (isStudySessionComplete(srsState, studySession, srsSettings, now)) {
         setSessionComplete(true);
       }
     }
   }, [srsState, studySession, currentCardId, sessionComplete, srsSettings]);
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
-      const nextDue = Math.min(
-        ...Object.values(srsState)
-          .map((c) => c.due)
-          .filter((d) => d > Date.now())
-      );
-
-      if (nextDue && nextDue < Infinity) {
-        scheduleSRSReminderForProject({
-          user_id: userId,
-          project_id: projectId,
-          project_name: projectName,
-          due: nextDue,
-        });
+      // Only schedule reminders if there are NO learning cards left
+      if (!hasLearningCards(srsState)) {
+        const nextDue = Math.min(
+          ...Object.values(srsState)
+            .map((c) => c.due)
+            .filter((d) => d > Date.now())
+        );
+        if (nextDue && nextDue < Infinity) {
+          scheduleSRSReminderForProject({
+            user_id: userId,
+            project_id: projectId,
+            project_name: projectName,
+            due: nextDue,
+          });
+        }
       }
     }
   }, [sessionComplete, userId, projectId, projectName, srsState]);
@@ -324,7 +421,7 @@ export default function StudyFlashcards({
         sessionStats={sessionStats}
         studyStats={{
           newCards: availableStats.availableNewCards,
-          learningCards: availableStats.dueLearningCards,
+          learningCards: availableStats.totalLearningCards,
           reviewCards: availableStats.dueReviewCards,
         }}
         nextReview={nextReview}
@@ -333,7 +430,37 @@ export default function StudyFlashcards({
   }
 
   if (!currentCard || !currentCardState) {
-    return <EmptyFlashcardState type="no-due-cards" onReset={handleReset} />;
+    // Check if we're waiting for learning cards
+    const waitingLearningCards = Object.values(srsState).filter(
+      (card) =>
+        (card.state === "learning" || card.state === "relearning") &&
+        !card.isSuspended &&
+        card.due > Date.now()
+    );
+
+    if (waitingLearningCards.length > 0) {
+      // Find the next learning card due
+      const nextDue = Math.min(...waitingLearningCards.map((c) => c.due));
+      return (
+        <EmptyFlashcardState
+          type="waiting-for-learning"
+          nextLearningCardDue={nextDue}
+          onReset={handleReset}
+        />
+      );
+    }
+
+    // Check if daily limits are reached and no learning/review cards available
+    const hasAvailableCards =
+      availableStats.dueCards > 0 || availableStats.availableNewCards > 0;
+
+    if (!hasAvailableCards) {
+      return (
+        <EmptyFlashcardState type="daily-limit-reached" onReset={handleReset} />
+      );
+    }
+
+    return <EmptyFlashcardState type="no-review-cards" onReset={handleReset} />;
   }
 
   // Main study interface
@@ -348,7 +475,7 @@ export default function StudyFlashcards({
       <div className="w-full max-w-2xl">
         <StudyStats
           newCards={availableStats.availableNewCards}
-          learningCards={availableStats.dueLearningCards}
+          learningCards={availableStats.totalLearningCards}
           reviewCards={availableStats.dueReviewCards}
           dueCards={availableStats.dueCards}
         />

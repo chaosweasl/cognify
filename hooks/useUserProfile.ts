@@ -9,6 +9,7 @@ export interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   email: string | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

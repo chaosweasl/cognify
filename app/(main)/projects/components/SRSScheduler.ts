@@ -399,7 +399,7 @@ function calculateAnkiEase(
   const q = quality === 0 ? 0 : quality === 1 ? 2 : quality === 2 ? 4 : 5;
 
   // SM-2 formula: EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))
-  let newEase = oldEase + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+  const newEase = oldEase + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
 
   // Apply minimum ease constraint
   return Math.max(validatedSettings.MINIMUM_EASE, newEase);
@@ -636,7 +636,7 @@ function scheduleLearningCard(
     // Good - advance to next step or graduate
     const nextStep = card.learningStep + 1;
 
-    if (nextStep >= settings.RELEARNING_STEPS.length) {
+    if (nextStep >= settings.LEARNING_STEPS.length) {
       // Graduate to review queue - use GRADUATING_INTERVAL as base
       const graduatingInterval = Math.max(
         1,
