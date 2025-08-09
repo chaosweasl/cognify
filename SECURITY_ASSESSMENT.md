@@ -171,9 +171,10 @@ const corsConfig = {
 ## �️ **Security Verification Checklist**
 
 - [ ] **Authentication**: Login/signup with rate limiting works
+- [ ] **Custom endpoints & actions**: Rate limit them so users can't overwhelm the database
 - [ ] **Authorization**: Users can only see their own projects
 - [ ] **Admin Access**: Debug components only visible to admins
-- [ ] **Input Validation**: XSS attempts are sanitized
+- [ ] **Input Validation**: XSS attempts are sanitized (also ensure users can't upload huge files)
 - [ ] **Data Isolation**: RLS policies prevent cross-user access
 - [ ] **Session Security**: JWT tokens contain proper role claims
 - [ ] **Environment Security**: All config variables validated
