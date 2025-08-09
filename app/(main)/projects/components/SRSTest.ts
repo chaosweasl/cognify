@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Test file to verify Anki-like SRS behavior
 import {
   initSRSStateWithSettings,
