@@ -12,7 +12,9 @@
 
 ### ✅ **Database Security**
 
-- **RLS Policies**: Comprehensive coverage for all tables
+- **Database hosted on Supabase (PostgreSQL)**: Managed, secure, and scalable cloud database
+- **RLS enforced at the database level**: Prevents unauthorized access even if application logic fails
+- **No direct database access from the client**: All access is mediated through Supabase client with user authentication
 - **Parameterized queries**: Supabase client prevents SQL injection
 - **User ownership verification**: All server actions verify project ownership
 - **Proper foreign keys**: Database integrity maintained
@@ -174,7 +176,7 @@ const corsConfig = {
 - [ ] **Custom endpoints & actions**: Rate limit them so users can't overwhelm the database
 - [ ] **Authorization**: Users can only see their own projects
 - [ ] **Admin Access**: Debug components only visible to admins
-- [ ] **Input Validation**: XSS attempts are sanitized (also ensure users can't upload huge files)
+- [ ] **Input Validation**: XSS attempts are sanitized (also ensure users can't upload huge files for DoS)
 - [ ] **Data Isolation**: RLS policies prevent cross-user access
 - [ ] **Session Security**: JWT tokens contain proper role claims
 - [ ] **Environment Security**: All config variables validated
