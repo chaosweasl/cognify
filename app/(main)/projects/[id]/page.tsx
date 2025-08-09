@@ -7,6 +7,8 @@ import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
 import { convertNewToLegacy } from "../types/flashcard";
 import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
 
+import DebugSRS from "../components/DebugSRS";
+
 export default async function ProjectStudyPage(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -118,7 +120,7 @@ export default async function ProjectStudyPage(props: {
   return (
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8 overflow-auto">
       {/* probably a good idea to have a 'is admin' function to determine whether this appears or not */}
-      {/* <DebugSRS projectId={project.id} /> */}
+      <DebugSRS projectId={project.id} />
       <StudyFlashcards
         flashcards={flashcards}
         projectName={project.name}

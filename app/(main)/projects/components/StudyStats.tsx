@@ -14,8 +14,9 @@ export function StudyStats({
   reviewCards,
   dueCards,
 }: StudyStatsProps) {
-  // Combine due cards and review cards since due cards are just review cards that are ready
-  const totalReviewCards = (reviewCards || 0) + (dueCards || 0);
+  // Use reviewCards directly - it represents the due review cards
+  // dueCards includes both learning and review cards, so don't double-count
+  const totalReviewCards = reviewCards || 0;
 
   return (
     <div className="grid grid-cols-3 gap-4 mb-4">
