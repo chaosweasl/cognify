@@ -2,20 +2,24 @@ import type { Metadata } from "next";
 import { ToastProvider } from "@/components/toast-provider";
 import { ProfileProvider } from "@/components/profile-provider";
 import EarlyDevWarning from "@/components/EarlyDevWarning";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 import "./globals.css";
 
 // Use system fonts as fallback to avoid Google Fonts connectivity issues
 const fontSans = {
   variable: "--font-geist-sans",
   style: {
-    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily:
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
 };
 
 const fontMono = {
-  variable: "--font-geist-mono", 
+  variable: "--font-geist-mono",
   style: {
-    fontFamily: "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+    fontFamily:
+      "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
   },
 };
 
@@ -48,6 +52,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${fontSans.variable} ${fontMono.variable} antialiased bg-base-100`}
       >
+        <SpeedInsights />
         <ToastProvider>
           <ProfileProvider>
             {children}
