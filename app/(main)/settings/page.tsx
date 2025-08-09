@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Settings, User, Brain, RotateCcw } from "lucide-react";
+import { Settings, User, Brain, RotateCcw, Shield } from "lucide-react";
 import { useSettingsStore } from "@/hooks/useSettings";
+import { useUserProfileStore } from "@/hooks/useUserProfile";
 
 // Sub-components
 import { UserSettingsTab } from "./components/UserSettingsTab";
@@ -10,6 +11,7 @@ import { SRSSettingsTab } from "./components/SRSSettingsTab";
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("user");
   const { resetAllSettings } = useSettingsStore();
+  const { userProfile, isLoading } = useUserProfileStore();
 
   const tabs = [
     { id: "user", label: "User Settings", icon: User },
@@ -34,6 +36,12 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <Settings className="w-6 h-6 text-primary" />
             <h1 className="text-2xl font-bold text-base-content">Settings</h1>
+            {!isLoading && userProfile?.is_admin && (
+              <div className="badge badge-primary gap-1">
+                <Shield className="w-3 h-3" />
+                Admin
+              </div>
+            )}
           </div>
           <button
             onClick={handleResetAll}
