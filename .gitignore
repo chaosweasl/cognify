@@ -47,5 +47,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+#copilot-instructions
+**/copilot-instructions.md
+**/.copilot-instructions.md
+**/instructions.md
+**/.instructions.md
+
 #other
 .env*.local
