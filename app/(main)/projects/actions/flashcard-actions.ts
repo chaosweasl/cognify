@@ -6,6 +6,7 @@ import {
   CreateFlashcardData,
   UpdateFlashcardData,
 } from "../types/flashcard";
+import { validateUUID, validateFlashcardContent } from "@/utils/security";
 
 // Get all flashcards for a project
 export async function getFlashcardsByProjectId(
@@ -14,6 +15,16 @@ export async function getFlashcardsByProjectId(
   console.log(
     `[Flashcards] getFlashcardsByProjectId called for project: ${projectId}`
   );
+
+  // Validate project ID format
+  const projectIdValidation = validateUUID(projectId);
+  if (!projectIdValidation.isValid) {
+    console.log(
+      `[Flashcards] getFlashcardsByProjectId - Invalid project ID format: ${projectId}`
+    );
+    return [];
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -77,10 +88,31 @@ export async function createFlashcard(
   projectId: string,
   flashcardData: CreateFlashcardData
 ): Promise<Flashcard | null> {
-  console.log(
-    `[Flashcards] createFlashcard called for project: ${projectId}`,
-    flashcardData
+  console.log(`[Flashcards] createFlashcard called for project: ${projectId}`, {
+    front: flashcardData.front.length,
+    back: flashcardData.back.length,
+  });
+
+  // Validate inputs
+  const projectIdValidation = validateUUID(projectId);
+  if (!projectIdValidation.isValid) {
+    console.log(
+      `[Flashcards] createFlashcard - Invalid project ID: ${projectId}`
+    );
+    throw new Error("Invalid project ID format");
+  }
+
+  const contentValidation = validateFlashcardContent(
+    flashcardData.front,
+    flashcardData.back
   );
+  if (!contentValidation.isValid) {
+    console.log(
+      `[Flashcards] createFlashcard - Invalid content: ${contentValidation.error}`
+    );
+    throw new Error(contentValidation.error || "Invalid flashcard content");
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -122,8 +154,8 @@ export async function createFlashcard(
     .insert([
       {
         project_id: projectId,
-        front: flashcardData.front,
-        back: flashcardData.back,
+        front: contentValidation.sanitizedFront,
+        back: contentValidation.sanitizedBack,
         extra: flashcardData.extra || {},
       },
     ])

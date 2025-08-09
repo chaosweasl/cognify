@@ -2,51 +2,85 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import {
+  validateEmail,
+  validatePassword,
+  checkRateLimit,
+} from "@/utils/security";
+import { getConfig } from "@/utils/env-config";
 
-/* TODO: add more robust validation as needed */
+const LOGIN_RATE_LIMIT = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 5, // 5 login attempts per 15 minutes
+};
 
-function validateEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function validatePassword(password: string) {
-  return typeof password === "string" && password.length >= 6;
-}
+const SIGNUP_RATE_LIMIT = {
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: 3, // 3 signup attempts per hour
+};
 
 export async function login(formData: FormData) {
-  console.log("loginActions: login called", formData);
+  console.log("loginActions: login called");
   const supabase = await createClient();
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  // Validation
-  if (!validateEmail(email)) {
-    return { error: "Please enter a valid email address." };
+  // Rate limiting
+  const rateLimitResult = checkRateLimit(`login:${email}`, LOGIN_RATE_LIMIT);
+  if (!rateLimitResult.allowed) {
+    return {
+      error: "Too many login attempts. Please try again later.",
+      retryAfter: rateLimitResult.resetTime,
+    };
   }
-  if (!validatePassword(password)) {
-    return { error: "Password must be at least 6 characters." };
+
+  // Validation
+  const emailValidation = validateEmail(email);
+  if (!emailValidation.isValid) {
+    return { error: emailValidation.error || "Invalid email" };
+  }
+
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.isValid) {
+    return { error: passwordValidation.error || "Invalid password" };
   }
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: error.message };
+    console.log("Login error:", error.message);
+    return { error: "Invalid email or password" }; // Generic error message for security
   }
 
   redirect("/dashboard");
 }
 
 export async function signup(formData: FormData) {
-  console.log("loginActions: signup called", formData);
+  console.log("loginActions: signup called");
   const supabase = await createClient();
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
+  // Rate limiting for signup
+  const rateLimitResult = checkRateLimit(`signup:${email}`, SIGNUP_RATE_LIMIT);
+  if (!rateLimitResult.allowed) {
+    return {
+      error: "Too many signup attempts. Please try again later.",
+      retryAfter: rateLimitResult.resetTime,
+    };
+  }
+
   // Validation
-  if (!validateEmail(email)) {
-    return { error: "Please enter a valid email address." };
+  const emailValidation = validateEmail(email);
+  if (!emailValidation.isValid) {
+    return { error: emailValidation.error || "Invalid email" };
+  }
+
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.isValid) {
+    return { error: passwordValidation.error || "Invalid password" };
   }
   if (!validatePassword(password)) {
     return { error: "Password must be at least 6 characters." };
@@ -66,11 +100,11 @@ export async function signInWithGithub() {
   console.log("loginActions: signInWithGithub called");
   const supabase = await createClient();
 
-  let siteUrl = "https://cognify-chaosweasl.vercel.app";
-  if (process.env.NODE_ENV === "development") {
-    siteUrl = "http://localhost:3000";
-  }
-  console.log("[signInWithGithub] NODE_ENV:", process.env.NODE_ENV);
+  // Use environment variables for URLs
+  const config = getConfig();
+  const siteUrl = config.NEXT_PUBLIC_SITE_URL;
+
+  console.log("[signInWithGithub] NODE_ENV:", config.NODE_ENV);
   console.log("[signInWithGithub] siteUrl:", siteUrl);
   console.log(
     "[signInWithGithub] redirectTo:",

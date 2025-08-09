@@ -12,10 +12,9 @@ export function StudyStats({
   newCards,
   learningCards,
   reviewCards,
-  dueCards,
 }: StudyStatsProps) {
   // Use reviewCards directly - it represents the due review cards
-  // dueCards includes both learning and review cards, so don't double-count
+  // Note: dueCards prop is available but not used to avoid double-counting
   const totalReviewCards = reviewCards || 0;
 
   return (

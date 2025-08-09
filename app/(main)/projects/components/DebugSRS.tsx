@@ -11,8 +11,35 @@ interface DebugSRSProps {
   projectId: string;
 }
 
+interface DebugData {
+  summary: {
+    totalFlashcards: number;
+    totalSRSStates: number;
+    cardsWithoutSRS: number;
+    cardsInNewState: number;
+    totalNewCards: number;
+    availableNewCards: number;
+    dueLearningCards: number;
+    dueReviewCards: number;
+    futureLearningCards: number;
+    futureReviewCards: number;
+    hasCardsToStudy: boolean;
+  };
+  dailyProgress: {
+    newCardsStudiedToday: number;
+    reviewsCompletedToday: number;
+    remainingNewCardSlots: number;
+    date: string;
+  };
+  stateBreakdown: Record<string, number>;
+  nextDueTimes: {
+    nextLearningCard: number | null;
+    nextReviewCard: number | null;
+  };
+}
+
 export default function DebugSRS({ projectId }: DebugSRSProps) {
-  const [debugData, setDebugData] = useState<any>(null);
+  const [debugData, setDebugData] = useState<DebugData | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -67,7 +94,6 @@ export default function DebugSRS({ projectId }: DebugSRSProps) {
 
   const formatTime = (timestamp: number | null) => {
     if (!timestamp) return "N/A";
-    const date = new Date(timestamp);
     const now = new Date();
     const diffMinutes = Math.round((timestamp - now.getTime()) / (60 * 1000));
 

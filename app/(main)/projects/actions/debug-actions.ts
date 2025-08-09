@@ -59,9 +59,11 @@ export async function debugStudyAvailability(projectId: string) {
     const totalSRSStates = srsStates?.length || 0;
 
     // Cards without SRS states (truly new cards that haven't been introduced yet)
-    const flashcardIds = new Set(flashcards?.map((f: any) => f.id) || []);
+    const flashcardIds = new Set(
+      flashcards?.map((f: { id: string }) => f.id) || []
+    );
     const srsCardIds = new Set(
-      srsStates?.map((s: any) => s.flashcard_id) || []
+      srsStates?.map((s: { flashcard_id: string }) => s.flashcard_id) || []
     );
     const cardsWithoutSRS = Array.from(flashcardIds).filter(
       (id) => !srsCardIds.has(id)
@@ -69,7 +71,10 @@ export async function debugStudyAvailability(projectId: string) {
 
     // Cards in "new" state (cards that have been introduced but not yet studied)
     const newStateCards =
-      srsStates?.filter((s: any) => s.state === "new" && !s.is_suspended) || [];
+      srsStates?.filter(
+        (s: { state: string; is_suspended: boolean }) =>
+          s.state === "new" && !s.is_suspended
+      ) || [];
 
     // Total new cards = cards without SRS state + cards in "new" state
     const totalNewCards = cardsWithoutSRS.length + newStateCards.length;
@@ -80,7 +85,8 @@ export async function debugStudyAvailability(projectId: string) {
 
     // Settings (using defaults)
     const NEW_CARDS_PER_DAY = 20;
-    const MAX_REVIEWS_PER_DAY = 200;
+    // Remove unused variable
+    // const MAX_REVIEWS_PER_DAY = 200;
 
     // Available slots
     const remainingNewCardSlots = Math.max(
@@ -92,7 +98,7 @@ export async function debugStudyAvailability(projectId: string) {
     // Due cards analysis
     const dueLearningCards =
       srsStates?.filter(
-        (s: any) =>
+        (s: { state: string; is_suspended: boolean; due: string }) =>
           (s.state === "learning" || s.state === "relearning") &&
           !s.is_suspended &&
           new Date(s.due).getTime() <= now
@@ -100,7 +106,7 @@ export async function debugStudyAvailability(projectId: string) {
 
     const dueReviewCards =
       srsStates?.filter(
-        (s: any) =>
+        (s: { state: string; is_suspended: boolean; due: string }) =>
           s.state === "review" &&
           !s.is_suspended &&
           new Date(s.due).getTime() <= now
@@ -109,7 +115,7 @@ export async function debugStudyAvailability(projectId: string) {
     // Future cards
     const futureLearningCards =
       srsStates?.filter(
-        (s: any) =>
+        (s: { state: string; is_suspended: boolean; due: string }) =>
           (s.state === "learning" || s.state === "relearning") &&
           !s.is_suspended &&
           new Date(s.due).getTime() > now
@@ -117,7 +123,7 @@ export async function debugStudyAvailability(projectId: string) {
 
     const futureReviewCards =
       srsStates?.filter(
-        (s: any) =>
+        (s: { state: string; is_suspended: boolean; due: string }) =>
           s.state === "review" &&
           !s.is_suspended &&
           new Date(s.due).getTime() > now
@@ -125,10 +131,13 @@ export async function debugStudyAvailability(projectId: string) {
 
     // State breakdown
     const stateBreakdown =
-      srsStates?.reduce((acc: Record<string, number>, state: any) => {
-        acc[state.state] = (acc[state.state] || 0) + 1;
-        return acc;
-      }, {}) || {};
+      srsStates?.reduce(
+        (acc: Record<string, number>, state: { state: string }) => {
+          acc[state.state] = (acc[state.state] || 0) + 1;
+          return acc;
+        },
+        {}
+      ) || {};
 
     const result = {
       summary: {
@@ -158,7 +167,7 @@ export async function debugStudyAvailability(projectId: string) {
         nextLearningCard:
           futureLearningCards.length > 0
             ? Math.min(
-                ...futureLearningCards.map((s: any) =>
+                ...futureLearningCards.map((s: { due: string }) =>
                   new Date(s.due).getTime()
                 )
               )
@@ -166,7 +175,9 @@ export async function debugStudyAvailability(projectId: string) {
         nextReviewCard:
           futureReviewCards.length > 0
             ? Math.min(
-                ...futureReviewCards.map((s: any) => new Date(s.due).getTime())
+                ...futureReviewCards.map((s: { due: string }) =>
+                  new Date(s.due).getTime()
+                )
               )
             : null,
       },
