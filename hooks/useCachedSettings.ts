@@ -131,8 +131,8 @@ function dbRowToSettings(row: UserSettingsRow): {
 function settingsToDbUpdate(
   srs: Partial<SRSSettings>,
   user: Partial<UserSettings>
-) {
-  const update: any = {};
+): Record<string, unknown> {
+  const update: Record<string, unknown> = {};
 
   // SRS settings
   if (srs.NEW_CARDS_PER_DAY !== undefined)
@@ -218,6 +218,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
             console.log(
               `[Settings] Fetching settings from database for user: ${user.id}`
             );
+            
+            // Verify user is still authenticated
+            const { data: currentUser } = await supabase.auth.getUser();
+            if (!currentUser.user || currentUser.user.id !== user.id) {
+              throw new Error("Authentication state changed during request");
+            }
+            
             const { data, error } = await supabase
               .from("user_settings")
               .select("*")
@@ -225,6 +232,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
               .single();
 
             if (error) {
+              console.error(`[Settings] Database error details:`, {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint
+              });
+              
               if (error.code === "PGRST116") {
                 // No settings found, create default settings
                 console.log(
@@ -240,11 +254,21 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
                   ),
                 };
 
+                console.log(`[Settings] Inserting default row:`, defaultRow);
+
                 const { error: insertError } = await supabase
                   .from("user_settings")
                   .insert([defaultRow]);
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                  console.error(`[Settings] Insert error details:`, {
+                    code: insertError.code,
+                    message: insertError.message,
+                    details: insertError.details,
+                    hint: insertError.hint
+                  });
+                  throw insertError;
+                }
 
                 return {
                   srs: defaultSRSSettings,
@@ -291,6 +315,12 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
     updateSRSSettings: async (updates) => {
       const currentSettings = get().srsSettings;
       const newSettings = { ...currentSettings, ...updates };
+
+      // Validate settings before updating
+      const validationErrors = get().validateSRSSettings(updates);
+      if (validationErrors.length > 0) {
+        throw new Error(`Invalid settings: ${validationErrors.join(", ")}`);
+      }
 
       set({ isLoading: true, error: null });
 
@@ -475,6 +505,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
         (settings.MINIMUM_EASE < 1.0 || settings.MINIMUM_EASE > 3.0)
       ) {
         errors.push("Minimum ease must be between 1.0 and 3.0");
+      }
+
+      if (
+        settings.HARD_INTERVAL_FACTOR !== undefined &&
+        (settings.HARD_INTERVAL_FACTOR < 0.1 || settings.HARD_INTERVAL_FACTOR > 1.0)
+      ) {
+        errors.push("Hard interval factor must be between 0.1 and 1.0");
       }
 
       if (
