@@ -17,6 +17,33 @@ export function logSupabaseError(
   prefix: string,
   error: SupabaseError | any
 ): void {
+  // Handle completely undefined/null errors
+  if (!error) {
+    console.error(`${prefix}: No error provided (null/undefined)`);
+    return;
+  }
+
+  // Additional check to avoid logging completely empty or meaningless errors
+  if (typeof error === "object") {
+    const keys = Object.keys(error);
+    const hasAnyContent = keys.some((key) => {
+      const value = error[key];
+      return (
+        value !== null &&
+        value !== undefined &&
+        (typeof value !== "string" || value.trim() !== "") &&
+        value !== ""
+      );
+    });
+
+    if (!hasAnyContent) {
+      console.warn(
+        `${prefix}: Empty error object detected, skipping log to avoid noise`
+      );
+      return;
+    }
+  }
+
   console.error(`${prefix}:`, {
     message: error?.message || "No message",
     details: error?.details || "No details",
@@ -26,7 +53,18 @@ export function logSupabaseError(
     // Try to stringify the full error safely
     fullError: (() => {
       try {
-        return JSON.stringify(error, null, 2);
+        if (typeof error === "string") {
+          return error;
+        }
+        if (typeof error === "object") {
+          // Check if it's an empty object
+          const keys = Object.keys(error);
+          if (keys.length === 0) {
+            return "Empty error object - no properties available";
+          }
+          return JSON.stringify(error, null, 2);
+        }
+        return String(error);
       } catch (stringifyError) {
         return `Failed to stringify error: ${stringifyError}`;
       }

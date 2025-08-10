@@ -1,14 +1,36 @@
 "use client";
 
-import { useEnhancedProjects } from "@/components/CacheProvider";
+import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 import { ProjectList } from "./components/ProjectList";
 import { EmptyState } from "./components/EmptyState";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 export default function ProjectsPage() {
-  const { projects, isLoadingProjects, error } = useEnhancedProjects();
+  const { projects, isLoadingProjects, error, loadProjects, lastFetch } =
+    useCachedProjectsStore();
 
-  console.log("[ProjectsPage] Projects loaded:", projects.length);
+  // Auto-load projects when component mounts or if cache is stale
+  useEffect(() => {
+    const now = Date.now();
+    const projectsLastFetch = lastFetch.projects || 0;
+    const cacheAge = now - projectsLastFetch;
+    const cacheExpiry = 10000; // 10 seconds for projects - much more responsive
+
+    const shouldRefresh = !projectsLastFetch || cacheAge > cacheExpiry;
+
+    console.log("[ProjectsPage] Cache check:", {
+      projectsCount: projects.length,
+      cacheAge: Math.round(cacheAge / 1000),
+      shouldRefresh,
+      isLoading: isLoadingProjects,
+    });
+
+    if (shouldRefresh && !isLoadingProjects) {
+      console.log("[ProjectsPage] Loading fresh projects");
+      loadProjects(true); // Force refresh
+    }
+  }, [projects.length, lastFetch.projects, isLoadingProjects, loadProjects]);
 
   if (error) {
     console.error("[ProjectsPage] Error loading projects:", error);

@@ -1,3 +1,4 @@
+import React from "react";
 import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 import { createClient } from "@/utils/supabase/client";
@@ -31,12 +32,12 @@ interface CacheConfig {
 
 // Default cache configurations
 const CACHE_CONFIGS: Record<string, CacheConfig> = {
-  projects: { ttl: 5 * 60 * 1000, version: "1.0" }, // 5 minutes
-  project: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
-  flashcards: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
-  srs_states: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes (more dynamic)
-  user_settings: { ttl: 30 * 60 * 1000, version: "1.0" }, // 30 minutes
-  user_profile: { ttl: 30 * 60 * 1000, version: "1.0" }, // 30 minutes
+  projects: { ttl: 30 * 1000, version: "1.0" }, // 30 seconds - more responsive
+  project: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
+  flashcards: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
+  srs_states: { ttl: 1 * 60 * 1000, version: "1.0" }, // 1 minute (more dynamic)
+  user_settings: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
+  user_profile: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
   daily_stats: { ttl: 60 * 60 * 1000, version: "1.0" }, // 1 hour
   study_stats: { ttl: 5 * 60 * 1000, version: "1.0" }, // 5 minutes
   notifications: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
@@ -316,9 +317,9 @@ export async function cachedFetch<T>(
     return data;
   } catch (error) {
     console.error(`[Cache] Error fetching ${key}:`, error);
-    
+
     // Enhanced error logging for database issues
-    if (error && typeof error === 'object') {
+    if (error && typeof error === "object") {
       const dbError = error as any;
       if (dbError.code) {
         console.error(`[Cache] Database error code: ${dbError.code}`);
@@ -333,7 +334,7 @@ export async function cachedFetch<T>(
         console.error(`[Cache] Database error hint: ${dbError.hint}`);
       }
     }
-    
+
     throw error;
   }
 }
@@ -394,7 +395,37 @@ export const CacheInvalidation = {
 
 // Hook for cache statistics (useful for debugging)
 export function useCacheStats() {
-  return useCacheStore((state) => state.getStats());
+  const store = useCacheStore();
+
+  return React.useMemo(() => {
+    const cache = store.cache;
+    const hits = store.hits;
+    const misses = store.misses;
+    const entries = Object.values(cache).filter(Boolean);
+    const now = Date.now();
+
+    const expired = entries.filter((entry) => {
+      const config = getCacheConfig(
+        Object.keys(cache).find((k) => cache[k] === entry) as CacheKey
+      );
+      return entry.expiresAt
+        ? now > entry.expiresAt
+        : now - entry.timestamp > config.ttl;
+    }).length;
+
+    const totalSize = entries.reduce(
+      (acc, entry) => acc + calculateSize(entry.data),
+      0
+    );
+    const hitRate = hits + misses > 0 ? hits / (hits + misses) : 0;
+
+    return {
+      totalEntries: entries.length,
+      expiredEntries: expired,
+      cacheHitRate: Math.round(hitRate * 100) / 100,
+      totalSize,
+    };
+  }, [store.cache, store.hits, store.misses]);
 }
 
 // Hook for cache management

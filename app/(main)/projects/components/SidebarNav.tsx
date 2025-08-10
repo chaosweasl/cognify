@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useProjectsStore } from "../hooks/useProjects";
+import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 import { Layers, Plus, FolderOpen, ChevronRight, X } from "lucide-react";
 
 interface SidebarNavProps {
@@ -10,7 +10,11 @@ interface SidebarNavProps {
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
-  const { projects, loading, error } = useProjectsStore();
+  const {
+    projects,
+    isLoadingProjects: loading,
+    error,
+  } = useCachedProjectsStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);

@@ -8,7 +8,11 @@ import React, {
 } from "react";
 import { useCachedSettingsStore } from "@/hooks/useCachedSettings";
 import { useCachedUserProfileStore } from "@/hooks/useCachedUserProfile";
-import { useCachedProjectsStore, type CreateFlashcardData, type Project } from "@/hooks/useCachedProjects";
+import {
+  useCachedProjectsStore,
+  type CreateFlashcardData,
+  type Project,
+} from "@/hooks/useCachedProjects";
 import { useCachedDailyStatsStore } from "@/hooks/useCachedDailyStats";
 import { useCacheStore, useCacheStats } from "@/hooks/useCache";
 
@@ -33,6 +37,7 @@ export function CacheProvider({
   enableAutoLoad = true,
   enableDebugLogs = false,
 }: CacheProviderProps) {
+  const [isMounted, setIsMounted] = React.useState(false);
   const cacheStats = useCacheStats();
   const { clear: clearCache } = useCacheStore();
 
@@ -45,9 +50,14 @@ export function CacheProvider({
   // Use ref to prevent multiple auto-loads
   const hasAutoLoaded = React.useRef(false);
 
+  // Handle mounting to prevent hydration mismatches
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Auto-load data on mount if enabled (only once)
   useEffect(() => {
-    if (enableAutoLoad && !hasAutoLoaded.current) {
+    if (isMounted && enableAutoLoad && !hasAutoLoaded.current) {
       hasAutoLoaded.current = true;
       console.log("[CacheProvider] Auto-loading initial data");
 
@@ -78,18 +88,25 @@ export function CacheProvider({
 
       loadData();
     }
-  }, [enableAutoLoad, settingsStore, profileStore, projectsStore, dailyStatsStore]);
+  }, [
+    isMounted,
+    enableAutoLoad,
+    settingsStore,
+    profileStore,
+    projectsStore,
+    dailyStatsStore,
+  ]);
 
   // Debug logging
   useEffect(() => {
-    if (enableDebugLogs) {
+    if (isMounted && enableDebugLogs) {
       const interval = setInterval(() => {
         console.log("[CacheProvider] Cache Stats:", cacheStats);
       }, 30000); // Log every 30 seconds
 
       return () => clearInterval(interval);
     }
-  }, [enableDebugLogs, cacheStats]);
+  }, [isMounted, enableDebugLogs, cacheStats]);
 
   // Refresh all cached data
   const refreshAll = React.useCallback(async () => {
@@ -127,11 +144,13 @@ export function CacheProvider({
 
   const contextValue: CacheProviderContextType = useMemo(
     () => ({
-      cacheStats,
+      cacheStats: isMounted
+        ? cacheStats
+        : { totalEntries: 0, expiredEntries: 0, cacheHitRate: 0, totalSize: 0 },
       refreshAll,
       clearAll,
     }),
-    [cacheStats, refreshAll, clearAll]
+    [isMounted, cacheStats, refreshAll, clearAll]
   );
 
   return (
@@ -173,14 +192,21 @@ export function useEnhancedUserProfile() {
   const { fetchUserProfile, ...restStore } = store;
   const [hasLoaded, setHasLoaded] = React.useState(false);
 
-  const stableFetchUserProfile = React.useCallback(fetchUserProfile, [fetchUserProfile]);
+  const stableFetchUserProfile = React.useCallback(fetchUserProfile, [
+    fetchUserProfile,
+  ]);
 
   useEffect(() => {
     if (!hasLoaded && !restStore.userProfile && !restStore.lastFetch) {
       setHasLoaded(true);
       stableFetchUserProfile();
     }
-  }, [stableFetchUserProfile, restStore.userProfile, restStore.lastFetch, hasLoaded]);
+  }, [
+    stableFetchUserProfile,
+    restStore.userProfile,
+    restStore.lastFetch,
+    hasLoaded,
+  ]);
 
   return restStore;
 }
@@ -265,15 +291,15 @@ export function useEnhancedProject(projectId: string) {
 
     loadData().catch(console.error);
   }, [
-    projectId, 
-    project, 
-    flashcards.length, 
-    srsStates.length, 
-    stats, 
+    projectId,
+    project,
+    flashcards.length,
+    srsStates.length,
+    stats,
     stableLoadProject,
     stableLoadFlashcards,
     stableLoadSRSStates,
-    stableLoadProjectStats
+    stableLoadProjectStats,
   ]);
 
   return {
@@ -284,8 +310,10 @@ export function useEnhancedProject(projectId: string) {
     isLoadingFlashcards: store.isLoadingFlashcards[projectId] || false,
     isLoadingSRS: store.isLoadingSRS[projectId] || false,
     // Store actions
-    createFlashcard: (data: CreateFlashcardData) => store.createFlashcard(projectId, data),
-    updateProject: (updates: Partial<Project>) => store.updateProject(projectId, updates),
+    createFlashcard: (data: CreateFlashcardData) =>
+      store.createFlashcard(projectId, data),
+    updateProject: (updates: Partial<Project>) =>
+      store.updateProject(projectId, updates),
     deleteProject: () => store.deleteProject(projectId),
     refreshProject: () => {
       store.loadProject(projectId, true);
@@ -298,11 +326,21 @@ export function useEnhancedProject(projectId: string) {
 
 // Debug component for cache stats
 export function CacheDebugInfo() {
-  const { cacheStats } = useCacheProvider();
+  const [isMounted, setIsMounted] = React.useState(false);
 
-  if (process.env.NODE_ENV !== "development") {
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || process.env.NODE_ENV !== "development") {
     return null;
   }
+
+  return <CacheDebugInfoContent />;
+}
+
+function CacheDebugInfoContent() {
+  const { cacheStats } = useCacheProvider();
 
   return (
     <div className="fixed bottom-4 right-4 bg-base-200 p-4 rounded-lg shadow-lg text-xs opacity-75 hover:opacity-100 transition-opacity">

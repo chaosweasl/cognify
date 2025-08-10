@@ -13,6 +13,34 @@ import {
   logDatabaseOperation,
 } from "@/utils/debug/errorLogger";
 
+/**
+ * Check if an error object contains meaningful error information
+ */
+function hasMeaningfulError(error: any): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  // Check for actual error properties with non-empty values
+  const hasMessage = error.message && error.message.trim() !== "";
+  const hasCode = error.code && error.code.trim() !== "";
+  const hasDetails = error.details && error.details.trim() !== "";
+  const hasHint = error.hint && error.hint.trim() !== "";
+
+  // Check if there are any other meaningful properties
+  const keys = Object.keys(error);
+  const hasOtherProps = keys.some((key) => {
+    const value = error[key];
+    return (
+      value !== null &&
+      value !== undefined &&
+      (typeof value !== "string" || value.trim() !== "")
+    );
+  });
+
+  return hasMessage || hasCode || hasDetails || hasHint || hasOtherProps;
+}
+
 // Database type for SRS states table
 type DatabaseSRSState = {
   id: string;
@@ -226,7 +254,7 @@ export async function saveSRSStates(
       onConflict: "user_id,project_id,card_id",
     });
 
-    if (error) {
+    if (error && hasMeaningfulError(error)) {
       logSupabaseError("[SRS-DB] saveSRSStates - Database error", error);
       return false;
     }

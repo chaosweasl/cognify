@@ -61,7 +61,7 @@ export default function RootLayout({
         <ToastProvider>
           <ProfileProvider>
             <CacheProvider
-              enableAutoLoad={true}
+              enableAutoLoad={false}
               enableDebugLogs={process.env.NODE_ENV === "development"}
             >
               {children}

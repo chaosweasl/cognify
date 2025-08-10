@@ -6,6 +6,34 @@
 import { createClient } from "./client";
 import { logSupabaseError, logError } from "../debug/errorLogger";
 
+/**
+ * Check if an error object contains meaningful error information
+ */
+function hasMeaningfulError(error: any): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  // Check for actual error properties with non-empty values
+  const hasMessage = error.message && error.message.trim() !== "";
+  const hasCode = error.code && error.code.trim() !== "";
+  const hasDetails = error.details && error.details.trim() !== "";
+  const hasHint = error.hint && error.hint.trim() !== "";
+
+  // Check if there are any other meaningful properties
+  const keys = Object.keys(error);
+  const hasOtherProps = keys.some((key) => {
+    const value = error[key];
+    return (
+      value !== null &&
+      value !== undefined &&
+      (typeof value !== "string" || value.trim() !== "")
+    );
+  });
+
+  return hasMessage || hasCode || hasDetails || hasHint || hasOtherProps;
+}
+
 export type DailyStudyStats = {
   id: string;
   user_id: string;
@@ -68,7 +96,10 @@ export async function getDailyStudyStats(
       .eq("study_date", studyDate)
       .maybeSingle();
 
-    if (error) {
+    if (
+      error &&
+      (error.message || error.code || Object.keys(error).length > 0)
+    ) {
       console.error(`[DailyStats] Error fetching daily stats:`, error);
       console.error(`[DailyStats] Error details:`, {
         code: error.code,
@@ -143,7 +174,7 @@ export async function updateDailyStudyStats(
         ignoreDuplicates: false,
       });
 
-    if (error) {
+    if (error && hasMeaningfulError(error)) {
       logSupabaseError("Error updating daily study stats", error);
     }
   } catch (error) {
@@ -205,7 +236,10 @@ export async function getDailyStudyStatsRange(
       .lte("study_date", endDate)
       .order("study_date", { ascending: true });
 
-    if (error) {
+    if (
+      error &&
+      (error.message || error.code || Object.keys(error).length > 0)
+    ) {
       console.error("Error fetching daily study stats range:", error);
       return [];
     }

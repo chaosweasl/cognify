@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ManageFlashcardsModal } from "./ManageFlashcardsModal";
 import { ProjectInfoForm } from "./ProjectInfoForm";
 import { FlashcardCardEditor } from "./FlashcardCardEditor";
@@ -38,10 +38,13 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
-  const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([]);
+  const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([
+    { front: "", back: "" },
+  ]); // Always start with at least one card
   const [current, setCurrent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isValid, setIsValid] = useState(false);
+  const isAddingCard = useRef(false);
 
   // Load flashcards on component mount
   useEffect(() => {
@@ -50,18 +53,31 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   // Update local flashcards when database flashcards change
   useEffect(() => {
-    const editorFlashcards = dbFlashcards.map(
-      (card): EditorFlashcard => ({
-        id: card.id,
-        front: card.front,
-        back: card.back,
-      })
-    );
-    setFlashcards(editorFlashcards);
-    if (editorFlashcards.length > 0 && current >= editorFlashcards.length) {
-      setCurrent(Math.max(0, editorFlashcards.length - 1));
+    const editorFlashcards = dbFlashcards
+      .filter((card) => card && typeof card === "object") // Filter out null/undefined entries
+      .map(
+        (card): EditorFlashcard => ({
+          id: card.id,
+          front: card.front || "",
+          back: card.back || "",
+        })
+      );
+
+    // Ensure there's always at least one flashcard for editing
+    if (editorFlashcards.length === 0) {
+      editorFlashcards.push({ front: "", back: "" });
     }
-  }, [dbFlashcards, current]);
+
+    setFlashcards(editorFlashcards);
+
+    // Only update current if it's out of bounds
+    setCurrent((prevCurrent) => {
+      if (prevCurrent >= editorFlashcards.length) {
+        return Math.max(0, editorFlashcards.length - 1);
+      }
+      return prevCurrent;
+    });
+  }, [dbFlashcards]); // Removed 'current' from dependencies
 
   useEffect(() => {
     // Allow saving as long as project name is present
@@ -75,12 +91,17 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   function handleChange(field: "front" | "back", value: string) {
     setFlashcards((prev) => {
       const up = [...prev];
+      // Ensure we have a valid card at current index
+      if (!up[current]) {
+        up[current] = { front: "", back: "" };
+      }
       up[current] = { ...up[current], [field]: value };
       return up;
     });
   }
 
   function handleAdd() {
+    isAddingCard.current = true;
     setFlashcards((prev) => [
       ...prev,
       {
@@ -88,15 +109,26 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
         back: "",
       },
     ]);
-    setCurrent(flashcards.length);
   }
+
+  // Handle current index update when cards are added
+  useEffect(() => {
+    if (isAddingCard.current) {
+      setCurrent(flashcards.length - 1);
+      isAddingCard.current = false;
+    }
+  }, [flashcards.length]);
 
   function handleJumpTo(idx: number) {
     setCurrent(idx);
   }
 
   function handleDeleteAt(idx: number) {
-    setFlashcards((prev) => prev.filter((_, i) => i !== idx));
+    setFlashcards((prev) => {
+      const filtered = prev.filter((_, i) => i !== idx);
+      // Ensure there's always at least one flashcard
+      return filtered.length === 0 ? [{ front: "", back: "" }] : filtered;
+    });
     // If deleting current card, move to previous or 0
     setCurrent((prev) => {
       if (idx < prev) return prev - 1;
@@ -106,12 +138,17 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   }
 
   function handleDeleteAll() {
-    setFlashcards([]);
+    setFlashcards([{ front: "", back: "" }]); // Always keep at least one card
     setCurrent(0);
   }
 
   function handleDelete() {
-    if (flashcards.length <= 1) return;
+    if (flashcards.length <= 1) {
+      // If only one card left, reset it instead of deleting
+      setFlashcards([{ front: "", back: "" }]);
+      setCurrent(0);
+      return;
+    }
     setFlashcards((prev) => {
       const updated = [...prev.slice(0, current), ...prev.slice(current + 1)];
       return updated;
@@ -136,16 +173,20 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       // Only save non-empty cards (at least one non-empty field)
       const filtered = flashcards.filter(
         (fc) =>
-          (typeof fc.front === "string" && fc.front.trim()) ||
-          (typeof fc.back === "string" && fc.back.trim())
+          fc &&
+          typeof fc === "object" &&
+          ((typeof fc.front === "string" && fc.front.trim()) ||
+            (typeof fc.back === "string" && fc.back.trim()))
       );
 
       // Convert editor format to database format
-      const flashcardData: CreateFlashcardData[] = filtered.map((card) => ({
-        front: card.front,
-        back: card.back,
-        extra: {},
-      }));
+      const flashcardData: CreateFlashcardData[] = filtered
+        .filter((card) => card && typeof card === "object") // Extra safety check
+        .map((card) => ({
+          front: card.front || "",
+          back: card.back || "",
+          extra: {},
+        }));
 
       // Save flashcards using new API
       await replaceAllFlashcards(project.id, flashcardData);
@@ -171,14 +212,18 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     }>
   ) {
     // Convert from legacy format to editor format if needed
-    const editorCards: EditorFlashcard[] = importedCards.map((card) => ({
-      front: card.question || card.front || "",
-      back: card.answer || card.back || "",
-    }));
+    const editorCards: EditorFlashcard[] = importedCards
+      .filter((card) => card && typeof card === "object") // Filter out null/undefined entries
+      .map((card) => ({
+        front: card.question || card.front || "",
+        back: card.answer || card.back || "",
+      }));
 
     // Remove any cards that are missing a non-empty front or back
     const filtered = editorCards.filter(
       (fc) =>
+        fc &&
+        typeof fc === "object" &&
         typeof fc.front === "string" &&
         typeof fc.back === "string" &&
         fc.front.trim() &&
@@ -194,8 +239,10 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     (typeof card.back === "string" && card.back.trim());
   const completedCards = flashcards.filter(
     (fc) =>
-      (typeof fc.front === "string" && fc.front.trim()) ||
-      (typeof fc.back === "string" && fc.back.trim())
+      fc &&
+      typeof fc === "object" &&
+      ((typeof fc.front === "string" && fc.front.trim()) ||
+        (typeof fc.back === "string" && fc.back.trim()))
   ).length;
 
   const isLoading = saving || flashcardsLoading;

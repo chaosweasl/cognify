@@ -2,19 +2,30 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createProject } from "../actions";
+import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 
 export default function CreateProjectPage() {
   const router = useRouter();
+  const { createProject } = useCachedProjectsStore();
+
   useEffect(() => {
     async function createAndRedirect() {
-      const id = await createProject({
-        name: "Untitled Project",
-        description: "",
-      });
-      if (id) router.push(`/projects/${id}/edit`);
+      try {
+        const project = await createProject({
+          name: "Untitled Project",
+          description: "",
+        });
+        if (project?.id) {
+          router.push(`/projects/${project.id}/edit`);
+        }
+      } catch (error) {
+        console.error("Failed to create project:", error);
+        // Fallback to projects page
+        router.push("/projects");
+      }
     }
     createAndRedirect();
-  }, [router]);
+  }, [router, createProject]);
+
   return null;
 }
