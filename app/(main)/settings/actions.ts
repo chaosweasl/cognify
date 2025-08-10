@@ -1,4 +1,5 @@
 import { useUserProfileStore } from "@/hooks/useUserProfile";
+import { useEnhancedUserProfile } from "@/components/CacheProvider";
 
 export interface HandleSaveParams {
   profilePicture: File | null;
@@ -75,7 +76,7 @@ export function useSettingsActions() {
     isLoading: profileLoading,
     updateUserProfile,
     uploadAvatar,
-  } = useUserProfileStore();
+  } = useEnhancedUserProfile();
 
   function validateProfile(
     displayName: string,

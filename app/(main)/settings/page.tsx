@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { Settings, User, Brain, RotateCcw, Shield } from "lucide-react";
-import { useSettingsStore } from "@/hooks/useSettings";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import {
+  useEnhancedSettings,
+  useEnhancedUserProfile,
+} from "@/components/CacheProvider";
 
 // Sub-components
 import { UserSettingsTab } from "./components/UserSettingsTab";
@@ -10,8 +12,8 @@ import { SRSSettingsTab } from "./components/SRSSettingsTab";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("user");
-  const { resetAllSettings } = useSettingsStore();
-  const { userProfile, isLoading } = useUserProfileStore();
+  const { resetAllSettings } = useEnhancedSettings();
+  const { userProfile, isLoading } = useEnhancedUserProfile();
 
   const tabs = [
     { id: "user", label: "User Settings", icon: User },

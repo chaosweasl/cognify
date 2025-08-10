@@ -1,15 +1,18 @@
 "use client";
 import React from "react";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
-import { useSettingsStore } from "@/hooks/useSettings";
+import {
+  useEnhancedUserProfile,
+  useEnhancedSettings,
+} from "@/components/CacheProvider";
 import { useToast } from "@/components/toast-provider";
 import Image from "next/image";
 // import nopfp from "@/public/assets/nopfp.png";
 const nopfp = "/assets/nopfp.png";
 
 export function UserSettingsTab() {
-  const { userProfile, isLoading, updateUserProfile } = useUserProfileStore();
-  const { userSettings, updateUserSettings } = useSettingsStore();
+  const { userProfile, isLoading, updateUserProfile } =
+    useEnhancedUserProfile();
+  const { userSettings, updateUserSettings } = useEnhancedSettings();
   const { showToast } = useToast();
 
   const [formData, setFormData] = React.useState({

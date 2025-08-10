@@ -15,13 +15,13 @@ import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
 import React from "react";
 import { NotificationBell } from "@/components/NotificationBell";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import { useEnhancedUserProfile } from "@/components/CacheProvider";
 import { useState, useEffect } from "react";
 import { signOut } from "../dashboard/actions";
 
 export function HeaderMain() {
   const { theme, toggleTheme } = useThemeStore();
-  const { userProfile } = useUserProfileStore();
+  const { userProfile } = useEnhancedUserProfile();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

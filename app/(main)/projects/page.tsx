@@ -1,30 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
-import { useProjectsStore } from "./hooks/useProjects";
+import { useEnhancedProjects } from "@/components/CacheProvider";
 import { ProjectList } from "./components/ProjectList";
 import { EmptyState } from "./components/EmptyState";
 import { Loader2 } from "lucide-react";
 
 export default function ProjectsPage() {
-  const { projects, loading, error, fetchProjects } = useProjectsStore();
+  const { projects, isLoadingProjects, error } = useEnhancedProjects();
 
-  useEffect(() => {
-    if (!loading && projects.length === 0) {
-      console.log("[ProjectsPage] Fetching projects from database...");
-      fetchProjects();
-    }
-  }, [loading, projects.length, fetchProjects]);
+  console.log("[ProjectsPage] Projects loaded:", projects.length);
 
-  useEffect(() => {
-    console.log("[ProjectsPage] Projects loaded:", projects);
-  }, [projects]);
-
-  useEffect(() => {
-    if (error) {
-      console.error("[ProjectsPage] Error loading projects:", error);
-    }
-  }, [error]);
+  if (error) {
+    console.error("[ProjectsPage] Error loading projects:", error);
+  }
 
   return (
     <>
@@ -33,7 +21,7 @@ export default function ProjectsPage() {
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto px-2 py-6 md:px-10 md:py-10 transition-all">
-          {loading ? (
+          {isLoadingProjects ? (
             <div className="flex items-center gap-2 h-40 justify-center">
               <Loader2 className="animate-spin w-5 h-5 text-primary" />{" "}
               Loading...
