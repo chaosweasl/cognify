@@ -11,14 +11,14 @@ import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "../hooks/useFlashcards";
-import { CreateFlashcardData } from "../types/flashcard";
 import ProjectResetComponent from "./ProjectResetComponent";
+import { CreateFlashcardData } from "../types/flashcard";
 
-// Define Flashcard type locally for legacy compatibility
-type LegacyFlashcard = {
+// Working flashcard type for the editor (without full database fields)
+type EditorFlashcard = {
   id?: string; // Keep optional for internal use
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
 };
 
 // Main FlashcardEditor Component
@@ -33,13 +33,12 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     loading: flashcardsLoading,
     fetchFlashcards,
     replaceAllFlashcards,
-    getLegacyFlashcards,
   } = useFlashcardsStore();
 
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
-  const [flashcards, setFlashcards] = useState<LegacyFlashcard[]>([]);
+  const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([]);
   const [current, setCurrent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [isValid, setIsValid] = useState(false);
@@ -51,12 +50,18 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
   // Update local flashcards when database flashcards change
   useEffect(() => {
-    const legacyFlashcards = getLegacyFlashcards();
-    setFlashcards(legacyFlashcards);
-    if (legacyFlashcards.length > 0 && current >= legacyFlashcards.length) {
-      setCurrent(Math.max(0, legacyFlashcards.length - 1));
+    const editorFlashcards = dbFlashcards.map(
+      (card): EditorFlashcard => ({
+        id: card.id,
+        front: card.front,
+        back: card.back,
+      })
+    );
+    setFlashcards(editorFlashcards);
+    if (editorFlashcards.length > 0 && current >= editorFlashcards.length) {
+      setCurrent(Math.max(0, editorFlashcards.length - 1));
     }
-  }, [dbFlashcards, getLegacyFlashcards, current]);
+  }, [dbFlashcards, current]);
 
   useEffect(() => {
     // Allow saving as long as project name is present
@@ -67,7 +72,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     );
   }, [flashcards, name]);
 
-  function handleChange(field: "question" | "answer", value: string) {
+  function handleChange(field: "front" | "back", value: string) {
     setFlashcards((prev) => {
       const up = [...prev];
       up[current] = { ...up[current], [field]: value };
@@ -79,8 +84,8 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     setFlashcards((prev) => [
       ...prev,
       {
-        question: "",
-        answer: "",
+        front: "",
+        back: "",
       },
     ]);
     setCurrent(flashcards.length);
@@ -131,14 +136,14 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       // Only save non-empty cards (at least one non-empty field)
       const filtered = flashcards.filter(
         (fc) =>
-          (typeof fc.question === "string" && fc.question.trim()) ||
-          (typeof fc.answer === "string" && fc.answer.trim())
+          (typeof fc.front === "string" && fc.front.trim()) ||
+          (typeof fc.back === "string" && fc.back.trim())
       );
 
-      // Convert legacy format to new format
+      // Convert editor format to database format
       const flashcardData: CreateFlashcardData[] = filtered.map((card) => ({
-        front: card.question,
-        back: card.answer,
+        front: card.front,
+        back: card.back,
         extra: {},
       }));
 
@@ -157,27 +162,40 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     router.push("/projects");
   }
 
-  function handleImportFlashcards(importedCards: LegacyFlashcard[]) {
-    // Remove any cards that are missing a non-empty question or answer
-    const filtered = importedCards.filter(
+  function handleImportFlashcards(
+    importedCards: Array<{
+      front?: string;
+      back?: string;
+      question?: string;
+      answer?: string;
+    }>
+  ) {
+    // Convert from legacy format to editor format if needed
+    const editorCards: EditorFlashcard[] = importedCards.map((card) => ({
+      front: card.question || card.front || "",
+      back: card.answer || card.back || "",
+    }));
+
+    // Remove any cards that are missing a non-empty front or back
+    const filtered = editorCards.filter(
       (fc) =>
-        typeof fc.question === "string" &&
-        typeof fc.answer === "string" &&
-        fc.question.trim() &&
-        fc.answer.trim()
+        typeof fc.front === "string" &&
+        typeof fc.back === "string" &&
+        fc.front.trim() &&
+        fc.back.trim()
     );
     setFlashcards(filtered);
     setCurrent(0);
   }
 
-  const card = flashcards[current] || { question: "", answer: "" };
+  const card = flashcards[current] || { front: "", back: "" };
   const currentCardValid =
-    (typeof card.question === "string" && card.question.trim()) ||
-    (typeof card.answer === "string" && card.answer.trim());
+    (typeof card.front === "string" && card.front.trim()) ||
+    (typeof card.back === "string" && card.back.trim());
   const completedCards = flashcards.filter(
     (fc) =>
-      (typeof fc.question === "string" && fc.question.trim()) ||
-      (typeof fc.answer === "string" && fc.answer.trim())
+      (typeof fc.front === "string" && fc.front.trim()) ||
+      (typeof fc.back === "string" && fc.back.trim())
   ).length;
 
   const isLoading = saving || flashcardsLoading;

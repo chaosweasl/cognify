@@ -11,7 +11,7 @@ const flashcardsPath = path.resolve(
   __dirname,
   "../app/(main)/projects/components/testflashcards.json"
 );
-const flashcards: Array<{ question: string; answer: string }> = JSON.parse(
+const flashcards: Array<{ front: string; back: string }> = JSON.parse(
   fs.readFileSync(flashcardsPath, "utf8")
 );
 
@@ -44,8 +44,8 @@ async function main() {
   const now = new Date().toISOString();
   const flashcardRows = flashcards.map((fc) => ({
     project_id: project.id,
-    front: fc.question,
-    back: fc.answer,
+    front: fc.front,
+    back: fc.back,
     extra: {}, // empty object for extra field (jsonb)
     created_at: now,
     updated_at: now,

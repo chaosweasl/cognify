@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import { useEnhancedUserProfile } from "@/components/CacheProvider";
 
 interface DashboardHeaderState {
   drawerOpen: boolean;
@@ -12,7 +12,7 @@ export const useDashboardHeaderStore = create<DashboardHeaderState>((set) => ({
 }));
 
 export function useDashboardHeader() {
-  const { userProfile } = useUserProfileStore();
+  const { userProfile } = useEnhancedUserProfile();
   const { drawerOpen, setDrawerOpen } = useDashboardHeaderStore();
   return {
     user: {

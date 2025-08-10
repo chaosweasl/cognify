@@ -2,18 +2,13 @@
 
 import { useEffect } from "react";
 import { HeaderMain } from "./components/HeaderMain";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+// Profile is auto-loaded by CacheProvider, no manual action needed
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { fetchUserProfile } = useUserProfileStore();
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
-
   return (
     <>
       <HeaderMain />

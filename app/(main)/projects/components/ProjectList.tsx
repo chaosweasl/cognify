@@ -8,12 +8,12 @@ import {
   getSessionAwareStudyStats,
   initStudySessionWithFallback,
 } from "./SRSSession";
-import { useSettingsStore } from "@/hooks/useSettings";
+import { useEnhancedSettings } from "@/components/CacheProvider";
 
 export function ProjectList() {
   const { projects, deleteProjectById } = useProjectsStore();
   const userId = useUserId();
-  const { srsSettings } = useSettingsStore();
+  const { srsSettings } = useEnhancedSettings();
   const [projectStats, setProjectStats] = useState<
     Record<
       string,

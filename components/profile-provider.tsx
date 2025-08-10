@@ -1,17 +1,12 @@
 "use client";
-import React, { useEffect } from "react";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import React from "react";
 
 export const ProfileProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const fetchUserProfile = useUserProfileStore(
-    (state) => state.fetchUserProfile
-  );
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
+  // Profile loading is now handled by CacheProvider
+  // This component remains for backwards compatibility
   return <>{children}</>;
 };

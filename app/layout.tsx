@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/toast-provider";
 import { ProfileProvider } from "@/components/profile-provider";
+import { CacheProvider, CacheDebugInfo } from "@/components/CacheProvider";
 import EarlyDevWarning from "@/components/EarlyDevWarning";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -59,9 +60,16 @@ export default function RootLayout({
 
         <ToastProvider>
           <ProfileProvider>
-            {children}
-            {/* Early development warning fixed at bottom left */}
-            <EarlyDevWarning />
+            <CacheProvider
+              enableAutoLoad={true}
+              enableDebugLogs={process.env.NODE_ENV === "development"}
+            >
+              {children}
+              {/* Early development warning fixed at bottom left */}
+              <EarlyDevWarning />
+              {/* Cache debug info for development */}
+              <CacheDebugInfo />
+            </CacheProvider>
           </ProfileProvider>
         </ToastProvider>
       </body>

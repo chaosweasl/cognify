@@ -1,7 +1,7 @@
 export type Flashcard = {
   id: string;
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
 };
 
 export type RawProject = {

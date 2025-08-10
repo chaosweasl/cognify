@@ -173,6 +173,43 @@ export async function createFlashcard(
   console.log(
     `[Flashcards] createFlashcard - Successfully created flashcard with ID: ${data.id}`
   );
+
+  // Create initial SRS state for the new flashcard
+  console.log(
+    `[Flashcards] createFlashcard - Creating SRS state for flashcard: ${data.id}`
+  );
+  const now = new Date().toISOString();
+  const { error: srsError } = await supabase.from("srs_states").insert([
+    {
+      user_id: user.id,
+      project_id: projectId,
+      card_id: data.id,
+      interval: 1,
+      ease: 2.5,
+      due: now, // New cards are immediately available
+      last_reviewed: now,
+      repetitions: 0,
+      state: "new",
+      lapses: 0,
+      learning_step: 0,
+      is_leech: false,
+      is_suspended: false,
+    },
+  ]);
+
+  if (srsError) {
+    console.error(
+      "[Flashcards] createFlashcard - Error creating SRS state:",
+      srsError
+    );
+    // Don't throw error here - flashcard was created successfully
+    // The SRS state can be created later if needed
+  } else {
+    console.log(
+      `[Flashcards] createFlashcard - Successfully created SRS state for flashcard: ${data.id}`
+    );
+  }
+
   return data;
 }
 
@@ -212,6 +249,47 @@ export async function createFlashcards(
     .select("*");
 
   if (error) throw error;
+
+  // Create SRS states for all new flashcards
+  if (data && data.length > 0) {
+    console.log(
+      `[Flashcards] createFlashcards - Creating SRS states for ${data.length} flashcards`
+    );
+    const now = new Date().toISOString();
+    const srsStatesToInsert = data.map((flashcard) => ({
+      user_id: user.id,
+      project_id: projectId,
+      card_id: flashcard.id,
+      interval: 1,
+      ease: 2.5,
+      due: now, // New cards are immediately available
+      last_reviewed: now,
+      repetitions: 0,
+      state: "new",
+      lapses: 0,
+      learning_step: 0,
+      is_leech: false,
+      is_suspended: false,
+    }));
+
+    const { error: srsError } = await supabase
+      .from("srs_states")
+      .insert(srsStatesToInsert);
+
+    if (srsError) {
+      console.error(
+        "[Flashcards] createFlashcards - Error creating SRS states:",
+        srsError
+      );
+      // Don't throw error here - flashcards were created successfully
+      // The SRS states can be created later if needed
+    } else {
+      console.log(
+        `[Flashcards] createFlashcards - Successfully created SRS states for ${data.length} flashcards`
+      );
+    }
+  }
+
   return data || [];
 }
 
@@ -329,6 +407,12 @@ export async function replaceAllFlashcardsForProject(
   projectId: string,
   flashcardsData: CreateFlashcardData[]
 ): Promise<Flashcard[]> {
+  console.log("[Flashcards] replaceAllFlashcardsForProject called with:", {
+    projectId,
+    flashcardsCount: flashcardsData.length,
+    flashcardsData,
+  });
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -347,13 +431,22 @@ export async function replaceAllFlashcardsForProject(
   if (projectError || !project)
     throw new Error("Project not found or unauthorized");
 
+  console.log(
+    "[Flashcards] Project ownership verified, deleting existing flashcards"
+  );
+
   // Delete all existing flashcards
   await deleteAllFlashcardsForProject(projectId);
 
+  console.log("[Flashcards] Existing flashcards deleted, creating new ones");
+
   // Create new flashcards if any
   if (flashcardsData.length > 0) {
-    return await createFlashcards(projectId, flashcardsData);
+    const result = await createFlashcards(projectId, flashcardsData);
+    console.log("[Flashcards] Successfully created flashcards:", result);
+    return result;
   }
 
+  console.log("[Flashcards] No flashcards to create, returning empty array");
   return [];
 }

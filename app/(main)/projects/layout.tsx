@@ -4,7 +4,7 @@ import { SidebarNav } from "./components/SidebarNav";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { createProject } from "./components/../actions";
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import { useEnhancedUserProfile } from "@/components/CacheProvider";
 import { useProjectsStore } from "./hooks/useProjects";
 import { useEffect } from "react";
 
@@ -15,13 +15,12 @@ export default function ProjectsLayout({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const userProfile = useUserProfileStore((state) => state.userProfile);
+  const { userProfile } = useEnhancedUserProfile();
   const { fetchProjects } = useProjectsStore();
 
   useEffect(() => {
-    if (!userProfile) {
-      useUserProfileStore.getState().fetchUserProfile();
-    } else {
+    // Profile is auto-loaded by CacheProvider, just need to trigger project fetch when ready
+    if (userProfile) {
       fetchProjects();
     }
   }, [userProfile, fetchProjects]);

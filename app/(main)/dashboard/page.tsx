@@ -1,10 +1,10 @@
 "use client";
 
-import { useUserProfileStore } from "@/hooks/useUserProfile";
+import { useEnhancedUserProfile } from "@/components/CacheProvider";
 import Image from "next/image";
 
 export default function PrivatePage() {
-  // Get user profile from Zustand
+  // Get user profile from cached store
   return (
     <div className="min-h-screen bg-base-100">
       <div className="container mx-auto p-8">
@@ -25,7 +25,7 @@ export default function PrivatePage() {
 
 // Inline UserProfileDisplay logic as a local component
 function UserProfileInline() {
-  const userProfile = useUserProfileStore((state) => state.userProfile);
+  const { userProfile } = useEnhancedUserProfile();
   if (!userProfile) return null;
   return (
     <div className="flex flex-col items-center">

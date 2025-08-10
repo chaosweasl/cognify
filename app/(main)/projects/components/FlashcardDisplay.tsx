@@ -1,11 +1,6 @@
 "use client";
 import React from "react";
-
-interface Flashcard {
-  id: string;
-  question: string;
-  answer: string;
-}
+import { Flashcard } from "../types/flashcard";
 
 interface FlashcardDisplayProps {
   card: Flashcard;
@@ -34,10 +29,10 @@ export function FlashcardDisplay({
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-base-100 to-base-200 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] transition-all duration-300 border-base-300 hover:border-primary/50">
             <div className="text-center px-4 py-6">
               <div className="text-sm md:text-base lg:text-xl font-semibold text-base-content mb-6 leading-relaxed">
-                {card.question}
+                {card.front}
               </div>
               <div className="flex items-center justify-center gap-2 text-base-content/60 text-sm">
-                <span>Click or press Space to reveal answer</span>
+                <span>Click or press Space to reveal back</span>
               </div>
             </div>
           </div>
@@ -46,10 +41,10 @@ export function FlashcardDisplay({
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 shadow-xl rounded-2xl border-2 [backface-visibility:hidden] [transform:rotateY(180deg)] transition-all duration-300 border-primary/30">
             <div className="text-center px-4 py-6">
               <div className="text-sm md:text-base lg:text-xl font-semibold text-base-content mb-6 leading-relaxed">
-                {card.answer}
+                {card.back}
               </div>
               <div className="flex items-center justify-center gap-2 text-base-content/60 text-sm">
-                <span>Click or press Space to show question</span>
+                <span>Click or press Space to show front</span>
               </div>
             </div>
           </div>

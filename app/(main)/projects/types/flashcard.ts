@@ -22,28 +22,3 @@ export interface UpdateFlashcardData {
   back?: string;
   extra?: Record<string, unknown>;
 }
-
-// Legacy flashcard format for backwards compatibility during migration
-export interface LegacyFlashcard {
-  id: string; // Changed from optional to required
-  question: string;
-  answer: string;
-}
-
-// Utility function to convert legacy format to new format
-export function convertLegacyToNew(legacy: LegacyFlashcard): CreateFlashcardData {
-  return {
-    front: legacy.question,
-    back: legacy.answer,
-    extra: {},
-  };
-}
-
-// Utility function to convert new format to legacy for components that haven't been updated yet
-export function convertNewToLegacy(flashcard: Flashcard): LegacyFlashcard {
-  return {
-    id: flashcard.id,
-    question: flashcard.front,
-    answer: flashcard.back,
-  };
-}

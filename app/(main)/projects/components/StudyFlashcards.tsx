@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
-import { useSettingsStore } from "@/hooks/useSettings";
+import { useEnhancedSettings } from "@/components/CacheProvider";
 import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
 import { saveSRSStates } from "./SRSDBUtils";
@@ -32,12 +32,7 @@ import { FlashcardDisplay } from "./FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "./EmptyFlashcardState";
 import { SessionProgress } from "./SessionProgress";
-
-interface Flashcard {
-  id: string;
-  question: string;
-  answer: string;
-}
+import { Flashcard } from "../types/flashcard";
 
 interface StudyFlashcardsProps {
   flashcards: Flashcard[];
@@ -47,13 +42,33 @@ interface StudyFlashcardsProps {
 }
 
 // Demo data
-const demoFlashcards = [
-  { id: "1", question: "What is the capital of France?", answer: "Paris" },
-  { id: "2", question: "What is 2 + 2?", answer: "4" },
+const demoFlashcards: Flashcard[] = [
+  {
+    id: "1",
+    front: "What is the capital of France?",
+    back: "Paris",
+    project_id: "demo",
+    extra: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    front: "What is 2 + 2?",
+    back: "4",
+    project_id: "demo",
+    extra: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
   {
     id: "3",
-    question: "Who wrote Romeo and Juliet?",
-    answer: "William Shakespeare",
+    front: "Who wrote Romeo and Juliet?",
+    back: "William Shakespeare",
+    project_id: "demo",
+    extra: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
@@ -65,12 +80,9 @@ export default function StudyFlashcards({
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
-  const { loadSettings, srsSettings } = useSettingsStore();
+  const { srsSettings } = useEnhancedSettings();
 
-  // Load settings on mount
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+  // Settings are auto-loaded by the enhanced hook
 
   // Initialize study session asynchronously
   useEffect(() => {

@@ -3,7 +3,8 @@
  * Replaces localStorage-based daily limit tracking with proper database persistence
  */
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "./client";
+import { logSupabaseError, logError } from "../debug/errorLogger";
 
 export type DailyStudyStats = {
   id: string;
@@ -143,10 +144,10 @@ export async function updateDailyStudyStats(
       });
 
     if (error) {
-      console.error("Error updating daily study stats:", error);
+      logSupabaseError("Error updating daily study stats", error);
     }
   } catch (error) {
-    console.error("Failed to update daily study stats:", error);
+    logError("Failed to update daily study stats", error);
   }
 }
 
