@@ -191,7 +191,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       // Save flashcards using new API
       await replaceAllFlashcards(project.id, flashcardData);
 
-      router.push("/projects");
+      router.push("/projects?refresh=1");
     } catch (error) {
       console.error("Error saving project:", error);
     } finally {
@@ -200,7 +200,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   }
 
   function handleCancel() {
-    router.push("/projects");
+    router.push("/projects?refresh=1");
   }
 
   function handleImportFlashcards(

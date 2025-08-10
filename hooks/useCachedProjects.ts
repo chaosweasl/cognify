@@ -548,7 +548,7 @@ export const useCachedProjectsStore = create<CachedProjectsState>(
 
         const newProject = { ...project, user_id: user.id };
 
-        // Update state
+        // Update state optimistically
         set((state) => ({
           projects: [newProject, ...state.projects],
           projectsById: { ...state.projectsById, [newProject.id]: newProject },
@@ -560,9 +560,11 @@ export const useCachedProjectsStore = create<CachedProjectsState>(
             ...state.srsStatesByProject,
             [newProject.id]: [],
           },
+          // Update lastFetch to prevent immediate cache reload
+          lastFetch: { ...state.lastFetch, projects: Date.now() },
         }));
 
-        // Invalidate projects cache
+        // Invalidate projects cache to ensure fresh data on next access
         CacheInvalidation.onProjectUpdate(newProject.id);
 
         console.log(

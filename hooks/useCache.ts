@@ -32,7 +32,7 @@ interface CacheConfig {
 
 // Default cache configurations
 const CACHE_CONFIGS: Record<string, CacheConfig> = {
-  projects: { ttl: 30 * 1000, version: "1.0" }, // 30 seconds - more responsive
+  projects: { ttl: 10 * 1000, version: "1.0" }, // 10 seconds - much more responsive
   project: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
   flashcards: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
   srs_states: { ttl: 1 * 60 * 1000, version: "1.0" }, // 1 minute (more dynamic)

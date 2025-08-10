@@ -1,5 +1,5 @@
 import { ProjectCard } from "./ProjectCard";
-import { useProjectsStore } from "../hooks/useProjects";
+import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useUserId } from "@/hooks/useUserId";
@@ -11,7 +11,7 @@ import {
 import { useEnhancedSettings } from "@/components/CacheProvider";
 
 export function ProjectList() {
-  const { projects, deleteProjectById } = useProjectsStore();
+  const { projects, deleteProject } = useCachedProjectsStore();
   const userId = useUserId();
   const { srsSettings } = useEnhancedSettings();
   const [projectStats, setProjectStats] = useState<
@@ -25,6 +25,8 @@ export function ProjectList() {
       }
     >
   >({});
+
+  console.log("[ProjectList] Rendering with projects:", projects.length);
 
   // Fetch SRS statistics for all projects with session-aware calculations
   useEffect(() => {
@@ -162,13 +164,17 @@ export function ProjectList() {
         <ProjectCard
           key={project.id}
           project={{
-            ...project,
-            formattedCreatedAt: project.formattedCreatedAt ?? "",
+            id: project.id,
+            name: project.name,
+            description: project.description || "",
+            formattedCreatedAt: new Date(
+              project.created_at
+            ).toLocaleDateString(),
           }}
-          flashcardCount={project.flashcardCount ?? 0}
+          flashcardCount={project.flashcards?.length ?? 0}
           srsStats={projectStats[project.id]}
           onDelete={async (id: string) => {
-            deleteProjectById(id);
+            deleteProject(id);
             return Promise.resolve();
           }}
         />

@@ -4,37 +4,92 @@ import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 import { ProjectList } from "./components/ProjectList";
 import { EmptyState } from "./components/EmptyState";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function ProjectsPage() {
-  const { projects, isLoadingProjects, error, loadProjects, lastFetch } =
+  const { projects, isLoadingProjects, error, loadProjects } =
     useCachedProjectsStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [loadingTimeoutReached, setLoadingTimeoutReached] = useState(false);
 
-  // Auto-load projects when component mounts or if cache is stale
+  // Single unified loading effect
   useEffect(() => {
-    const now = Date.now();
-    const projectsLastFetch = lastFetch.projects || 0;
-    const cacheAge = now - projectsLastFetch;
-    const cacheExpiry = 10000; // 10 seconds for projects - much more responsive
+    const shouldForceRefresh = searchParams.get("refresh") === "1";
+    const shouldInitialLoad =
+      !initialLoadDone && projects.length === 0 && !isLoadingProjects;
 
-    const shouldRefresh = !projectsLastFetch || cacheAge > cacheExpiry;
-
-    console.log("[ProjectsPage] Cache check:", {
+    console.log("[ProjectsPage] Loading check:", {
+      shouldForceRefresh,
+      shouldInitialLoad,
       projectsCount: projects.length,
-      cacheAge: Math.round(cacheAge / 1000),
-      shouldRefresh,
       isLoading: isLoadingProjects,
+      initialLoadDone,
     });
 
-    if (shouldRefresh && !isLoadingProjects) {
-      console.log("[ProjectsPage] Loading fresh projects");
-      loadProjects(true); // Force refresh
+    if (shouldForceRefresh || shouldInitialLoad) {
+      console.log("[ProjectsPage] Loading projects...");
+      loadProjects(shouldForceRefresh);
+
+      if (shouldForceRefresh) {
+        // Remove the refresh param from the URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete("refresh");
+        window.history.replaceState(
+          {},
+          document.title,
+          url.pathname + url.search
+        );
+      }
+
+      if (!initialLoadDone) {
+        setInitialLoadDone(true);
+      }
     }
-  }, [projects.length, lastFetch.projects, isLoadingProjects, loadProjects]);
+  }, [
+    searchParams,
+    projects.length,
+    isLoadingProjects,
+    loadProjects,
+    initialLoadDone,
+  ]);
+
+  // Failsafe: if loading takes more than 3 seconds, show empty/error state
+  useEffect(() => {
+    if (isLoadingProjects && !loadingTimeoutReached) {
+      const timeout = setTimeout(() => {
+        console.log(
+          "[ProjectsPage] Loading timeout reached - showing fallback UI"
+        );
+        setLoadingTimeoutReached(true);
+      }, 3000);
+      return () => clearTimeout(timeout);
+    } else if (!isLoadingProjects && loadingTimeoutReached) {
+      setLoadingTimeoutReached(false);
+    }
+  }, [isLoadingProjects, loadingTimeoutReached]);
 
   if (error) {
     console.error("[ProjectsPage] Error loading projects:", error);
   }
+
+  // Determine what to show
+  const showLoading = isLoadingProjects && !loadingTimeoutReached && !error;
+  const showEmpty =
+    (!isLoadingProjects || loadingTimeoutReached) && projects.length === 0;
+  const showProjects = !isLoadingProjects && projects.length > 0;
+
+  console.log("[ProjectsPage] Render state:", {
+    projects: projects.length,
+    isLoading: isLoadingProjects,
+    error: !!error,
+    timeoutReached: loadingTimeoutReached,
+    showLoading,
+    showEmpty,
+    showProjects,
+  });
 
   return (
     <>
@@ -43,25 +98,34 @@ export default function ProjectsPage() {
 
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto px-2 py-6 md:px-10 md:py-10 transition-all">
-          {isLoadingProjects ? (
+          {showLoading ? (
             <div className="flex items-center gap-2 h-40 justify-center">
-              <Loader2 className="animate-spin w-5 h-5 text-primary" />{" "}
-              Loading...
+              <Loader2 className="animate-spin w-5 h-5 text-primary" />
+              Loading projects...
             </div>
-          ) : projects.length === 0 ? (
+          ) : showEmpty ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[60vh]">
               <EmptyState />
+              {error && (
+                <p className="text-error mt-4 text-center text-sm">{error}</p>
+              )}
+              {loadingTimeoutReached && !error && (
+                <p className="text-warning mt-4 text-center text-sm">
+                  Loading timed out. Try refreshing the page.
+                </p>
+              )}
             </div>
-          ) : (
-            <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 ">
+          ) : showProjects ? (
+            <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
               <ProjectList />
             </div>
-          )}
-
-          {error && (
-            <p className="text-error mt-4 text-center text-lg font-semibold">
-              {error}
-            </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full min-h-[60vh]">
+              <EmptyState />
+              <p className="text-warning mt-4 text-center text-sm">
+                Unknown state. Try refreshing the page.
+              </p>
+            </div>
           )}
         </main>
       </div>
