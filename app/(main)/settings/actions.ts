@@ -1,4 +1,3 @@
-import { useUserProfileStore } from "@/hooks/useUserProfile";
 import { useEnhancedUserProfile } from "@/components/CacheProvider";
 
 export interface HandleSaveParams {

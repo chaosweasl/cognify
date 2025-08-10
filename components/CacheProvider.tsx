@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { useCachedSettingsStore } from "@/hooks/useCachedSettings";
 import { useCachedUserProfileStore } from "@/hooks/useCachedUserProfile";
-import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
+import { useCachedProjectsStore, type CreateFlashcardData, type Project } from "@/hooks/useCachedProjects";
 import { useCachedDailyStatsStore } from "@/hooks/useCachedDailyStats";
 import { useCacheStore, useCacheStats } from "@/hooks/useCache";
 
@@ -42,9 +42,13 @@ export function CacheProvider({
   const projectsStore = useCachedProjectsStore();
   const dailyStatsStore = useCachedDailyStatsStore();
 
+  // Use ref to prevent multiple auto-loads
+  const hasAutoLoaded = React.useRef(false);
+
   // Auto-load data on mount if enabled (only once)
   useEffect(() => {
-    if (enableAutoLoad) {
+    if (enableAutoLoad && !hasAutoLoaded.current) {
+      hasAutoLoaded.current = true;
       console.log("[CacheProvider] Auto-loading initial data");
 
       // Create a promise chain to ensure proper sequencing
@@ -74,7 +78,7 @@ export function CacheProvider({
 
       loadData();
     }
-  }, []); // Empty dependency array - only run once on mount
+  }, [enableAutoLoad, settingsStore, profileStore, projectsStore, dailyStatsStore]);
 
   // Debug logging
   useEffect(() => {
@@ -88,7 +92,7 @@ export function CacheProvider({
   }, [enableDebugLogs, cacheStats]);
 
   // Refresh all cached data
-  const refreshAll = async () => {
+  const refreshAll = React.useCallback(async () => {
     console.log("[CacheProvider] Refreshing all cached data");
 
     try {
@@ -108,10 +112,10 @@ export function CacheProvider({
       console.error("[CacheProvider] Error refreshing data:", error);
       throw error;
     }
-  };
+  }, [profileStore, settingsStore, projectsStore, dailyStatsStore]);
 
   // Clear all cached data
-  const clearAll = () => {
+  const clearAll = React.useCallback(() => {
     console.log("[CacheProvider] Clearing all cached data");
     clearCache();
 
@@ -119,7 +123,7 @@ export function CacheProvider({
     profileStore.setUserProfile(null);
 
     console.log("[CacheProvider] All cached data cleared");
-  };
+  }, [clearCache, profileStore]);
 
   const contextValue: CacheProviderContextType = useMemo(
     () => ({
@@ -127,7 +131,7 @@ export function CacheProvider({
       refreshAll,
       clearAll,
     }),
-    [cacheStats]
+    [cacheStats, refreshAll, clearAll]
   );
 
   return (
@@ -148,54 +152,63 @@ export function useCacheProvider() {
 
 // Enhanced hooks that use the cache provider
 export function useEnhancedSettings() {
-  const { loadSettings, ...store } = useCachedSettingsStore();
+  const store = useCachedSettingsStore();
+  const { loadSettings, ...restStore } = store;
   const [hasLoaded, setHasLoaded] = React.useState(false);
 
-  useEffect(() => {
-    if (!hasLoaded && !store.lastFetch) {
-      setHasLoaded(true);
-      loadSettings();
-    }
-  }, [loadSettings, store.lastFetch, hasLoaded]);
+  const stableLoadSettings = React.useCallback(loadSettings, [loadSettings]);
 
-  return store;
+  useEffect(() => {
+    if (!hasLoaded && !restStore.lastFetch) {
+      setHasLoaded(true);
+      stableLoadSettings();
+    }
+  }, [stableLoadSettings, restStore.lastFetch, hasLoaded]);
+
+  return restStore;
 }
 
 export function useEnhancedUserProfile() {
-  const { fetchUserProfile, ...store } = useCachedUserProfileStore();
+  const store = useCachedUserProfileStore();
+  const { fetchUserProfile, ...restStore } = store;
   const [hasLoaded, setHasLoaded] = React.useState(false);
 
-  useEffect(() => {
-    if (!hasLoaded && !store.userProfile && !store.lastFetch) {
-      setHasLoaded(true);
-      fetchUserProfile();
-    }
-  }, [fetchUserProfile, store.userProfile, store.lastFetch, hasLoaded]);
+  const stableFetchUserProfile = React.useCallback(fetchUserProfile, [fetchUserProfile]);
 
-  return store;
+  useEffect(() => {
+    if (!hasLoaded && !restStore.userProfile && !restStore.lastFetch) {
+      setHasLoaded(true);
+      stableFetchUserProfile();
+    }
+  }, [stableFetchUserProfile, restStore.userProfile, restStore.lastFetch, hasLoaded]);
+
+  return restStore;
 }
 
 export function useEnhancedProjects() {
-  const { loadProjects, ...store } = useCachedProjectsStore();
+  const store = useCachedProjectsStore();
+  const { loadProjects, ...restStore } = store;
   const [hasLoaded, setHasLoaded] = React.useState(false);
+
+  const stableLoadProjects = React.useCallback(loadProjects, [loadProjects]);
 
   useEffect(() => {
     if (
       !hasLoaded &&
-      store.projects.length === 0 &&
-      !store.lastFetch.projects
+      restStore.projects.length === 0 &&
+      !restStore.lastFetch.projects
     ) {
       setHasLoaded(true);
-      loadProjects();
+      stableLoadProjects();
     }
   }, [
-    loadProjects,
-    store.projects.length,
-    store.lastFetch.projects,
+    stableLoadProjects,
+    restStore.projects.length,
+    restStore.lastFetch.projects,
     hasLoaded,
   ]);
 
-  return store;
+  return restStore;
 }
 
 // Hook for project with all its data
@@ -207,25 +220,42 @@ export function useEnhancedProject(projectId: string) {
   const srsStates = store.getSRSStates(projectId);
   const stats = store.getProjectStats(projectId);
 
+  const stableLoadProject = React.useCallback(
+    (id: string, force?: boolean) => store.loadProject(id, force),
+    [store]
+  );
+  const stableLoadFlashcards = React.useCallback(
+    (id: string, force?: boolean) => store.loadFlashcards(id, force),
+    [store]
+  );
+  const stableLoadSRSStates = React.useCallback(
+    (id: string, force?: boolean) => store.loadSRSStates(id, force),
+    [store]
+  );
+  const stableLoadProjectStats = React.useCallback(
+    (id: string, force?: boolean) => store.loadProjectStats(id, force),
+    [store]
+  );
+
   useEffect(() => {
     const loadData = async () => {
       if (!project) {
-        await store.loadProject(projectId);
+        await stableLoadProject(projectId);
       }
 
       // Load related data in parallel
       const promises = [];
 
       if (flashcards.length === 0) {
-        promises.push(store.loadFlashcards(projectId));
+        promises.push(stableLoadFlashcards(projectId));
       }
 
       if (srsStates.length === 0) {
-        promises.push(store.loadSRSStates(projectId));
+        promises.push(stableLoadSRSStates(projectId));
       }
 
       if (!stats) {
-        promises.push(store.loadProjectStats(projectId));
+        promises.push(stableLoadProjectStats(projectId));
       }
 
       if (promises.length > 0) {
@@ -234,7 +264,17 @@ export function useEnhancedProject(projectId: string) {
     };
 
     loadData().catch(console.error);
-  }, [projectId, project, flashcards.length, srsStates.length, stats, store]);
+  }, [
+    projectId, 
+    project, 
+    flashcards.length, 
+    srsStates.length, 
+    stats, 
+    stableLoadProject,
+    stableLoadFlashcards,
+    stableLoadSRSStates,
+    stableLoadProjectStats
+  ]);
 
   return {
     project,
@@ -244,8 +284,8 @@ export function useEnhancedProject(projectId: string) {
     isLoadingFlashcards: store.isLoadingFlashcards[projectId] || false,
     isLoadingSRS: store.isLoadingSRS[projectId] || false,
     // Store actions
-    createFlashcard: (data: any) => store.createFlashcard(projectId, data),
-    updateProject: (updates: any) => store.updateProject(projectId, updates),
+    createFlashcard: (data: CreateFlashcardData) => store.createFlashcard(projectId, data),
+    updateProject: (updates: Partial<Project>) => store.updateProject(projectId, updates),
     deleteProject: () => store.deleteProject(projectId),
     refreshProject: () => {
       store.loadProject(projectId, true);

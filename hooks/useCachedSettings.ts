@@ -131,8 +131,8 @@ function dbRowToSettings(row: UserSettingsRow): {
 function settingsToDbUpdate(
   srs: Partial<SRSSettings>,
   user: Partial<UserSettings>
-) {
-  const update: any = {};
+): Record<string, unknown> {
+  const update: Record<string, unknown> = {};
 
   // SRS settings
   if (srs.NEW_CARDS_PER_DAY !== undefined)
@@ -291,6 +291,12 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
     updateSRSSettings: async (updates) => {
       const currentSettings = get().srsSettings;
       const newSettings = { ...currentSettings, ...updates };
+
+      // Validate settings before updating
+      const validationErrors = get().validateSRSSettings(updates);
+      if (validationErrors.length > 0) {
+        throw new Error(`Invalid settings: ${validationErrors.join(", ")}`);
+      }
 
       set({ isLoading: true, error: null });
 
@@ -475,6 +481,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
         (settings.MINIMUM_EASE < 1.0 || settings.MINIMUM_EASE > 3.0)
       ) {
         errors.push("Minimum ease must be between 1.0 and 3.0");
+      }
+
+      if (
+        settings.HARD_INTERVAL_FACTOR !== undefined &&
+        (settings.HARD_INTERVAL_FACTOR < 0.1 || settings.HARD_INTERVAL_FACTOR > 1.0)
+      ) {
+        errors.push("Hard interval factor must be between 0.1 and 1.0");
       }
 
       if (
