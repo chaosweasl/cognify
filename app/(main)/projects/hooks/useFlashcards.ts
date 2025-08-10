@@ -1,16 +1,16 @@
 import { create } from "zustand";
-import { 
-  Flashcard, 
+import {
+  Flashcard,
   CreateFlashcardData,
   convertNewToLegacy,
-  LegacyFlashcard
+  LegacyFlashcard,
 } from "../types/flashcard";
 import {
   getFlashcardsByProjectId,
   replaceAllFlashcardsForProject,
   createFlashcard,
   updateFlashcard,
-  deleteFlashcard
+  deleteFlashcard,
 } from "../actions/flashcard-actions";
 
 interface FlashcardsState {
@@ -18,10 +18,19 @@ interface FlashcardsState {
   loading: boolean;
   error: string | null;
   fetchFlashcards: (projectId: string) => Promise<void>;
-  createFlashcard: (projectId: string, flashcardData: CreateFlashcardData) => Promise<void>;
-  updateFlashcard: (flashcardId: string, updateData: Partial<CreateFlashcardData>) => Promise<void>;
+  createFlashcard: (
+    projectId: string,
+    flashcardData: CreateFlashcardData
+  ) => Promise<void>;
+  updateFlashcard: (
+    flashcardId: string,
+    updateData: Partial<CreateFlashcardData>
+  ) => Promise<void>;
   deleteFlashcard: (flashcardId: string) => Promise<void>;
-  replaceAllFlashcards: (projectId: string, flashcardsData: CreateFlashcardData[]) => Promise<void>;
+  replaceAllFlashcards: (
+    projectId: string,
+    flashcardsData: CreateFlashcardData[]
+  ) => Promise<void>;
   // Legacy compatibility methods
   getLegacyFlashcards: () => LegacyFlashcard[];
   setError: (error: string | null) => void;
@@ -45,13 +54,16 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
     }
   },
 
-  createFlashcard: async (projectId: string, flashcardData: CreateFlashcardData) => {
+  createFlashcard: async (
+    projectId: string,
+    flashcardData: CreateFlashcardData
+  ) => {
     set({ loading: true, error: null });
     try {
       const newFlashcard = await createFlashcard(projectId, flashcardData);
       if (newFlashcard) {
         set((state) => ({
-          flashcards: [...state.flashcards, newFlashcard]
+          flashcards: [...state.flashcards, newFlashcard],
         }));
       }
     } catch (error) {
@@ -62,7 +74,10 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
     }
   },
 
-  updateFlashcard: async (flashcardId: string, updateData: Partial<CreateFlashcardData>) => {
+  updateFlashcard: async (
+    flashcardId: string,
+    updateData: Partial<CreateFlashcardData>
+  ) => {
     set({ loading: true, error: null });
     try {
       const updatedFlashcard = await updateFlashcard(flashcardId, updateData);
@@ -70,7 +85,7 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
         set((state) => ({
           flashcards: state.flashcards.map((fc) =>
             fc.id === flashcardId ? updatedFlashcard : fc
-          )
+          ),
         }));
       }
     } catch (error) {
@@ -86,7 +101,7 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
     try {
       await deleteFlashcard(flashcardId);
       set((state) => ({
-        flashcards: state.flashcards.filter((fc) => fc.id !== flashcardId)
+        flashcards: state.flashcards.filter((fc) => fc.id !== flashcardId),
       }));
     } catch (error) {
       console.error("Failed to delete flashcard:", error);
@@ -96,14 +111,32 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
     }
   },
 
-  replaceAllFlashcards: async (projectId: string, flashcardsData: CreateFlashcardData[]) => {
+  replaceAllFlashcards: async (
+    projectId: string,
+    flashcardsData: CreateFlashcardData[]
+  ) => {
     set({ loading: true, error: null });
     try {
-      const newFlashcards = await replaceAllFlashcardsForProject(projectId, flashcardsData);
+      console.log(
+        "[useFlashcards] Replacing all flashcards for project:",
+        projectId
+      );
+      console.log("[useFlashcards] Flashcard data to save:", flashcardsData);
+
+      const newFlashcards = await replaceAllFlashcardsForProject(
+        projectId,
+        flashcardsData
+      );
+
+      console.log(
+        "[useFlashcards] Successfully saved flashcards:",
+        newFlashcards
+      );
       set({ flashcards: newFlashcards });
     } catch (error) {
       console.error("Failed to replace flashcards:", error);
       set({ error: "Failed to save flashcards" });
+      throw error; // Re-throw so FlashcardEditor can catch it
     } finally {
       set({ loading: false });
     }
@@ -111,7 +144,12 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
 
   // Legacy compatibility method for components that haven't been updated yet
   getLegacyFlashcards: () => {
-    return get().flashcards.map(convertNewToLegacy);
+    const flashcards = get().flashcards;
+    if (!Array.isArray(flashcards)) {
+      console.warn("[useFlashcards] Flashcards is not an array:", flashcards);
+      return [];
+    }
+    return flashcards.filter(Boolean).map(convertNewToLegacy);
   },
 
   setError: (error) => set({ error }),

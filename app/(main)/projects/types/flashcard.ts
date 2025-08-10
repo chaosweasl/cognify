@@ -31,7 +31,9 @@ export interface LegacyFlashcard {
 }
 
 // Utility function to convert legacy format to new format
-export function convertLegacyToNew(legacy: LegacyFlashcard): CreateFlashcardData {
+export function convertLegacyToNew(
+  legacy: LegacyFlashcard
+): CreateFlashcardData {
   return {
     front: legacy.question,
     back: legacy.answer,
@@ -41,9 +43,17 @@ export function convertLegacyToNew(legacy: LegacyFlashcard): CreateFlashcardData
 
 // Utility function to convert new format to legacy for components that haven't been updated yet
 export function convertNewToLegacy(flashcard: Flashcard): LegacyFlashcard {
+  if (!flashcard) {
+    return {
+      id: "",
+      question: "",
+      answer: "",
+    };
+  }
+
   return {
-    id: flashcard.id,
-    question: flashcard.front,
-    answer: flashcard.back,
+    id: flashcard.id || "",
+    question: flashcard.front || "",
+    answer: flashcard.back || "",
   };
 }

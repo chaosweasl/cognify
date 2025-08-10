@@ -7,6 +7,11 @@ import {
   initSRSStateWithSettings,
   DEFAULT_SRS_SETTINGS,
 } from "./SRSScheduler";
+import {
+  logSupabaseError,
+  logError,
+  logDatabaseOperation,
+} from "@/utils/debug/errorLogger";
 
 // Database type for SRS states table
 type DatabaseSRSState = {
@@ -99,7 +104,13 @@ export async function loadSRSStates(
       .in("card_id", cardIds);
 
     if (error) {
-      console.error("[SRS-DB] loadSRSStates - Database error:", error);
+      console.error("[SRS-DB] loadSRSStates - Database error:", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        fullError: JSON.stringify(error, null, 2),
+      });
       console.log("[SRS-DB] loadSRSStates - Falling back to default states");
       return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
     }
@@ -155,7 +166,11 @@ export async function loadSRSStates(
     );
     return srsStates;
   } catch (error) {
-    console.error("Error in loadSRSStates:", error);
+    console.error("Error in loadSRSStates:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      fullError: error,
+    });
     return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
   }
 }
@@ -175,10 +190,34 @@ export async function saveSRSStates(
     }`
   );
 
+  // Add operation logging
+  logDatabaseOperation("SAVE", "srs_states", userId, projectId, {
+    stateCount: Object.keys(srsStates).length,
+  });
+
+  // Validate inputs
+  if (!userId || !projectId) {
+    console.error("[SRS-DB] saveSRSStates - Missing required parameters:", {
+      userId,
+      projectId,
+    });
+    return false;
+  }
+
+  if (!srsStates || typeof srsStates !== "object") {
+    console.error("[SRS-DB] saveSRSStates - Invalid srsStates:", srsStates);
+    return false;
+  }
+
   try {
-    const dbStates = Object.values(srsStates).map((cardState) =>
-      srsStateToDatabase(cardState, userId, projectId)
-    );
+    const dbStates = Object.values(srsStates)
+      .filter((cardState) => cardState && cardState.id) // Filter out invalid states
+      .map((cardState) => srsStateToDatabase(cardState, userId, projectId));
+
+    if (dbStates.length === 0) {
+      console.log("[SRS-DB] saveSRSStates - No valid states to save");
+      return true; // Consider this a success since there's nothing to save
+    }
 
     console.log(
       `[SRS-DB] saveSRSStates - Upserting ${dbStates.length} states to database`
@@ -188,16 +227,22 @@ export async function saveSRSStates(
     });
 
     if (error) {
-      console.error("[SRS-DB] saveSRSStates - Database error:", error);
+      logSupabaseError("[SRS-DB] saveSRSStates - Database error", error);
       return false;
     }
 
     console.log(
       `[SRS-DB] saveSRSStates - Successfully saved ${dbStates.length} states`
     );
+
+    // Log successful operation
+    logDatabaseOperation("SAVE_SUCCESS", "srs_states", userId, projectId, {
+      savedCount: dbStates.length,
+    });
+
     return true;
   } catch (error) {
-    console.error("[SRS-DB] saveSRSStates - Error:", error);
+    logError("[SRS-DB] saveSRSStates - Error", error);
     return false;
   }
 }
@@ -219,13 +264,25 @@ export async function saveSingleSRSState(
     });
 
     if (error) {
-      console.error("Error saving single SRS state:", error);
+      console.error("Error saving single SRS state:", {
+        error,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        cardId: cardState.id,
+      });
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Error in saveSingleSRSState:", error);
+    console.error("Error in saveSingleSRSState:", {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      cardId: cardState.id,
+    });
     return false;
   }
 }
