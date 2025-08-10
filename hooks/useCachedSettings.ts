@@ -71,7 +71,7 @@ const defaultSRSSettings: SRSSettings = {
   STARTING_EASE: 2.5,
   MINIMUM_EASE: 1.3,
   EASY_BONUS: 1.3,
-  HARD_INTERVAL_FACTOR: 1.2,
+  HARD_INTERVAL_FACTOR: 0.8, // Must be between 0.1 and 1.0 per DB constraint
   EASY_INTERVAL_FACTOR: 1.3,
   LAPSE_RECOVERY_FACTOR: 0.2,
   LAPSE_EASE_PENALTY: 0.2,
@@ -230,9 +230,19 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
                 console.log(
                   `[Settings] Creating default settings for user: ${user.id}`
                 );
+
+                // Insert with all default values to avoid constraint violations
+                const defaultRow = {
+                  user_id: user.id,
+                  ...settingsToDbUpdate(
+                    defaultSRSSettings,
+                    defaultUserSettings
+                  ),
+                };
+
                 const { error: insertError } = await supabase
                   .from("user_settings")
-                  .insert([{ user_id: user.id }]);
+                  .insert([defaultRow]);
 
                 if (insertError) throw insertError;
 

@@ -1,5 +1,11 @@
 "use client";
-import React, { createContext, useContext, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from "react";
 import { useCachedSettingsStore } from "@/hooks/useCachedSettings";
 import { useCachedUserProfileStore } from "@/hooks/useCachedUserProfile";
 import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
@@ -36,41 +42,39 @@ export function CacheProvider({
   const projectsStore = useCachedProjectsStore();
   const dailyStatsStore = useCachedDailyStatsStore();
 
-  // Auto-load data on mount if enabled
+  // Auto-load data on mount if enabled (only once)
   useEffect(() => {
     if (enableAutoLoad) {
       console.log("[CacheProvider] Auto-loading initial data");
 
-      // Load user profile first (needed for other operations)
-      profileStore
-        .fetchUserProfile()
-        .then(() => {
+      // Create a promise chain to ensure proper sequencing
+      const loadData = async () => {
+        try {
+          // Load user profile first (needed for other operations)
+          await profileStore.fetchUserProfile();
           console.log(
             "[CacheProvider] Profile loaded, loading settings and projects"
           );
+
           // Load settings and projects in parallel
-          return Promise.all([
+          await Promise.all([
             settingsStore.loadSettings(),
             projectsStore.loadProjects(),
           ]);
-        })
-        .then(() => {
+
           console.log("[CacheProvider] Initial data load completed");
+
           // Load today's stats
           const today = new Date().toISOString().split("T")[0];
-          return dailyStatsStore.loadDailyStats(today);
-        })
-        .catch((error) => {
+          await dailyStatsStore.loadDailyStats(today);
+        } catch (error) {
           console.error("[CacheProvider] Error during auto-load:", error);
-        });
+        }
+      };
+
+      loadData();
     }
-  }, [
-    enableAutoLoad,
-    profileStore,
-    settingsStore,
-    projectsStore,
-    dailyStatsStore,
-  ]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Debug logging
   useEffect(() => {
@@ -117,11 +121,14 @@ export function CacheProvider({
     console.log("[CacheProvider] All cached data cleared");
   };
 
-  const contextValue: CacheProviderContextType = {
-    cacheStats,
-    refreshAll,
-    clearAll,
-  };
+  const contextValue: CacheProviderContextType = useMemo(
+    () => ({
+      cacheStats,
+      refreshAll,
+      clearAll,
+    }),
+    [cacheStats]
+  );
 
   return (
     <CacheProviderContext.Provider value={contextValue}>
@@ -142,36 +149,51 @@ export function useCacheProvider() {
 // Enhanced hooks that use the cache provider
 export function useEnhancedSettings() {
   const { loadSettings, ...store } = useCachedSettingsStore();
+  const [hasLoaded, setHasLoaded] = React.useState(false);
 
   useEffect(() => {
-    if (!store.lastFetch) {
+    if (!hasLoaded && !store.lastFetch) {
+      setHasLoaded(true);
       loadSettings();
     }
-  }, [loadSettings, store.lastFetch]);
+  }, [loadSettings, store.lastFetch, hasLoaded]);
 
   return store;
 }
 
 export function useEnhancedUserProfile() {
   const { fetchUserProfile, ...store } = useCachedUserProfileStore();
+  const [hasLoaded, setHasLoaded] = React.useState(false);
 
   useEffect(() => {
-    if (!store.userProfile && !store.lastFetch) {
+    if (!hasLoaded && !store.userProfile && !store.lastFetch) {
+      setHasLoaded(true);
       fetchUserProfile();
     }
-  }, [fetchUserProfile, store.userProfile, store.lastFetch]);
+  }, [fetchUserProfile, store.userProfile, store.lastFetch, hasLoaded]);
 
   return store;
 }
 
 export function useEnhancedProjects() {
   const { loadProjects, ...store } = useCachedProjectsStore();
+  const [hasLoaded, setHasLoaded] = React.useState(false);
 
   useEffect(() => {
-    if (store.projects.length === 0 && !store.lastFetch.projects) {
+    if (
+      !hasLoaded &&
+      store.projects.length === 0 &&
+      !store.lastFetch.projects
+    ) {
+      setHasLoaded(true);
       loadProjects();
     }
-  }, [loadProjects, store.projects.length, store.lastFetch.projects]);
+  }, [
+    loadProjects,
+    store.projects.length,
+    store.lastFetch.projects,
+    hasLoaded,
+  ]);
 
   return store;
 }
