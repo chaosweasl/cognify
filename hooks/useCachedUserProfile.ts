@@ -63,28 +63,44 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
               .single();
 
             if (error) {
+              console.error(`[UserProfile] Database error details:`, {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint
+              });
+              
               // If profile doesn't exist, create one
               if (error.code === "PGRST116") {
                 console.log(
                   `[UserProfile] Creating new profile for user: ${user.id}`
                 );
+                
+                const profileData = {
+                  id: user.id,
+                  display_name:
+                    user.user_metadata?.name ||
+                    user.email?.split("@")[0] ||
+                    "",
+                  avatar_url: user.user_metadata?.avatar_url || null,
+                  bio: "",
+                };
+                
+                console.log(`[UserProfile] Inserting profile data:`, profileData);
+                
                 const { data: newProfile, error: createError } = await supabase
                   .from("profiles")
-                  .insert([
-                    {
-                      id: user.id,
-                      display_name:
-                        user.user_metadata?.name ||
-                        user.email?.split("@")[0] ||
-                        "",
-                      avatar_url: user.user_metadata?.avatar_url || null,
-                      bio: "",
-                    },
-                  ])
+                  .insert([profileData])
                   .select()
                   .single();
 
                 if (createError) {
+                  console.error(`[UserProfile] Profile creation error details:`, {
+                    code: createError.code,
+                    message: createError.message,
+                    details: createError.details,
+                    hint: createError.hint
+                  });
                   throw new Error("Error creating profile");
                 }
 

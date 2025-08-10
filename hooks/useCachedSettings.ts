@@ -218,6 +218,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
             console.log(
               `[Settings] Fetching settings from database for user: ${user.id}`
             );
+            
+            // Verify user is still authenticated
+            const { data: currentUser } = await supabase.auth.getUser();
+            if (!currentUser.user || currentUser.user.id !== user.id) {
+              throw new Error("Authentication state changed during request");
+            }
+            
             const { data, error } = await supabase
               .from("user_settings")
               .select("*")
@@ -225,6 +232,13 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
               .single();
 
             if (error) {
+              console.error(`[Settings] Database error details:`, {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint
+              });
+              
               if (error.code === "PGRST116") {
                 // No settings found, create default settings
                 console.log(
@@ -240,11 +254,21 @@ export const useCachedSettingsStore = create<CachedSettingsState>(
                   ),
                 };
 
+                console.log(`[Settings] Inserting default row:`, defaultRow);
+
                 const { error: insertError } = await supabase
                   .from("user_settings")
                   .insert([defaultRow]);
 
-                if (insertError) throw insertError;
+                if (insertError) {
+                  console.error(`[Settings] Insert error details:`, {
+                    code: insertError.code,
+                    message: insertError.message,
+                    details: insertError.details,
+                    hint: insertError.hint
+                  });
+                  throw insertError;
+                }
 
                 return {
                   srs: defaultSRSSettings,

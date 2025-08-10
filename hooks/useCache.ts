@@ -316,6 +316,24 @@ export async function cachedFetch<T>(
     return data;
   } catch (error) {
     console.error(`[Cache] Error fetching ${key}:`, error);
+    
+    // Enhanced error logging for database issues
+    if (error && typeof error === 'object') {
+      const dbError = error as any;
+      if (dbError.code) {
+        console.error(`[Cache] Database error code: ${dbError.code}`);
+      }
+      if (dbError.message) {
+        console.error(`[Cache] Database error message: ${dbError.message}`);
+      }
+      if (dbError.details) {
+        console.error(`[Cache] Database error details: ${dbError.details}`);
+      }
+      if (dbError.hint) {
+        console.error(`[Cache] Database error hint: ${dbError.hint}`);
+      }
+    }
+    
     throw error;
   }
 }
