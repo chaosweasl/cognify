@@ -4,13 +4,12 @@ import { useCachedProjectsStore } from "@/hooks/useCachedProjects";
 import { ProjectList } from "./components/ProjectList";
 import { EmptyState } from "./components/EmptyState";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const { projects, isLoadingProjects, error, loadProjects } =
     useCachedProjectsStore();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [loadingTimeoutReached, setLoadingTimeoutReached] = useState(false);
@@ -130,5 +129,18 @@ export default function ProjectsPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center gap-2 h-40 justify-center">
+        <Loader2 className="animate-spin w-5 h-5 text-primary" />
+        Loading...
+      </div>
+    }>
+      <ProjectsPageContent />
+    </Suspense>
   );
 }
