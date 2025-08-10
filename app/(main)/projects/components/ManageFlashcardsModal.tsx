@@ -2,15 +2,15 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
-type Flashcard = {
-  question: string;
-  answer: string;
+type ModalFlashcard = {
+  front: string;
+  back: string;
 };
 
 interface ManageFlashcardsModalProps {
   open: boolean;
   onClose: () => void;
-  flashcards: Flashcard[];
+  flashcards: ModalFlashcard[];
   onJump: (idx: number) => void;
   onDelete: (idx: number) => void;
   onDeleteAll: () => void;
@@ -57,8 +57,8 @@ export function ManageFlashcardsModal({
             <thead>
               <tr>
                 <th className="w-8">#</th>
-                <th className="w-40 max-w-[10rem]">Question</th>
-                <th className="w-40 max-w-[10rem]">Answer</th>
+                <th className="w-40 max-w-[10rem]">Front</th>
+                <th className="w-40 max-w-[10rem]">Back</th>
                 <th className="text-center w-32">Actions</th>
               </tr>
             </thead>
@@ -66,11 +66,11 @@ export function ManageFlashcardsModal({
               {flashcards.map((fc, idx) => (
                 <tr key={idx}>
                   <td>{idx + 1}</td>
-                  <td className="max-w-[10rem] truncate" title={fc.question}>
-                    {fc.question}
+                  <td className="max-w-[10rem] truncate" title={fc.front}>
+                    {fc.front}
                   </td>
-                  <td className="max-w-[10rem] truncate" title={fc.answer}>
-                    {fc.answer}
+                  <td className="max-w-[10rem] truncate" title={fc.back}>
+                    {fc.back}
                   </td>
                   <td className="flex gap-2 justify-center">
                     <button

@@ -4,16 +4,16 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Upload, FileText, AlertTriangle, CheckCircle2, X } from "lucide-react";
 
-// Define Flashcard type to match your existing code
-type Flashcard = {
-  question: string;
-  answer: string;
+// Define Flashcard type that matches the new format
+type ImportFlashcard = {
+  front: string;
+  back: string;
 };
 
 interface FlashcardJsonImporterProps {
-  onImport: (flashcards: Flashcard[]) => void;
+  onImport: (flashcards: ImportFlashcard[]) => void;
   disabled?: boolean;
-  existingFlashcards?: Flashcard[];
+  existingFlashcards?: ImportFlashcard[];
 }
 
 export function FlashcardJsonImporter({
@@ -24,7 +24,7 @@ export function FlashcardJsonImporter({
   const [isOpen, setIsOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<Flashcard[]>([]);
+  const [preview, setPreview] = useState<ImportFlashcard[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (
@@ -72,8 +72,8 @@ export function FlashcardJsonImporter({
     }
   };
 
-  const validateAndNormalizeFlashcards = (data: unknown): Flashcard[] => {
-    const flashcards: Flashcard[] = [];
+  const validateAndNormalizeFlashcards = (data: unknown): ImportFlashcard[] => {
+    const flashcards: ImportFlashcard[] = [];
 
     // Handle different JSON structures
     let items: unknown[] = [];
@@ -106,22 +106,20 @@ export function FlashcardJsonImporter({
 
       const itemObj = item as Record<string, unknown>;
       // Try different property names
-      const question =
+      const front =
         itemObj.question || itemObj.front || itemObj.q || itemObj.prompt;
-      const answer =
+      const back =
         itemObj.answer || itemObj.back || itemObj.a || itemObj.response;
 
       // Convert to string and validate
-      const questionStr =
-        typeof question === "string" ? question : String(question || "");
-      const answerStr =
-        typeof answer === "string" ? answer : String(answer || "");
+      const frontStr = typeof front === "string" ? front : String(front || "");
+      const backStr = typeof back === "string" ? back : String(back || "");
 
-      // Only include cards with both question and answer
-      if (questionStr.trim() && answerStr.trim()) {
+      // Only include cards with both front and back
+      if (frontStr.trim() && backStr.trim()) {
         flashcards.push({
-          question: questionStr.trim(),
-          answer: answerStr.trim(),
+          front: frontStr.trim(),
+          back: backStr.trim(),
         });
       }
     }
@@ -151,12 +149,12 @@ export function FlashcardJsonImporter({
     return JSON.stringify(
       [
         {
-          question: "What is the capital of France?",
-          answer: "Paris",
+          front: "What is the capital of France?",
+          back: "Paris",
         },
         {
-          question: "What is 2 + 2?",
-          answer: "4",
+          front: "What is 2 + 2?",
+          back: "4",
         },
       ],
       null,
@@ -262,18 +260,18 @@ export function FlashcardJsonImporter({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <div className="text-xs font-medium text-base-content/40 mb-1">
-                                Question:
+                                Front:
                               </div>
                               <div className="text-sm line-clamp-2">
-                                {card.question}
+                                {card.front}
                               </div>
                             </div>
                             <div>
                               <div className="text-xs font-medium text-base-content/40 mb-1">
-                                Answer:
+                                Back:
                               </div>
                               <div className="text-sm line-clamp-2">
-                                {card.answer}
+                                {card.back}
                               </div>
                             </div>
                           </div>
@@ -298,7 +296,8 @@ export function FlashcardJsonImporter({
                 <div className="collapse-content">
                   <div className="text-sm text-base-content/60 mb-3">
                     Your JSON file should contain an array of objects with
-                    &quot;question&quot; and &quot;answer&quot; properties:
+                    &quot;front&quot; and &quot;back&quot; properties (or
+                    equivalent names):
                   </div>
                   <div className="mockup-code text-xs">
                     <pre>
@@ -307,8 +306,8 @@ export function FlashcardJsonImporter({
                   </div>
                   <div className="mt-3 text-xs text-base-content/60">
                     <strong>Supported property names:</strong>
-                    <br />• question, front, q, prompt (for questions)
-                    <br />• answer, back, a, response (for answers)
+                    <br />• front, question, q, prompt (for front side)
+                    <br />• back, answer, a, response (for back side)
                   </div>
                 </div>
               </div>

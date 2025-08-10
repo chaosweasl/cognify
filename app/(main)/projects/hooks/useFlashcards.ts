@@ -1,10 +1,5 @@
 import { create } from "zustand";
-import {
-  Flashcard,
-  CreateFlashcardData,
-  convertNewToLegacy,
-  LegacyFlashcard,
-} from "../types/flashcard";
+import { Flashcard, CreateFlashcardData } from "../types/flashcard";
 import {
   getFlashcardsByProjectId,
   replaceAllFlashcardsForProject,
@@ -31,12 +26,10 @@ interface FlashcardsState {
     projectId: string,
     flashcardsData: CreateFlashcardData[]
   ) => Promise<void>;
-  // Legacy compatibility methods
-  getLegacyFlashcards: () => LegacyFlashcard[];
   setError: (error: string | null) => void;
 }
 
-export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
+export const useFlashcardsStore = create<FlashcardsState>((set) => ({
   flashcards: [],
   loading: false,
   error: null,
@@ -140,16 +133,6 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
-  },
-
-  // Legacy compatibility method for components that haven't been updated yet
-  getLegacyFlashcards: () => {
-    const flashcards = get().flashcards;
-    if (!Array.isArray(flashcards)) {
-      console.warn("[useFlashcards] Flashcards is not an array:", flashcards);
-      return [];
-    }
-    return flashcards.filter(Boolean).map(convertNewToLegacy);
   },
 
   setError: (error) => set({ error }),

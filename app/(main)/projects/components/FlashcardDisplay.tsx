@@ -32,7 +32,7 @@ export function FlashcardDisplay({
                 {card.front}
               </div>
               <div className="flex items-center justify-center gap-2 text-base-content/60 text-sm">
-                <span>Click or press Space to reveal answer</span>
+                <span>Click or press Space to reveal back</span>
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@ export function FlashcardDisplay({
                 {card.back}
               </div>
               <div className="flex items-center justify-center gap-2 text-base-content/60 text-sm">
-                <span>Click or press Space to show question</span>
+                <span>Click or press Space to show front</span>
               </div>
             </div>
           </div>

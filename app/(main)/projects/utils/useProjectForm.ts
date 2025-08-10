@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 export type Flashcard = {
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
 };
 
 export function useProjectForm() {
@@ -35,7 +35,7 @@ export function useProjectForm() {
   function addFlashcard() {
     setForm((prev) => ({
       ...prev,
-      flashcards: [...prev.flashcards, { question: "", answer: "" }],
+      flashcards: [...prev.flashcards, { front: "", back: "" }],
     }));
   }
 

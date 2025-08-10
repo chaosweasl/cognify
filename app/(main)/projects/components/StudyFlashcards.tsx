@@ -43,23 +43,23 @@ interface StudyFlashcardsProps {
 
 // Demo data
 const demoFlashcards: Flashcard[] = [
-  { 
-    id: "1", 
-    front: "What is the capital of France?", 
+  {
+    id: "1",
+    front: "What is the capital of France?",
     back: "Paris",
     project_id: "demo",
     extra: {},
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   },
-  { 
-    id: "2", 
-    front: "What is 2 + 2?", 
+  {
+    id: "2",
+    front: "What is 2 + 2?",
     back: "4",
     project_id: "demo",
     extra: {},
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   },
   {
     id: "3",
@@ -68,7 +68,7 @@ const demoFlashcards: Flashcard[] = [
     project_id: "demo",
     extra: {},
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   },
 ];
 

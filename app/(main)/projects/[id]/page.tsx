@@ -4,7 +4,6 @@ import StudyFlashcards from "../components/StudyFlashcards";
 import { createClient } from "@/utils/supabase/server";
 import { loadSRSStates } from "../components/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
-import { convertNewToLegacy } from "../types/flashcard";
 import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
 import { canAccessDebugSync } from "@/utils/admin";
 import SRSDebugPanel from "@/components/debug/SRSDebugPanel";
@@ -25,14 +24,8 @@ export default async function ProjectStudyPage(props: {
 
   console.log(`[StudyPage] Project found: ${project.name}`);
 
-  // Load flashcards separately
-  const flashcardsData = await getFlashcardsByProjectId(id);
-  const flashcards = flashcardsData
-    .map(convertNewToLegacy)
-    .map((card, index) => ({
-      ...card,
-      id: card.id || `temp-${index}`, // Ensure id is always defined
-    }));
+  // Load flashcards directly without conversion
+  const flashcards = await getFlashcardsByProjectId(id);
 
   console.log(`[StudyPage] Loaded ${flashcards.length} flashcards`);
 

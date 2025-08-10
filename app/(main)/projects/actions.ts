@@ -55,8 +55,8 @@ export async function updateFlashcards(_id: string, _flashcards: Flashcard[]) {
 
 // --- Types ---
 export type Flashcard = {
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
 };
 
 export type Project = {

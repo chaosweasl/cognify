@@ -1,13 +1,13 @@
 [
-  { "question": "What is the capital of France?", "answer": "Paris" },
-  { "question": "What is 2 + 2?", "answer": "4" },
-  { "question": "Who wrote 'To Kill a Mockingbird'?", "answer": "Harper Lee" },
-  { "question": "What is the boiling point of water (°C)?", "answer": "100" },
+  { "front": "What is the capital of France?", "back": "Paris" },
+  { "front": "What is 2 + 2?", "back": "4" },
+  { "front": "Who wrote 'To Kill a Mockingbird'?", "back": "Harper Lee" },
+  { "front": "What is the boiling point of water (°C)?", "back": "100" },
   {
-    "question": "What is the largest planet in our solar system?",
-    "answer": "Jupiter"
+    "front": "What is the largest planet in our solar system?",
+    "back": "Jupiter"
   },
-  { "question": "What is the chemical symbol for gold?", "answer": "Au" },
+  { "front": "What is the chemical symbol for gold?", "back": "Au" },
   { "question": "Who painted the Mona Lisa?", "answer": "Leonardo da Vinci" },
   { "question": "What year did World War II end?", "answer": "1945" },
   { "question": "What is the square root of 64?", "answer": "8" },

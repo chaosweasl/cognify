@@ -10,13 +10,12 @@ import {
   checkDatabaseHealth,
   DatabaseHealthResult,
 } from "@/utils/debug/databaseHealth";
-import { testDatabaseOperations } from "@/scripts/testDatabaseOperations";
 
 interface SRSDebugPanelProps {
   userId?: string;
   projectId?: string;
-  srsStates?: Record<string, any>;
-  studySession?: any;
+  srsStates?: Record<string, unknown>;
+  studySession?: Record<string, unknown>;
   onTestDatabase?: () => Promise<void>;
 }
 
@@ -71,8 +70,11 @@ export default function SRSDebugPanel({
   const runDatabaseTest = async () => {
     setIsLoading(true);
     try {
-      await testDatabaseOperations();
-      setLogs((prev) => [...prev, "[TEST] Database operations test completed"]);
+      // Database test functionality removed - requires server-side code
+      setLogs((prev) => [
+        ...prev,
+        "[TEST] Database test feature disabled (requires server environment)",
+      ]);
     } catch (error) {
       console.error("Database test failed:", error);
     }
@@ -204,7 +206,7 @@ export default function SRSDebugPanel({
               <div className="text-xs text-gray-600">
                 • Check browser console for detailed errors
                 <br />
-                • Verify you're logged in
+                • Verify you&apos;re logged in
                 <br />
                 • Check network tab for failed requests
                 <br />
