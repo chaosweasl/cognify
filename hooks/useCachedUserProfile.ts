@@ -19,6 +19,7 @@ export interface UserProfile {
 
 interface CachedUserProfileState {
   userProfile: UserProfile | null;
+  userNotifications: any[] | null; // Add user notifications here
   isLoading: boolean;
   error: string | null;
   lastFetch: number | null;
@@ -32,6 +33,7 @@ interface CachedUserProfileState {
 export const useCachedUserProfileStore = create<CachedUserProfileState>(
   (set, get) => ({
     userProfile: null,
+    userNotifications: null,
     isLoading: false,
     error: null,
     lastFetch: null,
@@ -67,27 +69,28 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
                 code: error.code,
                 message: error.message,
                 details: error.details,
-                hint: error.hint
+                hint: error.hint,
               });
-              
+
               // If profile doesn't exist, create one
               if (error.code === "PGRST116") {
                 console.log(
                   `[UserProfile] Creating new profile for user: ${user.id}`
                 );
-                
+
                 const profileData = {
                   id: user.id,
                   display_name:
-                    user.user_metadata?.name ||
-                    user.email?.split("@")[0] ||
-                    "",
+                    user.user_metadata?.name || user.email?.split("@")[0] || "",
                   avatar_url: user.user_metadata?.avatar_url || null,
                   bio: "",
                 };
-                
-                console.log(`[UserProfile] Inserting profile data:`, profileData);
-                
+
+                console.log(
+                  `[UserProfile] Inserting profile data:`,
+                  profileData
+                );
+
                 const { data: newProfile, error: createError } = await supabase
                   .from("profiles")
                   .insert([profileData])
@@ -95,12 +98,15 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
                   .single();
 
                 if (createError) {
-                  console.error(`[UserProfile] Profile creation error details:`, {
-                    code: createError.code,
-                    message: createError.message,
-                    details: createError.details,
-                    hint: createError.hint
-                  });
+                  console.error(
+                    `[UserProfile] Profile creation error details:`,
+                    {
+                      code: createError.code,
+                      message: createError.message,
+                      details: createError.details,
+                      hint: createError.hint,
+                    }
+                  );
                   throw new Error("Error creating profile");
                 }
 
@@ -133,8 +139,27 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
           }
         );
 
+        // Fetch user notifications along with profile
+        console.log(
+          `[UserProfile] Fetching user notifications for user: ${user.id}`
+        );
+        const { data: notifications, error: notificationsError } =
+          await supabase
+            .from("user_notifications")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("trigger_at", { ascending: false });
+
+        if (notificationsError) {
+          console.warn(
+            "[UserProfile] Failed to fetch user notifications:",
+            notificationsError
+          );
+        }
+
         set({
           userProfile: profile,
+          userNotifications: notifications || [],
           isLoading: false,
           lastFetch: Date.now(),
         });

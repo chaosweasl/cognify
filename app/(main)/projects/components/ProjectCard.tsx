@@ -133,7 +133,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       {/* Actions */}
       <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
         {hasCardsToStudy ? (
-          <Link href={`/projects/${project.id}`}>
+          <Link href={`/projects/${project.id}`} prefetch={false}>
             <button className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]">
               <Play className="w-4 h-4" />
               Study
@@ -157,7 +157,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </button>
         )}
 
-        <Link href={`/projects/${project.id}/edit`}>
+        <Link href={`/projects/${project.id}/edit`} prefetch={false}>
           <button className="btn btn-md btn-outline gap-2 flex-auto max-w-[6rem]">
             <Edit2 className="w-4 h-4" />
             Edit

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { Flashcard, CreateFlashcardData } from "../types/flashcard";
 import {
-  getFlashcardsByProjectId,
   replaceAllFlashcardsForProject,
   createFlashcard,
   updateFlashcard,
@@ -37,7 +36,12 @@ export const useFlashcardsStore = create<FlashcardsState>((set) => ({
   fetchFlashcards: async (projectId: string) => {
     set({ loading: true, error: null });
     try {
-      const flashcards = await getFlashcardsByProjectId(projectId);
+      // Use API route instead of server action for proper GET request
+      const response = await fetch(`/api/flashcards?project_id=${projectId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const flashcards = await response.json();
       set({ flashcards });
     } catch (error) {
       console.error("Failed to fetch flashcards:", error);

@@ -12,7 +12,7 @@ Cognify is an AI-powered flashcard application built with Next.js 15, React 19, 
 - **Styling**: Tailwind CSS with DaisyUI components
 - **Database**: Supabase (PostgreSQL) with real-time subscriptions
 - **Authentication**: Supabase Auth
-- **State Management**: Zustand stores
+- **State Management**: Zustand stores with sophisticated caching layer
 - **Build Tool**: Turbopack for development
 - **Package Manager**: pnpm
 
@@ -48,6 +48,182 @@ hooks/                    # Custom React hooks
 - Use Supabase client utilities for database operations
 - **Add console.log statements liberally for debugging** - they help track data flow and identify issues
 - Remove console.logs only when explicitly asked or in production builds
+
+### Performance & Caching Architecture
+
+**CRITICAL**: Cognify implements a sophisticated multi-layer caching system to avoid N+1 queries and optimize performance.
+
+#### Caching Patterns
+
+- **Zustand-based global cache** (`hooks/useCache.ts`) with TTL and versioning
+- **SessionStorage batch caching** for project statistics (`ProjectList.tsx`)
+- **Automatic cache invalidation** on data mutations
+- **Batch APIs** for reducing multiple requests to single calls
+
+```typescript
+// Use the global caching system
+import { cachedFetch, CacheInvalidation } from "@/hooks/useCache";
+
+const data = await cachedFetch(
+  "projects",
+  async () => supabase.from("projects").select("*"),
+  { ttl: 60000 } // 1 minute cache
+);
+```
+
+#### Key Performance Patterns
+
+- **Batch API example**: `/api/projects/batch-stats` consolidates 25+ individual requests into 1
+- **Cache-first data fetching**: Always check cache before hitting database
+- **Automatic cleanup**: Expired cache entries removed every 5 minutes
+- **Development utilities**: `window.cognifyCache` available in dev mode for debugging
+
+### SRS System (Protected Core Logic)
+
+**CRITICAL**: The SRS algorithm is the core of Cognify and should NOT be modified without explicit approval.
+
+#### Key SRS Components
+
+- `SRSScheduler.ts` - Core Anki-compatible SM-2 algorithm implementation
+- `SRSSession.ts` - Session management and daily limits
+- Default settings follow Anki-inspired intervals and ease factors
+- Supports learning steps, relearning, ease factors, and leech detection
+
+#### SRS Usage Pattern
+
+```typescript
+import { scheduleCardWithSessionLimits, SRSRating } from "./SRSScheduler";
+
+// Always use session-aware scheduling
+const { updatedCard, updatedSession } = scheduleCardWithSessionLimits(
+  card,
+  rating,
+  settings,
+  session
+);
+```
+
+### Database Patterns
+
+#### Core Schema
+
+```sql
+projects (id, user_id, name, description, created_at)
+flashcards (id, project_id, front, back, extra, created_at, updated_at)
+srs_states (id, user_id, card_id, project_id, state, due, interval, ease, ...)
+daily_study_stats (user_id, date, new_cards_studied, reviews_completed)
+```
+
+#### Database Best Practices
+
+- **RLS (Row Level Security)** policies on all user tables
+- **Foreign key constraints** maintain referential integrity
+- **Batch queries** instead of individual lookups (see `batch-stats` API)
+- **Proper indexing** on user_id, project_id, due dates
+
+### API Design Patterns
+
+#### REST API Conventions
+
+- GET for data retrieval (never use POST for fetching)
+- Batch endpoints for multiple related queries
+- Consistent error handling with proper HTTP status codes
+- Server-side authentication validation on all routes
+
+```typescript
+// API route pattern
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Implementation
+}
+```
+
+### State Management Patterns
+
+#### Zustand Store Structure
+
+- **Cached stores**: `useCachedProjectsStore`, `useCachedUserProfileStore`
+- **Settings store**: `useSettings` with SRS configuration
+- **Global cache store**: `useCacheStore` for performance optimization
+
+```typescript
+// Store pattern with caching
+const store = create<State>((set, get) => ({
+  data: [],
+  loadData: async () => {
+    const data = await cachedFetch("key", fetcher);
+    set({ data });
+  },
+}));
+```
+
+### Developer Workflow
+
+#### Essential Commands
+
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Production build
+- `pnpm lint` - ESLint check
+- `pnpm exec tsx scripts/SCRIPT_NAME.ts` - Run utility scripts
+
+#### Development Scripts
+
+- `scripts/createTestProject.ts` - Create test data
+- `scripts/deleteTestUserProjects.ts` - Clean up test data
+- `scripts/debugSRSCardStates.ts` - Debug SRS states
+
+#### Testing & Debugging
+
+- **SRS Tests**: Built-in test suite in `SRSTest.ts` validates Anki compatibility
+- **Cache utilities**: `useCacheUtilities()` for debugging cache performance
+- **Database health**: Debug utilities in `utils/debug/` directory
+- **Error logging**: Enhanced error tracking in `dailyStudyStats.ts`
+
+### Project-Specific Conventions
+
+#### Component Organization
+
+- **Project components**: `app/(main)/projects/components/`
+- **Shared components**: `components/`
+- **SRS components**: Keep algorithm logic in `SRSScheduler.ts`
+- **UI components**: Follow DaisyUI patterns consistently
+
+#### Error Handling
+
+- **Try-catch blocks** around all async operations
+- **Meaningful error messages** for users
+- **Console logging** for developer debugging
+- **Graceful degradation** when services are unavailable
+
+### Integration Points
+
+#### Supabase Integration
+
+- **Server client**: `utils/supabase/server.ts` for API routes
+- **Client**: `utils/supabase/client.ts` for browser code
+- **Middleware**: `utils/supabase/middleware.ts` for auth handling
+- **Admin client**: `utils/supabase/superClient.ts` for scripts
+
+#### External Dependencies
+
+- **AI Integration**: User-provided API keys (OpenAI, Anthropic)
+- **Analytics**: Vercel Analytics and Speed Insights
+- **UI Framework**: DaisyUI components with custom themes
+
+## Critical Patterns to Follow
+
+1. **Cache-first data access** - Always use caching layer for database queries
+2. **Batch API calls** - Consolidate multiple requests into single endpoints
+3. **Session-aware SRS** - Use `scheduleCardWithSessionLimits` for all card scheduling
+4. **Proper TypeScript** - No `any` types, define interfaces for all data shapes
+5. **Zustand stores** - Use existing cached stores rather than creating new ones
+6. **Error boundaries** - Implement proper error handling at component boundaries
 
 ### Key Patterns
 

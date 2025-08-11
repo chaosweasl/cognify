@@ -9,21 +9,27 @@ import { logSupabaseError, logError } from "../debug/errorLogger";
 /**
  * Check if an error object contains meaningful error information
  */
-function hasMeaningfulError(error: any): boolean {
+function hasMeaningfulError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }
 
+  const errorObj = error as Record<string, unknown>;
+
   // Check for actual error properties with non-empty values
-  const hasMessage = error.message && error.message.trim() !== "";
-  const hasCode = error.code && error.code.trim() !== "";
-  const hasDetails = error.details && error.details.trim() !== "";
-  const hasHint = error.hint && error.hint.trim() !== "";
+  const hasMessage =
+    typeof errorObj.message === "string" && errorObj.message.trim() !== "";
+  const hasCode =
+    typeof errorObj.code === "string" && errorObj.code.trim() !== "";
+  const hasDetails =
+    typeof errorObj.details === "string" && errorObj.details.trim() !== "";
+  const hasHint =
+    typeof errorObj.hint === "string" && errorObj.hint.trim() !== "";
 
   // Check if there are any other meaningful properties
-  const keys = Object.keys(error);
+  const keys = Object.keys(errorObj);
   const hasOtherProps = keys.some((key) => {
-    const value = error[key];
+    const value = errorObj[key];
     return (
       value !== null &&
       value !== undefined &&
@@ -174,8 +180,20 @@ export async function updateDailyStudyStats(
         ignoreDuplicates: false,
       });
 
-    if (error && hasMeaningfulError(error)) {
-      logSupabaseError("Error updating daily study stats", error);
+    if (error) {
+      const isErrorMeaningful = hasMeaningfulError(error);
+      console.log("[DailyStats] Error check:", {
+        hasError: !!error,
+        isErrorMeaningful,
+        errorKeys: Object.keys(error || {}),
+        error: error,
+      });
+
+      if (isErrorMeaningful) {
+        logSupabaseError("Error updating daily study stats", error);
+      } else {
+        console.log("[DailyStats] Skipping empty/meaningless error log");
+      }
     }
   } catch (error) {
     logError("Failed to update daily study stats", error);

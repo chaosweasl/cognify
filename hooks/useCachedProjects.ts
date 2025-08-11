@@ -4,6 +4,19 @@ import { createClient } from "@/utils/supabase/client";
 import { cachedFetch, CacheInvalidation } from "./useCache";
 import type { CacheKey } from "./useCache";
 
+// Import cache invalidation from ProjectList
+let invalidateBatchStatsCacheRef: (() => void) | null = null;
+
+export function setBatchStatsCacheInvalidator(fn: () => void) {
+  invalidateBatchStatsCacheRef = fn;
+}
+
+function invalidateBatchStatsCache() {
+  if (invalidateBatchStatsCacheRef) {
+    invalidateBatchStatsCacheRef();
+  }
+}
+
 // Define interfaces based on the schema
 export interface Project {
   id: string;
@@ -567,6 +580,9 @@ export const useCachedProjectsStore = create<CachedProjectsState>(
         // Invalidate projects cache to ensure fresh data on next access
         CacheInvalidation.onProjectUpdate(newProject.id);
 
+        // Invalidate batch stats cache since project list changed
+        invalidateBatchStatsCache();
+
         console.log(
           `[Projects] Created project successfully: ${newProject.id}`
         );
@@ -617,6 +633,9 @@ export const useCachedProjectsStore = create<CachedProjectsState>(
 
         // Invalidate cache
         CacheInvalidation.onProjectUpdate(projectId);
+
+        // Invalidate batch stats cache since project data changed
+        invalidateBatchStatsCache();
 
         console.log(`[Projects] Updated project successfully: ${projectId}`);
       } catch (error) {
@@ -676,6 +695,9 @@ export const useCachedProjectsStore = create<CachedProjectsState>(
 
         // Invalidate cache
         CacheInvalidation.onProjectDelete(projectId);
+
+        // Invalidate batch stats cache since project list changed
+        invalidateBatchStatsCache();
 
         console.log(`[Projects] Deleted project successfully: ${projectId}`);
       } catch (error) {

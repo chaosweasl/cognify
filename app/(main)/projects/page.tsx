@@ -134,12 +134,14 @@ function ProjectsPageContent() {
 
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center gap-2 h-40 justify-center">
-        <Loader2 className="animate-spin w-5 h-5 text-primary" />
-        Loading...
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center gap-2 h-40 justify-center">
+          <Loader2 className="animate-spin w-5 h-5 text-primary" />
+          Loading...
+        </div>
+      }
+    >
       <ProjectsPageContent />
     </Suspense>
   );
