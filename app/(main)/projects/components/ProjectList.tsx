@@ -11,13 +11,15 @@ import { StudySession } from "./SRSSession";
 import { SRSSettings } from "@/hooks/useSettings";
 
 // TypeScript interfaces for batch stats and cached data
-interface BatchStatsData {
-  projectId: string;
-  totalCards: number;
-  newCards: number;
-  cardsToReview: number;
-  lastStudied: Date | null;
-}
+type BatchStatsResponse = Record<
+  string,
+  {
+    dueCards: number;
+    newCards: number;
+    learningCards: number;
+    totalCards: number;
+  }
+>;
 
 // Cache for batch stats to avoid repeated API calls
 const BATCH_STATS_CACHE_KEY = "batch_stats_cache";
@@ -39,7 +41,7 @@ function getBatchStatsCache() {
 }
 
 // Function to set cache in sessionStorage
-function setBatchStatsCache(data: BatchStatsData[], userId: string) {
+function setBatchStatsCache(data: BatchStatsResponse, userId: string) {
   if (typeof window === "undefined") return;
 
   try {
@@ -88,7 +90,15 @@ export function ProjectList() {
 
   // Helper function to process stats data
   function processStatsData(
-    batchStats: BatchStatsData[],
+    batchStats: Record<
+      string,
+      {
+        dueCards: number;
+        newCards: number;
+        learningCards: number;
+        totalCards: number;
+      }
+    >,
     currentSession: StudySession | null,
     srsSettings: SRSSettings
   ) {
@@ -102,7 +112,7 @@ export function ProjectList() {
       }
     > = {};
 
-    batchStats.forEach((stats) => {
+    Object.entries(batchStats).forEach(([projectId, stats]) => {
       // Apply session-aware limits (respects daily new card limits)
       const remainingNewCards = Math.max(
         0,
@@ -110,10 +120,10 @@ export function ProjectList() {
       );
       const availableNewCards = Math.min(stats.newCards, remainingNewCards);
 
-      statsMap[stats.projectId] = {
-        dueCards: stats.cardsToReview,
+      statsMap[projectId] = {
+        dueCards: stats.dueCards,
         newCards: availableNewCards,
-        learningCards: 0, // Will be calculated from SRS states if needed
+        learningCards: stats.learningCards,
         nextReviewDate: null,
       };
     });
