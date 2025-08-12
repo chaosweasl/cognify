@@ -2,6 +2,7 @@ import React from "react";
 import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 import { createClient } from "@/utils/supabase/client";
+import { devLog, devWarn, prodLog } from "@/utils/env-config";
 
 // Cache key types for type safety
 export type CacheKey =
@@ -32,15 +33,15 @@ interface CacheConfig {
 
 // Default cache configurations
 const CACHE_CONFIGS: Record<string, CacheConfig> = {
-  projects: { ttl: 10 * 1000, version: "1.0" }, // 10 seconds - much more responsive
-  project: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
-  flashcards: { ttl: 2 * 60 * 1000, version: "1.0" }, // 2 minutes
-  srs_states: { ttl: 1 * 60 * 1000, version: "1.0" }, // 1 minute (more dynamic)
-  user_settings: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
-  user_profile: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
-  daily_stats: { ttl: 60 * 60 * 1000, version: "1.0" }, // 1 hour
-  study_stats: { ttl: 5 * 60 * 1000, version: "1.0" }, // 5 minutes
-  notifications: { ttl: 10 * 60 * 1000, version: "1.0" }, // 10 minutes
+  projects: { ttl: 10 * 1000, version: "1.0", maxSize: 50 }, // 10 seconds - much more responsive
+  project: { ttl: 2 * 60 * 1000, version: "1.0", maxSize: 100 }, // 2 minutes
+  flashcards: { ttl: 2 * 60 * 1000, version: "1.0", maxSize: 200 }, // 2 minutes
+  srs_states: { ttl: 1 * 60 * 1000, version: "1.0", maxSize: 500 }, // 1 minute (more dynamic)
+  user_settings: { ttl: 10 * 60 * 1000, version: "1.0", maxSize: 10 }, // 10 minutes
+  user_profile: { ttl: 10 * 60 * 1000, version: "1.0", maxSize: 10 }, // 10 minutes
+  daily_stats: { ttl: 60 * 60 * 1000, version: "1.0", maxSize: 30 }, // 1 hour
+  study_stats: { ttl: 5 * 60 * 1000, version: "1.0", maxSize: 100 }, // 5 minutes
+  notifications: { ttl: 10 * 60 * 1000, version: "1.0", maxSize: 50 }, // 10 minutes
 };
 
 interface CacheState {
@@ -98,7 +99,7 @@ export const useCacheStore = create<CacheState>()(
           const entry = get().cache[key];
 
           if (!entry) {
-            console.log(`[Cache] MISS ${key} - not found`);
+            devLog(`[Cache] MISS ${key} - not found`);
             set((state) => ({ misses: state.misses + 1 }));
             return null;
           }
@@ -108,7 +109,7 @@ export const useCacheStore = create<CacheState>()(
 
           // Check version compatibility
           if (entry.version !== config.version) {
-            console.log(`[Cache] MISS ${key} - version mismatch`);
+            devLog(`[Cache] MISS ${key} - version mismatch`);
             get().remove(key);
             set((state) => ({ misses: state.misses + 1 }));
             return null;
@@ -119,13 +120,13 @@ export const useCacheStore = create<CacheState>()(
             ? now > entry.expiresAt
             : now - entry.timestamp > config.ttl;
           if (isExpired) {
-            console.log(`[Cache] MISS ${key} - expired`);
+            devLog(`[Cache] MISS ${key} - expired`);
             get().remove(key);
             set((state) => ({ misses: state.misses + 1 }));
             return null;
           }
 
-          console.log(`[Cache] HIT ${key}`);
+          devLog(`[Cache] HIT ${key}`);
           set((state) => ({ hits: state.hits + 1 }));
           return entry.data;
         },
@@ -146,12 +147,35 @@ export const useCacheStore = create<CacheState>()(
             version: config.version,
           };
 
-          set((state) => ({
-            cache: {
-              ...state.cache,
-              [key]: newEntry,
-            },
-          }));
+          set((state) => {
+            const newCache = { ...state.cache };
+
+            // Add new entry
+            newCache[key] = newEntry;
+
+            // Implement LRU eviction based on cache type limits
+            const cacheType = key.split(":")[0];
+            const maxSize = config.maxSize;
+
+            if (maxSize) {
+              const entriesOfType = Object.keys(newCache).filter(
+                (k) => k.startsWith(cacheType + ":") || k === cacheType
+              );
+
+              if (entriesOfType.length > maxSize) {
+                // Sort by timestamp (oldest first) and remove oldest entries
+                entriesOfType
+                  .sort((a, b) => newCache[a].timestamp - newCache[b].timestamp)
+                  .slice(0, entriesOfType.length - maxSize)
+                  .forEach((keyToRemove) => {
+                    console.log(`[Cache] LRU EVICTED ${keyToRemove}`);
+                    delete newCache[keyToRemove];
+                  });
+              }
+            }
+
+            return { cache: newCache };
+          });
         },
 
         remove: (key: CacheKey): void => {

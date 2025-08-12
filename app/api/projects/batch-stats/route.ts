@@ -46,52 +46,73 @@ export async function GET() {
     const projectIds = projects.map((p) => p.id);
     console.log(`[BatchStats] Processing ${projectIds.length} projects`);
 
-    // Get all flashcards for all projects in one query
-    const { data: allFlashcards, error: flashcardsError } = await supabase
-      .from("flashcards")
-      .select("id, project_id")
-      .in("project_id", projectIds);
+    // Optimize queries for large datasets by chunking
+    const CHUNK_SIZE = 50; // Process projects in chunks to avoid query size limits
 
-    if (flashcardsError) {
-      console.error("[BatchStats] Error fetching flashcards:", flashcardsError);
-      return NextResponse.json(
-        { error: "Failed to fetch flashcards" },
-        { status: 500 }
-      );
-    }
+    const processProjectChunk = async (projectChunk: string[]) => {
+      // Get all flashcards for this chunk of projects
+      const { data: chunkFlashcards, error: flashcardsError } = await supabase
+        .from("flashcards")
+        .select("id, project_id")
+        .in("project_id", projectChunk);
 
-    // Group flashcards by project
-    const flashcardsByProject: Record<string, string[]> = {};
-    const allFlashcardIds: string[] = [];
-
-    if (allFlashcards) {
-      allFlashcards.forEach((flashcard) => {
-        if (!flashcardsByProject[flashcard.project_id]) {
-          flashcardsByProject[flashcard.project_id] = [];
-        }
-        flashcardsByProject[flashcard.project_id].push(flashcard.id);
-        allFlashcardIds.push(flashcard.id);
-      });
-    }
-
-    // Get all SRS states for all flashcards in one query
-    let allSrsStates: SRSState[] = [];
-    if (allFlashcardIds.length > 0) {
-      const { data: srsStates, error: srsError } = await supabase
-        .from("srs_states")
-        .select("card_id, state, due, is_suspended")
-        .eq("user_id", user.id)
-        .in("card_id", allFlashcardIds);
-
-      if (srsError) {
-        console.error("[BatchStats] Error fetching SRS states:", srsError);
-        return NextResponse.json(
-          { error: "Failed to fetch SRS states" },
-          { status: 500 }
+      if (flashcardsError) {
+        throw new Error(
+          `Failed to fetch flashcards: ${flashcardsError.message}`
         );
       }
 
-      allSrsStates = srsStates || [];
+      return chunkFlashcards || [];
+    };
+
+    // Process projects in chunks to handle large datasets
+    const allFlashcards: Array<{ id: string; project_id: string }> = [];
+
+    for (let i = 0; i < projectIds.length; i += CHUNK_SIZE) {
+      const chunk = projectIds.slice(i, i + CHUNK_SIZE);
+      const chunkFlashcards = await processProjectChunk(chunk);
+      allFlashcards.push(...chunkFlashcards);
+    } // Group flashcards by project
+    const flashcardsByProject: Record<string, string[]> = {};
+    const allFlashcardIds: string[] = [];
+
+    allFlashcards.forEach((flashcard) => {
+      if (!flashcardsByProject[flashcard.project_id]) {
+        flashcardsByProject[flashcard.project_id] = [];
+      }
+      flashcardsByProject[flashcard.project_id].push(flashcard.id);
+      allFlashcardIds.push(flashcard.id);
+    });
+
+    // Get all SRS states for all flashcards, also chunked for large datasets
+    const allSrsStates: SRSState[] = [];
+    if (allFlashcardIds.length > 0) {
+      const SRS_CHUNK_SIZE = 1000; // Chunk SRS queries for very large flashcard sets
+
+      for (let i = 0; i < allFlashcardIds.length; i += SRS_CHUNK_SIZE) {
+        const flashcardChunk = allFlashcardIds.slice(i, i + SRS_CHUNK_SIZE);
+
+        const { data: srsStates, error: srsError } = await supabase
+          .from("srs_states")
+          .select("card_id, state, due, is_suspended")
+          .eq("user_id", user.id)
+          .in("card_id", flashcardChunk);
+
+        if (srsError) {
+          console.error(
+            "[BatchStats] Error fetching SRS states chunk:",
+            srsError
+          );
+          return NextResponse.json(
+            { error: "Failed to fetch SRS states" },
+            { status: 500 }
+          );
+        }
+
+        if (srsStates) {
+          allSrsStates.push(...srsStates);
+        }
+      }
     }
 
     // Group SRS states by project

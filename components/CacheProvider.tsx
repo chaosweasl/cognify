@@ -6,6 +6,7 @@ import React, {
   ReactNode,
   useMemo,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useCachedSettingsStore } from "@/hooks/useCachedSettings";
 import { useCachedUserProfileStore } from "@/hooks/useCachedUserProfile";
 import {
@@ -37,7 +38,8 @@ export function CacheProvider({
   enableAutoLoad = true,
   enableDebugLogs = false,
 }: CacheProviderProps) {
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [isMounted] = React.useState(false);
+  const pathname = usePathname();
   const cacheStats = useCacheStats();
   const { clear: clearCache } = useCacheStore();
 
@@ -47,40 +49,80 @@ export function CacheProvider({
   const projectsStore = useCachedProjectsStore();
   const dailyStatsStore = useCachedDailyStatsStore();
 
-  // Use ref to prevent multiple auto-loads
-  const hasAutoLoaded = React.useRef(false);
+  // Use localStorage to prevent multiple auto-loads across navigation
+  const AUTO_LOAD_KEY = "cognify_cache_auto_loaded";
+  const hasAutoLoaded = React.useRef(
+    typeof window !== "undefined" &&
+      localStorage.getItem(AUTO_LOAD_KEY) === "true"
+  );
 
-  // Handle mounting to prevent hydration mismatches
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Auto-load data on mount if enabled (only once)
+  // Auto-load data on mount if enabled (only once per session)
   useEffect(() => {
     if (isMounted && enableAutoLoad && !hasAutoLoaded.current) {
       hasAutoLoaded.current = true;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(AUTO_LOAD_KEY, "true");
+      }
       console.log("[CacheProvider] Auto-loading initial data");
 
       // Create a promise chain to ensure proper sequencing
       const loadData = async () => {
         try {
-          // Load user profile first (needed for other operations)
-          await profileStore.fetchUserProfile();
-          console.log(
-            "[CacheProvider] Profile loaded, loading settings and projects"
+          // Define which routes need which data
+          const PROFILE_ROUTES = ["/settings", "/dashboard"];
+          const PROJECTS_ROUTES = ["/projects", "/dashboard"];
+          const STATS_ROUTES = ["/dashboard"];
+
+          const needsProfile = PROFILE_ROUTES.some((route) =>
+            pathname.startsWith(route)
+          );
+          const needsProjects = PROJECTS_ROUTES.some((route) =>
+            pathname.startsWith(route)
+          );
+          const needsStats = STATS_ROUTES.some((route) =>
+            pathname.startsWith(route)
           );
 
-          // Load settings and projects in parallel
-          await Promise.all([
-            settingsStore.loadSettings(),
-            projectsStore.loadProjects(),
-          ]);
+          console.log("[CacheProvider] Route-based loading:", {
+            pathname,
+            needsProfile,
+            needsProjects,
+            needsStats,
+          });
 
-          console.log("[CacheProvider] Initial data load completed");
+          // Always load profile first if needed (required for auth)
+          if (needsProfile || needsProjects) {
+            await profileStore.fetchUserProfile();
+            console.log("[CacheProvider] Profile loaded");
 
-          // Load today's stats
-          const today = new Date().toISOString().split("T")[0];
-          await dailyStatsStore.loadDailyStats(today);
+            // Load notifications only on routes that actually need them
+            if (needsProfile) {
+              await profileStore.fetchUserNotifications();
+              console.log("[CacheProvider] User notifications loaded");
+            }
+          }
+
+          // Load other data based on route needs
+          const loadPromises = [];
+
+          if (needsProfile || needsProjects) {
+            loadPromises.push(settingsStore.loadSettings());
+          }
+
+          if (needsProjects) {
+            loadPromises.push(projectsStore.loadProjects());
+          }
+
+          if (loadPromises.length > 0) {
+            await Promise.all(loadPromises);
+            console.log("[CacheProvider] Conditional data load completed");
+          }
+
+          // Load today's stats only for dashboard
+          if (needsStats) {
+            const today = new Date().toISOString().split("T")[0];
+            await dailyStatsStore.loadDailyStats(today);
+          }
         } catch (error) {
           console.error("[CacheProvider] Error during auto-load:", error);
         }
@@ -91,6 +133,7 @@ export function CacheProvider({
   }, [
     isMounted,
     enableAutoLoad,
+    pathname,
     settingsStore,
     profileStore,
     projectsStore,

@@ -19,12 +19,14 @@ export interface UserProfile {
 
 interface CachedUserProfileState {
   userProfile: UserProfile | null;
-  userNotifications: any[] | null; // Add user notifications here
+  userNotifications: any[] | null;
   isLoading: boolean;
+  isLoadingNotifications: boolean;
   error: string | null;
   lastFetch: number | null;
 
   fetchUserProfile: (forceRefresh?: boolean) => Promise<void>;
+  fetchUserNotifications: (forceRefresh?: boolean) => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<string>;
   setUserProfile: (profile: UserProfile | null) => void;
@@ -35,6 +37,7 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
     userProfile: null,
     userNotifications: null,
     isLoading: false,
+    isLoadingNotifications: false,
     error: null,
     lastFetch: null,
 
@@ -139,27 +142,8 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
           }
         );
 
-        // Fetch user notifications along with profile
-        console.log(
-          `[UserProfile] Fetching user notifications for user: ${user.id}`
-        );
-        const { data: notifications, error: notificationsError } =
-          await supabase
-            .from("user_notifications")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("trigger_at", { ascending: false });
-
-        if (notificationsError) {
-          console.warn(
-            "[UserProfile] Failed to fetch user notifications:",
-            notificationsError
-          );
-        }
-
         set({
           userProfile: profile,
-          userNotifications: notifications || [],
           isLoading: false,
           lastFetch: Date.now(),
         });
@@ -169,6 +153,73 @@ export const useCachedUserProfileStore = create<CachedUserProfileState>(
           error:
             err instanceof Error ? err.message : "An unexpected error occurred",
           isLoading: false,
+        });
+      }
+    },
+
+    fetchUserNotifications: async (forceRefresh = false) => {
+      set({ isLoadingNotifications: true, error: null });
+
+      try {
+        const { data: userResponse } = await supabase.auth.getUser();
+        const user = userResponse?.user;
+
+        if (!user) {
+          set({
+            error: "User not authenticated",
+            isLoadingNotifications: false,
+          });
+          return;
+        }
+
+        const cacheKey: CacheKey = `notifications:${user.id}`;
+
+        const notifications = await cachedFetch(
+          cacheKey,
+          async () => {
+            console.log(
+              `[UserProfile] Fetching user notifications for user: ${user.id}`
+            );
+            const { data: notifications, error: notificationsError } =
+              await supabase
+                .from("user_notifications")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("trigger_at", { ascending: false });
+
+            if (notificationsError) {
+              console.warn(
+                "[UserProfile] Failed to fetch user notifications:",
+                notificationsError
+              );
+              return [];
+            }
+
+            return notifications || [];
+          },
+          {
+            forceRefresh,
+            onCacheHit: () =>
+              console.log(
+                `[UserProfile] Using cached notifications for user: ${user.id}`
+              ),
+            onCacheMiss: () =>
+              console.log(
+                `[UserProfile] Cache miss, fetching notifications for user: ${user.id}`
+              ),
+          }
+        );
+
+        set({
+          userNotifications: notifications,
+          isLoadingNotifications: false,
+        });
+      } catch (err) {
+        console.error("[UserProfile] Error fetching notifications:", err);
+        set({
+          error:
+            err instanceof Error ? err.message : "An unexpected error occurred",
+          isLoadingNotifications: false,
         });
       }
     },

@@ -23,7 +23,7 @@ type BatchStatsResponse = Record<
 
 // Cache for batch stats to avoid repeated API calls
 const BATCH_STATS_CACHE_KEY = "batch_stats_cache";
-const BATCH_STATS_CACHE_TTL = 30000; // 30 seconds
+const BATCH_STATS_CACHE_TTL = 60000; // 60 seconds (increased from 30s)
 
 // Function to get cache from sessionStorage
 function getBatchStatsCache() {

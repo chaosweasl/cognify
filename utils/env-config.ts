@@ -3,6 +3,34 @@
  * Ensures all required environment variables are present and valid
  */
 
+// Enhanced logging utilities
+export const isDevelopment = process.env.NODE_ENV === "development";
+export const isProduction = process.env.NODE_ENV === "production";
+
+// Smart logging functions that respect environment
+export const devLog = (...args: any[]) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
+export const devWarn = (...args: any[]) => {
+  if (isDevelopment) {
+    console.warn(...args);
+  }
+};
+
+export const devError = (...args: any[]) => {
+  if (isDevelopment) {
+    console.error(...args);
+  }
+};
+
+// Production-safe logging (for critical errors only)
+export const prodLog = (...args: any[]) => {
+  console.log(...args);
+};
+
 interface EnvironmentConfig {
   // Database
   NEXT_PUBLIC_SUPABASE_URL: string;
