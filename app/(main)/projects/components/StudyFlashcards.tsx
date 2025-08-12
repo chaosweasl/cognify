@@ -24,15 +24,14 @@ import {
 } from "./SRSSession";
 
 // Import sub-components
-import { StudyHeader } from "./StudyHeader";
-import { StudyStats } from "./StudyStats";
 import { DailyLimitsProgress } from "./DailyLimitsProgress";
 import { CardTypeIndicator } from "./CardTypeIndicator";
 import { FlashcardDisplay } from "./FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "./EmptyFlashcardState";
-import { SessionProgress } from "./SessionProgress";
 import { Flashcard } from "../types/flashcard";
+import { useRouter } from "next/navigation";
+import { RotateCcw, Pencil } from "lucide-react";
 
 interface StudyFlashcardsProps {
   flashcards: Flashcard[];
@@ -71,6 +70,136 @@ const demoFlashcards: Flashcard[] = [
     updated_at: new Date().toISOString(),
   },
 ];
+
+// Inline StudyHeader component
+interface StudyHeaderProps {
+  projectName: string;
+  projectId: string;
+  onReset: () => void;
+}
+
+function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
+  const router = useRouter();
+
+  return (
+    <div className="w-full max-w-2xl mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-primary">
+          Study: {projectName || "Demo Flashcards"}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => router.push(`/projects/${projectId}/edit`)}
+            className="btn btn-outline btn-sm gap-2"
+            title="Edit flashcards"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
+          <button
+            onClick={onReset}
+            className="btn btn-ghost btn-sm gap-2"
+            title="Reset session"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Inline StudyStats component
+interface StudyStatsProps {
+  newCards: number;
+  learningCards: number;
+  reviewCards: number;
+  dueCards: number;
+}
+
+function StudyStats({ newCards, learningCards, reviewCards }: StudyStatsProps) {
+  const totalReviewCards = reviewCards || 0;
+
+  return (
+    <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="bg-base-100 rounded-lg p-3 text-center border">
+        <div
+          className={`text-lg font-bold ${
+            newCards > 0 ? "text-blue-600" : "text-gray-400"
+          }`}
+        >
+          {newCards}
+        </div>
+        <div className="text-xs text-base-content/70">New</div>
+      </div>
+      <div className="bg-base-100 rounded-lg p-3 text-center border">
+        <div
+          className={`text-lg font-bold ${
+            learningCards > 0 ? "text-orange-600" : "text-gray-400"
+          }`}
+        >
+          {learningCards}
+        </div>
+        <div className="text-xs text-base-content/70">Learning</div>
+      </div>
+      <div className="bg-base-100 rounded-lg p-3 text-center border">
+        <div
+          className={`text-lg font-bold ${
+            totalReviewCards > 0 ? "text-green-600" : "text-gray-400"
+          }`}
+        >
+          {totalReviewCards}
+        </div>
+        <div className="text-xs text-base-content/70">Review</div>
+      </div>
+    </div>
+  );
+}
+
+// Inline SessionProgress component
+interface SessionProgressProps {
+  reviewed: number;
+  learningQueueCount: number;
+}
+
+function SessionProgress({ reviewed, learningQueueCount }: SessionProgressProps) {
+  return (
+    <>
+      <div className="mt-6 text-center">
+        <div className="text-sm text-base-content/70">
+          Session: {reviewed} cards reviewed
+        </div>
+        {learningQueueCount > 0 && (
+          <div className="text-xs text-orange-600 mt-1">
+            {learningQueueCount} card{learningQueueCount === 1 ? "" : "s"} in
+            learning queue
+          </div>
+        )}
+        {reviewed > 0 && learningQueueCount === 0 && (
+          <div className="text-xs text-green-600 mt-1">
+            ✓ Learning queue empty
+          </div>
+        )}
+      </div>
+
+      {/* Shortcuts */}
+      <div className="mt-4 text-xs text-base-content/50 text-center">
+        <div className="hidden lg:flex flex-wrap justify-center gap-4">
+          <span>Space / F: Flip</span>
+          <span>1: Again</span>
+          <span>2: Hard</span>
+          <span>3: Good</span>
+          <span>4: Easy</span>
+          <span>R: Reset</span>
+        </div>
+        <div className="lg:hidden text-center mt-2">
+          <div>Tap to flip • Use buttons to rate</div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function StudyFlashcards({
   flashcards,
