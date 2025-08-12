@@ -59,7 +59,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   try {
     new URL(config.NEXT_PUBLIC_SUPABASE_URL!);
     new URL(config.NEXT_PUBLIC_SITE_URL!);
-  } catch (error) {
+  } catch {
     throw new Error("Invalid URL in environment variables");
   }
 

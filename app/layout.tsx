@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/toast-provider";
 import { ProfileProvider } from "@/components/profile-provider";
-import EarlyDevWarning from "@/components/EarlyDevWarning";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -60,8 +59,6 @@ export default function RootLayout({
         <ToastProvider>
           <ProfileProvider>
             {children}
-            {/* Early development warning fixed at bottom left */}
-            <EarlyDevWarning />
           </ProfileProvider>
         </ToastProvider>
       </body>
