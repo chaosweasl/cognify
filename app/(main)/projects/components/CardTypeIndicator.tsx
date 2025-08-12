@@ -2,14 +2,14 @@
 import React from "react";
 import { RotateCcw, BookOpen, Target, Zap } from "lucide-react";
 import { SRSCardState } from "./SRSScheduler";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettingsStore } from "@/hooks/useSettings";
 
 interface CardTypeIndicatorProps {
   cardState: SRSCardState;
 }
 
 export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
-  const { srsSettings } = useSettings();
+  const { srsSettings } = useSettingsStore();
 
   const getCardTypeInfo = (state: SRSCardState) => {
     switch (state.state) {

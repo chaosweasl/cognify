@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettingsStore } from "@/hooks/useSettings";
 import { useToast } from "@/components/toast-provider";
 import Image from "next/image";
 // import nopfp from "@/public/assets/nopfp.png";
@@ -9,7 +9,7 @@ const nopfp = "/assets/nopfp.png";
 
 export function UserSettingsTab() {
   const { userProfile, isLoading, updateUserProfile } = useUserProfile();
-  const { userSettings, updateUserSettings } = useSettings();
+  const { userSettings, updateUserSettings } = useSettingsStore();
   const { showToast } = useToast();
 
   const [formData, setFormData] = React.useState({
