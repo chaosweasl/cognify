@@ -124,6 +124,22 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
 
 // Simple hook to match the interface expected by simplified components
 export const useUserProfile = () => {
-  const { userProfile, isLoading, error, fetchUserProfile } = useUserProfileStore();
-  return { userProfile, isLoading, error, fetchUserProfile };
+  const { 
+    userProfile, 
+    isLoading, 
+    error, 
+    fetchUserProfile, 
+    updateUserProfile, 
+    uploadAvatar,
+    setUserProfile 
+  } = useUserProfileStore();
+  return { 
+    userProfile, 
+    isLoading, 
+    error, 
+    fetchUserProfile, 
+    updateUserProfile, 
+    uploadAvatar,
+    setUserProfile 
+  };
 };

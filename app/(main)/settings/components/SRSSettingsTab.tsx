@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useEnhancedSettings } from "@/components/CacheProvider";
+import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/components/toast-provider";
 import { Info, RotateCcw } from "lucide-react";
 
@@ -11,7 +11,7 @@ export function SRSSettingsTab() {
     resetSRSSettings,
     validateSRSSettings,
     error,
-  } = useEnhancedSettings();
+  } = useSettings();
   const { showToast } = useToast();
 
   const [formData, setFormData] = React.useState(srsSettings);

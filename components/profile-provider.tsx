@@ -6,7 +6,7 @@ export const ProfileProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  // Profile loading is now handled by CacheProvider
+  // Profile loading is handled by simple hooks now
   // This component remains for backwards compatibility
   return <>{children}</>;
 };

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
-import { useEnhancedSettings } from "@/components/CacheProvider";
+import { useSettings } from "@/hooks/useSettings";
 import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
 import { saveSRSStates } from "./SRSDBUtils";
@@ -80,7 +80,7 @@ export default function StudyFlashcards({
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
-  const { srsSettings } = useEnhancedSettings();
+  const { srsSettings } = useSettings();
 
   // Settings are auto-loaded by the enhanced hook
 
