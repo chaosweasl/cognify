@@ -1,42 +1,61 @@
 import { ProjectCard } from "./ProjectCard";
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectStats } from "@/src/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+interface ProjectWithStats {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  stats?: ProjectStats;
+}
 
 export function ProjectList() {
   const { 
     projects, 
     deleteProject, 
     loadProjects, 
-    loadProjectStats, 
   } = useProjectsStore();
   
   const [projectStats, setProjectStats] = useState<Record<string, ProjectStats>>({});
-  const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
-  // Load projects on mount
-  useEffect(() => {
-    loadProjects();
+  // Load projects and their stats using batch API
+  const loadProjectsAndStats = useCallback(async () => {
+    console.log("[ProjectList] Loading projects and stats...");
+    
+    try {
+      // First load basic projects
+      await loadProjects();
+      
+      // Then load all stats in one batch call
+      const response = await fetch("/api/projects/batch-stats");
+      if (response.ok) {
+        const data = await response.json();
+        const statsMap: Record<string, ProjectStats> = {};
+        
+        data.projects.forEach((project: ProjectWithStats) => {
+          if (project.stats) {
+            statsMap[project.id] = project.stats;
+          }
+        });
+        
+        setProjectStats(statsMap);
+        console.log("[ProjectList] Successfully loaded batch stats for", Object.keys(statsMap).length, "projects");
+      } else {
+        console.error("[ProjectList] Failed to load batch stats:", response.status);
+        // Fallback: could implement individual loading here if needed
+      }
+    } catch (error) {
+      console.error("[ProjectList] Error loading projects and stats:", error);
+    }
   }, [loadProjects]);
 
-  // Load stats for each project
   useEffect(() => {
-    projects.forEach(async (project) => {
-      if (!projectStats[project.id] && !loadingStats[project.id]) {
-        setLoadingStats(prev => ({ ...prev, [project.id]: true }));
-        try {
-          const stats = await loadProjectStats(project.id);
-          setProjectStats(prev => ({ ...prev, [project.id]: stats }));
-        } catch (error) {
-          console.error(`Error loading stats for project ${project.id}:`, error);
-        } finally {
-          setLoadingStats(prev => ({ ...prev, [project.id]: false }));
-        }
-      }
-    });
-  }, [projects, loadProjectStats, loadingStats, projectStats]);
+    loadProjectsAndStats();
+  }, [loadProjectsAndStats]);
 
   const handleDeleteProject = async (projectId: string) => {
     try {
