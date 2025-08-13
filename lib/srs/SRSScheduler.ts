@@ -424,7 +424,7 @@ export function initSRSStateWithSettings(
     initial[id] = {
       id,
       state: "new",
-      interval: 0,
+      interval: 1, // Use 1 instead of 0 to satisfy database constraint srs_states_interval_positive
       ease: settings.STARTING_EASE,
       due: now, // New cards are immediately available
       lastReviewed: 0,
@@ -1205,7 +1205,7 @@ export function generateCardsFromNote(
     cards[cardId] = {
       id: cardId,
       state: "new",
-      interval: 0,
+      interval: 1, // Use 1 instead of 0 to satisfy database constraint srs_states_interval_positive
       ease: settings.STARTING_EASE,
       due: Date.now(),
       lastReviewed: 0,
@@ -1282,7 +1282,8 @@ export function setCardInterval(
 ): SRSCardState {
   const updatedCard = { ...card };
 
-  updatedCard.interval = intervalDays;
+  // Ensure interval is always >= 1 to satisfy database constraint
+  updatedCard.interval = Math.max(1, intervalDays);
   updatedCard.due = addDays(now, intervalDays);
   updatedCard.state = intervalDays > 0 ? "review" : card.state;
 

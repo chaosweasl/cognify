@@ -63,12 +63,15 @@ export async function GET() {
       const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
       const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
 
+      // Calculate due cards (cards that need to be reviewed now)
+      const dueCardsCount = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
+      
       projectStats[project.id] = {
         totalCards: projectFlashcards.length,
         newCards: projectSrsStates.filter(s => s.state === "new").length,
         learningCards: projectSrsStates.filter(s => s.state === "learning").length,
-        reviewCards: projectSrsStates.filter(s => s.state === "review").length,
-        dueCards: projectSrsStates.filter(s => s.due <= now && s.state !== "new").length,
+        reviewCards: dueCardsCount, // For user clarity: review cards = due cards
+        dueCards: dueCardsCount,
       };
       
       console.log(`[API] batch-stats - Project ${project.id} (${project.name}):`, {
