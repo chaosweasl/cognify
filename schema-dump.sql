@@ -200,19 +200,6 @@ $$;
 ALTER FUNCTION "public"."safe_card_update"("p_card_id" "uuid", "p_updates" "jsonb") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."uid_cache"() RETURNS "uuid"
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public, pg_catalog'
-    AS $$
-BEGIN
-    RETURN auth.uid();
-END;
-$$;
-
-
-ALTER FUNCTION "public"."uid_cache"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO ''
@@ -265,9 +252,11 @@ CREATE TABLE IF NOT EXISTS "public"."daily_study_stats" (
     "cards_lapsed" integer DEFAULT 0 NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "project_id" "uuid",
     CONSTRAINT "daily_study_stats_cards_lapsed_check" CHECK (("cards_lapsed" >= 0)),
     CONSTRAINT "daily_study_stats_cards_learned_check" CHECK (("cards_learned" >= 0)),
     CONSTRAINT "daily_study_stats_new_cards_studied_check" CHECK (("new_cards_studied" >= 0)),
+    CONSTRAINT "daily_study_stats_project_or_global" CHECK ((("project_id" IS NOT NULL) OR ("project_id" IS NULL))),
     CONSTRAINT "daily_study_stats_reviews_completed_check" CHECK (("reviews_completed" >= 0)),
     CONSTRAINT "daily_study_stats_time_spent_seconds_check" CHECK (("time_spent_seconds" >= 0))
 );
@@ -308,16 +297,32 @@ COMMENT ON COLUMN "public"."daily_study_stats"."cards_lapsed" IS 'Number of card
 
 
 
+COMMENT ON COLUMN "public"."daily_study_stats"."project_id" IS 'Project ID for per-project stats tracking. NULL for legacy global stats.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."projects" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid",
     "name" "text" NOT NULL,
     "description" "text",
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "new_cards_per_day" integer DEFAULT 20 NOT NULL,
+    "max_reviews_per_day" integer DEFAULT 100 NOT NULL,
+    CONSTRAINT "projects_max_reviews_per_day_check" CHECK (("max_reviews_per_day" >= 0)),
+    CONSTRAINT "projects_new_cards_per_day_check" CHECK (("new_cards_per_day" >= 0))
 );
 
 
 ALTER TABLE "public"."projects" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."projects"."new_cards_per_day" IS 'Maximum number of new cards to introduce per day for this project';
+
+
+
+COMMENT ON COLUMN "public"."projects"."max_reviews_per_day" IS 'Maximum number of review cards to show per day for this project';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."srs_states" (
@@ -636,7 +641,7 @@ ALTER TABLE ONLY "public"."daily_study_stats"
 
 
 ALTER TABLE ONLY "public"."daily_study_stats"
-    ADD CONSTRAINT "daily_study_stats_user_date_unique" UNIQUE ("user_id", "study_date");
+    ADD CONSTRAINT "daily_study_stats_user_project_date_unique" UNIQUE ("user_id", "project_id", "study_date");
 
 
 
@@ -679,11 +684,31 @@ CREATE INDEX "daily_study_stats_user_date_idx" ON "public"."daily_study_stats" U
 
 
 
+CREATE UNIQUE INDEX "daily_study_stats_user_global_date_unique" ON "public"."daily_study_stats" USING "btree" ("user_id", "study_date") WHERE ("project_id" IS NULL);
+
+
+
+CREATE INDEX "idx_daily_study_stats_project_date" ON "public"."daily_study_stats" USING "btree" ("user_id", "project_id", "study_date");
+
+
+
 CREATE INDEX "idx_flashcards_project_id" ON "public"."flashcards" USING "btree" ("project_id");
 
 
 
 CREATE UNIQUE INDEX "idx_optimized_due_cards" ON "public"."optimized_due_cards" USING "btree" ("id");
+
+
+
+CREATE INDEX "idx_projects_daily_limits" ON "public"."projects" USING "btree" ("user_id", "new_cards_per_day", "max_reviews_per_day");
+
+
+
+CREATE INDEX "idx_projects_user_id" ON "public"."projects" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_srs_states_card_id" ON "public"."srs_states" USING "btree" ("card_id");
 
 
 
@@ -700,6 +725,14 @@ CREATE INDEX "idx_srs_states_state" ON "public"."srs_states" USING "btree" ("use
 
 
 CREATE INDEX "idx_srs_states_user_project_state_due" ON "public"."srs_states" USING "btree" ("user_id", "project_id", "state", "due");
+
+
+
+CREATE INDEX "idx_user_notifications_user_id" ON "public"."user_notifications" USING "btree" ("user_id");
+
+
+
+CREATE OR REPLACE TRIGGER "create_user_settings_trigger" AFTER INSERT ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."create_default_user_settings"();
 
 
 
@@ -722,6 +755,11 @@ ALTER TABLE ONLY "public"."app_notification_reads"
 
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."daily_study_stats"
+    ADD CONSTRAINT "daily_study_stats_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 
 
@@ -1020,7 +1058,6 @@ GRANT ALL ON FUNCTION "public"."create_default_user_settings"() TO "service_role
 
 GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) TO "service_role";
-GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) TO "anon";
 
 
 
@@ -1032,13 +1069,11 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."is_user_admin"() TO "anon";
 
 
 
 GRANT ALL ON FUNCTION "public"."manage_leech_cards"("p_user_id" "uuid", "p_leech_threshold" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."manage_leech_cards"("p_user_id" "uuid", "p_leech_threshold" integer) TO "service_role";
-GRANT ALL ON FUNCTION "public"."manage_leech_cards"("p_user_id" "uuid", "p_leech_threshold" integer) TO "anon";
 
 
 
@@ -1050,13 +1085,6 @@ GRANT ALL ON FUNCTION "public"."refresh_due_cards_view"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."safe_card_update"("p_card_id" "uuid", "p_updates" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."safe_card_update"("p_card_id" "uuid", "p_updates" "jsonb") TO "service_role";
-GRANT ALL ON FUNCTION "public"."safe_card_update"("p_card_id" "uuid", "p_updates" "jsonb") TO "anon";
-
-
-
-GRANT ALL ON FUNCTION "public"."uid_cache"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."uid_cache"() TO "service_role";
-GRANT ALL ON FUNCTION "public"."uid_cache"() TO "anon";
 
 
 
