@@ -4,7 +4,7 @@
  */
 
 import { createClient } from "./client";
-import { logSupabaseError, logError } from "@/utils/debug/errorLogger";
+import { logSupabaseError, logError } from "@/tests/debug/errorLogger";
 
 /**
  * Check if an error object contains meaningful error information

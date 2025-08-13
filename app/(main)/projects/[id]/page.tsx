@@ -6,7 +6,7 @@ import { loadSRSStates } from "@/lib/srs/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
 import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
 import { canAccessDebugSync } from "@/utils/admin";
-import SRSDebugPanel from "@/components/debug/SRSDebugPanel";
+import SRSDebugPanel from "@/tests/debug/SRSDebugPanel";
 
 import DebugSRS from "../components/DebugSRS";
 

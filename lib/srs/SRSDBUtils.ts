@@ -11,7 +11,7 @@ import {
   logSupabaseError,
   logError,
   logDatabaseOperation,
-} from "@/utils/debug/errorLogger";
+} from "@/tests/debug/errorLogger";
 
 /**
  * Check if an error object contains meaningful error information
