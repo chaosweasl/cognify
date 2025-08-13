@@ -5,6 +5,17 @@ import {
   CreateProjectData 
 } from "@/src/types";
 import { useCallback } from "react";
+import { cachedFetch, CacheInvalidation } from "@/hooks/useCache";
+import { BatchAPI } from "@/lib/utils/batchAPI";
+import { ErrorHandling, Validators } from "@/lib/utils/errorHandling";
+import { logger, useRenderMonitor } from "@/lib/utils/devUtils";
+import { 
+  ProjectId, 
+  UserId, 
+  ProjectRow,
+  createProjectId,
+  createUserId 
+} from "@/lib/types";
 
 // Simple Zustand store for global project state only
 import { create } from "zustand";
@@ -34,94 +45,142 @@ const useProjectsGlobalStore = create<ProjectsGlobalState>((set) => ({
   })),
 }));
 
-// Simplified project management functions
+// Simplified project management functions with cache-first approach
 export const projectApi = {
   async loadProjects(): Promise<Project[]> {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    logger.debug('Loading projects with cache-first approach');
     
-    if (!user) throw new Error("Not authenticated");
+    return await cachedFetch(
+      'user_projects',
+      async () => {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) throw new Error("Not authenticated");
 
-    const { data: projects, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+        const { data: projects, error } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-    if (error) throw error;
-    return projects || [];
+        if (error) throw error;
+        logger.debug(`Loaded ${projects?.length || 0} projects from database`);
+        return projects || [];
+      },
+      { ttl: 5 * 60 * 1000 } // 5 minute cache
+    );
   },
 
   async createProject(data: CreateProjectData): Promise<Project> {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    logger.debug('Creating project:', data);
     
-    if (!user) throw new Error("Not authenticated");
+    // Validate input data
+    const validation = Validators.project(data);
+    if (!validation.isValid) {
+      throw validation.errors[0];
+    }
 
-    const { data: project, error } = await supabase
-      .from("projects")
-      .insert({
-        name: data.name,
-        description: data.description || null,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+    return await ErrorHandling.wrapAsync(async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("Not authenticated");
 
-    if (error) throw error;
-    return project;
+      const { data: project, error } = await supabase
+        .from("projects")
+        .insert({
+          name: data.name,
+          description: data.description || null,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Invalidate projects cache
+      CacheInvalidation.invalidatePattern('user_projects');
+      
+      logger.info(`Created project: ${project.name} (${project.id})`);
+      return project;
+    }, 'createProject')();
   },
 
   async updateProject(projectId: string, updates: Partial<Project>): Promise<void> {
-    const supabase = createClient();
+    logger.debug('Updating project:', projectId, updates);
     
-    const { error } = await supabase
-      .from("projects")
-      .update(updates)
-      .eq("id", projectId);
+    // Validate updates
+    if (updates.name !== undefined || updates.description !== undefined) {
+      const validation = Validators.project({ ...updates, name: updates.name || 'temp' });
+      if (!validation.isValid) {
+        throw validation.errors[0];
+      }
+    }
 
-    if (error) throw error;
+    return await ErrorHandling.wrapAsync(async () => {
+      const supabase = createClient();
+      
+      const { error } = await supabase
+        .from("projects")
+        .update(updates)
+        .eq("id", projectId);
+
+      if (error) throw error;
+      
+      // Invalidate relevant caches
+      CacheInvalidation.invalidatePattern('user_projects');
+      CacheInvalidation.invalidatePattern(`project_${projectId}`);
+      
+      logger.info(`Updated project: ${projectId}`);
+    }, 'updateProject')();
   },
 
   async deleteProject(projectId: string): Promise<void> {
-    const supabase = createClient();
+    logger.debug('Deleting project:', projectId);
     
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", projectId);
+    return await ErrorHandling.wrapAsync(async () => {
+      const supabase = createClient();
+      
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
 
-    if (error) throw error;
+      if (error) throw error;
+      
+      // Invalidate relevant caches
+      CacheInvalidation.invalidatePattern('user_projects');
+      CacheInvalidation.invalidatePattern(`project_${projectId}`);
+      
+      logger.info(`Deleted project: ${projectId}`);
+    }, 'deleteProject')();
   },
 
   async getProjectStats(projectId: string): Promise<ProjectStats> {
-    const supabase = createClient();
+    logger.debug('Getting project stats:', projectId);
     
-    // Get flashcard count
-    const { count: totalCards } = await supabase
-      .from("flashcards")
-      .select("*", { count: "exact", head: true })
-      .eq("project_id", projectId);
+    return await cachedFetch(
+      `project_stats_${projectId}`,
+      async () => {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) throw new Error("Not authenticated");
 
-    // Get SRS states count by state
-    const { data: srsStates } = await supabase
-      .from("srs_states")
-      .select("state, due")
-      .eq("project_id", projectId);
-
-    const now = new Date().toISOString();
-    return {
-      totalCards: totalCards || 0,
-      newCards: srsStates?.filter(s => s.state === "new").length || 0,
-      learningCards: srsStates?.filter(s => s.state === "learning").length || 0,
-      reviewCards: srsStates?.filter(s => s.state === "review").length || 0,
-      dueCards: srsStates?.filter(s => s.due <= now && s.state !== "new").length || 0,
-    };
+        // Use batch API for stats to prevent N+1 queries
+        return await BatchAPI.getProjectStats(projectId, user.id);
+      },
+      { ttl: 2 * 60 * 1000 } // 2 minute cache for stats
+    );
   }
 };
 
-// Main hook for components - simplified interface
+// Main hook for components - simplified interface with performance monitoring
 export const useProjectsStore = () => {
+  // Track component renders for performance monitoring
+  useRenderMonitor('useProjectsStore');
+  
   const { 
     projects, 
     setProjects, 
@@ -130,30 +189,54 @@ export const useProjectsStore = () => {
     removeProject 
   } = useProjectsGlobalStore();
 
-  // Create stable function references using useCallback
+  // Create stable function references using useCallback with proper dependencies
   const loadProjects = useCallback(async () => {
     try {
+      logger.debug('useProjectsStore.loadProjects called');
       const projects = await projectApi.loadProjects();
       setProjects(projects);
+      logger.info(`Loaded ${projects.length} projects in store`);
     } catch (error) {
-      console.error("Error loading projects:", error);
+      logger.error("Error loading projects:", error);
+      throw error; // Re-throw for component error handling
     }
   }, [setProjects]);
 
   const createProject = useCallback(async (data: CreateProjectData) => {
-    const project = await projectApi.createProject(data);
-    addProject(project);
-    return project;
+    try {
+      logger.debug('useProjectsStore.createProject called:', data);
+      const project = await projectApi.createProject(data);
+      addProject(project);
+      logger.info(`Created and added project: ${project.name}`);
+      return project;
+    } catch (error) {
+      logger.error("Error creating project:", error);
+      throw error;
+    }
   }, [addProject]);
 
   const updateProjectById = useCallback(async (projectId: string, updates: Partial<Project>) => {
-    await projectApi.updateProject(projectId, updates);
-    updateProject(projectId, updates);
+    try {
+      logger.debug('useProjectsStore.updateProject called:', projectId, updates);
+      await projectApi.updateProject(projectId, updates);
+      updateProject(projectId, updates);
+      logger.info(`Updated project: ${projectId}`);
+    } catch (error) {
+      logger.error("Error updating project:", error);
+      throw error;
+    }
   }, [updateProject]);
 
   const deleteProject = useCallback(async (projectId: string) => {
-    await projectApi.deleteProject(projectId);
-    removeProject(projectId);
+    try {
+      logger.debug('useProjectsStore.deleteProject called:', projectId);
+      await projectApi.deleteProject(projectId);
+      removeProject(projectId);
+      logger.info(`Deleted project: ${projectId}`);
+    } catch (error) {
+      logger.error("Error deleting project:", error);
+      throw error;
+    }
   }, [removeProject]);
 
   const getProject = useCallback((projectId: string) => {
@@ -161,7 +244,22 @@ export const useProjectsStore = () => {
   }, [projects]);
 
   const loadProjectStats = useCallback(async (projectId: string) => {
-    return await projectApi.getProjectStats(projectId);
+    try {
+      logger.debug('useProjectsStore.loadProjectStats called:', projectId);
+      const stats = await projectApi.getProjectStats(projectId);
+      logger.debug(`Loaded stats for project ${projectId}:`, stats);
+      return stats;
+    } catch (error) {
+      logger.error("Error loading project stats:", error);
+      throw error;
+    }
+  }, []);
+
+  // Invalidate cache when needed
+  const invalidateCache = useCallback(() => {
+    CacheInvalidation.invalidatePattern('user_projects');
+    CacheInvalidation.invalidatePattern('project_stats_');
+    logger.info('Invalidated projects cache');
   }, []);
 
   return {
@@ -169,19 +267,17 @@ export const useProjectsStore = () => {
     isLoadingProjects: false, // Simplified - no complex loading states
     error: null,
     
-    // Simplified actions that use the API
+    // Cache-optimized actions
     loadProjects,
-    
     createProject,
-    
     updateProjectById,
-    
     deleteProject,
 
     // Utility functions
     getProject,
-
-    // Remove complex stats caching - just fetch when needed
     loadProjectStats,
+    
+    // Cache management
+    invalidateCache,
   };
 };
