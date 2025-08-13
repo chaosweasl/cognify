@@ -51,15 +51,44 @@ async function main() {
     updated_at: now,
   }));
 
-  const { error: flashcardError } = await supabase
+  const { data: insertedFlashcards, error: flashcardError } = await supabase
     .from("flashcards")
-    .insert(flashcardRows, { count: "exact" });
+    .insert(flashcardRows)
+    .select();
 
-  if (flashcardError) {
+  if (flashcardError || !insertedFlashcards) {
     console.error("Error inserting flashcards:", flashcardError);
     return;
   }
   console.log(`Inserted ${flashcardRows.length} flashcards for project.`);
+
+  // Create SRS states for all new flashcards (this was missing!)
+  console.log("Creating SRS states for flashcards...");
+  const srsStatesToInsert = insertedFlashcards.map((flashcard) => ({
+    user_id: userId,
+    project_id: project.id,
+    card_id: flashcard.id,
+    interval: 1, // Ensure constraint compliance
+    ease: 2.5,
+    due: now, // New cards are immediately available
+    last_reviewed: now,
+    repetitions: 0,
+    state: "new",
+    lapses: 0,
+    learning_step: 0,
+    is_leech: false,
+    is_suspended: false,
+  }));
+
+  const { error: srsError } = await supabase
+    .from("srs_states")
+    .insert(srsStatesToInsert);
+
+  if (srsError) {
+    console.error("Error creating SRS states:", srsError);
+    return;
+  }
+  console.log(`Created SRS states for ${insertedFlashcards.length} flashcards.`);
 }
 
 main();
