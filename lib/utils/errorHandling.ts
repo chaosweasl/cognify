@@ -42,7 +42,7 @@ export enum ErrorType {
 export class CognifyError extends Error {
   public readonly type: ErrorType;
   public readonly code: string;
-  public readonly context?: Record<string, any>;
+  public readonly context?: Record<string, unknown>;
   public readonly timestamp: number;
   public readonly userMessage: string;
 
@@ -51,7 +51,7 @@ export class CognifyError extends Error {
     code: string,
     message: string,
     userMessage?: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'CognifyError';
@@ -84,7 +84,7 @@ export class CognifyError extends Error {
 
 // Specific error classes
 export class ValidationError extends CognifyError {
-  constructor(message: string, field?: string, value?: any) {
+  constructor(message: string, field?: string, value?: unknown) {
     super(
       ErrorType.VALIDATION,
       'VALIDATION_FAILED',
@@ -151,7 +151,7 @@ interface ValidationRule {
   min?: number;
   max?: number;
   pattern?: RegExp;
-  custom?: (value: any) => boolean | string;
+  custom?: (value: unknown) => boolean | string;
 }
 
 // Project validation schema
@@ -410,7 +410,7 @@ export const ErrorHandling = {
   /**
    * Wrap async functions with error handling
    */
-  wrapAsync: <T extends any[], R>(
+  wrapAsync: <T extends unknown[], R>(
     fn: (...args: T) => Promise<R>,
     context?: string
   ) => {

@@ -215,11 +215,11 @@ export type ChangeEventHandler<T = void> = (event: React.ChangeEvent<HTMLInputEl
 export type FormEventHandler<T = void> = (event: React.FormEvent<HTMLFormElement>) => T;
 
 // Async function types
-export type AsyncFunction<TArgs extends any[] = [], TReturn = void> = (
+export type AsyncFunction<TArgs extends unknown[] = [], TReturn = void> = (
   ...args: TArgs
 ) => Promise<TReturn>;
 
-export type AsyncEventHandler<TArgs extends any[] = []> = AsyncFunction<TArgs, void>;
+export type AsyncEventHandler<TArgs extends unknown[] = []> = AsyncFunction<TArgs, void>;
 
 // Utility types for optional properties
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

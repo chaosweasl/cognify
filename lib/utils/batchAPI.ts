@@ -250,7 +250,7 @@ const projectStatsBatchProcessor: BatchProcessor<ProjectStatsInput, ProjectStats
     const errors: { index: number; error: Error }[] = [];
 
     inputs.forEach((input, index) => {
-      const project = data.projects?.find((p: any) => p.id === input.projectId);
+      const project = data.projects?.find((p: { id: string; stats: unknown }) => p.id === input.projectId);
       
       if (project && project.stats) {
         success.push({
@@ -412,7 +412,7 @@ if (typeof window !== 'undefined') {
   
   // Make batch utilities available in development
   if (process.env.NODE_ENV === 'development') {
-    (window as any).cognifyBatch = {
+    (window as Window & { cognifyBatch?: unknown }).cognifyBatch = {
       api: BatchAPI,
       stats: BatchAPI.getStats,
     };
