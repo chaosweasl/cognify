@@ -2,7 +2,7 @@
  * Debug utility to analyze SRS card states and understand why no new cards are available
  */
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function debugSRSCardStates(userId: string, projectId: string) {
   const supabase = await createClient();

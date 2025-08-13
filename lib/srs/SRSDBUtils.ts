@@ -1,7 +1,7 @@
 // SRS Database Utilities for Supabase
 // Handles loading and saving SRS states to/from the database
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import {
   SRSCardState,
   initSRSStateWithSettings,

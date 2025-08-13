@@ -1,11 +1,11 @@
 import { getProjectById } from "../actions";
 import { notFound, redirect } from "next/navigation";
-import StudyFlashcards from "../components/StudyFlashcards";
-import { createClient } from "@/utils/supabase/server";
+import StudyFlashcards from "@/src/components/study/StudyFlashcards";
+import { createClient } from "@/lib/supabase/server";
 import { loadSRSStates } from "@/lib/srs/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
-import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
-import { canAccessDebugSync } from "@/utils/admin";
+import { getDailyStudyStats } from "@/lib/supabase/dailyStudyStats";
+import { canAccessDebugSync } from "@/lib/utils/admin";
 import SRSDebugPanel from "@/tests/debug/SRSDebugPanel";
 
 import DebugSRS from "@/tests/DebugSRS";

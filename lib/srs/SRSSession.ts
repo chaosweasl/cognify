@@ -6,7 +6,7 @@ import {
   getDailyStudyStats,
   updateDailyStudyStats,
   // incrementDailyStudyCounters, // removed unused import
-} from "@/utils/supabase/dailyStudyStats";
+} from "@/lib/supabase/dailyStudyStats";
 
 // --- CONSTANTS ---
 const UNDO_HISTORY_LIMIT = 20; // Maximum number of reviews to keep for undo

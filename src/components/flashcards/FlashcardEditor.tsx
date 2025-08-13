@@ -2,17 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ManageFlashcardsModal } from "./ManageFlashcardsModal";
-import { ProjectInfoForm } from "./ProjectInfoForm";
+import { ProjectInfoForm } from "../projects/ProjectInfoForm";
 import { FlashcardCardEditor } from "./FlashcardCardEditor";
 import { FlashcardNavigation } from "./FlashcardNavigation";
 import { useRouter } from "next/navigation";
 import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
-import { updateProject } from "../actions";
-import { Project } from "../utils/normalizeProject";
+import { updateProject } from "@/app/(main)/projects/actions";
+import { Project } from "@/lib/utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "@/hooks/useFlashcards";
-import ProjectResetComponent from "./ProjectResetComponent";
-import { CreateFlashcardData } from "../types/flashcard";
+import ProjectResetComponent from "../projects/ProjectResetComponent";
+import { CreateFlashcardData } from "../../types";
 
 // Working flashcard type for the editor (without full database fields)
 type EditorFlashcard = {

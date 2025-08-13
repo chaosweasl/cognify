@@ -1,7 +1,7 @@
 "use client";
 
 import { useProjectsStore } from "@/hooks/useProjects";
-import { ProjectList } from "./components/ProjectList";
+import { ProjectList } from "@/src/components/projects/ProjectList";
 import { BookOpen } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";

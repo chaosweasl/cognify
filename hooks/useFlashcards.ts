@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { Flashcard, CreateFlashcardData } from "@/src/types";
 import { create } from "zustand";
 

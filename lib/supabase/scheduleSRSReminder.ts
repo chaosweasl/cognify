@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Schedules a user notification for SRS review at the next due time (e.g., 4 AM EST on due date)

@@ -4,16 +4,16 @@ import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 
 import { useUserId } from "@/hooks/useUserId";
-import { getAppNotifications } from "@/utils/supabase/appNotifications";
+import { getAppNotifications } from "@/lib/supabase/appNotifications";
 import {
   getAppNotificationReads,
   markAppNotificationRead,
-} from "@/utils/supabase/appNotificationReads";
+} from "@/lib/supabase/appNotificationReads";
 import {
   getUserNotifications,
   markNotificationRead,
   deleteUserNotification,
-} from "@/utils/supabase/userNotifications";
+} from "@/lib/supabase/userNotifications";
 
 // Notification types
 interface UserNotification {

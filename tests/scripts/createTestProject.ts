@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createSuperClient } from "@/utils/supabase/superClient";
+import { createSuperClient } from "@/lib/supabase/superClient";
 import fs from "fs";
 import path from "path";
 

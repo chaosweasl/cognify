@@ -3,7 +3,7 @@
  * This can happen if there were timezone issues or other date/time problems
  */
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function fixStuckSRSCards(userId: string, projectId: string) {
   const supabase = await createClient();

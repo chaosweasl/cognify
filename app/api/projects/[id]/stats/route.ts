@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProjectStudyStats } from "@/lib/srs/SRSDBUtils";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 // GET /api/projects/[id]/stats
 export async function GET(

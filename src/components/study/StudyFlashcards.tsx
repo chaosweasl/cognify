@@ -3,8 +3,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
 import { useSettingsStore } from "@/hooks/useSettings";
-import { scheduleSRSReminderForProject } from "@/app/(main)/projects/components/scheduleSRSReminderClient";
-import { createClient } from "@/utils/supabase/client";
+import { scheduleSRSReminderForProject } from "@/lib/utils/scheduleSRSReminderClient";
+import { createClient } from "@/lib/supabase/client";
 import { saveSRSStates } from "@/lib/srs/SRSDBUtils";
 import {
   initSRSStateWithSettings,
@@ -24,10 +24,11 @@ import {
 } from "@/lib/srs/SRSSession";
 
 // Import sub-components
-import { DailyLimitsProgress, CardTypeIndicator } from "./StudyUtils";
-import { FlashcardDisplay } from "@/src/components/flashcards/FlashcardDisplay";
+import { DailyLimitsProgress } from "./DailyLimitsProgress";
+import { CardTypeIndicator } from "./CardTypeIndicator";
+import { FlashcardDisplay } from "../flashcards/FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
-import { EmptyFlashcardState } from "@/src/components/flashcards/EmptyFlashcardState";
+import { EmptyFlashcardState } from "../flashcards/EmptyFlashcardState";
 import { Flashcard } from "../../types";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Pencil } from "lucide-react";

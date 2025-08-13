@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 // SRS Settings interface - keep the same for compatibility
 export interface SRSSettings {

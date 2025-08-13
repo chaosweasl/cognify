@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createSuperClient } from "@/utils/supabase/superClient";
+import { createSuperClient } from "@/lib/supabase/superClient";
 
 const supabase = createSuperClient();
 const userId = process.env.TEST_USER_ID;

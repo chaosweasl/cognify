@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { resetProjectSRSData } from "../actions/project-reset-actions";
+import { resetProjectSRSData } from "@/app/(main)/projects/actions/project-reset-actions";
 
 interface ProjectResetComponentProps {
   projectId: string;

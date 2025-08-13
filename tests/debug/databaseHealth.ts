@@ -3,7 +3,7 @@
  * Helps diagnose common database issues that might cause empty error logs
  */
 
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 export interface DatabaseHealthResult {
   status: "healthy" | "warning" | "error";

@@ -1,4 +1,4 @@
-import { scheduleSRSReminder } from "@/utils/supabase/scheduleSRSReminder";
+import { scheduleSRSReminder } from "@/lib/supabase/scheduleSRSReminder";
 
 export async function scheduleSRSReminderForProject({
   user_id,
