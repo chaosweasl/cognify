@@ -597,7 +597,7 @@ function scheduleNewCard(
       state: "learning",
       learningStep: 0,
       due: addMinutes(now, stepInterval),
-      interval: stepInterval,
+      interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
     };
   }
 }
@@ -618,7 +618,7 @@ function scheduleLearningCard(
       ...card,
       learningStep: 0,
       due: addMinutes(now, stepInterval),
-      interval: stepInterval,
+      interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
     };
   } else if (rating === 1) {
     // Hard - repeat current step
@@ -630,7 +630,7 @@ function scheduleLearningCard(
     return {
       ...card,
       due: addMinutes(now, stepInterval),
-      interval: stepInterval,
+      interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
     };
   } else if (rating === 2) {
     // Good - advance to next step or graduate
@@ -662,7 +662,7 @@ function scheduleLearningCard(
         ...card,
         learningStep: nextStep,
         due: addMinutes(now, stepInterval),
-        interval: stepInterval,
+        interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
       };
     }
   } else {
@@ -718,7 +718,7 @@ function scheduleReviewCard(
       ease: newEase,
       learningStep: 0,
       due: addMinutes(now, firstRelearningStep),
-      interval: firstRelearningStep,
+      interval: Math.max(1, firstRelearningStep), // Ensure interval is always ≥ 1
       isLeech,
       isSuspended: shouldSuspend,
     };
@@ -809,7 +809,7 @@ function scheduleRelearningCard(
       ...card,
       learningStep: 0,
       due: addMinutes(now, firstRelearningStep),
-      interval: firstRelearningStep,
+      interval: Math.max(1, firstRelearningStep), // Ensure interval is always ≥ 1
     };
   } else if (rating === 1) {
     // Hard - repeat current relearning step
@@ -824,7 +824,7 @@ function scheduleRelearningCard(
     return {
       ...card,
       due: addMinutes(now, stepInterval),
-      interval: stepInterval,
+      interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
     };
   } else if (rating === 2) {
     // Good - advance to next relearning step or graduate back to review
@@ -867,7 +867,7 @@ function scheduleRelearningCard(
         ...card,
         learningStep: nextStep,
         due: addMinutes(now, stepInterval),
-        interval: stepInterval,
+        interval: Math.max(1, stepInterval), // Ensure interval is always ≥ 1
       };
     }
   } else {

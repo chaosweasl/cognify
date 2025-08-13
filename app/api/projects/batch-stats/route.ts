@@ -63,14 +63,20 @@ export async function GET() {
       const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
       const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
 
-      // Calculate due cards (cards that need to be reviewed now)
-      const dueCardsCount = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
+      // Calculate new cards (cards that haven't been studied yet)
+      const newCardsCount = projectSrsStates.filter(s => s.state === "new").length;
+      
+      // Calculate learning cards (cards currently in learning phase)
+      const learningCardsCount = projectSrsStates.filter(s => s.state === "learning").length;
+      
+      // Calculate due cards (ALL cards that need to be reviewed now, including new cards)
+      const dueCardsCount = projectSrsStates.filter(s => s.due <= now).length;
       
       projectStats[project.id] = {
         totalCards: projectFlashcards.length,
-        newCards: projectSrsStates.filter(s => s.state === "new").length,
-        learningCards: projectSrsStates.filter(s => s.state === "learning").length,
-        reviewCards: dueCardsCount, // For user clarity: review cards = due cards
+        newCards: newCardsCount,
+        learningCards: learningCardsCount,
+        reviewCards: dueCardsCount, // For user clarity: review cards = due cards (includes new cards)
         dueCards: dueCardsCount,
       };
       
