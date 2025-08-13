@@ -1,4 +1,5 @@
 import { useUserProfile } from "@/hooks/useUserProfile";
+import type { UserProfile } from "@/hooks/useUserProfile";
 
 export interface HandleSaveParams {
   profilePicture: File | null;
@@ -120,15 +121,14 @@ export function useSettingsActions() {
   }: {
     trimmedDisplayName: string;
     trimmedBio: string;
-    userProfile: unknown;
+    userProfile: UserProfile | null;
     profilePicture: File | null;
   }) {
     let displayName = "";
     let bio = "";
-    if (userProfile && typeof userProfile === "object") {
-      displayName =
-        (userProfile as { display_name?: string }).display_name ?? "";
-      bio = (userProfile as { bio?: string }).bio ?? "";
+    if (userProfile) {
+      displayName = userProfile.display_name ?? "";
+      bio = userProfile.bio ?? "";
     }
     return {
       isDisplayNameChanged: trimmedDisplayName !== displayName,
