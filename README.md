@@ -55,6 +55,61 @@ Cognify is an AI-powered learning platform that automatically converts your note
 5. **Open your browser**
    Navigate to `http://localhost:3000` to start using Cognify.
 
+## 🛠️ Development Commands
+
+### Essential Commands
+
+```bash
+# Development
+pnpm dev                    # Start development server with Turbopack
+pnpm build                  # Build for production
+pnpm start                  # Start production server
+pnpm lint                   # Run ESLint checks
+pnpm lint --fix            # Fix auto-fixable lint issues
+
+# Type Checking
+npx tsc --noEmit           # Check TypeScript compilation
+
+# Database Management
+pnpm exec tsx scripts/createTestProject.ts    # Create test data
+pnpm exec tsx scripts/deleteTestUserProjects.ts  # Clean test data
+pnpm exec tsx scripts/debugSRSCardStates.ts   # Debug SRS states
+```
+
+### Environment Setup
+
+**Required Environment Variables**:
+
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Optional: Analytics
+NEXT_PUBLIC_VERCEL_ANALYTICS=true
+```
+
+Copy `.env.example` to `.env.local` and fill in your Supabase credentials.
+
+### Development Workflow
+
+1. **Start development server**: `pnpm dev`
+2. **Make changes**: Edit files with hot reloading
+3. **Check types**: `npx tsc --noEmit`
+4. **Lint code**: `pnpm lint`
+5. **Test build**: `pnpm build`
+
+### Authentication Flow
+
+Cognify uses Supabase Auth with the following flow:
+
+1. User signs up/in via Supabase Auth
+2. JWT token stored in httpOnly cookies
+3. Middleware validates tokens on protected routes
+4. Row Level Security (RLS) enforces data isolation
+5. User profile automatically created on first login
+
 ## 🛠️ Technology Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript

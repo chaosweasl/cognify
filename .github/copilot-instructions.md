@@ -446,9 +446,71 @@ srs_states (id, user_id, flashcard_id, state, due, interval, ease, etc.)
 ### Getting Started
 
 1. Clone and install dependencies with `pnpm install`
-2. Set up Supabase environment variables
+2. Set up Supabase environment variables (copy `.env.example` to `.env.local`)
 3. Run development server with `pnpm dev`
 4. Focus on approved contribution areas
+
+### Essential Development Commands
+
+```bash
+# Development
+pnpm dev                    # Start development server with Turbopack
+pnpm build                  # Build for production
+pnpm start                  # Start production server
+pnpm lint                   # Run ESLint checks
+pnpm lint --fix            # Fix auto-fixable lint issues
+
+# Type Checking
+npx tsc --noEmit           # Check TypeScript compilation
+
+# Database Management & Debugging
+pnpm exec tsx scripts/createTestProject.ts    # Create test data
+pnpm exec tsx scripts/deleteTestUserProjects.ts  # Clean test data
+pnpm exec tsx scripts/debugSRSCardStates.ts   # Debug SRS states
+```
+
+### Debug Workflow for Performance Issues
+
+When debugging performance issues like infinite loops or excessive re-renders:
+
+1. **Use React DevTools Profiler** to identify render causes
+2. **Check useEffect dependencies** for unstable objects/functions
+3. **Add console.log statements** to trace data flow
+4. **Use browser Performance tab** to identify bottlenecks
+5. **Check network tab** for duplicate API calls
+6. **Verify cache utilization** with `window.cognifyCache` in dev mode
+
+### Code Quality Standards
+
+Before submitting any changes:
+
+- **Lint**: `pnpm lint` must pass without warnings
+- **Types**: `npx tsc --noEmit` must succeed
+- **Build**: `pnpm build` must complete successfully
+- **Performance**: No N+1 queries or infinite loops
+- **Console**: No console errors in browser
+
+### Architecture Guidelines
+
+See `ARCHITECTURE.md` for detailed system design. Key principles:
+
+- **Cache-first data access** - Always use caching layer for database queries
+- **Batch API calls** - Consolidate multiple requests into single endpoints
+- **Session-aware SRS** - Use `scheduleCardWithSessionLimits` for all card scheduling
+- **Proper TypeScript** - No `any` types, define interfaces for all data shapes
+- **Zustand stores** - Use existing cached stores rather than creating new ones
+- **Error boundaries** - Implement proper error handling at component boundaries
+
+### Performance Debugging Checklist
+
+When investigating performance issues:
+
+- [ ] Check useEffect dependency arrays for inline objects/functions
+- [ ] Verify API calls aren't duplicated or in loops
+- [ ] Ensure setState isn't called with new objects when values unchanged
+- [ ] Check parent components aren't recreating props each render
+- [ ] Verify cache is being used effectively
+- [ ] Check for memory leaks in async operations
 
 ### Before Contributing
 
