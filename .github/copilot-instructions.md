@@ -103,6 +103,10 @@ const { updatedCard, updatedSession } = scheduleCardWithSessionLimits(
 );
 ```
 
+### Database Schema Awareness
+
+**IMPORTANT:** When making any code or logic changes that interact with the database, always check and respect the current schema as defined in `schema-dump.sql`. Ensure that all queries, inserts, and updates are compatible with the actual database constraints (e.g., NOT NULL, data types, defaults) to avoid runtime errors. If you need to change the schema, update `schema-dump.sql` accordingly and communicate the migration steps.
+
 ### Database Patterns
 
 #### Core Schema
