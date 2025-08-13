@@ -28,6 +28,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onDelete,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Debug logging
+  console.log(`[ProjectCard] Rendering project ${project.id}:`, {
+    flashcardCount,
+    srsStats,
+    hasFlashcards: flashcardCount > 0,
+  });
+  
   // SRS stats logic can be refactored to fetch from API or use flashcardCount only
   // SRS stats logic placeholder (future use)
 

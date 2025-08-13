@@ -45,9 +45,14 @@ export function ProjectList() {
           const data = await response.json();
           const statsMap: Record<string, ProjectStats> = {};
           
+          console.log("[ProjectList] Batch API response:", data);
+          
           data.projects.forEach((project: ProjectWithStats) => {
             if (project.stats) {
               statsMap[project.id] = project.stats;
+              console.log(`[ProjectList] Stats for project ${project.id}:`, project.stats);
+            } else {
+              console.log(`[ProjectList] No stats for project ${project.id}`);
             }
           });
           
@@ -55,7 +60,8 @@ export function ProjectList() {
           console.log("[ProjectList] Successfully loaded batch stats for", Object.keys(statsMap).length, "projects");
         } else {
           console.error("[ProjectList] Failed to load batch stats:", response.status);
-          // Fallback: could implement individual loading here if needed
+          const errorText = await response.text();
+          console.error("[ProjectList] Error response:", errorText);
         }
       } catch (error) {
         console.error("[ProjectList] Error loading projects and stats:", error);
