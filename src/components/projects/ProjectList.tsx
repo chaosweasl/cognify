@@ -1,7 +1,7 @@
 import { ProjectCard } from "./ProjectCard";
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectStats } from "@/src/types";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface ProjectWithStats {
   id: string;
@@ -19,57 +19,53 @@ export function ProjectList() {
   } = useProjectsStore();
   
   const [projectStats, setProjectStats] = useState<Record<string, ProjectStats>>({});
-  const [isLoading, setIsLoading] = useState(false);
   const hasLoadedRef = useRef(false);
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
   // Load projects and their stats using batch API
-  const loadProjectsAndStats = useCallback(async () => {
-    // Prevent multiple simultaneous calls
-    if (isLoading || hasLoadedRef.current) {
-      console.log("[ProjectList] Skipping load - already loading or loaded");
-      return;
-    }
-
-    console.log("[ProjectList] Loading projects and stats...");
-    setIsLoading(true);
-    hasLoadedRef.current = true;
-    
-    try {
-      // First load basic projects
-      await loadProjects();
-      
-      // Then load all stats in one batch call
-      const response = await fetch("/api/projects/batch-stats");
-      if (response.ok) {
-        const data = await response.json();
-        const statsMap: Record<string, ProjectStats> = {};
-        
-        data.projects.forEach((project: ProjectWithStats) => {
-          if (project.stats) {
-            statsMap[project.id] = project.stats;
-          }
-        });
-        
-        setProjectStats(statsMap);
-        console.log("[ProjectList] Successfully loaded batch stats for", Object.keys(statsMap).length, "projects");
-      } else {
-        console.error("[ProjectList] Failed to load batch stats:", response.status);
-        // Fallback: could implement individual loading here if needed
-      }
-    } catch (error) {
-      console.error("[ProjectList] Error loading projects and stats:", error);
-      // Reset hasLoadedRef on error so we can retry
-      hasLoadedRef.current = false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadProjects, isLoading]);
-
   useEffect(() => {
+    const loadProjectsAndStats = async () => {
+      // Prevent multiple simultaneous calls using the ref
+      if (hasLoadedRef.current) {
+        console.log("[ProjectList] Skipping load - already loaded");
+        return;
+      }
+
+      console.log("[ProjectList] Loading projects and stats...");
+      hasLoadedRef.current = true;
+      
+      try {
+        // First load basic projects
+        await loadProjects();
+        
+        // Then load all stats in one batch call
+        const response = await fetch("/api/projects/batch-stats");
+        if (response.ok) {
+          const data = await response.json();
+          const statsMap: Record<string, ProjectStats> = {};
+          
+          data.projects.forEach((project: ProjectWithStats) => {
+            if (project.stats) {
+              statsMap[project.id] = project.stats;
+            }
+          });
+          
+          setProjectStats(statsMap);
+          console.log("[ProjectList] Successfully loaded batch stats for", Object.keys(statsMap).length, "projects");
+        } else {
+          console.error("[ProjectList] Failed to load batch stats:", response.status);
+          // Fallback: could implement individual loading here if needed
+        }
+      } catch (error) {
+        console.error("[ProjectList] Error loading projects and stats:", error);
+        // Reset hasLoadedRef on error so we can retry
+        hasLoadedRef.current = false;
+      }
+    };
+
     loadProjectsAndStats();
-  }, [loadProjectsAndStats]);
+  }, [loadProjects]);
 
   const handleDeleteProject = async (projectId: string) => {
     try {
