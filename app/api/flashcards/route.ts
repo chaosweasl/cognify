@@ -4,7 +4,7 @@ import {
   createFlashcards,
   replaceAllFlashcardsForProject 
 } from "@/app/(main)/projects/actions/flashcard-actions";
-import { CreateFlashcardData } from "@/app/(main)/projects/types/flashcard";
+import { CreateFlashcardData } from "@/src/types";
 
 // GET /api/flashcards?project_id=<id>
 export async function GET(request: NextRequest) {

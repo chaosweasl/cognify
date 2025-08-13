@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 
@@ -121,3 +121,25 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
   },
   setUserProfile: (profile) => set({ userProfile: profile }),
 }));
+
+// Simple hook to match the interface expected by simplified components
+export const useUserProfile = () => {
+  const { 
+    userProfile, 
+    isLoading, 
+    error, 
+    fetchUserProfile, 
+    updateUserProfile, 
+    uploadAvatar,
+    setUserProfile 
+  } = useUserProfileStore();
+  return { 
+    userProfile, 
+    isLoading, 
+    error, 
+    fetchUserProfile, 
+    updateUserProfile, 
+    uploadAvatar,
+    setUserProfile 
+  };
+};

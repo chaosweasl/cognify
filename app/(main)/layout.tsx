@@ -1,7 +1,7 @@
 "use client";
 
 import { HeaderMain } from "./components/HeaderMain";
-// Profile is auto-loaded by CacheProvider, no manual action needed
+// Profile loading handled by ProfileProvider component
 
 export default function MainLayout({
   children,

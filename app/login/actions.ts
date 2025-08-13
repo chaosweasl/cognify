@@ -1,13 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   validateEmail,
   validatePassword,
   checkRateLimit,
-} from "@/utils/security";
-import { getConfig } from "@/utils/env-config";
+} from "@/lib/utils/security";
+import { getConfig } from "@/lib/utils/env-config";
 
 const LOGIN_RATE_LIMIT = {
   windowMs: 15 * 60 * 1000, // 15 minutes

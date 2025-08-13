@@ -1,209 +1,103 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { ProjectStats } from "@/src/types";
 
-// Types for SRS states from database
-interface SRSState {
-  card_id: string;
-  state: string;
-  due: string;
-  is_suspended: boolean;
-}
-
-// GET /api/projects/batch-stats - Get stats for all user's projects in one request
+// GET /api/projects/batch-stats
+// Returns stats for all user's projects in a single API call
 export async function GET() {
+  console.log("[API] /api/projects/batch-stats called");
+  
   try {
     const supabase = await createClient();
-
-    // Get current user
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
+
     if (userError || !user) {
+      console.log("[API] batch-stats - User not authenticated:", userError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[BatchStats] Getting batch stats for user:", user.id);
+    console.log(`[API] batch-stats - Fetching stats for user: ${user.id}`);
 
-    // Get all projects for this user
+    // Get all projects for the user
     const { data: projects, error: projectsError } = await supabase
       .from("projects")
-      .select("id, name")
-      .eq("user_id", user.id);
+      .select("id, name, description, created_at, user_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-    if (projectsError) {
-      console.error("[BatchStats] Error fetching projects:", projectsError);
+    if (projectsError || !projects) {
+      console.log("[API] batch-stats - Error fetching projects:", projectsError);
       return NextResponse.json(
         { error: "Failed to fetch projects" },
         { status: 500 }
       );
     }
 
-    if (!projects || projects.length === 0) {
-      return NextResponse.json({});
-    }
+    // Get all flashcards for all projects in one query
+    const projectIds = projects.map(p => p.id);
+    console.log(`[API] batch-stats - Fetching flashcards for project IDs:`, projectIds);
+    
+    const { data: flashcards } = await supabase
+      .from("flashcards")
+      .select("project_id")
+      .in("project_id", projectIds);
+      
+    console.log(`[API] batch-stats - Found ${flashcards?.length || 0} flashcards total`);
 
-    const projectIds = projects.map((p) => p.id);
-    console.log(`[BatchStats] Processing ${projectIds.length} projects`);
-
-    // Optimize queries for large datasets by chunking
-    const CHUNK_SIZE = 50; // Process projects in chunks to avoid query size limits
-
-    const processProjectChunk = async (projectChunk: string[]) => {
-      // Get all flashcards for this chunk of projects
-      const { data: chunkFlashcards, error: flashcardsError } = await supabase
-        .from("flashcards")
-        .select("id, project_id")
-        .in("project_id", projectChunk);
-
-      if (flashcardsError) {
-        throw new Error(
-          `Failed to fetch flashcards: ${flashcardsError.message}`
-        );
-      }
-
-      return chunkFlashcards || [];
-    };
-
-    // Process projects in chunks to handle large datasets
-    const allFlashcards: Array<{ id: string; project_id: string }> = [];
-
-    for (let i = 0; i < projectIds.length; i += CHUNK_SIZE) {
-      const chunk = projectIds.slice(i, i + CHUNK_SIZE);
-      const chunkFlashcards = await processProjectChunk(chunk);
-      allFlashcards.push(...chunkFlashcards);
-    } // Group flashcards by project
-    const flashcardsByProject: Record<string, string[]> = {};
-    const allFlashcardIds: string[] = [];
-
-    allFlashcards.forEach((flashcard) => {
-      if (!flashcardsByProject[flashcard.project_id]) {
-        flashcardsByProject[flashcard.project_id] = [];
-      }
-      flashcardsByProject[flashcard.project_id].push(flashcard.id);
-      allFlashcardIds.push(flashcard.id);
-    });
-
-    // Get all SRS states for all flashcards, also chunked for large datasets
-    const allSrsStates: SRSState[] = [];
-    if (allFlashcardIds.length > 0) {
-      const SRS_CHUNK_SIZE = 1000; // Chunk SRS queries for very large flashcard sets
-
-      for (let i = 0; i < allFlashcardIds.length; i += SRS_CHUNK_SIZE) {
-        const flashcardChunk = allFlashcardIds.slice(i, i + SRS_CHUNK_SIZE);
-
-        const { data: srsStates, error: srsError } = await supabase
-          .from("srs_states")
-          .select("card_id, state, due, is_suspended")
-          .eq("user_id", user.id)
-          .in("card_id", flashcardChunk);
-
-        if (srsError) {
-          console.error(
-            "[BatchStats] Error fetching SRS states chunk:",
-            srsError
-          );
-          return NextResponse.json(
-            { error: "Failed to fetch SRS states" },
-            { status: 500 }
-          );
-        }
-
-        if (srsStates) {
-          allSrsStates.push(...srsStates);
-        }
-      }
-    }
-
-    // Group SRS states by project
-    const srsStatesByProject: Record<string, SRSState[]> = {};
-    allSrsStates.forEach((state) => {
-      // Find which project this flashcard belongs to
-      const projectId = Object.keys(flashcardsByProject).find((pid) =>
-        flashcardsByProject[pid].includes(state.card_id)
-      );
-
-      if (projectId) {
-        if (!srsStatesByProject[projectId]) {
-          srsStatesByProject[projectId] = [];
-        }
-        srsStatesByProject[projectId].push(state);
-      }
-    });
+    // Get all SRS states for all projects in one query
+    const { data: srsStates } = await supabase
+      .from("srs_states")
+      .select("project_id, state, due")
+      .in("project_id", projectIds);
+      
+    console.log(`[API] batch-stats - Found ${srsStates?.length || 0} SRS states total`);
 
     // Calculate stats for each project
-    const now = new Date();
-    const statsMap: Record<
-      string,
-      {
-        dueCards: number;
-        newCards: number;
-        learningCards: number;
-        totalCards: number;
-      }
-    > = {};
+    const now = new Date().toISOString();
+    const projectStats: Record<string, ProjectStats> = {};
 
-    projects.forEach((project) => {
-      const projectId = project.id;
-      const flashcardIds = flashcardsByProject[projectId] || [];
-      const srsStates = srsStatesByProject[projectId] || [];
+    projects.forEach(project => {
+      const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
+      const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
 
-      let dueCards = 0;
-      let newCards = 0;
-      let learningCards = 0;
-
-      if (flashcardIds.length === 0) {
-        // No flashcards for this project
-        statsMap[projectId] = {
-          dueCards: 0,
-          newCards: 0,
-          learningCards: 0,
-          totalCards: 0,
-        };
-        return;
-      }
-
-      // Count cards with no SRS state as new
-      const cardsWithStates = new Set(srsStates.map((s) => s.card_id));
-      const newCardsCount = flashcardIds.filter(
-        (id) => !cardsWithStates.has(id)
-      ).length;
-      newCards += newCardsCount;
-
-      // Process existing SRS states
-      srsStates.forEach((state) => {
-        if (state.is_suspended) return;
-
-        const dueDate = new Date(state.due);
-
-        if (state.state === "new") {
-          newCards++;
-        } else if (state.state === "learning" || state.state === "relearning") {
-          learningCards++;
-          if (dueDate <= now) {
-            dueCards++;
-          }
-        } else if (state.state === "review" && dueDate <= now) {
-          dueCards++;
-        }
-      });
-
-      statsMap[projectId] = {
-        dueCards,
-        newCards,
-        learningCards,
-        totalCards: flashcardIds.length,
+      // Calculate new cards (cards that haven't been studied yet)
+      const newCardsCount = projectSrsStates.filter(s => s.state === "new").length;
+      
+      // Calculate learning cards (cards currently in learning phase)
+      const learningCardsCount = projectSrsStates.filter(s => s.state === "learning").length;
+      
+      // Calculate due cards (ALL cards that need to be reviewed now, including new cards)
+      const dueCardsCount = projectSrsStates.filter(s => s.due <= now).length;
+      
+      projectStats[project.id] = {
+        totalCards: projectFlashcards.length,
+        newCards: newCardsCount,
+        learningCards: learningCardsCount,
+        reviewCards: dueCardsCount, // For user clarity: review cards = due cards (includes new cards)
+        dueCards: dueCardsCount,
       };
+      
+      console.log(`[API] batch-stats - Project ${project.id} (${project.name}):`, {
+        flashcards: projectFlashcards.length,
+        srsStates: projectSrsStates.length,
+        stats: projectStats[project.id]
+      });
     });
 
-    console.log(
-      `[BatchStats] Processed stats for ${
-        Object.keys(statsMap).length
-      } projects`
-    );
-    return NextResponse.json(statsMap);
+    console.log(`[API] batch-stats - Successfully calculated stats for ${projects.length} projects`);
+
+    return NextResponse.json({
+      projects: projects.map(project => ({
+        ...project,
+        stats: projectStats[project.id]
+      }))
+    });
+
   } catch (error) {
-    console.error("[BatchStats] Error in batch stats:", error);
+    console.error("[API] batch-stats - Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

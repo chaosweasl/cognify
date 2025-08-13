@@ -134,6 +134,85 @@ If you're working on code changes (themes, UI improvements), please:
    - Reference any related issues
    - Keep description clear and concise
 
+## 📋 Pull Request Guidelines
+
+### Before Submitting a PR
+
+**Code Quality Checklist**:
+- [ ] ESLint passes without warnings (`pnpm lint`)
+- [ ] TypeScript compilation succeeds (`npx tsc --noEmit`)
+- [ ] Build succeeds (`pnpm build`)
+- [ ] No console errors in browser
+- [ ] Changes tested in multiple browsers/devices
+
+**Performance Checklist**:
+- [ ] No N+1 database queries introduced
+- [ ] API endpoints use batch operations where possible
+- [ ] Components use React.memo/useCallback for optimization
+- [ ] No unnecessary re-renders or infinite loops
+- [ ] Images optimized and properly sized
+- [ ] Bundle size impact considered
+
+**Documentation Checklist**:
+- [ ] README updated if functionality changed
+- [ ] Comments added for complex logic
+- [ ] Type definitions updated if needed
+- [ ] API documentation updated if endpoints changed
+
+### PR Template
+
+Use this template for your pull request:
+
+```markdown
+## Description
+Brief description of what this PR does.
+
+## Type of Change
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📚 Documentation update
+- [ ] 🎨 Style/UI improvement
+- [ ] ⚡ Performance improvement
+
+## Testing
+- [ ] Tested locally in development mode
+- [ ] Tested build version
+- [ ] Cross-browser testing completed
+- [ ] Mobile responsiveness verified
+
+## Screenshots (if applicable)
+Include before/after screenshots for UI changes.
+
+## Performance Impact
+- [ ] No performance degradation
+- [ ] Database queries optimized
+- [ ] No infinite loops or excessive re-renders
+- [ ] Bundle size impact acceptable
+
+## Checklist
+- [ ] ESLint passes
+- [ ] TypeScript compiles without errors
+- [ ] Build succeeds
+- [ ] Documentation updated
+- [ ] Related issue referenced
+```
+
+### Code Review Process
+
+**Review Focus Areas**:
+
+1. **Performance**: Check for N+1 queries, excessive re-renders, memory leaks
+2. **Security**: Validate input sanitization, authentication checks
+3. **Accessibility**: Ensure ARIA labels, keyboard navigation, contrast
+4. **Type Safety**: Verify TypeScript usage, no `any` types
+5. **Code Quality**: Consistent patterns, readable code, proper error handling
+
+**Review Timeline**:
+- Initial feedback within 48 hours
+- Final approval within 1 week
+- Merge after all checks pass
+
 ## 🎨 Theme Contribution Guide
 
 We especially welcome new themes! Here's how to contribute:

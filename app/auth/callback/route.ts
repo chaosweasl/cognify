@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 // The client you created from the Server-Side Auth instructions
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 let SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cognify-chaosweasl.vercel.app';
 if (process.env.NODE_ENV === 'development') {

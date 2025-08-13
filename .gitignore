@@ -24,7 +24,7 @@ test-*.js
 
 # supabase
 /supabase
-/schema-dump.sql
+# /schema-dump.sql
 
 # misc
 .DS_Store

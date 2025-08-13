@@ -1,6 +1,6 @@
 "use client";
 
-import { useEnhancedUserProfile } from "@/components/CacheProvider";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import Image from "next/image";
 
 export default function PrivatePage() {
@@ -25,7 +25,7 @@ export default function PrivatePage() {
 
 // Inline UserProfileDisplay logic as a local component
 function UserProfileInline() {
-  const { userProfile } = useEnhancedUserProfile();
+  const { userProfile } = useUserProfile();
   if (!userProfile) return null;
   return (
     <div className="flex flex-col items-center">

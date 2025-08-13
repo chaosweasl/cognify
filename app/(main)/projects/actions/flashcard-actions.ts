@@ -1,12 +1,12 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   Flashcard,
   CreateFlashcardData,
   UpdateFlashcardData,
-} from "../types/flashcard";
-import { validateUUID, validateFlashcardContent } from "@/utils/security";
+} from "@/src/types";
+import { validateUUID, validateFlashcardContent } from "@/lib/utils/security";
 
 // Get all flashcards for a project
 export async function getFlashcardsByProjectId(
