@@ -38,16 +38,22 @@ export async function GET() {
 
     // Get all flashcards for all projects in one query
     const projectIds = projects.map(p => p.id);
+    console.log(`[API] batch-stats - Fetching flashcards for project IDs:`, projectIds);
+    
     const { data: flashcards } = await supabase
       .from("flashcards")
       .select("project_id")
       .in("project_id", projectIds);
+      
+    console.log(`[API] batch-stats - Found ${flashcards?.length || 0} flashcards total`);
 
     // Get all SRS states for all projects in one query
     const { data: srsStates } = await supabase
       .from("srs_states")
       .select("project_id, state, due")
       .in("project_id", projectIds);
+      
+    console.log(`[API] batch-stats - Found ${srsStates?.length || 0} SRS states total`);
 
     // Calculate stats for each project
     const now = new Date().toISOString();
@@ -64,6 +70,12 @@ export async function GET() {
         reviewCards: projectSrsStates.filter(s => s.state === "review").length,
         dueCards: projectSrsStates.filter(s => s.due <= now && s.state !== "new").length,
       };
+      
+      console.log(`[API] batch-stats - Project ${project.id} (${project.name}):`, {
+        flashcards: projectFlashcards.length,
+        srsStates: projectSrsStates.length,
+        stats: projectStats[project.id]
+      });
     });
 
     console.log(`[API] batch-stats - Successfully calculated stats for ${projects.length} projects`);
