@@ -4,6 +4,7 @@ import {
   ProjectStats, 
   CreateProjectData 
 } from "@/src/types";
+import { useCallback } from "react";
 
 // Simple Zustand store for global project state only
 import { create } from "zustand";
@@ -129,45 +130,58 @@ export const useProjectsStore = () => {
     removeProject 
   } = useProjectsGlobalStore();
 
+  // Create stable function references using useCallback
+  const loadProjects = useCallback(async () => {
+    try {
+      const projects = await projectApi.loadProjects();
+      setProjects(projects);
+    } catch (error) {
+      console.error("Error loading projects:", error);
+    }
+  }, [setProjects]);
+
+  const createProject = useCallback(async (data: CreateProjectData) => {
+    const project = await projectApi.createProject(data);
+    addProject(project);
+    return project;
+  }, [addProject]);
+
+  const updateProjectById = useCallback(async (projectId: string, updates: Partial<Project>) => {
+    await projectApi.updateProject(projectId, updates);
+    updateProject(projectId, updates);
+  }, [updateProject]);
+
+  const deleteProject = useCallback(async (projectId: string) => {
+    await projectApi.deleteProject(projectId);
+    removeProject(projectId);
+  }, [removeProject]);
+
+  const getProject = useCallback((projectId: string) => {
+    return projects.find(p => p.id === projectId) || null;
+  }, [projects]);
+
+  const loadProjectStats = useCallback(async (projectId: string) => {
+    return await projectApi.getProjectStats(projectId);
+  }, []);
+
   return {
     projects,
     isLoadingProjects: false, // Simplified - no complex loading states
     error: null,
     
     // Simplified actions that use the API
-    loadProjects: async () => {
-      try {
-        const projects = await projectApi.loadProjects();
-        setProjects(projects);
-      } catch (error) {
-        console.error("Error loading projects:", error);
-      }
-    },
+    loadProjects,
     
-    createProject: async (data: CreateProjectData) => {
-      const project = await projectApi.createProject(data);
-      addProject(project);
-      return project;
-    },
+    createProject,
     
-    updateProjectById: async (projectId: string, updates: Partial<Project>) => {
-      await projectApi.updateProject(projectId, updates);
-      updateProject(projectId, updates);
-    },
+    updateProjectById,
     
-    deleteProject: async (projectId: string) => {
-      await projectApi.deleteProject(projectId);
-      removeProject(projectId);
-    },
+    deleteProject,
 
     // Utility functions
-    getProject: (projectId: string) => {
-      return projects.find(p => p.id === projectId) || null;
-    },
+    getProject,
 
     // Remove complex stats caching - just fetch when needed
-    loadProjectStats: async (projectId: string) => {
-      return await projectApi.getProjectStats(projectId);
-    },
+    loadProjectStats,
   };
 };

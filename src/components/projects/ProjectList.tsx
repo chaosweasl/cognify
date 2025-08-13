@@ -1,7 +1,7 @@
 import { ProjectCard } from "./ProjectCard";
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectStats } from "@/src/types";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface ProjectWithStats {
   id: string;
@@ -19,12 +19,22 @@ export function ProjectList() {
   } = useProjectsStore();
   
   const [projectStats, setProjectStats] = useState<Record<string, ProjectStats>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
   // Load projects and their stats using batch API
   const loadProjectsAndStats = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoading || hasLoadedRef.current) {
+      console.log("[ProjectList] Skipping load - already loading or loaded");
+      return;
+    }
+
     console.log("[ProjectList] Loading projects and stats...");
+    setIsLoading(true);
+    hasLoadedRef.current = true;
     
     try {
       // First load basic projects
@@ -50,8 +60,12 @@ export function ProjectList() {
       }
     } catch (error) {
       console.error("[ProjectList] Error loading projects and stats:", error);
+      // Reset hasLoadedRef on error so we can retry
+      hasLoadedRef.current = false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [loadProjects]);
+  }, [loadProjects, isLoading]);
 
   useEffect(() => {
     loadProjectsAndStats();
