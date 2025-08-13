@@ -24,7 +24,7 @@ export async function GET() {
     // Get all projects for the user
     const { data: projects, error: projectsError } = await supabase
       .from("projects")
-      .select("id, name, description, created_at")
+      .select("id, name, description, created_at, user_id")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 

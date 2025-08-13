@@ -7,14 +7,14 @@ export type Flashcard = {
 export type RawProject = {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   flashcards?: string | Omit<Flashcard, "id">[];
   flashcardCount?: number;
   created_at: string;
   formattedCreatedAt?: string;
 };
 
-export type Project = {
+export type NormalizedProject = {
   id: string;
   name: string;
   description: string;
@@ -42,10 +42,11 @@ export function parseFlashcards(
   return parsed.map((card, idx) => ({ ...card, id: `${idx}` }));
 }
 
-export function normalizeProject(raw: RawProject | Project): Project {
-  // Accepts either RawProject or Project, always returns Project with id on flashcards
+export function normalizeProject(raw: RawProject | NormalizedProject): NormalizedProject {
+  // Accepts either RawProject or already normalized Project, always returns NormalizedProject
   return {
     ...raw,
+    description: raw.description || "",
     flashcards: parseFlashcards((raw as RawProject).flashcards),
     flashcardCount: (raw as RawProject).flashcardCount ?? 0,
   };

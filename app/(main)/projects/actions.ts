@@ -24,7 +24,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at")
+    .select("id, name, description, created_at, user_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -59,14 +59,10 @@ export type Flashcard = {
   back: string;
 };
 
-export type Project = {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-  flashcards: Flashcard[];
-  formattedCreatedAt?: string;
-};
+// Import the main Project type instead of duplicating
+import { Project as MainProject } from "@/src/types";
+
+export type Project = MainProject;
 
 export async function getProjects(): Promise<Project[]> {
   console.log(`[Projects] getProjects called`);
@@ -86,7 +82,7 @@ export async function getProjects(): Promise<Project[]> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at")
+    .select("id, name, description, created_at, user_id")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 

@@ -8,7 +8,7 @@ import { FlashcardNavigation } from "./FlashcardNavigation";
 import { useRouter } from "next/navigation";
 import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 import { updateProject } from "@/app/(main)/projects/actions";
-import { Project } from "@/lib/utils/normalizeProject";
+import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "@/hooks/useFlashcards";
 import ProjectResetComponent from "../projects/ProjectResetComponent";
@@ -23,7 +23,7 @@ type EditorFlashcard = {
 
 // Main FlashcardEditor Component
 interface FlashcardEditorProps {
-  project: Project;
+  project: NormalizedProject;
 }
 
 export function FlashcardEditor({ project }: FlashcardEditorProps) {
