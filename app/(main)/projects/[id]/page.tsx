@@ -8,7 +8,7 @@ import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
 import { canAccessDebugSync } from "@/utils/admin";
 import SRSDebugPanel from "@/tests/debug/SRSDebugPanel";
 
-import DebugSRS from "../components/DebugSRS";
+import DebugSRS from "@/tests/DebugSRS";
 
 export default async function ProjectStudyPage(props: {
   params: Promise<{ id: string }>;

@@ -78,7 +78,7 @@ export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
           label: "Learning",
           color: "text-warning",
           bgColor: "bg-warning/10",
-          description: `Step ${state.step + 1} of ${srsSettings.LEARNING_STEPS.length}`,
+          description: `Step ${state.learningStep + 1} of ${srsSettings.LEARNING_STEPS.length}`,
         };
       case "review":
         return {
@@ -94,7 +94,7 @@ export function CardTypeIndicator({ cardState }: CardTypeIndicatorProps) {
           label: "Relearning",
           color: "text-error",
           bgColor: "bg-error/10",
-          description: `Relearning step ${state.step + 1}`,
+          description: `Relearning step ${state.learningStep + 1}`,
         };
       default:
         return {

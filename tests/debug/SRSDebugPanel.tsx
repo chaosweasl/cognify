@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import {
   checkDatabaseHealth,
   DatabaseHealthResult,
-} from "@/utils/debug/databaseHealth";
+} from "@/tests/debug/databaseHealth";
 
 interface SRSDebugPanelProps {
   userId?: string;

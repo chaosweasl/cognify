@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
 import { useSettingsStore } from "@/hooks/useSettings";
-import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
+import { scheduleSRSReminderForProject } from "@/app/(main)/projects/components/scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
 import { saveSRSStates } from "@/lib/srs/SRSDBUtils";
 import {
@@ -28,7 +28,7 @@ import { DailyLimitsProgress, CardTypeIndicator } from "./StudyUtils";
 import { FlashcardDisplay } from "@/src/components/flashcards/FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "@/src/components/flashcards/EmptyFlashcardState";
-import { Flashcard } from "../types/flashcard";
+import { Flashcard } from "../../types";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Pencil } from "lucide-react";
 

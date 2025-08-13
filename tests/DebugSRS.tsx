@@ -5,7 +5,7 @@ import {
   debugStudyAvailability,
   fixStuckCards,
   createDueCards,
-} from "../actions/debug-actions";
+} from "./debug-actions";
 
 interface DebugSRSProps {
   projectId: string;

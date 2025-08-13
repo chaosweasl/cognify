@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Flashcard } from "../types/flashcard";
+import { Flashcard } from "../../types";
 
 interface FlashcardDisplayProps {
   card: Flashcard;
