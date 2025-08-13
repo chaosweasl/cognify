@@ -5,13 +5,13 @@ import { useUserId } from "@/hooks/useUserId";
 import { useSettingsStore } from "@/hooks/useSettings";
 import { scheduleSRSReminderForProject } from "./scheduleSRSReminderClient";
 import { createClient } from "@/utils/supabase/client";
-import { saveSRSStates } from "./SRSDBUtils";
+import { saveSRSStates } from "@/lib/srs/SRSDBUtils";
 import {
   initSRSStateWithSettings,
   scheduleSRSCardWithSettings,
   SRSRating,
   SRSCardState,
-} from "./SRSScheduler";
+} from "@/lib/srs/SRSScheduler";
 import {
   getNextCardToStudyWithSettings,
   initStudySessionWithFallback,
@@ -21,7 +21,7 @@ import {
   hasLearningCards,
   isStudySessionComplete,
   migrateDailyStudyDataToDatabase,
-} from "./SRSSession";
+} from "@/lib/srs/SRSSession";
 
 // Import sub-components
 import { DailyLimitsProgress } from "./DailyLimitsProgress";

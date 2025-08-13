@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProjectStudyStats } from "@/app/(main)/projects/components/SRSDBUtils";
+import { getProjectStudyStats } from "@/lib/srs/SRSDBUtils";
 import { createClient } from "@/utils/supabase/server";
 
 // GET /api/projects/[id]/stats

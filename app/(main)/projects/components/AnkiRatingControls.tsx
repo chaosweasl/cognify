@@ -1,5 +1,5 @@
 import React from "react";
-import { SRSRating, SRSCardState, DEFAULT_SRS_SETTINGS } from "./SRSScheduler";
+import { SRSRating, SRSCardState, DEFAULT_SRS_SETTINGS } from "@/lib/srs/SRSScheduler";
 
 interface AnkiRatingControlsProps {
   flipped: boolean;

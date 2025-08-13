@@ -89,14 +89,18 @@ export function ProjectList() {
         return (
           <ProjectCard
             key={project.id}
-            id={project.id}
-            name={project.name}
-            description={project.description}
-            createdAt={project.created_at}
-            dueCards={stats?.dueCards || 0}
-            newCards={stats?.newCards || 0}
-            learningCards={stats?.learningCards || 0}
-            totalCards={stats?.totalCards || 0}
+            project={{
+              id: project.id,
+              name: project.name,
+              description: project.description || "",
+              formattedCreatedAt: project.created_at
+            }}
+            flashcardCount={stats?.totalCards || 0}
+            srsStats={{
+              dueCards: stats?.dueCards || 0,
+              newCards: stats?.newCards || 0,
+              learningCards: stats?.learningCards || 0,
+            }}
             onDelete={() => handleDeleteProject(project.id)}
           />
         );

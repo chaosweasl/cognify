@@ -2,7 +2,7 @@ import { getProjectById } from "../actions";
 import { notFound, redirect } from "next/navigation";
 import StudyFlashcards from "../components/StudyFlashcards";
 import { createClient } from "@/utils/supabase/server";
-import { loadSRSStates } from "../components/SRSDBUtils";
+import { loadSRSStates } from "@/lib/srs/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
 import { getDailyStudyStats } from "@/utils/supabase/dailyStudyStats";
 import { canAccessDebugSync } from "@/utils/admin";

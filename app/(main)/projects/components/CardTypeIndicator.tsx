@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { RotateCcw, BookOpen, Target, Zap } from "lucide-react";
-import { SRSCardState } from "./SRSScheduler";
+import { SRSCardState } from "@/lib/srs/SRSScheduler";
 import { useSettingsStore } from "@/hooks/useSettings";
 
 interface CardTypeIndicatorProps {

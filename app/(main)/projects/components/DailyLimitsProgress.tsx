@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { DEFAULT_SRS_SETTINGS } from "./SRSScheduler";
+import { DEFAULT_SRS_SETTINGS } from "@/lib/srs/SRSScheduler";
 
 interface DailyLimitsProgressProps {
   newCardsStudied: number;
