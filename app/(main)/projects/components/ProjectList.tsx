@@ -1,14 +1,7 @@
 import { ProjectCard } from "./ProjectCard";
 import { useProjectsStore } from "@/hooks/useProjects";
+import { ProjectStats } from "@/src/types";
 import { useState, useEffect } from "react";
-
-// TypeScript interfaces for project stats
-interface ProjectStatsSummary {
-  dueCards: number;
-  newCards: number;
-  learningCards: number;
-  totalCards: number;
-}
 
 export function ProjectList() {
   const { 
@@ -16,10 +9,10 @@ export function ProjectList() {
     deleteProject, 
     loadProjects, 
     loadProjectStats, 
-    getProjectStats,
-    isLoadingProjects 
   } = useProjectsStore();
-  const [projectStats, setProjectStats] = useState<Record<string, ProjectStatsSummary>>({});
+  
+  const [projectStats, setProjectStats] = useState<Record<string, ProjectStats>>({});
+  const [loadingStats, setLoadingStats] = useState<Record<string, boolean>>({});
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
@@ -30,48 +23,35 @@ export function ProjectList() {
 
   // Load stats for each project
   useEffect(() => {
-    if (projects.length > 0) {
-      projects.forEach(project => {
-        loadProjectStats(project.id);
-      });
-    }
-  }, [projects, loadProjectStats]);
-
-  // Update local stats when store stats change
-  useEffect(() => {
-    const stats: Record<string, ProjectStatsSummary> = {};
-    
-    projects.forEach(project => {
-      const projectStat = getProjectStats(project.id);
-      if (projectStat) {
-        stats[project.id] = {
-          dueCards: projectStat.dueCards,
-          newCards: projectStat.newCards,
-          learningCards: projectStat.learningCards,
-          totalCards: projectStat.totalCards,
-        };
+    projects.forEach(async (project) => {
+      if (!projectStats[project.id] && !loadingStats[project.id]) {
+        setLoadingStats(prev => ({ ...prev, [project.id]: true }));
+        try {
+          const stats = await loadProjectStats(project.id);
+          setProjectStats(prev => ({ ...prev, [project.id]: stats }));
+        } catch (error) {
+          console.error(`Error loading stats for project ${project.id}:`, error);
+        } finally {
+          setLoadingStats(prev => ({ ...prev, [project.id]: false }));
+        }
       }
     });
-    
-    setProjectStats(stats);
-  }, [projects, getProjectStats]);
+  }, [projects, loadProjectStats, loadingStats, projectStats]);
 
   const handleDeleteProject = async (projectId: string) => {
     try {
       await deleteProject(projectId);
+      // Remove stats from local state
+      setProjectStats(prev => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [projectId]: _removed, ...rest } = prev;
+        return rest;
+      });
       console.log(`[ProjectList] Deleted project: ${projectId}`);
     } catch (error) {
       console.error("[ProjectList] Error deleting project:", error);
     }
   };
-
-  if (isLoadingProjects) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
 
   if (projects.length === 0) {
     return (

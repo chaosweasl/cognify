@@ -10,7 +10,7 @@ import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 import { updateProject } from "../actions";
 import { Project } from "../utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
-import { useFlashcardsStore } from "../hooks/useFlashcards";
+import { useFlashcardsStore } from "@/hooks/useFlashcards";
 import ProjectResetComponent from "./ProjectResetComponent";
 import { CreateFlashcardData } from "../types/flashcard";
 
