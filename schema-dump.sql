@@ -764,6 +764,11 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 
+ALTER TABLE ONLY "public"."daily_study_stats"
+    ADD CONSTRAINT "unique_user_date" UNIQUE ("user_id", "study_date");
+
+
+
 ALTER TABLE ONLY "public"."user_notifications"
     ADD CONSTRAINT "user_notifications_pkey" PRIMARY KEY ("id");
 
