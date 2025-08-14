@@ -81,6 +81,100 @@ $$;
 ALTER FUNCTION "public"."create_default_user_settings"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    new_flashcard_id UUID;
+    project_user_id UUID;
+BEGIN
+    -- Verify user owns the project
+    SELECT user_id INTO project_user_id 
+    FROM public.projects 
+    WHERE id = p_project_id;
+    
+    IF project_user_id IS NULL THEN
+        RAISE EXCEPTION 'Project not found';
+    END IF;
+    
+    IF project_user_id != p_user_id THEN
+        RAISE EXCEPTION 'Unauthorized access to project';
+    END IF;
+    
+    -- Insert flashcard
+    INSERT INTO public.flashcards (project_id, front, back, extra)
+    VALUES (p_project_id, p_front, p_back, p_extra)
+    RETURNING id INTO new_flashcard_id;
+    
+    -- SRS state will be created automatically by the trigger
+    -- But we'll verify it was created
+    IF NOT EXISTS (
+        SELECT 1 FROM public.srs_states 
+        WHERE card_id = new_flashcard_id 
+        AND user_id = p_user_id
+    ) THEN
+        RAISE EXCEPTION 'Failed to create SRS state for flashcard';
+    END IF;
+    
+    RETURN new_flashcard_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") IS 'Atomically creates a flashcard and its SRS state with proper authorization checks';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Insert SRS state for the new flashcard
+    INSERT INTO public.srs_states (
+        user_id,
+        project_id,
+        card_id,
+        interval,
+        ease,
+        due,
+        last_reviewed,
+        repetitions,
+        state,
+        lapses,
+        learning_step,
+        is_leech,
+        is_suspended
+    ) VALUES (
+        (SELECT user_id FROM public.projects WHERE id = NEW.project_id),
+        NEW.project_id,
+        NEW.id,
+        1,                      -- Initial interval
+        2.5,                    -- Default ease factor  
+        NEW.created_at,         -- New cards available immediately
+        NEW.created_at,         -- Last reviewed = creation time
+        0,                      -- No repetitions
+        'new',                  -- New card state
+        0,                      -- No lapses
+        0,                      -- Learning step 0
+        false,                  -- Not a leech
+        false                   -- Not suspended
+    );
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_srs_state_for_flashcard"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."create_srs_state_for_flashcard"() IS 'Function to create initial SRS state for newly inserted flashcards';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 100) RETURNS TABLE("card_id" "uuid", "project_id" "uuid", "due" timestamp with time zone, "state" "text", "front" "text", "back" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public, pg_catalog'
@@ -732,6 +826,14 @@ CREATE INDEX "idx_user_notifications_user_id" ON "public"."user_notifications" U
 
 
 
+CREATE OR REPLACE TRIGGER "create_srs_state_trigger" AFTER INSERT ON "public"."flashcards" FOR EACH ROW EXECUTE FUNCTION "public"."create_srs_state_for_flashcard"();
+
+
+
+COMMENT ON TRIGGER "create_srs_state_trigger" ON "public"."flashcards" IS 'Automatically creates an SRS state record when a new flashcard is inserted';
+
+
+
 CREATE OR REPLACE TRIGGER "create_user_settings_trigger" AFTER INSERT ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."create_default_user_settings"();
 
 
@@ -1053,6 +1155,18 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 REVOKE ALL ON FUNCTION "public"."create_default_user_settings"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."create_default_user_settings"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_default_user_settings"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "anon";
+GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "service_role";
 
 
 
