@@ -53,7 +53,6 @@ export interface ProjectStats {
   totalCards: number;
   newCards: number;
   learningCards: number;
-  reviewCards: number;
   dueCards: number;
 }
 

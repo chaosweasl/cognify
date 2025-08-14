@@ -69,14 +69,13 @@ export async function GET() {
       // Calculate learning cards (cards currently in learning phase)
       const learningCardsCount = projectSrsStates.filter(s => s.state === "learning").length;
       
-      // Calculate due cards (ALL cards that need to be reviewed now, including new cards)
-      const dueCardsCount = projectSrsStates.filter(s => s.due <= now).length;
+      // Calculate due cards (cards that need to be reviewed now, excluding new cards)
+      const dueCardsCount = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
       
       projectStats[project.id] = {
         totalCards: projectFlashcards.length,
         newCards: newCardsCount,
         learningCards: learningCardsCount,
-        reviewCards: dueCardsCount, // For user clarity: review cards = due cards (includes new cards)
         dueCards: dueCardsCount,
       };
       

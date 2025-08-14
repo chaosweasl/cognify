@@ -114,12 +114,11 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
 interface StudyStatsProps {
   newCards: number;
   learningCards: number;
-  reviewCards: number;
   dueCards: number;
 }
 
-function StudyStats({ newCards, learningCards, reviewCards }: StudyStatsProps) {
-  const totalReviewCards = reviewCards || 0;
+function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
+  const totalDueCards = dueCards || 0;
 
   return (
     <div className="grid grid-cols-3 gap-4 mb-4">
@@ -146,12 +145,12 @@ function StudyStats({ newCards, learningCards, reviewCards }: StudyStatsProps) {
       <div className="bg-base-100 rounded-lg p-3 text-center border">
         <div
           className={`text-lg font-bold ${
-            totalReviewCards > 0 ? "text-green-600" : "text-gray-400"
+            totalDueCards > 0 ? "text-green-600" : "text-gray-400"
           }`}
         >
-          {totalReviewCards}
+          {totalDueCards}
         </div>
-        <div className="text-xs text-base-content/70">Review</div>
+        <div className="text-xs text-base-content/70">Due</div>
       </div>
     </div>
   );
@@ -563,7 +562,7 @@ export default function StudyFlashcards({
         studyStats={{
           newCards: availableStats.availableNewCards,
           learningCards: availableStats.totalLearningCards,
-          reviewCards: availableStats.dueReviewCards,
+          dueCards: availableStats.dueReviewCards,
         }}
         nextReview={nextReview}
       />
@@ -617,8 +616,7 @@ export default function StudyFlashcards({
         <StudyStats
           newCards={availableStats.availableNewCards}
           learningCards={availableStats.totalLearningCards}
-          reviewCards={availableStats.dueReviewCards}
-          dueCards={availableStats.dueCards}
+          dueCards={availableStats.dueReviewCards}
         />
 
         <DailyLimitsProgress

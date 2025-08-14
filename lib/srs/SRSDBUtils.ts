@@ -440,7 +440,6 @@ export async function getUserStudyStats(
   totalCards: number;
   newCards: number;
   learningCards: number;
-  reviewCards: number;
   dueCards: number;
   leeches: number;
 } | null> {
@@ -462,7 +461,6 @@ export async function getUserStudyStats(
       totalCards: states.length,
       newCards: 0,
       learningCards: 0,
-      reviewCards: 0,
       dueCards: 0,
       leeches: 0,
     };
@@ -472,12 +470,12 @@ export async function getUserStudyStats(
       if (state.state === "new") stats.newCards++;
       else if (state.state === "learning" || state.state === "relearning")
         stats.learningCards++;
-      else if (state.state === "review") stats.reviewCards++;
 
-      // Count due cards (compare as dates)
+      // Count due cards (compare as dates) - exclude new cards
       if (
         typeof state.due === "string" &&
-        new Date(state.due).getTime() <= now.getTime()
+        new Date(state.due).getTime() <= now.getTime() &&
+        state.state !== "new"
       ) {
         stats.dueCards++;
       }

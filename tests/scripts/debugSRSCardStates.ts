@@ -109,7 +109,7 @@ export async function debugSRSCardStates(userId: string, projectId: string) {
         console.log(`Next learning card due in: ${minutesUntilNext} minutes`);
       }
 
-      console.log(`\n=== REVIEW CARDS ANALYSIS ===`);
+      console.log(`\n=== DUE CARDS ANALYSIS ===`);
       console.log(`Total review cards: ${reviewCards.length}`);
 
       const dueReviewCards = reviewCards.filter((s: any) => s.due <= now);
