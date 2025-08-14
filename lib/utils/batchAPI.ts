@@ -220,7 +220,6 @@ interface ProjectStatsOutput {
     totalCards: number;
     newCards: number;
     learningCards: number;
-    reviewCards: number;
     dueCards: number;
   };
 }
