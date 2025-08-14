@@ -360,6 +360,7 @@ export type CardState = "new" | "learning" | "review" | "relearning";
 
 export type SRSCardState = {
   id: string;
+  projectId: string; // ID of the project this card belongs to
   state: CardState;
   interval: number; // days (for review cards) or minutes (for learning cards)
   ease: number; // ease factor (only for review cards)
