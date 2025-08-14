@@ -2,6 +2,7 @@
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
+import { createClient } from "@/lib/supabase/client";
 import {
   getDailyStudyStats,
   updateDailyStudyStats,
