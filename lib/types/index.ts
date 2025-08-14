@@ -35,6 +35,8 @@ export interface ProjectRow {
   user_id: UserId;
   name: string;
   description: string | null;
+  new_cards_per_day: number;
+  max_reviews_per_day: number;
   created_at: ISOTimestamp;
   updated_at?: ISOTimestamp;
 }

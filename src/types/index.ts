@@ -5,6 +5,8 @@ export interface Project {
   name: string;
   description: string | null;
   created_at: string;
+  new_cards_per_day: number;
+  max_reviews_per_day: number;
   flashcards?: Flashcard[];
 }
 
@@ -54,10 +56,21 @@ export interface ProjectStats {
   newCards: number;
   learningCards: number;
   dueCards: number;
+  // Optional metadata for debugging and advanced features
+  _metadata?: {
+    totalNewCards: number;
+    totalDueReviewCards: number;
+    newCardsStudiedToday: number;
+    reviewsCompletedToday: number;
+    newCardsPerDay: number;
+    maxReviewsPerDay: number;
+  };
 }
 
 // Input types for creation
 export interface CreateProjectData {
   name: string;
   description?: string;
+  new_cards_per_day?: number;
+  max_reviews_per_day?: number;
 }
