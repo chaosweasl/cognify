@@ -238,7 +238,9 @@ export async function saveSRSStates(
   );
 
   // Add operation logging
-  logDatabaseOperation("SAVE", "srs_states", userId, projectId, {
+  logDatabaseOperation("SAVE srs_states", {
+    userId,
+    projectId,
     stateCount: Object.keys(srsStates).length,
   });
 
@@ -283,7 +285,9 @@ export async function saveSRSStates(
     );
 
     // Log successful operation
-    logDatabaseOperation("SAVE_SUCCESS", "srs_states", userId, projectId, {
+    logDatabaseOperation("SAVE_SUCCESS srs_states", {
+      userId,
+      projectId,
       savedCount: dbStates.length,
     });
 

@@ -4,7 +4,15 @@
  */
 
 import { createClient } from "./client";
-import { logSupabaseError, logError } from "../../tests/debug/errorLogger";
+
+// Simple logging functions (replacing removed debug utilities)
+function logSupabaseError(context: string, error: unknown) {
+  console.error(`[${context}] Supabase error:`, error);
+}
+
+function logError(context: string, error: unknown) {
+  console.error(`[${context}] Error:`, error);
+}
 
 /**
  * Check if an error object contains meaningful error information

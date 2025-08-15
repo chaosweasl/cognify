@@ -5,10 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { loadSRSStates } from "@/lib/srs/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
 import { getDailyStudyStats } from "@/lib/supabase/dailyStudyStats";
-import { canAccessDebugSync } from "@/lib/utils/admin";
-import SRSDebugPanel from "@/tests/debug/SRSDebugPanel";
-
-import DebugSRS from "@/tests/DebugSRS";
 
 export default async function ProjectStudyPage(props: {
   params: Promise<{ id: string }>;
@@ -114,8 +110,6 @@ export default async function ProjectStudyPage(props: {
 
   return (
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8 overflow-auto">
-      {/* Debug component - only visible to admins and in debug mode */}
-      {canAccessDebugSync(user) && <DebugSRS projectId={project.id} />}
       <StudyFlashcards
         flashcards={flashcards}
         projectName={project.name}
@@ -124,14 +118,6 @@ export default async function ProjectStudyPage(props: {
         maxReviewsPerDay={project.max_reviews_per_day ?? 100}
         existingSRSStates={existingSRSStates}
       />
-      {/* Floating Debug Panel - only visible to admins and in debug mode */}
-      {canAccessDebugSync(user) && user && (
-        <SRSDebugPanel
-          userId={user.id}
-          projectId={project.id}
-          srsStates={existingSRSStates}
-        />
-      )}
     </main>
   );
 }
