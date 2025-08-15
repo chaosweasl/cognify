@@ -8,26 +8,26 @@ export const isDevelopment = process.env.NODE_ENV === "development";
 export const isProduction = process.env.NODE_ENV === "production";
 
 // Smart logging functions that respect environment
-export const devLog = (...args: any[]) => {
+export const devLog = (...args: unknown[]) => {
   if (isDevelopment) {
     console.log(...args);
   }
 };
 
-export const devWarn = (...args: any[]) => {
+export const devWarn = (...args: unknown[]) => {
   if (isDevelopment) {
     console.warn(...args);
   }
 };
 
-export const devError = (...args: any[]) => {
+export const devError = (...args: unknown[]) => {
   if (isDevelopment) {
     console.error(...args);
   }
 };
 
 // Production-safe logging (for critical errors only)
-export const prodLog = (...args: any[]) => {
+export const prodLog = (...args: unknown[]) => {
   console.log(...args);
 };
 
