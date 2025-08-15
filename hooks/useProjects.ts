@@ -6,16 +6,8 @@ import {
 } from "@/src/types";
 import { useCallback } from "react";
 import { cachedFetch, CacheInvalidation } from "@/hooks/useCache";
-import { BatchAPI } from "@/lib/utils/batchAPI";
 import { ErrorHandling, Validators } from "@/lib/utils/errorHandling";
 import { logger, useRenderMonitor } from "@/lib/utils/devUtils";
-import { 
-  ProjectId, 
-  UserId, 
-  ProjectRow,
-  createProjectId,
-  createUserId 
-} from "@/lib/types";
 
 // Simple Zustand store for global project state only
 import { create } from "zustand";
@@ -48,24 +40,19 @@ const useProjectsGlobalStore = create<ProjectsGlobalState>((set) => ({
 // Simplified project management functions with cache-first approach
 export const projectApi = {
   async loadProjects(): Promise<Project[]> {
-    logger.debug('Loading projects with cache-first approach');
+    logger.debug('Loading projects with stats via API');
     
     return await cachedFetch(
       'user_projects',
       async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        // Use the enhanced projects API that includes stats
+        const response = await fetch('/api/projects');
+        if (!response.ok) {
+          throw new Error(`Failed to load projects: ${response.status}`);
+        }
         
-        if (!user) throw new Error("Not authenticated");
-
-        const { data: projects, error } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        logger.debug(`Loaded ${projects?.length || 0} projects from database`);
+        const projects = await response.json();
+        logger.debug(`Loaded ${projects?.length || 0} projects from API`);
         return projects || [];
       },
       { ttl: 5 * 60 * 1000 } // 5 minute cache
@@ -163,13 +150,14 @@ export const projectApi = {
     return await cachedFetch(
       `project_stats_${projectId}`,
       async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        // Use the individual project stats API endpoint
+        const response = await fetch(`/api/projects/${projectId}/stats`);
+        if (!response.ok) {
+          throw new Error(`Failed to load project stats: ${response.status}`);
+        }
         
-        if (!user) throw new Error("Not authenticated");
-
-        // Use batch API for stats to prevent N+1 queries
-        return await BatchAPI.getProjectStats(projectId, user.id);
+        const data = await response.json();
+        return data.stats;
       },
       { ttl: 2 * 60 * 1000 } // 2 minute cache for stats
     );

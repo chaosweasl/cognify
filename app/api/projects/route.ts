@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { ProjectStats } from "@/src/types";
 
 export async function GET() {
   const supabase = await createClient();
@@ -9,32 +10,87 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (userError || !user) return NextResponse.json([]);
 
+  // Get all projects with their settings
   const { data: projects, error: projectsError } = await supabase
     .from("projects")
-    .select("id, name, description, created_at")
+    .select("id, name, description, created_at, new_cards_per_day, max_reviews_per_day")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+    
   if (projectsError || !projects) return NextResponse.json([]);
-
-  // Fetch flashcard counts for each project
-  const projectIds = projects.map((p) => p.id);
-  let flashcardCounts: Record<string, number> = {};
-  if (projectIds.length > 0) {
-    const { data: flashcards, error: flashcardsError } = await supabase
-      .from("flashcards")
-      .select("project_id, id");
-    if (!flashcardsError && flashcards) {
-      flashcardCounts = flashcards.reduce((acc, card) => {
-        acc[card.project_id] = (acc[card.project_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-    }
+  
+  if (projects.length === 0) {
+    return NextResponse.json([]);
   }
 
-  // Attach flashcard count to each project
-  const projectsWithCounts = projects.map((project) => ({
-    ...project,
-    flashcardCount: flashcardCounts[project.id] || 0,
-  }));
-  return NextResponse.json(projectsWithCounts);
+  const projectIds = projects.map((p) => p.id);
+
+  // Get all flashcards for all projects in one query
+  const { data: flashcards } = await supabase
+    .from("flashcards")
+    .select("project_id")
+    .in("project_id", projectIds);
+
+  // Get all SRS states for all projects in one query
+  const { data: srsStates } = await supabase
+    .from("srs_states")
+    .select("project_id, state, due")
+    .in("project_id", projectIds);
+
+  // Get daily study stats for today
+  const today = new Date().toISOString().split("T")[0];
+  const { data: dailyStats } = await supabase
+    .from("daily_study_stats")
+    .select("project_id, new_cards_studied, reviews_completed")
+    .eq("user_id", user.id)
+    .eq("study_date", today)
+    .in("project_id", projectIds);
+
+  // Calculate stats for each project
+  const now = new Date().toISOString();
+  
+  const projectsWithStats = projects.map((project) => {
+    const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
+    const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
+    const projectDailyStats = dailyStats?.find(ds => ds.project_id === project.id);
+    
+    const newCardsStudiedToday = projectDailyStats?.new_cards_studied || 0;
+    const reviewsCompletedToday = projectDailyStats?.reviews_completed || 0;
+
+    // Calculate stats
+    const totalFlashcards = projectFlashcards.length;
+    const totalNewCards = projectSrsStates.filter(s => s.state === "new").length;
+    const learningCards = projectSrsStates.filter(s => s.state === "learning").length;
+    const dueReviewCards = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
+    
+    // Calculate remaining cards for today
+    const remainingNewCardsToday = Math.max(0, project.new_cards_per_day - newCardsStudiedToday);
+    const availableNewCards = Math.min(totalNewCards, remainingNewCardsToday);
+    
+    const remainingReviewsToday = project.max_reviews_per_day <= 0 
+      ? Infinity 
+      : Math.max(0, project.max_reviews_per_day - reviewsCompletedToday);
+    const availableDueCards = project.max_reviews_per_day <= 0 
+      ? dueReviewCards 
+      : Math.min(dueReviewCards, remainingReviewsToday);
+
+    const stats: ProjectStats = {
+      totalFlashcards,
+      totalNewCards,
+      availableNewCards,
+      learningCards,
+      dueCards: availableDueCards,
+      reviewCards: availableDueCards, // Same as dueCards for user clarity
+      newCardsStudiedToday,
+      reviewsCompletedToday,
+    };
+
+    return {
+      ...project,
+      flashcardCount: totalFlashcards, // Keep for backward compatibility
+      stats,
+    };
+  });
+
+  return NextResponse.json(projectsWithStats);
 }

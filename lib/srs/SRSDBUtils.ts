@@ -7,11 +7,6 @@ import {
   initSRSStateWithSettings,
   DEFAULT_SRS_SETTINGS,
 } from "./SRSScheduler";
-import {
-  logSupabaseError,
-  logError,
-  logDatabaseOperation,
-} from "@/tests/debug/errorLogger";
 
 /**
  * Check if an error object contains meaningful error information
@@ -45,6 +40,21 @@ function hasMeaningfulError(error: unknown): boolean {
   });
 
   return hasMessage || hasCode || hasDetails || hasHint || hasOtherProps;
+}
+
+// Simple logging functions (replacing removed debug utilities)
+function logSupabaseError(context: string, error: unknown) {
+  console.error(`[${context}] Supabase error:`, error);
+}
+
+function logError(context: string, error: unknown) {
+  console.error(`[${context}] Error:`, error);
+}
+
+function logDatabaseOperation(operation: string, details: unknown) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[DB] ${operation}:`, details);
+  }
 }
 
 // Database type for SRS states table

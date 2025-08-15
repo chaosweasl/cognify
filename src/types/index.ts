@@ -8,6 +8,9 @@ export interface Project {
   new_cards_per_day: number;
   max_reviews_per_day: number;
   flashcards?: Flashcard[];
+  // Optional stats when loaded from API
+  stats?: ProjectStats;
+  flashcardCount?: number;
 }
 
 // New flashcard types that match the database schema
@@ -52,19 +55,14 @@ export interface SRSState {
 }
 
 export interface ProjectStats {
-  totalCards: number;
-  newCards: number;
+  totalFlashcards: number;
+  totalNewCards: number;
+  availableNewCards: number;
   learningCards: number;
   dueCards: number;
-  // Optional metadata for debugging and advanced features
-  _metadata?: {
-    totalNewCards: number;
-    totalDueReviewCards: number;
-    newCardsStudiedToday: number;
-    reviewsCompletedToday: number;
-    newCardsPerDay: number;
-    maxReviewsPerDay: number;
-  };
+  reviewCards: number; // Same as dueCards for user clarity
+  newCardsStudiedToday: number;
+  reviewsCompletedToday: number;
 }
 
 // Input types for creation
