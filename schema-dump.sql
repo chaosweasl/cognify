@@ -765,7 +765,7 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 ALTER TABLE ONLY "public"."daily_study_stats"
-    ADD CONSTRAINT "unique_user_date" UNIQUE ("user_id", "study_date");
+    ADD CONSTRAINT "unique_user_project_date" UNIQUE ("user_id", "project_id", "study_date");
 
 
 
