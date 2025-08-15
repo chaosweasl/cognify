@@ -414,6 +414,7 @@ function calculateAnkiEase(
 export function initSRSStateWithSettings(
   cardIds: string[],
   settings: SRSSettings = DEFAULT_SRS_SETTINGS,
+  projectId: string = "unknown",
   noteId?: string,
   templateId?: string,
   tags?: string[]
@@ -435,6 +436,7 @@ export function initSRSStateWithSettings(
       isLeech: false,
       isSuspended: false,
       isBuried: false,
+      projectId,
       noteId,
       templateId,
       tags: tags ? [...tags] : undefined,
@@ -1174,7 +1176,8 @@ export function generateCardsFromNote(
     front: string;
     back: string;
   }>,
-  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS,
+  projectId: string = "unknown"
 ): Record<string, SRSCardState> {
   const cards: Record<string, SRSCardState> = {};
 
@@ -1216,6 +1219,7 @@ export function generateCardsFromNote(
       isLeech: false,
       isSuspended: false,
       isBuried: false,
+      projectId,
       noteId,
       templateId: template.id,
       tags: [], // Can be populated from note metadata

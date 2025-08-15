@@ -96,7 +96,7 @@ function srsStateToDatabase(
 /**
  * Convert database format to SRSCardState
  */
-function databaseToSRSState(dbState: DatabaseSRSState): SRSCardState {
+function databaseToSRSState(dbState: DatabaseSRSState, projectId: string): SRSCardState {
   return {
     id: dbState.card_id,
     state: dbState.state,
@@ -109,6 +109,7 @@ function databaseToSRSState(dbState: DatabaseSRSState): SRSCardState {
     learningStep: dbState.learning_step,
     isLeech: dbState.is_leech,
     isSuspended: dbState.is_suspended,
+    projectId: projectId,
   };
 }
 
@@ -146,7 +147,7 @@ export async function loadSRSStates(
         fullError: JSON.stringify(error, null, 2),
       });
       console.log("[SRS-DB] loadSRSStates - Falling back to default states");
-      return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
+      return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS, projectId);
     }
 
     console.log(
@@ -168,7 +169,8 @@ export async function loadSRSStates(
           typeof dbState.card_id === "string"
         ) {
           srsStates[dbState.card_id] = databaseToSRSState(
-            dbState as DatabaseSRSState
+            dbState as DatabaseSRSState,
+            projectId
           );
           existingCardIds.add(dbState.card_id);
           console.log(
@@ -188,7 +190,8 @@ export async function loadSRSStates(
       );
       const newStates = initSRSStateWithSettings(
         newCardIds,
-        DEFAULT_SRS_SETTINGS
+        DEFAULT_SRS_SETTINGS,
+        projectId
       );
       Object.assign(srsStates, newStates);
     }
@@ -205,7 +208,7 @@ export async function loadSRSStates(
       stack: error instanceof Error ? error.stack : undefined,
       fullError: error,
     });
-    return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
+    return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS, projectId);
   }
 }
 

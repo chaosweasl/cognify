@@ -241,11 +241,12 @@ export default function StudyFlashcards({
     const cardIds = (flashcards?.length > 0 ? flashcards : demoFlashcards).map(
       (c) => c.id
     );
-    return initSRSStateWithSettings(cardIds, srsSettings);
+    return initSRSStateWithSettings(cardIds, srsSettings, projectId);
   });
 
   // Study session state - initialize with empty session, load async
   const [studySession, setStudySession] = useState<StudySession>({
+    projectStats: {},
     newCardsStudied: 0,
     reviewsCompleted: 0,
     learningCardsInQueue: [],
