@@ -13,8 +13,12 @@
  * - TypeScript strict mode enforcement
  */
 
+// These imports are intentionally preserved for future implementation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cachedFetch } from '@/hooks/useCache';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { BatchAPI } from '@/lib/utils/batchAPI';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ErrorHandling, Validators } from '@/lib/utils/errorHandling';
 import { logger } from '@/lib/utils/devUtils';
 
@@ -109,8 +113,7 @@ class DevelopmentStandardsEnforcer {
    * Monitor API usage for N+1 query patterns
    */
   private monitorAPIUsage(): void {
-    let apiCallCounts = new Map<string, number>();
-    
+    // This will be implemented when performance tracking is enhanced
     setInterval(() => {
       // Simplified monitoring for now
       const recentCallsCount = 0; // Would get from performance tracker

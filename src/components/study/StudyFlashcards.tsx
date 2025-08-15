@@ -13,14 +13,15 @@ import {
   SRSCardState,
 } from "@/lib/srs/SRSScheduler";
 import {
-  getNextCardToStudyWithSettings,
+  getNextCardToStudyWithProjectSettings,
   initStudySessionWithFallback,
   updateStudySession,
-  getSessionAwareStudyStats,
+  getSessionAwareStudyStatsForProject,
   StudySession,
   hasLearningCards,
-  isStudySessionComplete,
+  isStudySessionCompleteForProject,
   migrateDailyStudyDataToDatabase,
+  ProjectSRSSettings,
 } from "@/lib/srs/SRSSession";
 
 // Import sub-components
@@ -37,6 +38,8 @@ interface StudyFlashcardsProps {
   flashcards: Flashcard[];
   projectName: string;
   projectId: string;
+  newCardsPerDay: number;
+  maxReviewsPerDay: number;
   existingSRSStates?: Record<string, SRSCardState>;
 }
 
@@ -204,11 +207,20 @@ export default function StudyFlashcards({
   flashcards,
   projectName,
   projectId,
+  newCardsPerDay,
+  maxReviewsPerDay,
   existingSRSStates,
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
   const { srsSettings } = useSettingsStore();
+
+  // Create project-specific settings
+  const projectSettings: ProjectSRSSettings = React.useMemo(() => ({
+    projectId,
+    newCardsPerDay,
+    maxReviewsPerDay,
+  }), [projectId, newCardsPerDay, maxReviewsPerDay]);
 
   // Settings are auto-loaded by the enhanced hook
 
@@ -315,8 +327,8 @@ export default function StudyFlashcards({
 
   // Recalculate session-aware stats on every SRS state change
   const availableStats = React.useMemo(
-    () => getSessionAwareStudyStats(srsState, studySession, srsSettings),
-    [srsState, studySession, srsSettings]
+    () => getSessionAwareStudyStatsForProject(srsState, studySession, srsSettings, projectSettings),
+    [srsState, studySession, srsSettings, projectSettings]
   );
 
   // Event handlers
@@ -397,10 +409,11 @@ export default function StudyFlashcards({
         const updatedNow = Date.now(); // Use current time for next card selection
         setSRSState((currentSRSState) => {
           setStudySession((currentSession) => {
-            const nextCardId = getNextCardToStudyWithSettings(
+            const nextCardId = getNextCardToStudyWithProjectSettings(
               currentSRSState,
               currentSession,
               srsSettings,
+              projectSettings,
               updatedNow // Pass consistent timestamp
             );
 
@@ -409,10 +422,11 @@ export default function StudyFlashcards({
             } else {
               // Use the proper session completion check
               if (
-                isStudySessionComplete(
+                isStudySessionCompleteForProject(
                   currentSRSState,
                   currentSession,
                   srsSettings,
+                  projectSettings,
                   updatedNow
                 )
               ) {
@@ -443,6 +457,7 @@ export default function StudyFlashcards({
       srsState,
       studySession,
       userId,
+      projectSettings,
     ]
   );
 
@@ -482,10 +497,11 @@ export default function StudyFlashcards({
         // Set a timer to refresh when the next card is due (plus small buffer)
         const timer = setTimeout(() => {
           const now = Date.now();
-          const nextCardId = getNextCardToStudyWithSettings(
+          const nextCardId = getNextCardToStudyWithProjectSettings(
             srsState,
             studySession,
             srsSettings,
+            projectSettings,
             now
           );
           if (nextCardId) {
@@ -496,25 +512,26 @@ export default function StudyFlashcards({
         return () => clearTimeout(timer);
       }
     }
-  }, [currentCardId, sessionComplete, srsState, studySession, srsSettings]);
+  }, [currentCardId, sessionComplete, srsState, studySession, srsSettings, projectSettings]);
 
   useEffect(() => {
     if (!currentCardId && !sessionComplete) {
       const now = Date.now(); // Use current timestamp
-      const nextCardId = getNextCardToStudyWithSettings(
+      const nextCardId = getNextCardToStudyWithProjectSettings(
         srsState,
         studySession,
         srsSettings,
+        projectSettings,
         now // Pass consistent timestamp
       );
       setCurrentCardId(nextCardId);
 
       // Use the proper session completion check
-      if (isStudySessionComplete(srsState, studySession, srsSettings, now)) {
+      if (isStudySessionCompleteForProject(srsState, studySession, srsSettings, projectSettings, now)) {
         setSessionComplete(true);
       }
     }
-  }, [srsState, studySession, currentCardId, sessionComplete, srsSettings]);
+  }, [srsState, studySession, currentCardId, sessionComplete, srsSettings, projectSettings]);
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
       // Only schedule reminders if there are NO learning cards left

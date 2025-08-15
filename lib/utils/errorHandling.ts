@@ -38,6 +38,14 @@ export enum ErrorType {
   UNKNOWN = 'UNKNOWN',
 }
 
+// Supabase error interface
+interface SupabaseError {
+  code?: string;
+  message?: string;
+  details?: string;
+  hint?: string;
+}
+
 // Base error class with additional context
 export class CognifyError extends Error {
   public readonly type: ErrorType;
@@ -452,7 +460,7 @@ export const ErrorHandling = {
     
     // Handle Supabase errors
     if (error && typeof error === 'object' && 'code' in error) {
-      const supabaseError = error as any;
+      const supabaseError = error as SupabaseError;
       
       if (supabaseError.code === 'PGRST116') {
         return {
@@ -527,7 +535,19 @@ export const ErrorHandling = {
 };
 
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  (window as any).cognifyErrors = {
+  (window as typeof window & { 
+    cognifyErrors: {
+      ErrorType: typeof ErrorType;
+      CognifyError: typeof CognifyError;
+      ValidationError: typeof ValidationError;
+      AuthenticationError: typeof AuthenticationError;
+      AuthorizationError: typeof AuthorizationError;
+      DatabaseError: typeof DatabaseError;
+      SRSError: typeof SRSError;
+      Validators: typeof Validators;
+      ErrorHandling: typeof ErrorHandling;
+    }
+  }).cognifyErrors = {
     ErrorType,
     CognifyError,
     ValidationError,

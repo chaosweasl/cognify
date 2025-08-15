@@ -15,6 +15,23 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+// Browser Performance API extensions (not fully typed in lib.dom.d.ts)
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+interface ExtendedPerformance extends Performance {
+  memory?: PerformanceMemory;
+}
+
+declare global {
+  interface Window {
+    performance: ExtendedPerformance;
+  }
+}
+
 // Performance monitoring interfaces
 interface RenderInfo {
   componentName: string;
@@ -142,7 +159,9 @@ class PerformanceTracker {
     if (!('memory' in performance)) return;
 
     this.memoryInterval = setInterval(() => {
-      const memory = (performance as any).memory;
+      const memory = (performance as ExtendedPerformance).memory;
+      if (!memory) return; // Guard against undefined memory
+      
       this.metrics.memoryUsage.push({
         timestamp: Date.now(),
         usedJSHeapSize: memory.usedJSHeapSize,
@@ -333,25 +352,25 @@ class DebugLogger {
     this.level = level;
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.DEBUG && process.env.NODE_ENV === 'development') {
       console.log(`${this.prefix} [DEBUG]`, message, ...args);
     }
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.INFO && process.env.NODE_ENV === 'development') {
       console.info(`${this.prefix} [INFO]`, message, ...args);
     }
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.WARN) {
       console.warn(`${this.prefix} [WARN]`, message, ...args);
     }
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.level <= LogLevel.ERROR) {
       console.error(`${this.prefix} [ERROR]`, message, ...args);
     }
@@ -420,7 +439,7 @@ export const PerfUtils = {
   /**
    * Throttle function calls
    */
-  throttle: <T extends any[]>(
+  throttle: <T extends unknown[]>(
     fn: (...args: T) => void,
     delay: number
   ) => {
@@ -437,7 +456,7 @@ export const PerfUtils = {
   /**
    * Debounce function calls
    */
-  debounce: <T extends any[]>(
+  debounce: <T extends unknown[]>(
     fn: (...args: T) => void,
     delay: number
   ) => {
@@ -478,7 +497,7 @@ export const DevUtils = process.env.NODE_ENV === 'development' ? {
 
 // Make development utilities available globally in development
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  (window as any).cognifyDev = DevUtils;
+  (window as typeof window & { cognifyDev: typeof DevUtils }).cognifyDev = DevUtils;
 }
 
 // Cleanup on unmount
