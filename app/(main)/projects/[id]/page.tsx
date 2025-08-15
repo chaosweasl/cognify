@@ -120,8 +120,8 @@ export default async function ProjectStudyPage(props: {
         flashcards={flashcards}
         projectName={project.name}
         projectId={project.id}
-        newCardsPerDay={project.new_cards_per_day || 20}
-        maxReviewsPerDay={project.max_reviews_per_day || 100}
+        newCardsPerDay={project.new_cards_per_day ?? 20}
+        maxReviewsPerDay={project.max_reviews_per_day ?? 100}
         existingSRSStates={existingSRSStates}
       />
       {/* Floating Debug Panel - only visible to admins and in debug mode */}
