@@ -2,29 +2,33 @@
 
 ## Core Philosophy
 
-Cognify is designed to be **lightweight, maintainable, and solo-developer friendly**. Every architectural decision prioritizes simplicity over sophistication, enabling rapid development and easy debugging.
+Cognify is designed to be **lightweight and maintainable**. Every architectural decision prioritizes simplicity over sophistication, enabling rapid development and easy debugging.
 
 ## Design Principles
 
 ### 1. **Simplicity First**
+
 - Minimal abstractions and layers
 - Clear, linear data flow
 - Avoid over-engineering for future scale
 - Choose readable code over clever code
 
 ### 2. **Efficient by Default**
+
 - Batch database operations where possible
 - Smart caching with automatic invalidation
 - Lazy loading and memoization patterns
 - Minimal re-renders and API calls
 
 ### 3. **Type Safety Without Complexity**
+
 - Strong TypeScript usage throughout
 - Simple, clear type definitions
 - Avoid complex generic abstractions
 - Prefer explicit types over inference where clarity matters
 
 ### 4. **Solo-Developer Maintainability**
+
 - Self-documenting code structure
 - Consistent patterns across features
 - Easy debugging and error tracking
@@ -33,6 +37,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 ## Technical Stack
 
 ### Core Technologies
+
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS, DaisyUI for components
 - **Database**: Supabase (PostgreSQL) with Row Level Security
@@ -41,6 +46,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 - **Deployment**: Vercel
 
 ### Key Libraries
+
 - `lucide-react` - Icons
 - `react-hot-toast` - Notifications
 - `zustand` - Global state (projects list only)
@@ -63,12 +69,14 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 ## Data Flow
 
 ### 1. Authentication Flow
+
 1. User signs up/in via Supabase Auth
 2. JWT token stored in httpOnly cookies
 3. Middleware validates tokens on protected routes
 4. Row Level Security enforces data isolation
 
 ### 2. Application Data Flow
+
 1. **Page Component** receives initial data via Server Components
 2. **Client Components** use hooks for interactive data
 3. **Hooks** coordinate with cached API calls
@@ -76,6 +84,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 5. **Database** enforces security and data integrity
 
 ### 3. Study Session Flow
+
 1. Load project and flashcards
 2. Calculate available cards using SRS algorithm
 3. Present cards in optimized order
@@ -85,19 +94,22 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 ## Core Features
 
 ### Projects
+
 - **Purpose**: Container for related flashcards
-- **Key Files**: 
+- **Key Files**:
   - `app/(main)/projects/` - Pages and layouts
   - `hooks/useProjects.ts` - Data management
   - `src/components/projects/` - UI components
 
 ### Flashcards
+
 - **Purpose**: Basic front/back card structure
 - **Key Files**:
   - `app/(main)/projects/actions/flashcard-actions.ts` - CRUD operations
   - `src/components/flashcards/` - UI components
 
 ### Spaced Repetition System (SRS)
+
 - **Purpose**: SM-2 algorithm implementation for optimal learning
 - **Key Files**:
   - `lib/srs/` - Core SRS logic
@@ -105,6 +117,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
   - Database triggers for automatic SRS state creation
 
 ### User Management
+
 - **Purpose**: Authentication and profile management
 - **Key Files**:
   - `hooks/useUserId.ts` - User identification
@@ -113,6 +126,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 ## Database Schema
 
 ### Core Tables
+
 - `profiles` - User profiles and preferences
 - `projects` - Study projects/decks
 - `flashcards` - Card content (front/back)
@@ -120,6 +134,7 @@ Cognify is designed to be **lightweight, maintainable, and solo-developer friend
 - `daily_study_stats` - Progress tracking
 
 ### Key Relationships
+
 ```sql
 profiles (1) ──── (∞) projects
 projects (1) ──── (∞) flashcards
@@ -130,11 +145,13 @@ profiles (1) ──── (∞) srs_states
 ## Caching Strategy
 
 ### Cache Layers
+
 1. **Zustand Store** - Global project list only
 2. **Custom Cache Hook** - API response caching with TTL
 3. **Session Storage** - Browser-level persistence
 
 ### Cache Invalidation
+
 - **Pattern-based**: Invalidate related data (e.g., all project data)
 - **Version-based**: Global cache busting
 - **Automatic cleanup**: Every 5 minutes
@@ -162,24 +179,28 @@ cognify/
 ## Development Guidelines
 
 ### Code Organization
+
 - **Server Components** for initial data loading
 - **Client Components** for interactivity
 - **Custom Hooks** for data logic
 - **Pure Functions** for business logic
 
 ### Error Handling
+
 - Clear error messages for users
 - Comprehensive logging for debugging
 - Graceful fallbacks for failed operations
 - Type-safe error boundaries
 
 ### Performance
+
 - Batch database operations
 - Memoize expensive calculations
 - Lazy load components and data
 - Monitor and eliminate N+1 queries
 
 ### Testing Philosophy
+
 - Manual testing for UI workflows
 - Database integrity via constraints
 - Type safety via TypeScript
@@ -188,6 +209,7 @@ cognify/
 ## Deployment
 
 ### Environment Variables
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=<supabase-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase-anon-key>
@@ -195,12 +217,14 @@ NEXT_PUBLIC_SITE_URL=<site-url>
 ```
 
 ### Build Process
+
 ```bash
 npm run build    # Next.js production build
 npm start        # Start production server
 ```
 
 ### Database Migrations
+
 - Use Supabase dashboard for schema changes
 - Update `schema-dump.sql` for documentation
 - Test with production data dumps
@@ -208,12 +232,14 @@ npm start        # Start production server
 ## Scaling Considerations
 
 ### Current Limitations (By Design)
+
 - Single developer maintenance
 - No complex CI/CD pipeline
 - Minimal testing infrastructure
 - Simple monitoring
 
 ### Future Scaling Points
+
 1. **User Growth**: Add database indexing and query optimization
 2. **Feature Complexity**: Consider feature flags and A/B testing
 3. **Team Growth**: Add comprehensive testing and CI/CD
@@ -222,16 +248,19 @@ npm start        # Start production server
 ## Security
 
 ### Authentication
+
 - Supabase Auth with JWT tokens
 - httpOnly cookies for token storage
 - Automatic token refresh
 
 ### Authorization
+
 - Row Level Security (RLS) in database
 - User-specific data isolation
 - Admin privilege checking
 
 ### Data Protection
+
 - Environment variable validation
 - Input sanitization
 - SQL injection prevention via Supabase client
@@ -239,12 +268,14 @@ npm start        # Start production server
 ## Maintenance
 
 ### Regular Tasks
+
 - Update dependencies monthly
 - Monitor error logs weekly
 - Review performance metrics
 - Clean up unused code
 
 ### Debugging Tools
+
 - Browser dev tools for frontend
 - Supabase dashboard for database
 - Vercel analytics for performance
@@ -252,4 +283,4 @@ npm start        # Start production server
 
 ---
 
-*This architecture prioritizes developer velocity and maintainability over enterprise-scale complexity. As the application grows, individual components can be enhanced without major architectural changes.*
+_This architecture prioritizes developer velocity and maintainability over enterprise-scale complexity. As the application grows, individual components can be enhanced without major architectural changes._
