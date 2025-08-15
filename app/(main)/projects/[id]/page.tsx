@@ -51,8 +51,8 @@ export default async function ProjectStudyPage(props: {
     if (user) {
       console.log(`[StudyPage] Checking daily limits and card availability`);
       const dailyStats = await getDailyStudyStats(user.id);
-      const NEW_CARDS_PER_DAY = 20; // TODO: Get from user settings
-      const MAX_REVIEWS_PER_DAY = 200; // TODO: Get from user settings
+      const NEW_CARDS_PER_DAY = project.new_cards_per_day ?? 20; // TODO: Get from user settings
+      const MAX_REVIEWS_PER_DAY = project.max_reviews_per_day ?? 200; // TODO: Get from user settings
 
       console.log(`[StudyPage] Daily stats:`, {
         newCardsStudied: dailyStats.newCardsStudied,
@@ -120,6 +120,8 @@ export default async function ProjectStudyPage(props: {
         flashcards={flashcards}
         projectName={project.name}
         projectId={project.id}
+        newCardsPerDay={project.new_cards_per_day ?? 20}
+        maxReviewsPerDay={project.max_reviews_per_day ?? 100}
         existingSRSStates={existingSRSStates}
       />
       {/* Floating Debug Panel - only visible to admins and in debug mode */}

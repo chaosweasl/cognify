@@ -14,7 +14,7 @@ interface SessionStats {
 interface StudyStats {
   newCards: number;
   learningCards: number;
-  reviewCards: number;
+  dueCards: number;
 }
 
 interface SessionCompleteProps {
@@ -119,9 +119,9 @@ export function SessionComplete({
             </div>
             <div>
               <div className="font-bold text-green-600">
-                {studyStats.reviewCards}
+                {studyStats.dueCards}
               </div>
-              <div className="text-base-content/70">Review</div>
+              <div className="text-base-content/70">Due</div>
             </div>
           </div>
         </div>

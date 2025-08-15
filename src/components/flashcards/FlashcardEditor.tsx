@@ -38,6 +38,8 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
+  const [newCardsPerDay, setNewCardsPerDay] = useState(project.new_cards_per_day || 20);
+  const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(project.max_reviews_per_day || 100);
   const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([
     { front: "", back: "" },
   ]); // Always start with at least one card
@@ -168,6 +170,8 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
         id: project.id,
         name,
         description,
+        new_cards_per_day: newCardsPerDay,
+        max_reviews_per_day: maxReviewsPerDay,
       });
 
       // Only save non-empty cards (at least one non-empty field)
@@ -299,6 +303,10 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
               setName={setName}
               description={description}
               setDescription={setDescription}
+              newCardsPerDay={newCardsPerDay}
+              setNewCardsPerDay={setNewCardsPerDay}
+              maxReviewsPerDay={maxReviewsPerDay}
+              setMaxReviewsPerDay={setMaxReviewsPerDay}
               isValid={isValid}
               saving={isLoading}
             />

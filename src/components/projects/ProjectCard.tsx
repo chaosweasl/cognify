@@ -91,7 +91,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               >
                 {srsStats.dueCards}
               </div>
-              <div className="text-xs text-base-content/70">Review</div>
+              <div className="text-xs text-base-content/70">Due</div>
             </div>
             <div className="text-center">
               <div

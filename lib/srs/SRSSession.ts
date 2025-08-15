@@ -2,6 +2,7 @@
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
+import { createClient } from "@/lib/supabase/client";
 import {
   getDailyStudyStats,
   updateDailyStudyStats,
@@ -102,6 +103,14 @@ class NoteIdCardsCache {
   }
 }
 
+// Project-specific SRS settings interface
+export interface ProjectSRSSettings {
+  projectId: string;
+  newCardsPerDay: number;
+  maxReviewsPerDay: number;
+  // Other settings are inherited from global user settings
+}
+
 // Global cache instance with encapsulated management
 const noteIdCache = new NoteIdCardsCache();
 
@@ -125,6 +134,12 @@ export function invalidateNoteIdCache(): void {
 
 // --- STUDY SESSION TYPES ---
 export type StudySession = {
+  // Per-project tracking of daily limits
+  projectStats: Record<string, {
+    newCardsStudied: number;
+    reviewsCompleted: number;
+  }>;
+  // Global fallback for backward compatibility
   newCardsStudied: number;
   reviewsCompleted: number;
   learningCardsInQueue: string[]; // Cards currently in learning queue
@@ -134,6 +149,7 @@ export type StudySession = {
     previousState: SRSCardState;
     rating: SRSRating;
     timestamp: number;
+    projectId: string; // Track which project the card belongs to
   }>;
   // Buried cards (sibling burying)
   buriedCards: Set<string>;
@@ -162,17 +178,128 @@ function getTodayDateString(): string {
 }
 
 /**
- * Get daily study counts from database
+ * Get daily study counts from database with support for per-project tracking
  * Returns counts for today only, resets for new days
  */
 async function getDailyStudyCountsFromDB(
-  userId: string
+  userId: string,
+  projectId?: string
 ): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
   try {
-    return await getDailyStudyStats(userId);
+    if (projectId) {
+      // Get per-project daily stats
+      return await getProjectDailyStudyStats(userId, projectId);
+    } else {
+      // Get global daily stats (legacy support)
+      return await getDailyStudyStats(userId);
+    }
   } catch (error) {
     console.warn("Failed to load daily study counts from database:", error);
     return { newCardsStudied: 0, reviewsCompleted: 0 };
+  }
+}
+
+/**
+ * Get per-project daily study stats
+ */
+async function getProjectDailyStudyStats(
+  userId: string,
+  projectId: string,
+  date?: string
+): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
+  const supabase = createClient();
+  const studyDate = date || getTodayDateString();
+
+  console.log(
+    `[ProjectDailyStats] Fetching stats for project: ${projectId}, date: ${studyDate}, user: ${userId}`
+  );
+
+  try {
+    const { data, error } = await supabase
+      .from("daily_study_stats")
+      .select("new_cards_studied, reviews_completed")
+      .eq("user_id", userId)
+      .eq("project_id", projectId)
+      .eq("study_date", studyDate)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`[ProjectDailyStats] Error fetching stats:`, error);
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    if (!data) {
+      console.log(
+        `[ProjectDailyStats] No stats found for project ${projectId} on ${studyDate}, returning defaults`
+      );
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    console.log(`[ProjectDailyStats] Retrieved stats for project ${projectId}:`, {
+      newCardsStudied: data.new_cards_studied,
+      reviewsCompleted: data.reviews_completed,
+    });
+
+    return {
+      newCardsStudied: data.new_cards_studied,
+      reviewsCompleted: data.reviews_completed,
+    };
+  } catch (error) {
+    console.error(`[ProjectDailyStats] Failed to fetch project daily stats:`, error);
+    return { newCardsStudied: 0, reviewsCompleted: 0 };
+  }
+}
+
+/**
+ * Save per-project daily study counts to database
+ */
+async function saveProjectDailyStudyCountsToDB(
+  userId: string,
+  projectId: string,
+  newCardsStudied: number,
+  reviewsCompleted: number
+): Promise<void> {
+  const supabase = createClient();
+  const today = getTodayDateString();
+
+  try {
+    console.log(
+      `[ProjectDailyStats] Saving stats for project ${projectId}:`,
+      { newCardsStudied, reviewsCompleted }
+    );
+
+    const { error } = await supabase
+      .from("daily_study_stats")
+      .upsert(
+        {
+          user_id: userId,
+          project_id: projectId,
+          study_date: today,
+          new_cards_studied: newCardsStudied,
+          reviews_completed: reviewsCompleted,
+        },
+        {
+          onConflict: "user_id,project_id,study_date",
+        }
+      );
+
+    if (error) {
+      console.error(
+        `[ProjectDailyStats] Error saving project daily stats:`,
+        error
+      );
+      throw error;
+    }
+
+    console.log(
+      `[ProjectDailyStats] Successfully saved stats for project ${projectId}`
+    );
+  } catch (error) {
+    console.warn(
+      `[ProjectDailyStats] Failed to save project daily stats:`,
+      error
+    );
+    throw error;
   }
 }
 
@@ -229,11 +356,12 @@ export async function migrateDailyStudyDataToDatabase(
  * This allows graceful migration from localStorage to database
  */
 export async function initStudySessionWithFallback(
-  userId?: string
+  userId?: string,
+  projectId?: string
 ): Promise<StudySession> {
   if (userId) {
     try {
-      return await initStudySession(userId);
+      return await initStudySession(userId, projectId);
     } catch (error) {
       console.warn(
         "Failed to load from database, falling back to localStorage:",
@@ -255,6 +383,7 @@ export async function initStudySessionWithFallback(
       };
 
       return {
+        projectStats: projectId ? { [projectId]: dailyCounts } : {},
         newCardsStudied: dailyCounts.newCardsStudied,
         reviewsCompleted: dailyCounts.reviewsCompleted,
         learningCardsInQueue: [],
@@ -273,6 +402,7 @@ export async function initStudySessionWithFallback(
 
   // Final fallback: empty session
   return {
+    projectStats: {},
     newCardsStudied: 0,
     reviewsCompleted: 0,
     learningCardsInQueue: [],
@@ -378,22 +508,80 @@ export function getProjectStudyStats(
 // --- SESSION MANAGEMENT FUNCTIONS ---
 
 /**
- * Initialize a new study session with persistent daily limits from database
- * Loads today's new cards and reviews count from database
+ * Initialize study session with support for per-project daily limits
+ * Can load specific project stats or all projects for a user
  */
-export async function initStudySession(userId: string): Promise<StudySession> {
-  const dailyCounts = await getDailyStudyCountsFromDB(userId);
+export async function initStudySession(
+  userId: string,
+  projectId?: string
+): Promise<StudySession> {
+  console.log(
+    `[SRSSession] Initializing study session for user: ${userId}, project: ${projectId || "all"}`
+  );
 
+  if (projectId) {
+    // Initialize for a specific project
+    const dailyCounts = await getDailyStudyCountsFromDB(userId, projectId);
+    
+    return {
+      projectStats: {
+        [projectId]: dailyCounts,
+      },
+      // Legacy global counters for backward compatibility
+      newCardsStudied: dailyCounts.newCardsStudied,
+      reviewsCompleted: dailyCounts.reviewsCompleted,
+      learningCardsInQueue: [],
+      reviewHistory: [],
+      buriedCards: new Set(),
+      _incrementalCounters: {
+        newCardsFromHistory: dailyCounts.newCardsStudied,
+        reviewsFromHistory: dailyCounts.reviewsCompleted,
+        lastHistoryLength: 0,
+      },
+    };
+  } else {
+    // Initialize with empty per-project stats (will be loaded as needed)
+    return {
+      projectStats: {},
+      // Legacy global counters
+      newCardsStudied: 0,
+      reviewsCompleted: 0,
+      learningCardsInQueue: [],
+      reviewHistory: [],
+      buriedCards: new Set(),
+      _incrementalCounters: {
+        newCardsFromHistory: 0,
+        reviewsFromHistory: 0,
+        lastHistoryLength: 0,
+      },
+    };
+  }
+}
+
+/**
+ * Load or initialize per-project stats in an existing session
+ */
+export async function ensureProjectStatsInSession(
+  session: StudySession,
+  userId: string,
+  projectId: string
+): Promise<StudySession> {
+  if (session.projectStats[projectId]) {
+    // Stats already loaded
+    return session;
+  }
+
+  console.log(
+    `[SRSSession] Loading daily stats for project ${projectId}`
+  );
+
+  const dailyCounts = await getDailyStudyCountsFromDB(userId, projectId);
+  
   return {
-    newCardsStudied: dailyCounts.newCardsStudied,
-    reviewsCompleted: dailyCounts.reviewsCompleted,
-    learningCardsInQueue: [],
-    reviewHistory: [],
-    buriedCards: new Set(),
-    _incrementalCounters: {
-      newCardsFromHistory: dailyCounts.newCardsStudied,
-      reviewsFromHistory: dailyCounts.reviewsCompleted,
-      lastHistoryLength: 0,
+    ...session,
+    projectStats: {
+      ...session.projectStats,
+      [projectId]: dailyCounts,
     },
   };
 }
@@ -411,20 +599,22 @@ export function hasLearningCards(
 }
 
 /**
- * Check if a study session should be considered complete
+ * Check if a study session should be considered complete for a specific project
  * Session is complete when there are no more cards to study today (genuine Anki behavior)
  */
-export function isStudySessionComplete(
+export function isStudySessionCompleteForProject(
   cardStates: Record<string, SRSCardState>,
   session: StudySession,
-  settings: SRSSettings,
+  globalSettings: SRSSettings,
+  projectSettings: ProjectSRSSettings,
   now: number = Date.now()
 ): boolean {
   // Check if there are cards available right now
-  const nextCard = getNextCardToStudyWithSettings(
+  const nextCard = getNextCardToStudyWithProjectSettings(
     cardStates,
     session,
-    settings,
+    globalSettings,
+    projectSettings,
     now
   );
 
@@ -435,7 +625,8 @@ export function isStudySessionComplete(
 
   // If no cards available now, check if there are learning cards that will become available later
   // In genuine Anki, the session continues until all learning cards are processed
-  const hasWaitingLearningCards = Object.values(cardStates).some(
+  const projectCards = Object.values(cardStates).filter(card => card.projectId === projectSettings.projectId);
+  const hasWaitingLearningCards = projectCards.some(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
       !card.isSuspended &&
@@ -447,52 +638,52 @@ export function isStudySessionComplete(
 }
 
 /**
- * Get the next card to study, respecting daily limits and card priorities (with settings)
- * Fixed to properly implement Anki behavior with daily limits
+ * Get the next card to study, respecting per-project daily limits and card priorities
+ * Updated to support per-project daily limits instead of global limits
  *
  * Priority order: Learning/Relearning → Review → New
  * Key Anki rules:
  * - Learning cards are NEVER subject to daily limits (must be completed)
- * - Review cards respect the review daily limit
- * - New card limit only applies to introducing NEW cards (not learning cards)
+ * - Review cards respect the per-project review daily limit
+ * - New card limit applies per-project for introducing NEW cards
  */
-export function getNextCardToStudyWithSettings(
+export function getNextCardToStudyWithProjectSettings(
   cardStates: Record<string, SRSCardState>,
   session: StudySession,
-  settings: SRSSettings,
+  globalSettings: SRSSettings,
+  projectSettings: ProjectSRSSettings,
   now: number = Date.now()
 ): string | null {
   const allCards = Object.values(cardStates);
+  const projectId = projectSettings.projectId;
+  
+  // Get per-project session stats
+  const projectStats = session.projectStats[projectId] || {
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+  };
 
-  console.log(`🔍 Looking for next card. Session state:`, {
-    newCardsStudied: session.newCardsStudied,
-    newCardLimit: settings.NEW_CARDS_PER_DAY,
-    reviewsCompleted: session.reviewsCompleted,
-    reviewLimit: settings.MAX_REVIEWS_PER_DAY,
+  console.log(`🔍 Looking for next card in project ${projectId}. Session state:`, {
+    newCardsStudied: projectStats.newCardsStudied,
+    newCardLimit: projectSettings.newCardsPerDay,
+    reviewsCompleted: projectStats.reviewsCompleted,
+    reviewLimit: projectSettings.maxReviewsPerDay,
     learningQueueSize: session.learningCardsInQueue.length,
-    learningQueue: session.learningCardsInQueue.map((id) => id.slice(0, 8)),
   });
 
+  // Filter cards to only include cards from this project
+  const projectCards = allCards.filter(card => card.projectId === projectId);
+
   // 1. HIGHEST PRIORITY: Learning/Relearning cards (NEVER subject to daily limits)
-  // These must be completed regardless of any daily limits - this is core Anki behavior
-  const learningCards = allCards.filter((card) => {
+  const learningCards = projectCards.filter((card) => {
     const isLearning = card.state === "learning" || card.state === "relearning";
     if (!isLearning || card.isSuspended) return false;
-
-    // Learning cards are only available when their due time has arrived
     return card.due <= now;
   });
 
-  // Debug: Show all learning cards and their due times (can be removed in production)
-  const allLearningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended
-  );
-
   if (learningCards.length > 0) {
     console.log(
-      `📚 Found ${learningCards.length} learning cards due (ignoring daily limits):`,
+      `📚 Found ${learningCards.length} learning cards due in project ${projectId}:`,
       learningCards.map((c) => ({
         id: c.id.slice(0, 8),
         step: c.learningStep,
@@ -511,38 +702,37 @@ export function getNextCardToStudyWithSettings(
     return nextCard.id;
   }
 
-  // 2. Second priority: Review cards that are due (subject to review daily limit)
+  // 2. Second priority: Review cards that are due (subject to per-project review daily limit)
   if (
-    settings.MAX_REVIEWS_PER_DAY <= 0 ||
-    session.reviewsCompleted < settings.MAX_REVIEWS_PER_DAY
+    projectSettings.maxReviewsPerDay <= 0 ||
+    projectStats.reviewsCompleted < projectSettings.maxReviewsPerDay
   ) {
-    const reviewCards = allCards.filter((card) => {
+    const reviewCards = projectCards.filter((card) => {
       if (card.state !== "review" || card.isSuspended) return false;
       if (session.buriedCards.has(card.id)) return false;
 
       // Normal due check or review ahead
-      return settings.REVIEW_AHEAD || card.due <= now;
+      return globalSettings.REVIEW_AHEAD || card.due <= now;
     });
 
     if (reviewCards.length > 0) {
       // Sort by due time (earliest first)
       reviewCards.sort((a, b) => a.due - b.due);
       console.log(
-        `🔄 Found ${reviewCards.length} review cards due, selecting:`,
+        `🔄 Found ${reviewCards.length} review cards due in project ${projectId}, selecting:`,
         reviewCards[0].id
       );
       return reviewCards[0].id;
     }
   } else {
     console.log(
-      `⏸️ Review limit reached: ${session.reviewsCompleted}/${settings.MAX_REVIEWS_PER_DAY}`
+      `⏸️ Project ${projectId} review limit reached: ${projectStats.reviewsCompleted}/${projectSettings.maxReviewsPerDay}`
     );
   }
 
-  // 3. LOWEST PRIORITY: New cards (subject to new card daily limit)
-  // Only introduce new cards if under the daily limit
-  if (session.newCardsStudied < settings.NEW_CARDS_PER_DAY) {
-    const newCards = allCards.filter(
+  // 3. LOWEST PRIORITY: New cards (subject to per-project new card daily limit)
+  if (projectStats.newCardsStudied < projectSettings.newCardsPerDay) {
+    const newCards = projectCards.filter(
       (card) =>
         card.state === "new" &&
         !card.isSuspended &&
@@ -551,17 +741,17 @@ export function getNextCardToStudyWithSettings(
 
     if (newCards.length > 0) {
       // Apply new card ordering
-      if (settings.NEW_CARD_ORDER === "random") {
+      if (globalSettings.NEW_CARD_ORDER === "random") {
         const randomIndex = Math.floor(Math.random() * newCards.length);
         console.log(
-          `🆕 Found ${newCards.length} new cards, selecting random:`,
+          `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting random:`,
           newCards[randomIndex].id
         );
         return newCards[randomIndex].id;
       } else {
         // FIFO - use first card (assumes cards are ordered by creation)
         console.log(
-          `🆕 Found ${newCards.length} new cards, selecting first:`,
+          `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting first:`,
           newCards[0].id
         );
         return newCards[0].id;
@@ -569,27 +759,30 @@ export function getNextCardToStudyWithSettings(
     }
   } else {
     console.log(
-      `⏸️ New card limit reached: ${session.newCardsStudied}/${settings.NEW_CARDS_PER_DAY}`
+      `⏸️ Project ${projectId} new card limit reached: ${projectStats.newCardsStudied}/${projectSettings.newCardsPerDay}`
     );
   }
 
   // 4. LEARNING AHEAD: If no other cards available, study learning cards early
-  // This follows Anki's "Learning Ahead" feature for better UX
-  if (allLearningCards.length > 0) {
-    console.log(`🔄 No cards due, checking learning ahead...`);
+  const allProjectLearningCards = projectCards.filter(
+    (card) =>
+      (card.state === "learning" || card.state === "relearning") &&
+      !card.isSuspended
+  );
+
+  if (allProjectLearningCards.length > 0) {
+    console.log(`🔄 No cards due in project ${projectId}, checking learning ahead...`);
 
     // Find learning cards that are close to being due (within 10 minutes)
-    // OR cards that have been in learning state for more than 10 minutes total
-    const learningAheadCards = allLearningCards.filter((card) => {
+    const learningAheadCards = allProjectLearningCards.filter((card) => {
       const timeUntilDue = card.due - now;
       const minutesUntilDue = timeUntilDue / (60 * 1000);
 
       // Allow studying cards that are due within 10 minutes
       const isDueSoon = minutesUntilDue <= 10;
 
-      // Also allow cards that have been waiting in learning state for more than 10 minutes
-      // This prevents cards from getting stuck in learning indefinitely
-      const hasBeenWaitingTooLong = timeUntilDue > 10 * 60 * 1000; // More than 10 minutes away
+      // Also allow cards that have been waiting too long
+      const hasBeenWaitingTooLong = timeUntilDue > 10 * 60 * 1000;
 
       return isDueSoon || hasBeenWaitingTooLong;
     });
@@ -603,20 +796,20 @@ export function getNextCardToStudyWithSettings(
 
       if (minutesAhead > 10) {
         console.log(
-          `📚 Learning promotion: Selecting card ${
+          `📚 Learning promotion in project ${projectId}: Selecting card ${
             nextCard.id
           } (waiting too long: ${Math.abs(minutesAhead)} min)`
         );
       } else {
         console.log(
-          `📚 Learning ahead: Selecting card ${nextCard.id} (due in ${minutesAhead} min)`
+          `📚 Learning ahead in project ${projectId}: Selecting card ${nextCard.id} (due in ${minutesAhead} min)`
         );
       }
       return nextCard.id;
     }
   }
 
-  console.log(`❌ No cards available for study`);
+  console.log(`❌ No cards available for study in project ${projectId}`);
   return null;
 }
 
@@ -654,18 +847,19 @@ export function burySiblingsAfterReview(
 }
 
 /**
- * Update study session after rating a card
+ * Update study session after rating a card with per-project daily limit tracking
  * Enhanced with optimized counter management and improved cloning
- * Now saves daily progress to database instead of localStorage
+ * Now saves daily progress to database per-project instead of globally
  *
  * Key behaviors:
  * - Uses compatible deep clone with structuredClone fallback for undo history
+ * - Tracks per-project daily limits and statistics
  * - Optimized incremental counter management to avoid O(n) operations
  * - Maintains FIFO learning queue with proper "Again" handling
  * - Clones buriedCards Set before mutation for immutability
  * - Undo history limited to last 20 actions
  * - Automatic cache management for sibling burying
- * - Persists daily progress to database for cross-device sync
+ * - Persists per-project daily progress to database for cross-device sync
  *
  * Performance improvements:
  * - Incremental counters avoid repeated history filtering (O(n) → O(1))
@@ -679,9 +873,19 @@ export async function updateStudySession(
   newCardState: SRSCardState,
   allCardStates: Record<string, SRSCardState>,
   settings: SRSSettings,
-  userId: string
+  userId: string,
+  projectId?: string
 ): Promise<StudySession> {
   const updatedSession = { ...session };
+  const cardProjectId = projectId || card.projectId || "global";
+
+  // Ensure per-project stats exist
+  if (!updatedSession.projectStats[cardProjectId]) {
+    updatedSession.projectStats[cardProjectId] = {
+      newCardsStudied: 0,
+      reviewsCompleted: 0,
+    };
+  }
 
   // Save review to history for undo functionality - use compatible deep clone
   updatedSession.reviewHistory.push({
@@ -689,6 +893,7 @@ export async function updateStudySession(
     previousState: safeDeepClone(card), // Compatible clone with fallback
     rating,
     timestamp: Date.now(),
+    projectId: cardProjectId, // Track which project this review belongs to
   });
 
   // Keep only last 20 reviews for undo (MVP limit)
@@ -696,9 +901,7 @@ export async function updateStudySession(
     updatedSession.reviewHistory.shift();
   }
 
-  // Update counters incrementally for better performance
-  // IMPORTANT: Only count cards as "new" if they were actually in "new" state before
-  // Learning cards (even if studied early) should NOT count toward new card limit
+  // Update per-project counters incrementally for better performance
   const wasNewCard = card.state === "new";
   const wasReviewCard = card.state === "review";
   const wasLearningCard =
@@ -713,33 +916,47 @@ export async function updateStudySession(
     };
   }
 
-  // Increment counters based on the card that was just reviewed
-  const counters = updatedSession._incrementalCounters;
+  // Increment per-project counters based on the card that was just reviewed
+  const projectStats = updatedSession.projectStats[cardProjectId];
 
   // Only count as new card if it was actually in "new" state
   if (wasNewCard) {
-    counters.newCardsFromHistory++;
+    projectStats.newCardsStudied++;
+    updatedSession._incrementalCounters.newCardsFromHistory++;
   }
 
   // Count as review if it was review OR learning/relearning (since learning cards are reviews in progress)
   if (wasReviewCard || wasLearningCard) {
-    counters.reviewsFromHistory++;
+    projectStats.reviewsCompleted++;
+    updatedSession._incrementalCounters.reviewsFromHistory++;
   }
 
-  counters.lastHistoryLength = updatedSession.reviewHistory.length;
+  updatedSession._incrementalCounters.lastHistoryLength = updatedSession.reviewHistory.length;
 
-  // Update session counters from incremental tracking
-  updatedSession.newCardsStudied = counters.newCardsFromHistory;
-  updatedSession.reviewsCompleted = counters.reviewsFromHistory;
+  // Update global session counters for backward compatibility
+  updatedSession.newCardsStudied = updatedSession._incrementalCounters.newCardsFromHistory;
+  updatedSession.reviewsCompleted = updatedSession._incrementalCounters.reviewsFromHistory;
 
-  // Persist daily counts to database (async, non-blocking)
-  saveDailyStudyCountsToDB(
-    userId,
-    updatedSession.newCardsStudied,
-    updatedSession.reviewsCompleted
-  ).catch((error) => {
-    console.warn("Failed to persist daily counts to database:", error);
-  });
+  // Persist per-project daily counts to database (async, non-blocking)
+  if (projectId && projectId !== "global") {
+    saveProjectDailyStudyCountsToDB(
+      userId,
+      projectId,
+      projectStats.newCardsStudied,
+      projectStats.reviewsCompleted
+    ).catch((error) => {
+      console.warn("Failed to persist per-project daily counts to database:", error);
+    });
+  } else {
+    // Legacy global stats persistence
+    saveDailyStudyCountsToDB(
+      userId,
+      updatedSession.newCardsStudied,
+      updatedSession.reviewsCompleted
+    ).catch((error) => {
+      console.warn("Failed to persist global daily counts to database:", error);
+    });
+  }
 
   // Learning queue management (simplified for genuine SM-2 behavior)
   if (
@@ -776,13 +993,14 @@ export async function updateStudySession(
 // --- STATISTICS AND SESSION STATE FUNCTIONS ---
 
 /**
- * Get session-aware study statistics (shows only cards available for study)
- * Following genuine Anki behavior for accurate statistics
+ * Get session-aware study statistics for a specific project (shows only cards available for study)
+ * Following genuine Anki behavior for accurate per-project statistics
  */
-export function getSessionAwareStudyStats(
+export function getSessionAwareStudyStatsForProject(
   cardStates: Record<string, SRSCardState>,
   session: StudySession,
-  settings: SRSSettings,
+  globalSettings: SRSSettings,
+  projectSettings: ProjectSRSSettings,
   now: number = Date.now()
 ): {
   availableNewCards: number;
@@ -792,12 +1010,19 @@ export function getSessionAwareStudyStats(
   totalCards: number;
   totalLearningCards: number; // All learning cards (due + not due)
 } {
-  const allCards = Object.values(cardStates);
+  const projectId = projectSettings.projectId;
+  const allCards = Object.values(cardStates).filter(card => card.projectId === projectId);
+  
+  // Get per-project session stats
+  const projectStats = session.projectStats[projectId] || {
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+  };
 
-  // New cards available for today (considering daily limit and suspension)
+  // New cards available for today (considering per-project daily limit and suspension)
   const remainingNewCardSlots = Math.max(
     0,
-    settings.NEW_CARDS_PER_DAY - session.newCardsStudied
+    projectSettings.newCardsPerDay - projectStats.newCardsStudied
   );
   const newCardsTotal = allCards.filter(
     (card) => card.state === "new" && !card.isSuspended
@@ -819,16 +1044,16 @@ export function getSessionAwareStudyStats(
       !card.isSuspended
   ).length;
 
-  // Review cards that are due (considering daily limit and suspension)
+  // Review cards that are due (considering per-project daily limit and suspension)
   const remainingReviewSlots =
-    settings.MAX_REVIEWS_PER_DAY <= 0
+    projectSettings.maxReviewsPerDay <= 0
       ? Infinity
-      : Math.max(0, settings.MAX_REVIEWS_PER_DAY - session.reviewsCompleted);
+      : Math.max(0, projectSettings.maxReviewsPerDay - projectStats.reviewsCompleted);
   const reviewCardsTotal = allCards.filter(
     (card) => card.state === "review" && card.due <= now && !card.isSuspended
   ).length;
   const dueReviewCards =
-    settings.MAX_REVIEWS_PER_DAY <= 0
+    projectSettings.maxReviewsPerDay <= 0
       ? reviewCardsTotal
       : Math.min(reviewCardsTotal, remainingReviewSlots);
 
@@ -847,32 +1072,35 @@ export function getSessionAwareStudyStats(
 }
 
 /**
- * Check if the study session should end (Anki-style logic)
- * Session ends when no more cards are available for study today
+ * Check if the study session should end for a specific project (Anki-style logic)
+ * Session ends when no more cards are available for study today in this project
  */
-export function shouldEndStudySession(
+export function shouldEndStudySessionForProject(
   cardStates: Record<string, SRSCardState>,
   session: StudySession,
-  settings: SRSSettings,
+  globalSettings: SRSSettings,
+  projectSettings: ProjectSRSSettings,
   now: number = Date.now()
 ): boolean {
-  // Use the same logic as getNextCardToStudyWithSettings to check if any cards are available
-  const nextCard = getNextCardToStudyWithSettings(
+  // Use the project-specific logic to check if any cards are available
+  const nextCard = getNextCardToStudyWithProjectSettings(
     cardStates,
     session,
-    settings,
+    globalSettings,
+    projectSettings,
     now
   );
   return nextCard === null;
 }
 
 /**
- * Get study session summary for UI display
+ * Get study session summary for a specific project
  */
-export function getStudySessionSummary(
+export function getStudySessionSummaryForProject(
   cardStates: Record<string, SRSCardState>,
   session: StudySession,
-  settings: SRSSettings,
+  globalSettings: SRSSettings,
+  projectSettings: ProjectSRSSettings,
   now: number = Date.now()
 ): {
   isComplete: boolean;
@@ -881,13 +1109,20 @@ export function getStudySessionSummary(
   reviewsRemaining: number;
   learningCardsWaiting: number;
 } {
-  const sessionStats = getSessionAwareStudyStats(
+  const sessionStats = getSessionAwareStudyStatsForProject(
     cardStates,
     session,
-    settings,
+    globalSettings,
+    projectSettings,
     now
   );
-  const isComplete = shouldEndStudySession(cardStates, session, settings, now);
+  const isComplete = shouldEndStudySessionForProject(
+    cardStates,
+    session,
+    globalSettings,
+    projectSettings,
+    now
+  );
 
   return {
     isComplete,

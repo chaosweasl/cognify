@@ -8,6 +8,8 @@ export type RawProject = {
   id: string;
   name: string;
   description: string | null;
+  new_cards_per_day?: number;
+  max_reviews_per_day?: number;
   flashcards?: string | Omit<Flashcard, "id">[];
   flashcardCount?: number;
   created_at: string;
@@ -18,6 +20,8 @@ export type NormalizedProject = {
   id: string;
   name: string;
   description: string;
+  new_cards_per_day: number;
+  max_reviews_per_day: number;
   flashcards: Flashcard[];
   flashcardCount?: number;
   created_at: string;
@@ -47,6 +51,8 @@ export function normalizeProject(raw: RawProject | NormalizedProject): Normalize
   return {
     ...raw,
     description: raw.description || "",
+    new_cards_per_day: raw.new_cards_per_day ?? 20,
+    max_reviews_per_day: raw.max_reviews_per_day ?? 100,
     flashcards: parseFlashcards((raw as RawProject).flashcards),
     flashcardCount: (raw as RawProject).flashcardCount ?? 0,
   };

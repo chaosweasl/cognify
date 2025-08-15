@@ -174,41 +174,41 @@ export async function createFlashcard(
     `[Flashcards] createFlashcard - Successfully created flashcard with ID: ${data.id}`
   );
 
-  // Create initial SRS state for the new flashcard
+  // With the database trigger, SRS state should be created automatically
+  // Let's verify it was created correctly
   console.log(
-    `[Flashcards] createFlashcard - Creating SRS state for flashcard: ${data.id}`
+    `[Flashcards] createFlashcard - Verifying SRS state was created for flashcard: ${data.id}`
   );
-  const now = new Date().toISOString();
-  const { error: srsError } = await supabase.from("srs_states").insert([
-    {
-      user_id: user.id,
-      project_id: projectId,
-      card_id: data.id,
-      interval: 1,
-      ease: 2.5,
-      due: now, // New cards are immediately available
-      last_reviewed: now,
-      repetitions: 0,
-      state: "new",
-      lapses: 0,
-      learning_step: 0,
-      is_leech: false,
-      is_suspended: false,
-    },
-  ]);
+  
+  const { data: srsState, error: srsError } = await supabase
+    .from("srs_states")
+    .select("*")
+    .eq("card_id", data.id)
+    .eq("user_id", user.id)
+    .single();
 
-  if (srsError) {
+  if (srsError || !srsState) {
     console.error(
-      "[Flashcards] createFlashcard - Error creating SRS state:",
+      "[Flashcards] createFlashcard - SRS state was not created by trigger:",
       srsError
     );
-    // Don't throw error here - flashcard was created successfully
-    // The SRS state can be created later if needed
-  } else {
-    console.log(
-      `[Flashcards] createFlashcard - Successfully created SRS state for flashcard: ${data.id}`
+    // This is a critical error - the flashcard exists but has no SRS state
+    // Delete the flashcard to maintain consistency
+    await supabase.from("flashcards").delete().eq("id", data.id);
+    throw new Error(
+      "Failed to create SRS state for flashcard. Flashcard creation rolled back."
     );
   }
+
+  console.log(
+    `[Flashcards] createFlashcard - Successfully verified SRS state creation:`,
+    {
+      cardId: data.id,
+      srsStateId: srsState.id,
+      state: srsState.state,
+      due: srsState.due,
+    }
+  );
 
   return data;
 }
@@ -250,44 +250,49 @@ export async function createFlashcards(
 
   if (error) throw error;
 
-  // Create SRS states for all new flashcards
+  // With the database trigger, SRS states should be created automatically for all flashcards
+  // Let's verify they were all created correctly
   if (data && data.length > 0) {
     console.log(
-      `[Flashcards] createFlashcards - Creating SRS states for ${data.length} flashcards`
+      `[Flashcards] createFlashcards - Verifying SRS states were created for ${data.length} flashcards`
     );
-    const now = new Date().toISOString();
-    const srsStatesToInsert = data.map((flashcard) => ({
-      user_id: user.id,
-      project_id: projectId,
-      card_id: flashcard.id,
-      interval: 1,
-      ease: 2.5,
-      due: now, // New cards are immediately available
-      last_reviewed: now,
-      repetitions: 0,
-      state: "new",
-      lapses: 0,
-      learning_step: 0,
-      is_leech: false,
-      is_suspended: false,
-    }));
-
-    const { error: srsError } = await supabase
+    
+    const cardIds = data.map((card) => card.id);
+    const { data: srsStates, error: srsError } = await supabase
       .from("srs_states")
-      .insert(srsStatesToInsert);
+      .select("card_id")
+      .eq("user_id", user.id)
+      .eq("project_id", projectId)
+      .in("card_id", cardIds);
 
     if (srsError) {
       console.error(
-        "[Flashcards] createFlashcards - Error creating SRS states:",
+        "[Flashcards] createFlashcards - Error checking SRS states:",
         srsError
       );
-      // Don't throw error here - flashcards were created successfully
-      // The SRS states can be created later if needed
-    } else {
-      console.log(
-        `[Flashcards] createFlashcards - Successfully created SRS states for ${data.length} flashcards`
+      throw new Error("Failed to verify SRS state creation");
+    }
+
+    const createdSrsCardIds = new Set(srsStates?.map((s) => s.card_id) || []);
+    const missingSrsStates = cardIds.filter((id) => !createdSrsCardIds.has(id));
+
+    if (missingSrsStates.length > 0) {
+      console.error(
+        "[Flashcards] createFlashcards - Missing SRS states for cards:",
+        missingSrsStates
+      );
+      
+      // Delete all flashcards to maintain consistency
+      await supabase.from("flashcards").delete().in("id", cardIds);
+      
+      throw new Error(
+        `Failed to create SRS states for ${missingSrsStates.length} flashcards. All flashcard creation rolled back.`
       );
     }
+
+    console.log(
+      `[Flashcards] createFlashcards - Successfully verified SRS states for all ${data.length} flashcards`
+    );
   }
 
   return data || [];

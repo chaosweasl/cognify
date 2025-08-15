@@ -96,7 +96,7 @@ function srsStateToDatabase(
 /**
  * Convert database format to SRSCardState
  */
-function databaseToSRSState(dbState: DatabaseSRSState): SRSCardState {
+function databaseToSRSState(dbState: DatabaseSRSState, projectId: string): SRSCardState {
   return {
     id: dbState.card_id,
     state: dbState.state,
@@ -109,6 +109,7 @@ function databaseToSRSState(dbState: DatabaseSRSState): SRSCardState {
     learningStep: dbState.learning_step,
     isLeech: dbState.is_leech,
     isSuspended: dbState.is_suspended,
+    projectId: projectId,
   };
 }
 
@@ -146,7 +147,7 @@ export async function loadSRSStates(
         fullError: JSON.stringify(error, null, 2),
       });
       console.log("[SRS-DB] loadSRSStates - Falling back to default states");
-      return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
+      return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS, projectId);
     }
 
     console.log(
@@ -168,7 +169,8 @@ export async function loadSRSStates(
           typeof dbState.card_id === "string"
         ) {
           srsStates[dbState.card_id] = databaseToSRSState(
-            dbState as DatabaseSRSState
+            dbState as DatabaseSRSState,
+            projectId
           );
           existingCardIds.add(dbState.card_id);
           console.log(
@@ -188,7 +190,8 @@ export async function loadSRSStates(
       );
       const newStates = initSRSStateWithSettings(
         newCardIds,
-        DEFAULT_SRS_SETTINGS
+        DEFAULT_SRS_SETTINGS,
+        projectId
       );
       Object.assign(srsStates, newStates);
     }
@@ -205,7 +208,7 @@ export async function loadSRSStates(
       stack: error instanceof Error ? error.stack : undefined,
       fullError: error,
     });
-    return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS);
+    return initSRSStateWithSettings(cardIds, DEFAULT_SRS_SETTINGS, projectId);
   }
 }
 
@@ -440,7 +443,6 @@ export async function getUserStudyStats(
   totalCards: number;
   newCards: number;
   learningCards: number;
-  reviewCards: number;
   dueCards: number;
   leeches: number;
 } | null> {
@@ -462,7 +464,6 @@ export async function getUserStudyStats(
       totalCards: states.length,
       newCards: 0,
       learningCards: 0,
-      reviewCards: 0,
       dueCards: 0,
       leeches: 0,
     };
@@ -472,12 +473,12 @@ export async function getUserStudyStats(
       if (state.state === "new") stats.newCards++;
       else if (state.state === "learning" || state.state === "relearning")
         stats.learningCards++;
-      else if (state.state === "review") stats.reviewCards++;
 
-      // Count due cards (compare as dates)
+      // Count due cards (compare as dates) - exclude new cards
       if (
         typeof state.due === "string" &&
-        new Date(state.due).getTime() <= now.getTime()
+        new Date(state.due).getTime() <= now.getTime() &&
+        state.state !== "new"
       ) {
         stats.dueCards++;
       }

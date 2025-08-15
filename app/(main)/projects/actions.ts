@@ -24,7 +24,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, user_id")
+    .select("id, name, description, created_at, user_id, new_cards_per_day, max_reviews_per_day")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -82,7 +82,7 @@ export async function getProjects(): Promise<Project[]> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, user_id")
+    .select("id, name, description, created_at, user_id, new_cards_per_day, max_reviews_per_day")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -103,11 +103,20 @@ export async function getProjects(): Promise<Project[]> {
 export async function createProject({
   name,
   description,
+  new_cards_per_day = 20,
+  max_reviews_per_day = 100,
 }: {
   name: string;
   description: string;
+  new_cards_per_day?: number;
+  max_reviews_per_day?: number;
 }) {
-  console.log(`[Projects] createProject called:`, { name, description });
+  console.log(`[Projects] createProject called:`, { 
+    name, 
+    description, 
+    new_cards_per_day, 
+    max_reviews_per_day 
+  });
   const supabase = await createClient();
   const {
     data: { user },
@@ -132,6 +141,8 @@ export async function createProject({
         user_id: user.id,
         name,
         description,
+        new_cards_per_day,
+        max_reviews_per_day,
       },
     ])
     .select("id");
@@ -152,15 +163,21 @@ export async function updateProject({
   id,
   name,
   description,
+  new_cards_per_day,
+  max_reviews_per_day,
 }: {
   id: string;
   name: string;
   description: string;
+  new_cards_per_day?: number;
+  max_reviews_per_day?: number;
 }) {
   console.log("projectsActions: updateProject called", {
     id,
     name,
     description,
+    new_cards_per_day,
+    max_reviews_per_day,
   });
   const supabase = await createClient();
   const {
@@ -169,9 +186,13 @@ export async function updateProject({
   } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("Not authenticated");
 
+  const updateData: Record<string, unknown> = { name, description };
+  if (new_cards_per_day !== undefined) updateData.new_cards_per_day = new_cards_per_day;
+  if (max_reviews_per_day !== undefined) updateData.max_reviews_per_day = max_reviews_per_day;
+
   const { error } = await supabase
     .from("projects")
-    .update({ name, description })
+    .update(updateData)
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw error;
@@ -193,7 +214,7 @@ export async function deleteProject(id: string) {
     );
 
     // 1. Delete user notifications that might reference this project
-    // Check both title (project name) and URL (project ID) fields
+    // Check title, message, and URL fields for various project reference patterns
     console.log(
       `[Projects] deleteProject - Deleting related notifications for user: ${user.id}`
     );
@@ -205,12 +226,34 @@ export async function deleteProject(id: string) {
         .eq("user_id", user.id)
         .ilike("title", `%${id}%`),
 
+      // Delete notifications with project ID in message
+      supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .ilike("message", `%${id}%`),
+
       // Delete notifications with project ID in URL (like SRS reminders)
       supabase
         .from("user_notifications")
         .delete()
         .eq("user_id", user.id)
         .ilike("url", `%/projects/${id}%`),
+
+      // Delete notifications with project ID in URL (alternative patterns)
+      supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .ilike("url", `%${id}%`),
+
+      // Delete SRS study reminder notifications that might reference this specific project
+      supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("type", "srs_reminder")
+        .ilike("message", `%${id}%`),
     ];
 
     const notificationResults = await Promise.all(notificationDeletePromises);
@@ -219,7 +262,25 @@ export async function deleteProject(id: string) {
       notificationResults
     );
 
-    // 2. Delete the project (this will cascade delete flashcards and srs_states)
+    // 2. Delete per-project daily study stats 
+    console.log(
+      `[Projects] deleteProject - Deleting per-project daily study stats`
+    );
+    const { error: statsError } = await supabase
+      .from("daily_study_stats")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("project_id", id);
+
+    if (statsError) {
+      console.warn(
+        `[Projects] deleteProject - Warning: Failed to delete daily stats:`,
+        statsError
+      );
+      // Don't throw error here as this is cleanup - continue with project deletion
+    }
+
+    // 3. Delete the project (this will cascade delete flashcards and srs_states)
     console.log(
       `[Projects] deleteProject - Deleting project and cascaded data`
     );

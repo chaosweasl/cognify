@@ -21,10 +21,10 @@ export async function GET() {
 
     console.log(`[API] batch-stats - Fetching stats for user: ${user.id}`);
 
-    // Get all projects for the user
+    // Get all projects for the user (including per-project daily limits)
     const { data: projects, error: projectsError } = await supabase
       .from("projects")
-      .select("id, name, description, created_at, user_id")
+      .select("id, name, description, created_at, user_id, new_cards_per_day, max_reviews_per_day")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -55,34 +55,75 @@ export async function GET() {
       
     console.log(`[API] batch-stats - Found ${srsStates?.length || 0} SRS states total`);
 
-    // Calculate stats for each project
+    // Get per-project daily study stats for today
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+    const { data: dailyStats } = await supabase
+      .from("daily_study_stats")
+      .select("project_id, new_cards_studied, reviews_completed")
+      .eq("user_id", user.id)
+      .eq("study_date", today)
+      .in("project_id", projectIds);
+      
+    console.log(`[API] batch-stats - Found ${dailyStats?.length || 0} daily stats records for today`);
+
+    // Calculate stats for each project with per-project daily limits
     const now = new Date().toISOString();
     const projectStats: Record<string, ProjectStats> = {};
 
     projects.forEach(project => {
       const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
       const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
+      
+      // Get today's study stats for this project
+      const projectDailyStats = dailyStats?.find(ds => ds.project_id === project.id);
+      const newCardsStudiedToday = projectDailyStats?.new_cards_studied || 0;
+      const reviewsCompletedToday = projectDailyStats?.reviews_completed || 0;
 
       // Calculate new cards (cards that haven't been studied yet)
-      const newCardsCount = projectSrsStates.filter(s => s.state === "new").length;
+      const totalNewCards = projectSrsStates.filter(s => s.state === "new").length;
+      
+      // Calculate remaining new cards available today based on per-project limit
+      const remainingNewCardsToday = Math.max(0, project.new_cards_per_day - newCardsStudiedToday);
+      const availableNewCards = Math.min(totalNewCards, remainingNewCardsToday);
       
       // Calculate learning cards (cards currently in learning phase)
       const learningCardsCount = projectSrsStates.filter(s => s.state === "learning").length;
       
-      // Calculate due cards (ALL cards that need to be reviewed now, including new cards)
-      const dueCardsCount = projectSrsStates.filter(s => s.due <= now).length;
+      // Calculate due review cards (cards that need to be reviewed now, excluding new cards)
+      const totalDueReviewCards = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
+      
+      // Calculate remaining review cards available today based on per-project limit
+      const remainingReviewsToday = project.max_reviews_per_day <= 0 
+        ? Infinity 
+        : Math.max(0, project.max_reviews_per_day - reviewsCompletedToday);
+      const availableDueCards = project.max_reviews_per_day <= 0 
+        ? totalDueReviewCards 
+        : Math.min(totalDueReviewCards, remainingReviewsToday);
       
       projectStats[project.id] = {
         totalCards: projectFlashcards.length,
-        newCards: newCardsCount,
+        newCards: availableNewCards, // Show available new cards, not total
         learningCards: learningCardsCount,
-        reviewCards: dueCardsCount, // For user clarity: review cards = due cards (includes new cards)
-        dueCards: dueCardsCount,
+        dueCards: availableDueCards, // Show available due cards, not total
+        // Additional metadata for debugging
+        _metadata: {
+          totalNewCards,
+          totalDueReviewCards,
+          newCardsStudiedToday,
+          reviewsCompletedToday,
+          newCardsPerDay: project.new_cards_per_day,
+          maxReviewsPerDay: project.max_reviews_per_day,
+        }
       };
       
       console.log(`[API] batch-stats - Project ${project.id} (${project.name}):`, {
         flashcards: projectFlashcards.length,
         srsStates: projectSrsStates.length,
+        dailyLimits: {
+          newCardsPerDay: project.new_cards_per_day,
+          maxReviewsPerDay: project.max_reviews_per_day,
+          studiedToday: { newCards: newCardsStudiedToday, reviews: reviewsCompletedToday }
+        },
         stats: projectStats[project.id]
       });
     });
