@@ -14,7 +14,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createFlashcard } from '@/app/(main)/projects/actions/flashcard-actions';
 import { loadSRSStates } from '@/lib/srs/SRSDBUtils';
-import { getNextCardToStudyWithSettings, getSessionAwareStudyStats } from '@/lib/srs/SRSSession';
+import { getNextCardToStudyWithProjectSettings, getSessionAwareStudyStatsForProject } from '@/lib/srs/SRSSession';
 import { DEFAULT_SRS_SETTINGS } from '@/lib/srs/SRSScheduler';
 
 async function debugNewCardBug() {
@@ -146,10 +146,15 @@ async function debugNewCardBug() {
     };
 
     // Test card selection
-    const nextCardId = getNextCardToStudyWithSettings(
+    const projectSettings = {
+      newCardsPerDay: DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY,
+      maxReviewsPerDay: DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY
+    };
+    const nextCardId = getNextCardToStudyWithProjectSettings(
       loadedStates,
       studySession,
       DEFAULT_SRS_SETTINGS,
+      projectSettings,
       now
     );
 
@@ -170,7 +175,7 @@ async function debugNewCardBug() {
 
     // Step 6: Test study statistics
     console.log('📊 Step 6: Testing study statistics...');
-    const stats = getSessionAwareStudyStats(loadedStates, studySession, DEFAULT_SRS_SETTINGS, now);
+    const stats = getSessionAwareStudyStatsForProject(loadedStates, studySession, DEFAULT_SRS_SETTINGS, projectSettings, now);
     
     console.log(`Study statistics:`);
     console.log(`   Available new cards: ${stats.availableNewCards}`);
@@ -215,6 +220,14 @@ async function debugNewCardBug() {
 
     if (deleteError) {
       console.error('❌ Failed to cleanup test project:', deleteError);
+    } else {
+      console.log('✅ Test project cleaned up');
+    }
+  }
+}
+
+// Run the test
+debugNewCardBug().catch(console.error);eanup test project:', deleteError);
     } else {
       console.log('✅ Test project cleaned up');
     }

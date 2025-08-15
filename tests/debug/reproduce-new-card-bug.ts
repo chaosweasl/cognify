@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createFlashcards } from '@/app/(main)/projects/actions/flashcard-actions';
 import { getFlashcardsByProjectId } from '@/app/(main)/projects/actions/flashcard-actions';
 import { loadSRSStates } from '@/lib/srs/SRSDBUtils';
-import { getNextCardToStudyWithSettings, getSessionAwareStudyStats } from '@/lib/srs/SRSSession';
+import { getNextCardToStudyWithProjectSettings, getSessionAwareStudyStatsForProject } from '@/lib/srs/SRSSession';
 import { DEFAULT_SRS_SETTINGS } from '@/lib/srs/SRSScheduler';
 import { getDailyStudyStats } from '@/lib/supabase/dailyStudyStats';
 
@@ -113,7 +113,11 @@ async function reproduceNewCardBug() {
 
     // Step 5: Get study statistics (as displayed in UI)
     const now = Date.now();
-    const stats = getSessionAwareStudyStats(existingSRSStates, studySession, DEFAULT_SRS_SETTINGS, now);
+    const projectSettings = {
+      newCardsPerDay: DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY,
+      maxReviewsPerDay: DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY
+    };
+    const stats = getSessionAwareStudyStatsForProject(existingSRSStates, studySession, DEFAULT_SRS_SETTINGS, projectSettings, now);
     
     console.log('📈 Study statistics that would be shown to user:');
     console.log(`   Available new cards: ${stats.availableNewCards}`);
@@ -123,10 +127,11 @@ async function reproduceNewCardBug() {
     console.log('');
 
     // Step 6: Try to get next card to study
-    const nextCardId = getNextCardToStudyWithSettings(
+    const nextCardId = getNextCardToStudyWithProjectSettings(
       existingSRSStates,
       studySession,
       DEFAULT_SRS_SETTINGS,
+      projectSettings,
       now
     );
 
@@ -186,6 +191,12 @@ async function reproduceNewCardBug() {
 }
 
 // Export for potential use in other tests
+export { reproduceNewCardBug };
+
+// Run if called directly
+if (require.main === module) {
+  reproduceNewCardBug().catch(console.error);
+}tial use in other tests
 export { reproduceNewCardBug };
 
 // Run if called directly

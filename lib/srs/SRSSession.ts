@@ -638,44 +638,6 @@ export function isStudySessionCompleteForProject(
 }
 
 /**
- * Legacy function for backward compatibility
- * @deprecated Use isStudySessionCompleteForProject instead
- */
-export function isStudySessionComplete(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  settings: SRSSettings,
-  now: number = Date.now()
-): boolean {
-  console.warn("isStudySessionComplete is deprecated. Use per-project version instead.");
-  
-  // Check if there are cards available right now
-  const nextCard = getNextCardToStudyWithSettings(
-    cardStates,
-    session,
-    settings,
-    now
-  );
-
-  // If there are cards available now, session is not complete
-  if (nextCard) {
-    return false;
-  }
-
-  // If no cards available now, check if there are learning cards that will become available later
-  // In genuine Anki, the session continues until all learning cards are processed
-  const hasWaitingLearningCards = Object.values(cardStates).some(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended &&
-      card.due > now
-  );
-
-  // Session is only complete if no cards are available AND no learning cards are waiting
-  return !hasWaitingLearningCards;
-}
-
-/**
  * Get the next card to study, respecting per-project daily limits and card priorities
  * Updated to support per-project daily limits instead of global limits
  *
@@ -849,34 +811,6 @@ export function getNextCardToStudyWithProjectSettings(
 
   console.log(`❌ No cards available for study in project ${projectId}`);
   return null;
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use getNextCardToStudyWithProjectSettings instead
- */
-export function getNextCardToStudyWithSettings(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  settings: SRSSettings,
-  now: number = Date.now()
-): string | null {
-  console.warn("getNextCardToStudyWithSettings is deprecated. Use per-project version instead.");
-  
-  // For backward compatibility, use global limits
-  const projectSettings: ProjectSRSSettings = {
-    projectId: "global",
-    newCardsPerDay: settings.NEW_CARDS_PER_DAY,
-    maxReviewsPerDay: settings.MAX_REVIEWS_PER_DAY,
-  };
-  
-  return getNextCardToStudyWithProjectSettings(
-    cardStates,
-    session,
-    settings,
-    projectSettings,
-    now
-  );
 }
 
 /**
@@ -1138,79 +1072,6 @@ export function getSessionAwareStudyStatsForProject(
 }
 
 /**
- * Legacy function for backward compatibility
- * @deprecated Use getSessionAwareStudyStatsForProject instead
- */
-export function getSessionAwareStudyStats(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  settings: SRSSettings,
-  now: number = Date.now()
-): {
-  availableNewCards: number;
-  dueLearningCards: number;
-  dueReviewCards: number;
-  dueCards: number;
-  totalCards: number;
-  totalLearningCards: number; // All learning cards (due + not due)
-} {
-  console.warn("getSessionAwareStudyStats is deprecated. Use per-project version instead.");
-  
-  const allCards = Object.values(cardStates);
-
-  // New cards available for today (considering daily limit and suspension)
-  const remainingNewCardSlots = Math.max(
-    0,
-    settings.NEW_CARDS_PER_DAY - session.newCardsStudied
-  );
-  const newCardsTotal = allCards.filter(
-    (card) => card.state === "new" && !card.isSuspended
-  ).length;
-  const availableNewCards = Math.min(newCardsTotal, remainingNewCardSlots);
-
-  // Learning cards that are actually due right now (genuine Anki behavior)
-  const dueLearningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended &&
-      card.due <= now
-  ).length;
-
-  // Total learning cards (for UI display of cards in learning state)
-  const totalLearningCards = allCards.filter(
-    (card) =>
-      (card.state === "learning" || card.state === "relearning") &&
-      !card.isSuspended
-  ).length;
-
-  // Review cards that are due (considering daily limit and suspension)
-  const remainingReviewSlots =
-    settings.MAX_REVIEWS_PER_DAY <= 0
-      ? Infinity
-      : Math.max(0, settings.MAX_REVIEWS_PER_DAY - session.reviewsCompleted);
-  const reviewCardsTotal = allCards.filter(
-    (card) => card.state === "review" && card.due <= now && !card.isSuspended
-  ).length;
-  const dueReviewCards =
-    settings.MAX_REVIEWS_PER_DAY <= 0
-      ? reviewCardsTotal
-      : Math.min(reviewCardsTotal, remainingReviewSlots);
-
-  // DUE = learning cards due RIGHT NOW + review cards due RIGHT NOW (NOT new cards)
-  // This follows genuine Anki terminology: "due" means available for study right now
-  const dueCards = dueLearningCards + dueReviewCards;
-
-  return {
-    availableNewCards,
-    dueLearningCards,
-    dueReviewCards,
-    dueCards,
-    totalCards: allCards.length,
-    totalLearningCards,
-  };
-}
-
-/**
  * Check if the study session should end for a specific project (Anki-style logic)
  * Session ends when no more cards are available for study today in this project
  */
@@ -1227,28 +1088,6 @@ export function shouldEndStudySessionForProject(
     session,
     globalSettings,
     projectSettings,
-    now
-  );
-  return nextCard === null;
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use shouldEndStudySessionForProject instead
- */
-export function shouldEndStudySession(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  settings: SRSSettings,
-  now: number = Date.now()
-): boolean {
-  console.warn("shouldEndStudySession is deprecated. Use per-project version instead.");
-  
-  // Use the same logic as getNextCardToStudyWithSettings to check if any cards are available
-  const nextCard = getNextCardToStudyWithSettings(
-    cardStates,
-    session,
-    settings,
     now
   );
   return nextCard === null;
@@ -1284,41 +1123,6 @@ export function getStudySessionSummaryForProject(
     projectSettings,
     now
   );
-
-  return {
-    isComplete,
-    availableCards: sessionStats.dueCards,
-    newCardsRemaining: sessionStats.availableNewCards,
-    reviewsRemaining: sessionStats.dueReviewCards,
-    learningCardsWaiting: sessionStats.dueLearningCards,
-  };
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use getStudySessionSummaryForProject instead
- */
-export function getStudySessionSummary(
-  cardStates: Record<string, SRSCardState>,
-  session: StudySession,
-  settings: SRSSettings,
-  now: number = Date.now()
-): {
-  isComplete: boolean;
-  availableCards: number;
-  newCardsRemaining: number;
-  reviewsRemaining: number;
-  learningCardsWaiting: number;
-} {
-  console.warn("getStudySessionSummary is deprecated. Use per-project version instead.");
-  
-  const sessionStats = getSessionAwareStudyStats(
-    cardStates,
-    session,
-    settings,
-    now
-  );
-  const isComplete = shouldEndStudySession(cardStates, session, settings, now);
 
   return {
     isComplete,
