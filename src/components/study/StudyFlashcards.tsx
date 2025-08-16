@@ -240,7 +240,7 @@ export default function StudyFlashcards({
         }
 
         // Initialize session with database or fallback to localStorage
-        const session = await initStudySessionWithFallback(userId || undefined);
+        const session = await initStudySessionWithFallback(userId || undefined, projectId);
         setStudySession(session);
       } catch (error) {
         console.error("Failed to initialize study session:", error);
@@ -249,7 +249,7 @@ export default function StudyFlashcards({
     };
 
     initSession();
-  }, [userId]);
+  }, [userId, projectId]);
 
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
