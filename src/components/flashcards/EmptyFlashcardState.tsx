@@ -7,7 +7,8 @@ interface EmptyStateProps {
     | "no-cards"
     | "no-review-cards"
     | "waiting-for-learning"
-    | "daily-limit-reached";
+    | "daily-limit-reached"
+    | "redirecting-to-projects";
   onReset?: () => void;
   nextLearningCardDue?: number; // Timestamp for next learning card
 }
@@ -96,6 +97,23 @@ export function EmptyFlashcardState({
               Study All Cards
             </button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "redirecting-to-projects") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh]">
+        <div className="text-center">
+          <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+          <div className="text-xl font-bold text-base-content mb-2">
+            Study session complete
+          </div>
+          <div className="text-base-content/70 mb-4">
+            No more cards available to study. Redirecting to projects...
+          </div>
+          <div className="loading loading-spinner loading-md"></div>
         </div>
       </div>
     );

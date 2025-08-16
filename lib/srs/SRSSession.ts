@@ -695,7 +695,8 @@ export function getNextCardToStudyWithProjectSettings(
   }
 
   // 3. LOWEST PRIORITY: New cards (subject to per-project new card daily limit)
-  if (projectStats.newCardsStudied < projectSettings.newCardsPerDay) {
+  // Strictly enforce the daily limit - no new cards if limit reached
+  if (projectStats.newCardsStudied < projectSettings.newCardsPerDay && projectSettings.newCardsPerDay > 0) {
     const newCards = projectCards.filter(
       (card) =>
         card.state === "new" &&
@@ -704,21 +705,28 @@ export function getNextCardToStudyWithProjectSettings(
     );
 
     if (newCards.length > 0) {
-      // Apply new card ordering
-      if (globalSettings.NEW_CARD_ORDER === "random") {
-        const randomIndex = Math.floor(Math.random() * newCards.length);
+      // Double-check we haven't exceeded the limit before returning a new card
+      if (projectStats.newCardsStudied >= projectSettings.newCardsPerDay) {
         console.log(
-          `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting random:`,
-          newCards[randomIndex].id
+          `⏸️ Project ${projectId} new card limit check failed: ${projectStats.newCardsStudied}/${projectSettings.newCardsPerDay}`
         );
-        return newCards[randomIndex].id;
       } else {
-        // FIFO - use first card (assumes cards are ordered by creation)
-        console.log(
-          `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting first:`,
-          newCards[0].id
-        );
-        return newCards[0].id;
+        // Apply new card ordering
+        if (globalSettings.NEW_CARD_ORDER === "random") {
+          const randomIndex = Math.floor(Math.random() * newCards.length);
+          console.log(
+            `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting random:`,
+            newCards[randomIndex].id
+          );
+          return newCards[randomIndex].id;
+        } else {
+          // FIFO - use first card (assumes cards are ordered by creation)
+          console.log(
+            `🆕 Found ${newCards.length} new cards in project ${projectId}, selecting first:`,
+            newCards[0].id
+          );
+          return newCards[0].id;
+        }
       }
     }
   } else {
@@ -976,6 +984,7 @@ export function getSessionAwareStudyStatsForProject(
   now: number = Date.now()
 ): {
   availableNewCards: number;
+  totalNewCards: number; // Total new cards regardless of daily limits
   dueLearningCards: number;
   dueReviewCards: number;
   dueCards: number;
@@ -1040,6 +1049,7 @@ export function getSessionAwareStudyStatsForProject(
 
   return {
     availableNewCards,
+    totalNewCards: newCardsTotal, // Total new cards for display
     dueLearningCards,
     dueReviewCards,
     dueCards,

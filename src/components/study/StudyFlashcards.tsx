@@ -217,6 +217,7 @@ export default function StudyFlashcards({
   const userId = useUserId();
   const supabase = createClient();
   const { srsSettings } = useSettingsStore();
+  const router = useRouter();
 
   // Create project-specific settings
   const projectSettings: ProjectSRSSettings = React.useMemo(
@@ -331,6 +332,12 @@ export default function StudyFlashcards({
   const currentCard = currentCardId ? cardMap[currentCardId] : null;
   const currentCardState = currentCardId ? srsState[currentCardId] : null;
 
+  // Get per-project session stats for display
+  const projectStats = studySession.projectStats[projectId] || {
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+  };
+
   // Recalculate session-aware stats on every SRS state change
   const availableStats = React.useMemo(
     () =>
@@ -429,8 +436,37 @@ export default function StudyFlashcards({
               updatedNow // Pass consistent timestamp
             );
 
+            // Additional safety check: if we have a new card but limit is reached, reject it
             if (nextCardId) {
-              setCurrentCardId(nextCardId);
+              const nextCard = currentSRSState[nextCardId];
+              const projectStats = currentSession.projectStats[projectId] || {
+                newCardsStudied: 0,
+                reviewsCompleted: 0,
+              };
+              
+              // Prevent new cards if daily limit reached
+              if (
+                nextCard?.state === "new" && 
+                projectStats.newCardsStudied >= newCardsPerDay &&
+                newCardsPerDay > 0
+              ) {
+                console.log("🚫 Rejecting new card due to daily limit enforcement");
+                setCurrentCardId(null);
+                // Force session completion check
+                if (
+                  isStudySessionCompleteForProject(
+                    currentSRSState,
+                    currentSession,
+                    srsSettings,
+                    projectSettings,
+                    updatedNow
+                  )
+                ) {
+                  setSessionComplete(true);
+                }
+              } else {
+                setCurrentCardId(nextCardId);
+              }
             } else {
               // Use the proper session completion check
               if (
@@ -470,6 +506,8 @@ export default function StudyFlashcards({
       studySession,
       userId,
       projectSettings,
+      projectId,
+      newCardsPerDay,
     ]
   );
 
@@ -543,7 +581,29 @@ export default function StudyFlashcards({
         projectSettings,
         now // Pass consistent timestamp
       );
-      setCurrentCardId(nextCardId);
+
+      // Additional safety check: if we have a new card but limit is reached, reject it
+      if (nextCardId) {
+        const nextCard = srsState[nextCardId];
+        const projectStats = studySession.projectStats[projectId] || {
+          newCardsStudied: 0,
+          reviewsCompleted: 0,
+        };
+        
+        // Prevent new cards if daily limit reached
+        if (
+          nextCard?.state === "new" && 
+          projectStats.newCardsStudied >= newCardsPerDay &&
+          newCardsPerDay > 0
+        ) {
+          console.log("🚫 Rejecting initial new card due to daily limit enforcement");
+          setCurrentCardId(null);
+        } else {
+          setCurrentCardId(nextCardId);
+        }
+      } else {
+        setCurrentCardId(null);
+      }
 
       // Use the proper session completion check
       if (
@@ -565,6 +625,8 @@ export default function StudyFlashcards({
     sessionComplete,
     srsSettings,
     projectSettings,
+    projectId,
+    newCardsPerDay,
   ]);
   useEffect(() => {
     if (sessionComplete && userId && projectId && projectName) {
@@ -642,7 +704,24 @@ export default function StudyFlashcards({
       );
     }
 
-    // Check if daily limits are reached and no learning/review cards available
+    // Check if there are absolutely no cards available (new, learning, or due)
+    const hasAnyCards = 
+      availableStats.dueCards > 0 || 
+      availableStats.availableNewCards > 0 ||
+      availableStats.totalLearningCards > 0;
+
+    // If no cards at all, redirect to projects
+    if (!hasAnyCards) {
+      setTimeout(() => {
+        router.push('/projects');
+      }, 2000); // Give user time to see the message
+      
+      return (
+        <EmptyFlashcardState type="redirecting-to-projects" />
+      );
+    }
+
+    // Check if daily limits are reached but still have cards in other states
     const hasAvailableCards =
       availableStats.dueCards > 0 || availableStats.availableNewCards > 0;
 
@@ -672,8 +751,10 @@ export default function StudyFlashcards({
         />
 
         <DailyLimitsProgress
-          newCardsStudied={studySession.newCardsStudied}
-          reviewsCompleted={studySession.reviewsCompleted}
+          newCardsStudied={projectStats.newCardsStudied}
+          reviewsCompleted={projectStats.reviewsCompleted}
+          newCardsPerDay={newCardsPerDay}
+          maxReviewsPerDay={maxReviewsPerDay}
         />
 
         <CardTypeIndicator cardState={currentCardState} />
