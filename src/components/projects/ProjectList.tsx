@@ -42,7 +42,7 @@ export function ProjectList() {
             flashcardCount={project.flashcardCount || project.stats?.totalFlashcards || 0}
             srsStats={{
               dueCards: project.stats?.dueCards || 0,
-              newCards: project.stats?.availableNewCards || 0,
+              newCards: project.stats?.totalNewCards || 0,
               learningCards: project.stats?.learningCards || 0,
             }}
             onDelete={() => deleteProject(project.id)}

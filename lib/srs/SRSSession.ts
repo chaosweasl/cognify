@@ -976,6 +976,7 @@ export function getSessionAwareStudyStatsForProject(
   now: number = Date.now()
 ): {
   availableNewCards: number;
+  totalNewCards: number; // Total new cards regardless of daily limits
   dueLearningCards: number;
   dueReviewCards: number;
   dueCards: number;
@@ -1040,6 +1041,7 @@ export function getSessionAwareStudyStatsForProject(
 
   return {
     availableNewCards,
+    totalNewCards: newCardsTotal, // Total new cards for display
     dueLearningCards,
     dueReviewCards,
     dueCards,
