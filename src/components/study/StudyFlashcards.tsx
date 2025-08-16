@@ -332,6 +332,12 @@ export default function StudyFlashcards({
   const currentCard = currentCardId ? cardMap[currentCardId] : null;
   const currentCardState = currentCardId ? srsState[currentCardId] : null;
 
+  // Get per-project session stats for display
+  const projectStats = studySession.projectStats[projectId] || {
+    newCardsStudied: 0,
+    reviewsCompleted: 0,
+  };
+
   // Recalculate session-aware stats on every SRS state change
   const availableStats = React.useMemo(
     () =>
@@ -745,8 +751,10 @@ export default function StudyFlashcards({
         />
 
         <DailyLimitsProgress
-          newCardsStudied={studySession.newCardsStudied}
-          reviewsCompleted={studySession.reviewsCompleted}
+          newCardsStudied={projectStats.newCardsStudied}
+          reviewsCompleted={projectStats.reviewsCompleted}
+          newCardsPerDay={newCardsPerDay}
+          maxReviewsPerDay={maxReviewsPerDay}
         />
 
         <CardTypeIndicator cardState={currentCardState} />

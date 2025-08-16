@@ -72,7 +72,7 @@ function validateSettings(settings: SRSSettings): SRSSettings {
   // Validate LEARNING_STEPS with content validation
   validated.LEARNING_STEPS = validateStepArray(
     validated.LEARNING_STEPS,
-    [1, 10],
+    [1, 10, 1440],
     "LEARNING_STEPS"
   );
 
@@ -310,8 +310,8 @@ export const DEFAULT_SRS_SETTINGS: SRSSettings = {
   NEW_CARDS_PER_DAY: 20, // Maximum new cards to introduce per day
   MAX_REVIEWS_PER_DAY: 200, // Maximum reviews per day (0 = unlimited)
 
-  // Learning steps (in minutes) – only the micro-steps
-  LEARNING_STEPS: [1, 10], // ← no 1440
+  // Learning steps (in minutes) – micro-steps for initial learning
+  LEARNING_STEPS: [1, 10, 1440], // 1 min → 10 min → 1 day → graduate
 
   // Relearning steps (in minutes) - for cards that fail review
   RELEARNING_STEPS: [10, 1440], // 10 minutes → 1 day before going back to review queue
