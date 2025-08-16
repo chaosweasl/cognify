@@ -156,7 +156,7 @@ export async function getProjectDailyStudyStats(
   const studyDate = date || getTodayDateString();
 
   console.log(
-    `[DailyStats] Fetching project stats for date: ${studyDate}, user: ${userId}, project: ${projectId}`
+    `[ProjectDailyStats] Fetching project stats for date: ${studyDate}, user: ${userId}, project: ${projectId}`
   );
 
   try {
@@ -165,9 +165,13 @@ export async function getProjectDailyStudyStats(
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
-      console.warn(`[DailyStats] No active session found, returning defaults`);
+      console.warn(
+        `[ProjectDailyStats] No active session found, returning defaults`
+      );
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
+
+    console.log(`[ProjectDailyStats] Session found, querying database...`);
 
     // Use .maybeSingle() to handle missing records gracefully
     const { data, error } = await supabase
@@ -181,29 +185,31 @@ export async function getProjectDailyStudyStats(
       error &&
       (error.message || error.code || Object.keys(error).length > 0)
     ) {
-      console.error(`[DailyStats] Error fetching project daily stats:`, error);
+      console.error(`[ProjectDailyStats] Database error:`, error);
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
 
     if (!data) {
       console.log(
-        `[DailyStats] No project stats found for ${studyDate}, project ${projectId}, returning defaults`
+        `[ProjectDailyStats] No project stats found for ${studyDate}, project ${projectId}, returning defaults (0, 0)`
       );
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
 
-    console.log(`[DailyStats] Retrieved project stats for ${studyDate}:`, {
-      newCardsStudied: data.new_cards_studied,
-      reviewsCompleted: data.reviews_completed,
-    });
-
-    return {
+    const result = {
       newCardsStudied: data.new_cards_studied,
       reviewsCompleted: data.reviews_completed,
     };
+
+    console.log(
+      `[ProjectDailyStats] Successfully retrieved project stats:`,
+      result
+    );
+
+    return result;
   } catch (error) {
     console.error(
-      `[DailyStats] Failed to fetch project daily study stats:`,
+      `[ProjectDailyStats] Exception while fetching project daily study stats:`,
       error
     );
     return { newCardsStudied: 0, reviewsCompleted: 0 };

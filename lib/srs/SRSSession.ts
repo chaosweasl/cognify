@@ -136,10 +136,13 @@ export function invalidateNoteIdCache(): void {
 // --- STUDY SESSION TYPES ---
 export type StudySession = {
   // Per-project tracking of daily limits
-  projectStats: Record<string, {
-    newCardsStudied: number;
-    reviewsCompleted: number;
-  }>;
+  projectStats: Record<
+    string,
+    {
+      newCardsStudied: number;
+      reviewsCompleted: number;
+    }
+  >;
   // Global fallback for backward compatibility
   newCardsStudied: number;
   reviewsCompleted: number;
@@ -187,29 +190,28 @@ async function getDailyStudyCountsFromDB(
   projectId?: string
 ): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
   try {
+    console.log(
+      `[getDailyStudyCountsFromDB] Loading stats for user: ${userId}, project: ${
+        projectId || "global"
+      }`
+    );
+
     if (projectId) {
       // Get per-project daily stats
-      return await getProjectDailyStudyStatsLocal(userId, projectId);
+      const stats = await getProjectDailyStudyStats(userId, projectId);
+      console.log(`[getDailyStudyCountsFromDB] Project stats loaded:`, stats);
+      return stats;
     } else {
       // Get global daily stats (legacy support)
-      return await getDailyStudyStats(userId);
+      const stats = await getDailyStudyStats(userId);
+      console.log(`[getDailyStudyCountsFromDB] Global stats loaded:`, stats);
+      return stats;
     }
   } catch (error) {
     console.warn("Failed to load daily study counts from database:", error);
+    // Return zeros as fallback, but this should be rare
     return { newCardsStudied: 0, reviewsCompleted: 0 };
   }
-}
-
-/**
- * Get per-project daily study stats (using centralized function)
- */
-async function getProjectDailyStudyStatsLocal(
-  userId: string,
-  projectId: string,
-  date?: string
-): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
-  // Use the centralized function from dailyStudyStats.ts instead of duplicating logic
-  return await getProjectDailyStudyStats(userId, projectId, date);
 }
 
 /**
@@ -223,7 +225,12 @@ async function saveProjectDailyStudyCountsToDB(
 ): Promise<void> {
   // Use the centralized function from dailyStudyStats.ts instead of duplicating logic
   try {
-    await updateProjectDailyStudyStats(userId, projectId, newCardsStudied, reviewsCompleted);
+    await updateProjectDailyStudyStats(
+      userId,
+      projectId,
+      newCardsStudied,
+      reviewsCompleted
+    );
     console.log(
       `[ProjectDailyStats] Successfully saved stats for project ${projectId}`
     );
@@ -449,13 +456,20 @@ export async function initStudySession(
   projectId?: string
 ): Promise<StudySession> {
   console.log(
-    `[SRSSession] Initializing study session for user: ${userId}, project: ${projectId || "all"}`
+    `[SRSSession] Initializing study session for user: ${userId}, project: ${
+      projectId || "all"
+    }`
   );
 
   if (projectId) {
-    // Initialize for a specific project
+    // Initialize for a specific project - FIXED: Actually load from database
     const dailyCounts = await getDailyStudyCountsFromDB(userId, projectId);
-    
+
+    console.log(
+      `[SRSSession] Loaded daily counts for project ${projectId}:`,
+      dailyCounts
+    );
+
     return {
       projectStats: {
         [projectId]: dailyCounts,
@@ -473,18 +487,21 @@ export async function initStudySession(
       },
     };
   } else {
-    // Initialize with empty per-project stats (will be loaded as needed)
+    // Initialize with global stats if no specific project
+    const globalDailyCounts = await getDailyStudyCountsFromDB(userId);
+
+    console.log(`[SRSSession] Loaded global daily counts:`, globalDailyCounts);
+
     return {
       projectStats: {},
-      // Legacy global counters
-      newCardsStudied: 0,
-      reviewsCompleted: 0,
+      newCardsStudied: globalDailyCounts.newCardsStudied,
+      reviewsCompleted: globalDailyCounts.reviewsCompleted,
       learningCardsInQueue: [],
       reviewHistory: [],
       buriedCards: new Set(),
       _incrementalCounters: {
-        newCardsFromHistory: 0,
-        reviewsFromHistory: 0,
+        newCardsFromHistory: globalDailyCounts.newCardsStudied,
+        reviewsFromHistory: globalDailyCounts.reviewsCompleted,
         lastHistoryLength: 0,
       },
     };
@@ -499,17 +516,26 @@ export async function ensureProjectStatsInSession(
   userId: string,
   projectId: string
 ): Promise<StudySession> {
-  if (session.projectStats[projectId]) {
-    // Stats already loaded
+  // Check if stats are already loaded and have meaningful data
+  const existingStats = session.projectStats[projectId];
+  if (
+    existingStats &&
+    (existingStats.newCardsStudied > 0 || existingStats.reviewsCompleted > 0)
+  ) {
+    // Stats already loaded with meaningful data, don't overwrite
+    console.log(
+      `[ensureProjectStatsInSession] Using existing stats for project ${projectId}:`,
+      existingStats
+    );
     return session;
   }
 
   console.log(
-    `[SRSSession] Loading daily stats for project ${projectId}`
+    `[ensureProjectStatsInSession] Loading fresh stats for project ${projectId}`
   );
 
   const dailyCounts = await getDailyStudyCountsFromDB(userId, projectId);
-  
+
   return {
     ...session,
     projectStats: {
@@ -558,7 +584,9 @@ export function isStudySessionCompleteForProject(
 
   // If no cards available now, check if there are learning cards that will become available later
   // In genuine Anki, the session continues until all learning cards are processed
-  const projectCards = Object.values(cardStates).filter(card => card.projectId === projectSettings.projectId);
+  const projectCards = Object.values(cardStates).filter(
+    (card) => card.projectId === projectSettings.projectId
+  );
   const hasWaitingLearningCards = projectCards.some(
     (card) =>
       (card.state === "learning" || card.state === "relearning") &&
@@ -589,23 +617,26 @@ export function getNextCardToStudyWithProjectSettings(
 ): string | null {
   const allCards = Object.values(cardStates);
   const projectId = projectSettings.projectId;
-  
+
   // Get per-project session stats
   const projectStats = session.projectStats[projectId] || {
     newCardsStudied: 0,
     reviewsCompleted: 0,
   };
 
-  console.log(`🔍 Looking for next card in project ${projectId}. Session state:`, {
-    newCardsStudied: projectStats.newCardsStudied,
-    newCardLimit: projectSettings.newCardsPerDay,
-    reviewsCompleted: projectStats.reviewsCompleted,
-    reviewLimit: projectSettings.maxReviewsPerDay,
-    learningQueueSize: session.learningCardsInQueue.length,
-  });
+  console.log(
+    `🔍 Looking for next card in project ${projectId}. Session state:`,
+    {
+      newCardsStudied: projectStats.newCardsStudied,
+      newCardLimit: projectSettings.newCardsPerDay,
+      reviewsCompleted: projectStats.reviewsCompleted,
+      reviewLimit: projectSettings.maxReviewsPerDay,
+      learningQueueSize: session.learningCardsInQueue.length,
+    }
+  );
 
   // Filter cards to only include cards from this project
-  const projectCards = allCards.filter(card => card.projectId === projectId);
+  const projectCards = allCards.filter((card) => card.projectId === projectId);
 
   // 1. HIGHEST PRIORITY: Learning/Relearning cards (NEVER subject to daily limits)
   const learningCards = projectCards.filter((card) => {
@@ -704,7 +735,9 @@ export function getNextCardToStudyWithProjectSettings(
   );
 
   if (allProjectLearningCards.length > 0) {
-    console.log(`🔄 No cards due in project ${projectId}, checking learning ahead...`);
+    console.log(
+      `🔄 No cards due in project ${projectId}, checking learning ahead...`
+    );
 
     // Find learning cards that are close to being due (within 10 minutes)
     const learningAheadCards = allProjectLearningCards.filter((card) => {
@@ -864,11 +897,14 @@ export async function updateStudySession(
     updatedSession._incrementalCounters.reviewsFromHistory++;
   }
 
-  updatedSession._incrementalCounters.lastHistoryLength = updatedSession.reviewHistory.length;
+  updatedSession._incrementalCounters.lastHistoryLength =
+    updatedSession.reviewHistory.length;
 
   // Update global session counters for backward compatibility
-  updatedSession.newCardsStudied = updatedSession._incrementalCounters.newCardsFromHistory;
-  updatedSession.reviewsCompleted = updatedSession._incrementalCounters.reviewsFromHistory;
+  updatedSession.newCardsStudied =
+    updatedSession._incrementalCounters.newCardsFromHistory;
+  updatedSession.reviewsCompleted =
+    updatedSession._incrementalCounters.reviewsFromHistory;
 
   // Persist per-project daily counts to database (async, non-blocking)
   if (projectId && projectId !== "global") {
@@ -878,7 +914,10 @@ export async function updateStudySession(
       projectStats.newCardsStudied,
       projectStats.reviewsCompleted
     ).catch((error) => {
-      console.warn("Failed to persist per-project daily counts to database:", error);
+      console.warn(
+        "Failed to persist per-project daily counts to database:",
+        error
+      );
     });
   } else {
     // Legacy global stats persistence
@@ -944,8 +983,10 @@ export function getSessionAwareStudyStatsForProject(
   totalLearningCards: number; // All learning cards (due + not due)
 } {
   const projectId = projectSettings.projectId;
-  const allCards = Object.values(cardStates).filter(card => card.projectId === projectId);
-  
+  const allCards = Object.values(cardStates).filter(
+    (card) => card.projectId === projectId
+  );
+
   // Get per-project session stats
   const projectStats = session.projectStats[projectId] || {
     newCardsStudied: 0,
@@ -981,7 +1022,10 @@ export function getSessionAwareStudyStatsForProject(
   const remainingReviewSlots =
     projectSettings.maxReviewsPerDay <= 0
       ? Infinity
-      : Math.max(0, projectSettings.maxReviewsPerDay - projectStats.reviewsCompleted);
+      : Math.max(
+          0,
+          projectSettings.maxReviewsPerDay - projectStats.reviewsCompleted
+        );
   const reviewCardsTotal = allCards.filter(
     (card) => card.state === "review" && card.due <= now && !card.isSuspended
   ).length;
