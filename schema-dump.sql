@@ -67,13 +67,22 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 CREATE OR REPLACE FUNCTION "public"."create_default_user_settings"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   INSERT INTO public.user_settings (user_id)
   VALUES (NEW.id)
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
+EXCEPTION
+  WHEN foreign_key_violation THEN
+    -- If foreign key constraint fails, log and continue
+    RAISE LOG 'Foreign key violation in create_default_user_settings for user %', NEW.id;
+    RETURN NEW;
+  WHEN OTHERS THEN
+    -- Log other errors but don't fail
+    RAISE LOG 'Error in create_default_user_settings for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
 END;
 $$;
 
@@ -126,6 +135,93 @@ ALTER FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid",
 
 COMMENT ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb") IS 'Atomically creates a flashcard and its SRS state with proper authorization checks';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."create_missing_profiles"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- Create missing profiles
+  INSERT INTO public.profiles (id, display_name, avatar_url, email)
+  SELECT 
+    u.id,
+    COALESCE(
+      u.raw_user_meta_data->>'full_name',
+      u.raw_user_meta_data->>'name', 
+      u.raw_user_meta_data->>'user_name',
+      split_part(u.email, '@', 1)
+    ),
+    COALESCE(
+      u.raw_user_meta_data->>'avatar_url',
+      u.raw_user_meta_data->>'picture'
+    ),
+    u.email
+  FROM auth.users u
+  LEFT JOIN public.profiles p ON u.id = p.id
+  WHERE p.id IS NULL
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Create missing user settings with explicit valid values
+  INSERT INTO public.user_settings (
+    user_id,
+    theme,
+    notifications_enabled,
+    daily_reminder,
+    reminder_time,
+    new_cards_per_day,
+    max_reviews_per_day,
+    learning_steps,
+    relearning_steps,
+    graduating_interval,
+    easy_interval,
+    starting_ease,
+    minimum_ease,
+    easy_bonus,
+    hard_interval_factor,
+    easy_interval_factor,
+    lapse_recovery_factor,
+    leech_threshold,
+    leech_action,
+    new_card_order,
+    review_ahead,
+    bury_siblings,
+    max_interval,
+    lapse_ease_penalty
+  )
+  SELECT 
+    u.id,
+    'system'::text,
+    true,
+    true,
+    '09:00:00'::time,
+    20,
+    100,
+    ARRAY[1, 10, 1440],
+    ARRAY[10, 1440],
+    1,
+    4,
+    2.5,
+    1.3,
+    1.3,
+    1.0,  -- Fixed: within constraint bounds
+    1.3,
+    0.2,
+    8,
+    'suspend'::text,
+    'random'::text,
+    false,
+    false,
+    36500,
+    0.2
+  FROM auth.users u
+  LEFT JOIN public.user_settings s ON u.id = s.user_id
+  WHERE s.user_id IS NULL
+  ON CONFLICT (user_id) DO NOTHING;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_missing_profiles"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
@@ -202,16 +298,29 @@ ALTER FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
-  INSERT INTO public.profiles (id, display_name, avatar_url)
+  -- Insert profile first
+  INSERT INTO public.profiles (id, display_name, avatar_url, email)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name'),
-    NEW.raw_user_meta_data->>'avatar_url'
+    NEW.raw_user_meta_data->>'avatar_url',
+    NEW.email
   );
+  
+  -- Then insert user settings
+  INSERT INTO public.user_settings (user_id)
+  VALUES (NEW.id)
+  ON CONFLICT (user_id) DO NOTHING;
+  
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log the error but don't prevent user creation
+    RAISE LOG 'Error in handle_new_user for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
 END;
 $$;
 
@@ -571,7 +680,8 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "bio" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    "is_admin" boolean DEFAULT false NOT NULL
+    "is_admin" boolean DEFAULT false NOT NULL,
+    "email" "text"
 );
 
 
@@ -629,7 +739,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_settings" (
     CONSTRAINT "user_settings_easy_interval_check" CHECK (("easy_interval" >= 1)),
     CONSTRAINT "user_settings_easy_interval_factor_check" CHECK ((("easy_interval_factor" >= (1.0)::double precision) AND ("easy_interval_factor" <= (2.0)::double precision))),
     CONSTRAINT "user_settings_graduating_interval_check" CHECK (("graduating_interval" >= 1)),
-    CONSTRAINT "user_settings_hard_interval_factor_check" CHECK ((("hard_interval_factor" >= (0.1)::double precision) AND ("hard_interval_factor" <= (1.0)::double precision))),
+    CONSTRAINT "user_settings_hard_interval_factor_check" CHECK ((("hard_interval_factor" >= (0.1)::double precision) AND ("hard_interval_factor" <= (2.0)::double precision))),
     CONSTRAINT "user_settings_lapse_ease_penalty_check" CHECK ((("lapse_ease_penalty" >= (0.1)::double precision) AND ("lapse_ease_penalty" <= (1.0)::double precision))),
     CONSTRAINT "user_settings_lapse_recovery_factor_check" CHECK ((("lapse_recovery_factor" >= (0.1)::double precision) AND ("lapse_recovery_factor" <= (1.0)::double precision))),
     CONSTRAINT "user_settings_leech_action_check" CHECK (("leech_action" = ANY (ARRAY['suspend'::"text", 'tag'::"text"]))),
@@ -836,10 +946,6 @@ CREATE OR REPLACE TRIGGER "create_srs_state_trigger" AFTER INSERT ON "public"."f
 
 
 COMMENT ON TRIGGER "create_srs_state_trigger" ON "public"."flashcards" IS 'Automatically creates an SRS state record when a new flashcard is inserted';
-
-
-
-CREATE OR REPLACE TRIGGER "create_user_settings_trigger" AFTER INSERT ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."create_default_user_settings"();
 
 
 
@@ -1169,6 +1275,12 @@ GRANT ALL ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" 
 
 
 
+GRANT ALL ON FUNCTION "public"."create_missing_profiles"() TO "anon";
+GRANT ALL ON FUNCTION "public"."create_missing_profiles"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_missing_profiles"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "anon";
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "service_role";
@@ -1183,6 +1295,7 @@ GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id
 REVOKE ALL ON FUNCTION "public"."handle_new_user"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 
 
 
