@@ -59,6 +59,7 @@ export type DailyStudyStats = {
   cards_lapsed: number;
   created_at: string;
   updated_at: string;
+  project_id: string | null; // Can be null for global stats
 };
 
 /**
@@ -69,7 +70,7 @@ function getTodayDateString(): string {
 }
 
 /**
- * Get daily study stats for a specific date
+ * Get daily study stats for a specific date (GLOBAL stats only, project_id = NULL)
  * Returns stats for the given date, or default values if no record exists
  * Fixed: Improved auth handling and error logging for HTTP 406 issues
  */
@@ -81,7 +82,7 @@ export async function getDailyStudyStats(
   const studyDate = date || getTodayDateString();
 
   console.log(
-    `[DailyStats] Fetching stats for date: ${studyDate}, user: ${userId}`
+    `[DailyStats] Fetching GLOBAL stats for date: ${studyDate}, user: ${userId}`
   );
 
   try {
@@ -96,18 +97,13 @@ export async function getDailyStudyStats(
 
     console.log(`[DailyStats] Session found, user ID: ${session.user.id}`);
 
-    // Debug: Log the exact request we're about to make
-    console.log(`[DailyStats] Making request to daily_study_stats table`);
-    console.log(
-      `[DailyStats] Query: select=new_cards_studied,reviews_completed&study_date=eq.${studyDate}`
-    );
-
     // Fixed: Use .maybeSingle() instead of .single() to handle missing records gracefully
     // .single() throws HTTP 406 when no records found, .maybeSingle() returns null
     const { data, error } = await supabase
       .from("daily_study_stats")
       .select("new_cards_studied, reviews_completed")
       .eq("study_date", studyDate)
+      .is("project_id", null) // Global stats have project_id = NULL
       .maybeSingle();
 
     if (
@@ -127,12 +123,12 @@ export async function getDailyStudyStats(
     if (!data) {
       // No record exists for this date, return default values
       console.log(
-        `[DailyStats] No stats found for ${studyDate}, returning defaults`
+        `[DailyStats] No GLOBAL stats found for ${studyDate}, returning defaults`
       );
       return { newCardsStudied: 0, reviewsCompleted: 0 };
     }
 
-    console.log(`[DailyStats] Retrieved stats for ${studyDate}:`, {
+    console.log(`[DailyStats] Retrieved GLOBAL stats for ${studyDate}:`, {
       newCardsStudied: data.new_cards_studied,
       reviewsCompleted: data.reviews_completed,
     });
@@ -148,7 +144,71 @@ export async function getDailyStudyStats(
 }
 
 /**
- * Update daily study stats for today
+ * Get daily study stats for a specific project and date
+ * Returns stats for the given project and date, or default values if no record exists
+ */
+export async function getProjectDailyStudyStats(
+  userId: string,
+  projectId: string,
+  date?: string
+): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
+  const supabase = createClient();
+  const studyDate = date || getTodayDateString();
+
+  console.log(
+    `[DailyStats] Fetching project stats for date: ${studyDate}, user: ${userId}, project: ${projectId}`
+  );
+
+  try {
+    // Check if user is authenticated first
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn(`[DailyStats] No active session found, returning defaults`);
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    // Use .maybeSingle() to handle missing records gracefully
+    const { data, error } = await supabase
+      .from("daily_study_stats")
+      .select("new_cards_studied, reviews_completed")
+      .eq("study_date", studyDate)
+      .eq("project_id", projectId)
+      .maybeSingle();
+
+    if (
+      error &&
+      (error.message || error.code || Object.keys(error).length > 0)
+    ) {
+      console.error(`[DailyStats] Error fetching project daily stats:`, error);
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    if (!data) {
+      console.log(
+        `[DailyStats] No project stats found for ${studyDate}, project ${projectId}, returning defaults`
+      );
+      return { newCardsStudied: 0, reviewsCompleted: 0 };
+    }
+
+    console.log(`[DailyStats] Retrieved project stats for ${studyDate}:`, {
+      newCardsStudied: data.new_cards_studied,
+      reviewsCompleted: data.reviews_completed,
+    });
+
+    return {
+      newCardsStudied: data.new_cards_studied,
+      reviewsCompleted: data.reviews_completed,
+    };
+  } catch (error) {
+    console.error(`[DailyStats] Failed to fetch project daily study stats:`, error);
+    return { newCardsStudied: 0, reviewsCompleted: 0 };
+  }
+}
+
+/**
+ * Update daily study stats for today (GLOBAL stats, project_id = NULL)
  * Uses UPSERT to create or update the record for today
  */
 export async function updateDailyStudyStats(
@@ -165,8 +225,9 @@ export async function updateDailyStudyStats(
   const studyDate = getTodayDateString();
 
   try {
-    const updateData: Partial<DailyStudyStats> = {
+    const updateData: Partial<DailyStudyStats> & { project_id: null } = {
       user_id: userId,
+      project_id: null, // Global stats - project_id must be NULL for proper constraint matching
       study_date: studyDate,
       new_cards_studied: newCardsStudied,
       reviews_completed: reviewsCompleted,
@@ -181,6 +242,8 @@ export async function updateDailyStudyStats(
       }),
     };
 
+    // For global stats (project_id IS NULL), we need to use the partial index constraint
+    // which matches the unique index: daily_study_stats_user_global_date_unique
     const { error } = await supabase
       .from("daily_study_stats")
       .upsert(updateData, {
@@ -205,6 +268,75 @@ export async function updateDailyStudyStats(
     }
   } catch (error) {
     logError("Failed to update daily study stats", error);
+  }
+}
+
+/**
+ * Update daily study stats for a specific project
+ * Uses UPSERT to create or update the record for today
+ */
+export async function updateProjectDailyStudyStats(
+  userId: string,
+  projectId: string,
+  newCardsStudied: number,
+  reviewsCompleted: number,
+  additionalStats?: {
+    timeSpentSeconds?: number;
+    cardsLearned?: number;
+    cardsLapsed?: number;
+  }
+): Promise<void> {
+  const supabase = createClient();
+  const studyDate = getTodayDateString();
+
+  try {
+    const updateData: Partial<DailyStudyStats> & { project_id: string } = {
+      user_id: userId,
+      project_id: projectId, // Project-specific stats
+      study_date: studyDate,
+      new_cards_studied: newCardsStudied,
+      reviews_completed: reviewsCompleted,
+      ...(additionalStats?.timeSpentSeconds !== undefined && {
+        time_spent_seconds: additionalStats.timeSpentSeconds,
+      }),
+      ...(additionalStats?.cardsLearned !== undefined && {
+        cards_learned: additionalStats.cardsLearned,
+      }),
+      ...(additionalStats?.cardsLapsed !== undefined && {
+        cards_lapsed: additionalStats.cardsLapsed,
+      }),
+    };
+
+    console.log(
+      `[ProjectDailyStats] Updating stats for project ${projectId}:`,
+      { newCardsStudied, reviewsCompleted }
+    );
+
+    // For project-specific stats, use the full unique constraint
+    const { error } = await supabase
+      .from("daily_study_stats")
+      .upsert(updateData, {
+        onConflict: "user_id,project_id,study_date",
+        ignoreDuplicates: false,
+      });
+
+    if (error) {
+      const isErrorMeaningful = hasMeaningfulError(error);
+      console.log("[ProjectDailyStats] Error check:", {
+        hasError: !!error,
+        isErrorMeaningful,
+        errorKeys: Object.keys(error || {}),
+        error: error,
+      });
+
+      if (isErrorMeaningful) {
+        logSupabaseError("Error updating project daily study stats", error);
+      } else {
+        console.log("[ProjectDailyStats] Skipping empty/meaningless error log");
+      }
+    }
+  } catch (error) {
+    logError("Failed to update project daily study stats", error);
   }
 }
 
@@ -291,6 +423,7 @@ export async function resetDailyStudyStats(
     const { error } = await supabase.from("daily_study_stats").upsert(
       {
         user_id: userId,
+        project_id: null, // Global stats - project_id must be NULL
         study_date: studyDate,
         new_cards_studied: 0,
         reviews_completed: 0,

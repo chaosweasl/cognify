@@ -2,10 +2,11 @@
 // Handles study sessions, statistics, and utility functions
 import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
-import { createClient } from "@/lib/supabase/client";
 import {
   getDailyStudyStats,
+  getProjectDailyStudyStats,
   updateDailyStudyStats,
+  updateProjectDailyStudyStats,
   // incrementDailyStudyCounters, // removed unused import
 } from "@/lib/supabase/dailyStudyStats";
 
@@ -188,7 +189,7 @@ async function getDailyStudyCountsFromDB(
   try {
     if (projectId) {
       // Get per-project daily stats
-      return await getProjectDailyStudyStats(userId, projectId);
+      return await getProjectDailyStudyStatsLocal(userId, projectId);
     } else {
       // Get global daily stats (legacy support)
       return await getDailyStudyStats(userId);
@@ -200,58 +201,19 @@ async function getDailyStudyCountsFromDB(
 }
 
 /**
- * Get per-project daily study stats
+ * Get per-project daily study stats (using centralized function)
  */
-async function getProjectDailyStudyStats(
+async function getProjectDailyStudyStatsLocal(
   userId: string,
   projectId: string,
   date?: string
 ): Promise<{ newCardsStudied: number; reviewsCompleted: number }> {
-  const supabase = createClient();
-  const studyDate = date || getTodayDateString();
-
-  console.log(
-    `[ProjectDailyStats] Fetching stats for project: ${projectId}, date: ${studyDate}, user: ${userId}`
-  );
-
-  try {
-    const { data, error } = await supabase
-      .from("daily_study_stats")
-      .select("new_cards_studied, reviews_completed")
-      .eq("user_id", userId)
-      .eq("project_id", projectId)
-      .eq("study_date", studyDate)
-      .maybeSingle();
-
-    if (error) {
-      console.error(`[ProjectDailyStats] Error fetching stats:`, error);
-      return { newCardsStudied: 0, reviewsCompleted: 0 };
-    }
-
-    if (!data) {
-      console.log(
-        `[ProjectDailyStats] No stats found for project ${projectId} on ${studyDate}, returning defaults`
-      );
-      return { newCardsStudied: 0, reviewsCompleted: 0 };
-    }
-
-    console.log(`[ProjectDailyStats] Retrieved stats for project ${projectId}:`, {
-      newCardsStudied: data.new_cards_studied,
-      reviewsCompleted: data.reviews_completed,
-    });
-
-    return {
-      newCardsStudied: data.new_cards_studied,
-      reviewsCompleted: data.reviews_completed,
-    };
-  } catch (error) {
-    console.error(`[ProjectDailyStats] Failed to fetch project daily stats:`, error);
-    return { newCardsStudied: 0, reviewsCompleted: 0 };
-  }
+  // Use the centralized function from dailyStudyStats.ts instead of duplicating logic
+  return await getProjectDailyStudyStats(userId, projectId, date);
 }
 
 /**
- * Save per-project daily study counts to database
+ * Save per-project daily study counts to database (using centralized function)
  */
 async function saveProjectDailyStudyCountsToDB(
   userId: string,
@@ -259,38 +221,9 @@ async function saveProjectDailyStudyCountsToDB(
   newCardsStudied: number,
   reviewsCompleted: number
 ): Promise<void> {
-  const supabase = createClient();
-  const today = getTodayDateString();
-
+  // Use the centralized function from dailyStudyStats.ts instead of duplicating logic
   try {
-    console.log(
-      `[ProjectDailyStats] Saving stats for project ${projectId}:`,
-      { newCardsStudied, reviewsCompleted }
-    );
-
-    const { error } = await supabase
-      .from("daily_study_stats")
-      .upsert(
-        {
-          user_id: userId,
-          project_id: projectId,
-          study_date: today,
-          new_cards_studied: newCardsStudied,
-          reviews_completed: reviewsCompleted,
-        },
-        {
-          onConflict: "user_id,project_id,study_date",
-        }
-      );
-
-    if (error) {
-      console.error(
-        `[ProjectDailyStats] Error saving project daily stats:`,
-        error
-      );
-      throw error;
-    }
-
+    await updateProjectDailyStudyStats(userId, projectId, newCardsStudied, reviewsCompleted);
     console.log(
       `[ProjectDailyStats] Successfully saved stats for project ${projectId}`
     );
