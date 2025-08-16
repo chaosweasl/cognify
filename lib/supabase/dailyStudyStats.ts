@@ -202,7 +202,10 @@ export async function getProjectDailyStudyStats(
       reviewsCompleted: data.reviews_completed,
     };
   } catch (error) {
-    console.error(`[DailyStats] Failed to fetch project daily study stats:`, error);
+    console.error(
+      `[DailyStats] Failed to fetch project daily study stats:`,
+      error
+    );
     return { newCardsStudied: 0, reviewsCompleted: 0 };
   }
 }
@@ -227,7 +230,7 @@ export async function updateDailyStudyStats(
   try {
     const updateData: Partial<DailyStudyStats> & { project_id: null } = {
       user_id: userId,
-      project_id: null, // Global stats - project_id must be NULL for proper constraint matching
+      project_id: null,
       study_date: studyDate,
       new_cards_studied: newCardsStudied,
       reviews_completed: reviewsCompleted,
@@ -242,28 +245,50 @@ export async function updateDailyStudyStats(
       }),
     };
 
-    // For global stats (project_id IS NULL), we need to use the partial index constraint
-    // which matches the unique index: daily_study_stats_user_global_date_unique
-    const { error } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from("daily_study_stats")
-      .upsert(updateData, {
-        onConflict: "user_id,study_date",
-        ignoreDuplicates: false,
-      });
+      .select("id")
+      .eq("user_id", userId)
+      .eq("study_date", studyDate)
+      .is("project_id", null)
+      .maybeSingle();
 
-    if (error) {
-      const isErrorMeaningful = hasMeaningfulError(error);
-      console.log("[DailyStats] Error check:", {
-        hasError: !!error,
-        isErrorMeaningful,
-        errorKeys: Object.keys(error || {}),
-        error: error,
-      });
+    if (selectError) {
+      console.error(
+        "[DailyStats] Error checking existing record:",
+        selectError
+      );
+      return;
+    }
 
-      if (isErrorMeaningful) {
-        logSupabaseError("Error updating daily study stats", error);
-      } else {
-        console.log("[DailyStats] Skipping empty/meaningless error log");
+    if (existing) {
+      const { error } = await supabase
+        .from("daily_study_stats")
+        .update({
+          new_cards_studied: newCardsStudied,
+          reviews_completed: reviewsCompleted,
+          ...(additionalStats?.timeSpentSeconds !== undefined && {
+            time_spent_seconds: additionalStats.timeSpentSeconds,
+          }),
+          ...(additionalStats?.cardsLearned !== undefined && {
+            cards_learned: additionalStats.cardsLearned,
+          }),
+          ...(additionalStats?.cardsLapsed !== undefined && {
+            cards_lapsed: additionalStats.cardsLapsed,
+          }),
+        })
+        .eq("id", existing.id);
+
+      if (error && hasMeaningfulError(error)) {
+        logSupabaseError("Error updating existing daily study stats", error);
+      }
+    } else {
+      const { error } = await supabase
+        .from("daily_study_stats")
+        .insert(updateData);
+
+      if (error && hasMeaningfulError(error)) {
+        logSupabaseError("Error inserting new daily study stats", error);
       }
     }
   } catch (error) {
@@ -292,7 +317,7 @@ export async function updateProjectDailyStudyStats(
   try {
     const updateData: Partial<DailyStudyStats> & { project_id: string } = {
       user_id: userId,
-      project_id: projectId, // Project-specific stats
+      project_id: projectId,
       study_date: studyDate,
       new_cards_studied: newCardsStudied,
       reviews_completed: reviewsCompleted,
@@ -307,12 +332,6 @@ export async function updateProjectDailyStudyStats(
       }),
     };
 
-    console.log(
-      `[ProjectDailyStats] Updating stats for project ${projectId}:`,
-      { newCardsStudied, reviewsCompleted }
-    );
-
-    // For project-specific stats, use the full unique constraint
     const { error } = await supabase
       .from("daily_study_stats")
       .upsert(updateData, {
@@ -320,20 +339,8 @@ export async function updateProjectDailyStudyStats(
         ignoreDuplicates: false,
       });
 
-    if (error) {
-      const isErrorMeaningful = hasMeaningfulError(error);
-      console.log("[ProjectDailyStats] Error check:", {
-        hasError: !!error,
-        isErrorMeaningful,
-        errorKeys: Object.keys(error || {}),
-        error: error,
-      });
-
-      if (isErrorMeaningful) {
-        logSupabaseError("Error updating project daily study stats", error);
-      } else {
-        console.log("[ProjectDailyStats] Skipping empty/meaningless error log");
-      }
+    if (error && hasMeaningfulError(error)) {
+      logSupabaseError("Error updating project daily study stats", error);
     }
   } catch (error) {
     logError("Failed to update project daily study stats", error);
@@ -420,25 +427,50 @@ export async function resetDailyStudyStats(
   const studyDate = date || getTodayDateString();
 
   try {
-    const { error } = await supabase.from("daily_study_stats").upsert(
-      {
-        user_id: userId,
-        project_id: null, // Global stats - project_id must be NULL
-        study_date: studyDate,
-        new_cards_studied: 0,
-        reviews_completed: 0,
-        time_spent_seconds: 0,
-        cards_learned: 0,
-        cards_lapsed: 0,
-      },
-      {
-        onConflict: "user_id,study_date",
-        ignoreDuplicates: false,
-      }
-    );
+    const { data: existing, error: selectError } = await supabase
+      .from("daily_study_stats")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("study_date", studyDate)
+      .is("project_id", null)
+      .maybeSingle();
 
-    if (error) {
-      console.error("Error resetting daily study stats:", error);
+    if (selectError) {
+      console.error(
+        "[DailyStats] Error checking existing record for reset:",
+        selectError
+      );
+      return;
+    }
+
+    const resetData = {
+      new_cards_studied: 0,
+      reviews_completed: 0,
+      time_spent_seconds: 0,
+      cards_learned: 0,
+      cards_lapsed: 0,
+    };
+
+    if (existing) {
+      const { error } = await supabase
+        .from("daily_study_stats")
+        .update(resetData)
+        .eq("id", existing.id);
+
+      if (error) {
+        console.error("Error updating daily study stats for reset:", error);
+      }
+    } else {
+      const { error } = await supabase.from("daily_study_stats").insert({
+        user_id: userId,
+        project_id: null,
+        study_date: studyDate,
+        ...resetData,
+      });
+
+      if (error) {
+        console.error("Error inserting daily study stats for reset:", error);
+      }
     }
   } catch (error) {
     console.error("Failed to reset daily study stats:", error);
