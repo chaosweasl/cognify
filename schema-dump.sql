@@ -65,6 +65,82 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
+CREATE OR REPLACE FUNCTION "public"."can_user_make_request"("p_user_id" "uuid", "p_estimated_credits" integer) RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    v_plan RECORD;
+    v_kill_switch BOOLEAN;
+BEGIN
+    -- Check global kill switch
+    SELECT (value::text)::boolean INTO v_kill_switch 
+    FROM public.system_config WHERE key = 'ai_kill_switch';
+    
+    IF v_kill_switch THEN
+        RETURN jsonb_build_object(
+            'allowed', false,
+            'reason', 'SERVICE_TEMPORARILY_UNAVAILABLE',
+            'message', 'AI services are temporarily unavailable. Please try again later.'
+        );
+    END IF;
+
+    -- Get user plan limits
+    SELECT * INTO v_plan FROM public.get_user_plan_limits(p_user_id);
+    
+    IF v_plan.plan_name IS NULL THEN
+        RETURN jsonb_build_object(
+            'allowed', false,
+            'reason', 'NO_ACTIVE_PLAN',
+            'message', 'No active subscription found. Please subscribe to continue.'
+        );
+    END IF;
+
+    -- Check per-request limit
+    IF p_estimated_credits > v_plan.max_per_request_credits THEN
+        RETURN jsonb_build_object(
+            'allowed', false,
+            'reason', 'REQUEST_TOO_LARGE',
+            'message', format('Request requires %s credits but maximum per request is %s', 
+                            p_estimated_credits, v_plan.max_per_request_credits)
+        );
+    END IF;
+
+    -- Check daily limit
+    IF p_estimated_credits > v_plan.daily_credits_remaining THEN
+        RETURN jsonb_build_object(
+            'allowed', false,
+            'reason', 'DAILY_LIMIT_EXCEEDED',
+            'message', format('Request requires %s credits but you have %s remaining today', 
+                            p_estimated_credits, v_plan.daily_credits_remaining)
+        );
+    END IF;
+
+    -- Check monthly limit
+    IF p_estimated_credits > v_plan.credits_remaining THEN
+        RETURN jsonb_build_object(
+            'allowed', false,
+            'reason', 'MONTHLY_LIMIT_EXCEEDED',
+            'message', format('Request requires %s credits but you have %s remaining this month', 
+                            p_estimated_credits, v_plan.credits_remaining)
+        );
+    END IF;
+
+    -- All checks passed
+    RETURN jsonb_build_object(
+        'allowed', true,
+        'plan_name', v_plan.plan_name,
+        'credits_required', p_estimated_credits,
+        'daily_remaining_after', v_plan.daily_credits_remaining - p_estimated_credits,
+        'monthly_remaining_after', v_plan.credits_remaining - p_estimated_credits
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."can_user_make_request"("p_user_id" "uuid", "p_estimated_credits" integer) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."create_default_user_settings"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -92,6 +168,7 @@ ALTER FUNCTION "public"."create_default_user_settings"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "uuid", "p_user_id" "uuid", "p_front" "text", "p_back" "text", "p_extra" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
     AS $$
 DECLARE
     new_flashcard_id UUID;
@@ -139,6 +216,7 @@ COMMENT ON FUNCTION "public"."create_flashcard_with_srs_state"("p_project_id" "u
 
 CREATE OR REPLACE FUNCTION "public"."create_missing_profiles"() RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
     AS $$
 BEGIN
   -- Create missing profiles
@@ -226,6 +304,7 @@ ALTER FUNCTION "public"."create_missing_profiles"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
     AS $$
 BEGIN
     -- Insert SRS state for the new flashcard
@@ -271,6 +350,164 @@ COMMENT ON FUNCTION "public"."create_srs_state_for_flashcard"() IS 'Function to 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."create_user_credit_balance"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+    INSERT INTO public.user_credit_balances (user_id)
+    VALUES (NEW.id)
+    ON CONFLICT (user_id) DO NOTHING;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_user_credit_balance"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."debit_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_transaction_type" "text", "p_description" "text", "p_reference_id" "text" DEFAULT NULL::"text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    v_balance RECORD;
+    v_success BOOLEAN := false;
+BEGIN
+    -- Use advisory lock to prevent race conditions
+    PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text)::bigint);
+    
+    -- Get current balance with row lock
+    SELECT * INTO v_balance 
+    FROM public.user_credit_balances 
+    WHERE user_id = p_user_id 
+    FOR UPDATE;
+    
+    -- Create balance record if it doesn't exist
+    IF v_balance.user_id IS NULL THEN
+        INSERT INTO public.user_credit_balances (user_id) 
+        VALUES (p_user_id);
+        
+        SELECT * INTO v_balance 
+        FROM public.user_credit_balances 
+        WHERE user_id = p_user_id;
+    END IF;
+    
+    -- Reset counters if needed
+    IF DATE(v_balance.last_daily_reset) < CURRENT_DATE THEN
+        UPDATE public.user_credit_balances 
+        SET daily_credits_used = 0, 
+            last_daily_reset = NOW()
+        WHERE user_id = p_user_id;
+    END IF;
+    
+    IF DATE_TRUNC('month', v_balance.last_monthly_reset) < DATE_TRUNC('month', NOW()) THEN
+        UPDATE public.user_credit_balances 
+        SET monthly_credits_used = 0, 
+            last_monthly_reset = NOW()
+        WHERE user_id = p_user_id;
+    END IF;
+    
+    -- Refresh balance after resets
+    SELECT * INTO v_balance 
+    FROM public.user_credit_balances 
+    WHERE user_id = p_user_id;
+    
+    -- Update usage counters
+    UPDATE public.user_credit_balances 
+    SET 
+        daily_credits_used = daily_credits_used + p_credits,
+        monthly_credits_used = monthly_credits_used + p_credits,
+        updated_at = NOW()
+    WHERE user_id = p_user_id;
+    
+    -- Record transaction
+    INSERT INTO public.credit_transactions (
+        user_id, amount, transaction_type, description, reference_id
+    ) VALUES (
+        p_user_id, -p_credits, p_transaction_type, p_description, p_reference_id
+    );
+    
+    v_success := true;
+    
+    RETURN jsonb_build_object(
+        'success', v_success,
+        'credits_debited', p_credits,
+        'new_daily_used', v_balance.daily_credits_used + p_credits,
+        'new_monthly_used', v_balance.monthly_credits_used + p_credits
+    );
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', SQLERRM
+        );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."debit_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_transaction_type" "text", "p_description" "text", "p_reference_id" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."estimate_ai_request_cost"("p_content_length" integer, "p_operation_type" "text" DEFAULT 'flashcard_generation'::"text", "p_think_harder" boolean DEFAULT false) RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    v_base_tokens INTEGER;
+    v_multiplier DECIMAL(4,2) := 1.0;
+    v_credits_per_usd INTEGER;
+    v_cost_per_1k DECIMAL(10,6);
+    v_safety_buffer DECIMAL(4,2);
+    v_estimated_credits INTEGER;
+BEGIN
+    -- Get system configuration
+    SELECT (value::text)::integer INTO v_credits_per_usd 
+    FROM public.system_config WHERE key = 'credits_per_usd';
+    
+    SELECT (value::text)::decimal INTO v_cost_per_1k 
+    FROM public.system_config WHERE key = 'cost_per_1k_tokens';
+    
+    SELECT (value::text)::decimal INTO v_safety_buffer 
+    FROM public.system_config WHERE key = 'safety_buffer_multiplier';
+    
+    -- Estimate tokens based on content length (rough: 1 token = 4 characters)
+    v_base_tokens := GREATEST(100, p_content_length / 4 + 200); -- +200 for system prompt
+    
+    -- Apply operation-specific multipliers
+    CASE p_operation_type
+        WHEN 'think_harder' THEN v_base_tokens := v_base_tokens * 3; -- More complex analysis
+        WHEN 'content_analysis' THEN v_base_tokens := v_base_tokens * 1.5;
+        ELSE v_base_tokens := v_base_tokens; -- Default for flashcard_generation
+    END CASE;
+    
+    -- Apply "Think Harder" cost multiplier
+    IF p_think_harder THEN
+        SELECT (value::text)::decimal INTO v_multiplier 
+        FROM public.system_config WHERE key = 'think_harder_multiplier';
+    END IF;
+    
+    -- Calculate estimated cost in credits with safety buffer
+    v_estimated_credits := CEILING(
+        v_base_tokens * v_cost_per_1k / 1000 * v_credits_per_usd * v_multiplier * v_safety_buffer
+    );
+    
+    RETURN jsonb_build_object(
+        'estimated_tokens', v_base_tokens,
+        'estimated_credits', v_estimated_credits,
+        'cost_multiplier', v_multiplier,
+        'safety_buffer_applied', v_safety_buffer,
+        'base_cost_usd', ROUND(v_base_tokens * v_cost_per_1k / 1000, 6),
+        'final_cost_usd', ROUND(v_base_tokens * v_cost_per_1k / 1000 * v_multiplier * v_safety_buffer, 6)
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."estimate_ai_request_cost"("p_content_length" integer, "p_operation_type" "text", "p_think_harder" boolean) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 100) RETURNS TABLE("card_id" "uuid", "project_id" "uuid", "due" timestamp with time zone, "state" "text", "front" "text", "back" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public, pg_catalog'
@@ -294,6 +531,31 @@ $$;
 
 
 ALTER FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_user_plan_limits"("p_user_id" "uuid") RETURNS TABLE("plan_name" "text", "monthly_credits" integer, "max_daily_credits" integer, "max_per_request_credits" integer, "credits_remaining" integer, "daily_credits_remaining" integer)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        sp.name,
+        sp.credits_per_month,
+        sp.max_daily_credits,
+        sp.max_per_request_credits,
+        GREATEST(0, sp.credits_per_month - COALESCE(ucb.monthly_credits_used, 0)) as credits_remaining,
+        GREATEST(0, sp.max_daily_credits - COALESCE(ucb.daily_credits_used, 0)) as daily_credits_remaining
+    FROM public.user_subscriptions us
+    JOIN public.subscription_plans sp ON us.plan_id = sp.id
+    LEFT JOIN public.user_credit_balances ucb ON us.user_id = ucb.user_id
+    WHERE us.user_id = p_user_id 
+    AND us.status = 'active';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_user_plan_limits"("p_user_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -421,6 +683,41 @@ SET default_tablespace = '';
 SET default_table_access_method = "heap";
 
 
+CREATE TABLE IF NOT EXISTS "public"."ai_usage_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "project_id" "uuid",
+    "request_id" "text" NOT NULL,
+    "operation_type" "text" NOT NULL,
+    "input_tokens" integer,
+    "output_tokens" integer,
+    "total_tokens" integer,
+    "model_used" "text",
+    "provider" "text" DEFAULT 'deepseek'::"text",
+    "estimated_cost_credits" integer NOT NULL,
+    "actual_cost_credits" integer,
+    "cost_multiplier" numeric(4,2) DEFAULT 1.0,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "error_message" "text",
+    "content_hash" "text",
+    "output_data" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "completed_at" timestamp with time zone,
+    CONSTRAINT "ai_usage_log_actual_cost_credits_check" CHECK (("actual_cost_credits" >= 0)),
+    CONSTRAINT "ai_usage_log_estimated_cost_credits_check" CHECK (("estimated_cost_credits" >= 0)),
+    CONSTRAINT "ai_usage_log_operation_type_check" CHECK (("operation_type" = ANY (ARRAY['flashcard_generation'::"text", 'content_analysis'::"text", 'think_harder'::"text"]))),
+    CONSTRAINT "ai_usage_log_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text"]))),
+    CONSTRAINT "ai_usage_log_tokens_consistent" CHECK ((("total_tokens" IS NULL) OR ("total_tokens" = (COALESCE("input_tokens", 0) + COALESCE("output_tokens", 0)))))
+);
+
+
+ALTER TABLE "public"."ai_usage_log" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."ai_usage_log" IS 'Detailed logging of AI API usage for cost tracking and debugging';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."app_notification_reads" (
     "user_id" "uuid" NOT NULL,
     "notification_id" "uuid" NOT NULL,
@@ -442,6 +739,26 @@ CREATE TABLE IF NOT EXISTS "public"."app_notifications" (
 
 
 ALTER TABLE "public"."app_notifications" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."credit_transactions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "amount" integer NOT NULL,
+    "transaction_type" "text" NOT NULL,
+    "description" "text",
+    "reference_id" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "credit_transactions_transaction_type_check" CHECK (("transaction_type" = ANY (ARRAY['subscription_grant'::"text", 'manual_grant'::"text", 'ai_usage'::"text", 'refund'::"text", 'bonus'::"text"])))
+);
+
+
+ALTER TABLE "public"."credit_transactions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."credit_transactions" IS 'Audit trail of all credit additions and deductions';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."daily_study_stats" (
@@ -692,6 +1009,70 @@ COMMENT ON COLUMN "public"."profiles"."is_admin" IS 'Admin flag - can only be up
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."subscription_plans" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "price_monthly" numeric(10,2) NOT NULL,
+    "credits_per_month" integer NOT NULL,
+    "max_daily_credits" integer NOT NULL,
+    "max_per_request_credits" integer NOT NULL,
+    "features" "jsonb" DEFAULT '{}'::"jsonb",
+    "active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "subscription_plans_credits_per_month_check" CHECK (("credits_per_month" >= 0)),
+    CONSTRAINT "subscription_plans_max_daily_credits_check" CHECK (("max_daily_credits" >= 0)),
+    CONSTRAINT "subscription_plans_max_per_request_credits_check" CHECK (("max_per_request_credits" >= 0)),
+    CONSTRAINT "subscription_plans_price_monthly_check" CHECK (("price_monthly" >= (0)::numeric))
+);
+
+
+ALTER TABLE "public"."subscription_plans" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."subscription_plans" IS 'Available subscription plans with credit limits';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."system_config" (
+    "key" "text" NOT NULL,
+    "value" "jsonb" NOT NULL,
+    "description" "text",
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "updated_by" "uuid"
+);
+
+
+ALTER TABLE "public"."system_config" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."system_config" IS 'System-wide configuration for cost limits and kill switches';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_credit_balances" (
+    "user_id" "uuid" NOT NULL,
+    "total_credits" integer DEFAULT 0 NOT NULL,
+    "monthly_credits_used" integer DEFAULT 0 NOT NULL,
+    "daily_credits_used" integer DEFAULT 0 NOT NULL,
+    "last_monthly_reset" timestamp with time zone DEFAULT "now"(),
+    "last_daily_reset" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "user_credit_balances_daily_credits_used_check" CHECK (("daily_credits_used" >= 0)),
+    CONSTRAINT "user_credit_balances_monthly_credits_used_check" CHECK (("monthly_credits_used" >= 0)),
+    CONSTRAINT "user_credit_balances_total_credits_check" CHECK (("total_credits" >= 0))
+);
+
+
+ALTER TABLE "public"."user_credit_balances" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_credit_balances" IS 'Real-time credit usage tracking with daily/monthly limits';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."user_notifications" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -829,6 +1210,38 @@ COMMENT ON COLUMN "public"."user_settings"."lapse_ease_penalty" IS 'Ease penalty
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_subscriptions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "plan_id" "uuid" NOT NULL,
+    "stripe_subscription_id" "text",
+    "stripe_customer_id" "text",
+    "status" "text" DEFAULT 'active'::"text" NOT NULL,
+    "current_period_start" timestamp with time zone,
+    "current_period_end" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "user_subscriptions_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'canceled'::"text", 'past_due'::"text", 'unpaid'::"text", 'incomplete'::"text"])))
+);
+
+
+ALTER TABLE "public"."user_subscriptions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_subscriptions" IS 'User subscription status and Stripe integration';
+
+
+
+ALTER TABLE ONLY "public"."ai_usage_log"
+    ADD CONSTRAINT "ai_usage_log_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."ai_usage_log"
+    ADD CONSTRAINT "ai_usage_log_request_id_key" UNIQUE ("request_id");
+
+
+
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_pkey" PRIMARY KEY ("user_id", "notification_id");
 
@@ -836,6 +1249,11 @@ ALTER TABLE ONLY "public"."app_notification_reads"
 
 ALTER TABLE ONLY "public"."app_notifications"
     ADD CONSTRAINT "app_notifications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."credit_transactions"
+    ADD CONSTRAINT "credit_transactions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -874,8 +1292,23 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 
-ALTER TABLE ONLY "public"."daily_study_stats"
-    ADD CONSTRAINT "unique_user_project_date" UNIQUE ("user_id", "project_id", "study_date");
+ALTER TABLE ONLY "public"."subscription_plans"
+    ADD CONSTRAINT "subscription_plans_name_key" UNIQUE ("name");
+
+
+
+ALTER TABLE ONLY "public"."subscription_plans"
+    ADD CONSTRAINT "subscription_plans_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."system_config"
+    ADD CONSTRAINT "system_config_pkey" PRIMARY KEY ("key");
+
+
+
+ALTER TABLE ONLY "public"."user_credit_balances"
+    ADD CONSTRAINT "user_credit_balances_pkey" PRIMARY KEY ("user_id");
 
 
 
@@ -889,7 +1322,13 @@ ALTER TABLE ONLY "public"."user_settings"
 
 
 
-CREATE INDEX "daily_study_stats_user_date_idx" ON "public"."daily_study_stats" USING "btree" ("user_id", "study_date");
+ALTER TABLE ONLY "public"."user_subscriptions"
+    ADD CONSTRAINT "user_subscriptions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_subscriptions"
+    ADD CONSTRAINT "user_subscriptions_stripe_subscription_id_key" UNIQUE ("stripe_subscription_id");
 
 
 
@@ -897,7 +1336,27 @@ CREATE UNIQUE INDEX "daily_study_stats_user_global_date_unique" ON "public"."dai
 
 
 
-CREATE INDEX "idx_daily_study_stats_project_date" ON "public"."daily_study_stats" USING "btree" ("user_id", "project_id", "study_date");
+CREATE INDEX "idx_ai_usage_log_project_id" ON "public"."ai_usage_log" USING "btree" ("project_id");
+
+
+
+CREATE INDEX "idx_ai_usage_log_user_status_created" ON "public"."ai_usage_log" USING "btree" ("user_id", "status", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_app_notification_reads_notification_id" ON "public"."app_notification_reads" USING "btree" ("notification_id");
+
+
+
+CREATE INDEX "idx_credit_transactions_user_type_created" ON "public"."credit_transactions" USING "btree" ("user_id", "transaction_type", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_daily_study_stats_project_id" ON "public"."daily_study_stats" USING "btree" ("project_id");
+
+
+
+CREATE INDEX "idx_daily_study_stats_user_date_desc" ON "public"."daily_study_stats" USING "btree" ("user_id", "study_date" DESC);
 
 
 
@@ -909,11 +1368,7 @@ CREATE UNIQUE INDEX "idx_optimized_due_cards" ON "public"."optimized_due_cards" 
 
 
 
-CREATE INDEX "idx_projects_daily_limits" ON "public"."projects" USING "btree" ("user_id", "new_cards_per_day", "max_reviews_per_day");
-
-
-
-CREATE INDEX "idx_projects_user_id" ON "public"."projects" USING "btree" ("user_id");
+CREATE INDEX "idx_projects_user_created" ON "public"."projects" USING "btree" ("user_id", "created_at" DESC);
 
 
 
@@ -921,15 +1376,11 @@ CREATE INDEX "idx_srs_states_card_id" ON "public"."srs_states" USING "btree" ("c
 
 
 
-CREATE INDEX "idx_srs_states_due" ON "public"."srs_states" USING "btree" ("user_id", "project_id", "due");
-
-
-
 CREATE INDEX "idx_srs_states_project_id" ON "public"."srs_states" USING "btree" ("project_id");
 
 
 
-CREATE INDEX "idx_srs_states_state" ON "public"."srs_states" USING "btree" ("user_id", "project_id", "state");
+CREATE INDEX "idx_srs_states_user_due_suspended" ON "public"."srs_states" USING "btree" ("user_id", "due", "is_suspended") WHERE ("is_suspended" = false);
 
 
 
@@ -937,7 +1388,23 @@ CREATE INDEX "idx_srs_states_user_project_state_due" ON "public"."srs_states" US
 
 
 
+CREATE INDEX "idx_system_config_updated_by" ON "public"."system_config" USING "btree" ("updated_by");
+
+
+
 CREATE INDEX "idx_user_notifications_user_id" ON "public"."user_notifications" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_subscriptions_plan_id" ON "public"."user_subscriptions" USING "btree" ("plan_id");
+
+
+
+CREATE INDEX "idx_user_subscriptions_user_active" ON "public"."user_subscriptions" USING "btree" ("user_id", "status", "current_period_end") WHERE ("status" = 'active'::"text");
+
+
+
+CREATE UNIQUE INDEX "user_subscriptions_active_unique" ON "public"."user_subscriptions" USING "btree" ("user_id") WHERE ("status" = 'active'::"text");
 
 
 
@@ -957,7 +1424,29 @@ CREATE OR REPLACE TRIGGER "update_srs_states_updated_at" BEFORE UPDATE ON "publi
 
 
 
+CREATE OR REPLACE TRIGGER "update_subscription_plans_updated_at" BEFORE UPDATE ON "public"."subscription_plans" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_user_credit_balances_updated_at" BEFORE UPDATE ON "public"."user_credit_balances" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
 CREATE OR REPLACE TRIGGER "update_user_settings_updated_at" BEFORE UPDATE ON "public"."user_settings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_user_subscriptions_updated_at" BEFORE UPDATE ON "public"."user_subscriptions" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+ALTER TABLE ONLY "public"."ai_usage_log"
+    ADD CONSTRAINT "ai_usage_log_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."ai_usage_log"
+    ADD CONSTRAINT "ai_usage_log_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -968,6 +1457,11 @@ ALTER TABLE ONLY "public"."app_notification_reads"
 
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."credit_transactions"
+    ADD CONSTRAINT "credit_transactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -1011,6 +1505,16 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 
+ALTER TABLE ONLY "public"."system_config"
+    ADD CONSTRAINT "system_config_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_credit_balances"
+    ADD CONSTRAINT "user_credit_balances_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_notifications"
     ADD CONSTRAINT "user_notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -1018,6 +1522,23 @@ ALTER TABLE ONLY "public"."user_notifications"
 
 ALTER TABLE ONLY "public"."user_settings"
     ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_subscriptions"
+    ADD CONSTRAINT "user_subscriptions_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "public"."subscription_plans"("id");
+
+
+
+ALTER TABLE ONLY "public"."user_subscriptions"
+    ADD CONSTRAINT "user_subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE "public"."ai_usage_log" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "ai_usage_log_policy" ON "public"."ai_usage_log" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -1036,6 +1557,13 @@ CREATE POLICY "app_notifications_admin" ON "public"."app_notifications" TO "serv
 
 
 CREATE POLICY "app_notifications_select" ON "public"."app_notifications" FOR SELECT USING (("published" = true));
+
+
+
+ALTER TABLE "public"."credit_transactions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "credit_transactions_policy" ON "public"."credit_transactions" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -1084,6 +1612,27 @@ CREATE POLICY "srs_states_policy" ON "public"."srs_states" USING (("user_id" = (
 
 
 
+ALTER TABLE "public"."subscription_plans" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "subscription_plans_read" ON "public"."subscription_plans" FOR SELECT USING (("active" = true));
+
+
+
+ALTER TABLE "public"."system_config" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "system_config_admin_policy" ON "public"."system_config" USING ("public"."is_user_admin"());
+
+
+
+ALTER TABLE "public"."user_credit_balances" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_credit_balances_policy" ON "public"."user_credit_balances" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
 ALTER TABLE "public"."user_notifications" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1095,6 +1644,13 @@ ALTER TABLE "public"."user_settings" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "user_settings_policy" ON "public"."user_settings" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+ALTER TABLE "public"."user_subscriptions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_subscriptions_policy" ON "public"."user_subscriptions" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -1263,6 +1819,12 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."can_user_make_request"("p_user_id" "uuid", "p_estimated_credits" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."can_user_make_request"("p_user_id" "uuid", "p_estimated_credits" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_user_make_request"("p_user_id" "uuid", "p_estimated_credits" integer) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."create_default_user_settings"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."create_default_user_settings"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_default_user_settings"() TO "service_role";
@@ -1287,8 +1849,32 @@ GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "service_ro
 
 
 
+GRANT ALL ON FUNCTION "public"."create_user_credit_balance"() TO "anon";
+GRANT ALL ON FUNCTION "public"."create_user_credit_balance"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_user_credit_balance"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."debit_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_transaction_type" "text", "p_description" "text", "p_reference_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."debit_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_transaction_type" "text", "p_description" "text", "p_reference_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."debit_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_transaction_type" "text", "p_description" "text", "p_reference_id" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."estimate_ai_request_cost"("p_content_length" integer, "p_operation_type" "text", "p_think_harder" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."estimate_ai_request_cost"("p_content_length" integer, "p_operation_type" "text", "p_think_harder" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."estimate_ai_request_cost"("p_content_length" integer, "p_operation_type" "text", "p_think_harder" boolean) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_user_plan_limits"("p_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_user_plan_limits"("p_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_user_plan_limits"("p_user_id" "uuid") TO "service_role";
 
 
 
@@ -1341,6 +1927,12 @@ GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."ai_usage_log" TO "anon";
+GRANT ALL ON TABLE "public"."ai_usage_log" TO "authenticated";
+GRANT ALL ON TABLE "public"."ai_usage_log" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."app_notification_reads" TO "authenticated";
 GRANT ALL ON TABLE "public"."app_notification_reads" TO "service_role";
 
@@ -1349,6 +1941,12 @@ GRANT ALL ON TABLE "public"."app_notification_reads" TO "service_role";
 GRANT ALL ON TABLE "public"."app_notifications" TO "authenticated";
 GRANT ALL ON TABLE "public"."app_notifications" TO "service_role";
 GRANT SELECT ON TABLE "public"."app_notifications" TO "anon";
+
+
+
+GRANT ALL ON TABLE "public"."credit_transactions" TO "anon";
+GRANT ALL ON TABLE "public"."credit_transactions" TO "authenticated";
+GRANT ALL ON TABLE "public"."credit_transactions" TO "service_role";
 
 
 
@@ -1386,6 +1984,24 @@ GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."subscription_plans" TO "anon";
+GRANT ALL ON TABLE "public"."subscription_plans" TO "authenticated";
+GRANT ALL ON TABLE "public"."subscription_plans" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."system_config" TO "anon";
+GRANT ALL ON TABLE "public"."system_config" TO "authenticated";
+GRANT ALL ON TABLE "public"."system_config" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_credit_balances" TO "anon";
+GRANT ALL ON TABLE "public"."user_credit_balances" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_credit_balances" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."user_notifications" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_notifications" TO "service_role";
 
@@ -1393,6 +2009,12 @@ GRANT ALL ON TABLE "public"."user_notifications" TO "service_role";
 
 GRANT ALL ON TABLE "public"."user_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_subscriptions" TO "anon";
+GRANT ALL ON TABLE "public"."user_subscriptions" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_subscriptions" TO "service_role";
 
 
 

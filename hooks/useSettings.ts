@@ -68,8 +68,10 @@ const defaultUserSettings: UserSettings = {
 const settingsApi = {
   async loadSettings() {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) throw new Error("No authenticated user");
 
     const { data, error } = await supabase
@@ -102,14 +104,14 @@ const settingsApi = {
         HARD_INTERVAL_FACTOR: data.hard_interval_factor,
         EASY_INTERVAL_FACTOR: data.easy_interval_factor,
         LAPSE_RECOVERY_FACTOR: data.lapse_recovery_factor,
-        LAPSE_EASE_PENALTY: 0.2,
-        INTERVAL_MODIFIER: 1.0,
+        LAPSE_EASE_PENALTY: data.lapse_ease_penalty,
+        INTERVAL_MODIFIER: data.interval_modifier,
         LEECH_THRESHOLD: data.leech_threshold,
         LEECH_ACTION: data.leech_action as "suspend" | "tag",
-        NEW_CARD_ORDER: "random" as const,
-        REVIEW_AHEAD: false,
-        BURY_SIBLINGS: false,
-        MAX_INTERVAL: 36500,
+        NEW_CARD_ORDER: data.new_card_order,
+        REVIEW_AHEAD: data.review_ahead,
+        BURY_SIBLINGS: data.bury_siblings,
+        MAX_INTERVAL: data.max_interval,
       },
       user: {
         theme: data.theme as "light" | "dark" | "system",
@@ -120,34 +122,55 @@ const settingsApi = {
     };
   },
 
-  async updateSettings(srs?: Partial<SRSSettings>, user?: Partial<UserSettings>) {
+  async updateSettings(
+    srs?: Partial<SRSSettings>,
+    user?: Partial<UserSettings>
+  ) {
     const supabase = createClient();
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
     if (!authUser) throw new Error("No authenticated user");
 
     const updates: Record<string, unknown> = {};
 
     // Simple mapping without complex validation
-    if (srs?.NEW_CARDS_PER_DAY !== undefined) updates.new_cards_per_day = srs.NEW_CARDS_PER_DAY;
-    if (srs?.MAX_REVIEWS_PER_DAY !== undefined) updates.max_reviews_per_day = srs.MAX_REVIEWS_PER_DAY;
-    if (srs?.LEARNING_STEPS !== undefined) updates.learning_steps = srs.LEARNING_STEPS;
-    if (srs?.RELEARNING_STEPS !== undefined) updates.relearning_steps = srs.RELEARNING_STEPS;
-    if (srs?.GRADUATING_INTERVAL !== undefined) updates.graduating_interval = srs.GRADUATING_INTERVAL;
-    if (srs?.EASY_INTERVAL !== undefined) updates.easy_interval = srs.EASY_INTERVAL;
-    if (srs?.STARTING_EASE !== undefined) updates.starting_ease = srs.STARTING_EASE;
-    if (srs?.MINIMUM_EASE !== undefined) updates.minimum_ease = srs.MINIMUM_EASE;
+    if (srs?.NEW_CARDS_PER_DAY !== undefined)
+      updates.new_cards_per_day = srs.NEW_CARDS_PER_DAY;
+    if (srs?.MAX_REVIEWS_PER_DAY !== undefined)
+      updates.max_reviews_per_day = srs.MAX_REVIEWS_PER_DAY;
+    if (srs?.LEARNING_STEPS !== undefined)
+      updates.learning_steps = srs.LEARNING_STEPS;
+    if (srs?.RELEARNING_STEPS !== undefined)
+      updates.relearning_steps = srs.RELEARNING_STEPS;
+    if (srs?.GRADUATING_INTERVAL !== undefined)
+      updates.graduating_interval = srs.GRADUATING_INTERVAL;
+    if (srs?.EASY_INTERVAL !== undefined)
+      updates.easy_interval = srs.EASY_INTERVAL;
+    if (srs?.STARTING_EASE !== undefined)
+      updates.starting_ease = srs.STARTING_EASE;
+    if (srs?.MINIMUM_EASE !== undefined)
+      updates.minimum_ease = srs.MINIMUM_EASE;
     if (srs?.EASY_BONUS !== undefined) updates.easy_bonus = srs.EASY_BONUS;
-    if (srs?.HARD_INTERVAL_FACTOR !== undefined) updates.hard_interval_factor = srs.HARD_INTERVAL_FACTOR;
-    if (srs?.EASY_INTERVAL_FACTOR !== undefined) updates.easy_interval_factor = srs.EASY_INTERVAL_FACTOR;
-    if (srs?.LAPSE_RECOVERY_FACTOR !== undefined) updates.lapse_recovery_factor = srs.LAPSE_RECOVERY_FACTOR;
-    if (srs?.LEECH_THRESHOLD !== undefined) updates.leech_threshold = srs.LEECH_THRESHOLD;
-    if (srs?.LEECH_ACTION !== undefined) updates.leech_action = srs.LEECH_ACTION;
+    if (srs?.HARD_INTERVAL_FACTOR !== undefined)
+      updates.hard_interval_factor = srs.HARD_INTERVAL_FACTOR;
+    if (srs?.EASY_INTERVAL_FACTOR !== undefined)
+      updates.easy_interval_factor = srs.EASY_INTERVAL_FACTOR;
+    if (srs?.LAPSE_RECOVERY_FACTOR !== undefined)
+      updates.lapse_recovery_factor = srs.LAPSE_RECOVERY_FACTOR;
+    if (srs?.LEECH_THRESHOLD !== undefined)
+      updates.leech_threshold = srs.LEECH_THRESHOLD;
+    if (srs?.LEECH_ACTION !== undefined)
+      updates.leech_action = srs.LEECH_ACTION;
 
     if (user?.theme !== undefined) updates.theme = user.theme;
-    if (user?.notificationsEnabled !== undefined) updates.notifications_enabled = user.notificationsEnabled;
-    if (user?.dailyReminder !== undefined) updates.daily_reminder = user.dailyReminder;
-    if (user?.reminderTime !== undefined) updates.reminder_time = user.reminderTime;
+    if (user?.notificationsEnabled !== undefined)
+      updates.notifications_enabled = user.notificationsEnabled;
+    if (user?.dailyReminder !== undefined)
+      updates.daily_reminder = user.dailyReminder;
+    if (user?.reminderTime !== undefined)
+      updates.reminder_time = user.reminderTime;
 
     const { error } = await supabase
       .from("user_settings")
@@ -155,7 +178,7 @@ const settingsApi = {
       .eq("user_id", authUser.id);
 
     if (error) throw error;
-  }
+  },
 };
 
 // Simplified Zustand store
@@ -186,7 +209,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ srsSettings: srs, userSettings: user, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : "Failed to load settings",
+        error:
+          error instanceof Error ? error.message : "Failed to load settings",
         isLoading: false,
       });
     }
@@ -195,24 +219,34 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   updateSRSSettings: async (updates) => {
     const current = get().srsSettings;
     const newSettings = { ...current, ...updates };
-    
+
     try {
       await settingsApi.updateSettings(updates);
       set({ srsSettings: newSettings });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : "Failed to update SRS settings" });
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update SRS settings",
+      });
     }
   },
 
   updateUserSettings: async (updates) => {
     const current = get().userSettings;
     const newSettings = { ...current, ...updates };
-    
+
     try {
       await settingsApi.updateSettings(undefined, updates);
       set({ userSettings: newSettings });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : "Failed to update user settings" });
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update user settings",
+      });
     }
   },
 
@@ -221,39 +255,62 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await settingsApi.updateSettings(defaultSRSSettings);
       set({ srsSettings: defaultSRSSettings });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : "Failed to reset SRS settings" });
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to reset SRS settings",
+      });
     }
   },
 
   resetAllSettings: async () => {
     try {
       await settingsApi.updateSettings(defaultSRSSettings, defaultUserSettings);
-      set({ srsSettings: defaultSRSSettings, userSettings: defaultUserSettings });
+      set({
+        srsSettings: defaultSRSSettings,
+        userSettings: defaultUserSettings,
+      });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : "Failed to reset settings" });
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to reset settings",
+      });
     }
   },
 
   // Simplified validation - basic checks only
   validateSRSSettings: (settings) => {
     const errors: string[] = [];
-    
-    if (settings.NEW_CARDS_PER_DAY !== undefined && settings.NEW_CARDS_PER_DAY < 0) {
+
+    if (
+      settings.NEW_CARDS_PER_DAY !== undefined &&
+      settings.NEW_CARDS_PER_DAY < 0
+    ) {
       errors.push("New cards per day must be non-negative");
     }
-    if (settings.MAX_REVIEWS_PER_DAY !== undefined && settings.MAX_REVIEWS_PER_DAY < 0) {
+    if (
+      settings.MAX_REVIEWS_PER_DAY !== undefined &&
+      settings.MAX_REVIEWS_PER_DAY < 0
+    ) {
       errors.push("Max reviews per day must be non-negative");
     }
     if (settings.LEARNING_STEPS && settings.LEARNING_STEPS.length === 0) {
       errors.push("Learning steps cannot be empty");
     }
-    if (settings.STARTING_EASE !== undefined && (settings.STARTING_EASE < 1.3 || settings.STARTING_EASE > 5.0)) {
+    if (
+      settings.STARTING_EASE !== undefined &&
+      (settings.STARTING_EASE < 1.3 || settings.STARTING_EASE > 5.0)
+    ) {
       errors.push("Starting ease must be between 1.3 and 5.0");
     }
-    if (settings.MINIMUM_EASE !== undefined && (settings.MINIMUM_EASE < 1.0 || settings.MINIMUM_EASE > 3.0)) {
+    if (
+      settings.MINIMUM_EASE !== undefined &&
+      (settings.MINIMUM_EASE < 1.0 || settings.MINIMUM_EASE > 3.0)
+    ) {
       errors.push("Minimum ease must be between 1.0 and 3.0");
     }
-    
+
     return errors;
   },
 }));
