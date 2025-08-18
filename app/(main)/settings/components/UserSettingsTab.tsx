@@ -10,8 +10,6 @@ const nopfp = "/assets/nopfp.png";
 export function UserSettingsTab() {
   const { userProfile, isLoading, updateUserProfile } = useUserProfile();
   const { userSettings, updateUserSettings } = useSettingsStore();
-  const { showToast } = useToast();
-
   const [formData, setFormData] = React.useState({
     displayName: userProfile?.display_name || "",
     bio: userProfile?.bio || "",
@@ -20,6 +18,7 @@ export function UserSettingsTab() {
     dailyReminder: userSettings.dailyReminder,
     reminderTime: userSettings.reminderTime,
   });
+  const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
     if (userProfile) {
@@ -31,23 +30,31 @@ export function UserSettingsTab() {
     }
   }, [userProfile]);
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
+  const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormData((prev) => ({ ...prev }));
+  };
+
+  const handleSettingsUpdate = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setPending(true);
     try {
       await updateUserProfile({
         display_name: formData.displayName,
         bio: formData.bio,
       });
-      showToast("Profile updated successfully!", "success");
-    } catch {
-      showToast("Failed to update profile", "error");
+      await updateUserSettings({
+        theme: formData.theme,
+        notificationsEnabled: formData.notificationsEnabled,
+        dailyReminder: formData.dailyReminder,
+        reminderTime: formData.reminderTime,
+      });
+    } finally {
+      setPending(false);
     }
-  };
-
-  const handleSettingsUpdate = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    updateUserSettings({ [field]: value });
-    showToast("Settings updated", "success");
   };
 
   return (
@@ -117,13 +124,7 @@ export function UserSettingsTab() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn btn-primary"
-          >
-            {isLoading ? "Updating..." : "Update Profile"}
-          </button>
+          {/* Remove old update button, replaced by Save Changes below */}
         </form>
       </div>
 
@@ -196,6 +197,16 @@ export function UserSettingsTab() {
             />
           </div>
         </div>
+      </div>
+      {/* Save Changes Button */}
+      <div className="flex justify-end mt-8">
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={pending}
+        >
+          {pending ? "Saving..." : "Save Changes"}
+        </button>
       </div>
     </div>
   );

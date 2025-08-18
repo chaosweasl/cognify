@@ -12,9 +12,9 @@ export function SRSSettingsTab() {
     validateSRSSettings,
     error,
   } = useSettingsStore();
-  const { showToast } = useToast();
 
   const [formData, setFormData] = React.useState(srsSettings);
+  const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
     setFormData(srsSettings);
@@ -24,17 +24,7 @@ export function SRSSettingsTab() {
     field: keyof typeof srsSettings,
     value: string | number | number[]
   ) => {
-    const newData = { ...formData, [field]: value };
-    setFormData(newData);
-
-    // Validate and update
-    const errors = validateSRSSettings({ [field]: value });
-    if (errors.length === 0) {
-      updateSRSSettings({ [field]: value });
-      showToast("Setting updated", "success");
-    } else {
-      showToast(errors[0], "error");
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLearningStepsChange = (steps: string) => {
@@ -46,9 +36,7 @@ export function SRSSettingsTab() {
       if (parsedSteps.length > 0) {
         handleUpdate("LEARNING_STEPS", parsedSteps);
       }
-    } catch {
-      showToast("Invalid learning steps format", "error");
-    }
+    } catch {}
   };
 
   const handleRelearningStepsChange = (steps: string) => {
@@ -60,16 +48,22 @@ export function SRSSettingsTab() {
       if (parsedSteps.length > 0) {
         handleUpdate("RELEARNING_STEPS", parsedSteps);
       }
-    } catch {
-      showToast("Invalid relearning steps format", "error");
-    }
+    } catch {}
   };
 
   const handleReset = () => {
     if (confirm("Reset all card settings to default?")) {
       resetSRSSettings();
-      showToast("Card settings reset to default", "success");
     }
+  };
+
+  const handleSave = async () => {
+    setPending(true);
+    const errors = validateSRSSettings(formData);
+    if (errors.length === 0) {
+      await updateSRSSettings(formData);
+    }
+    setPending(false);
   };
 
   return (
@@ -392,6 +386,16 @@ export function SRSSettingsTab() {
             <option value="tag">Tag Only</option>
           </select>
         </div>
+      </div>
+      {/* Save Changes Button */}
+      <div className="flex justify-end mt-8">
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={pending}
+        >
+          {pending ? "Saving..." : "Save Changes"}
+        </button>
       </div>
     </div>
   );
