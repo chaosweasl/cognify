@@ -58,36 +58,54 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col justify-between w-full bg-base-100 border border-base-300 rounded-2xl shadow-md hover:shadow-lg transition duration-200 overflow-hidden group focus-within:ring-2 focus-within:ring-primary">
+    <article 
+      className="flex flex-col justify-between w-full bg-base-100 border border-base-300 rounded-2xl shadow-md hover:shadow-lg transition duration-200 overflow-hidden group focus-within:ring-2 focus-within:ring-primary"
+      role="region"
+      aria-labelledby={`project-title-${project.id}`}
+      aria-describedby={`project-description-${project.id}`}
+    >
       {/* Project Info */}
       <div className="p-6 space-y-3 flex-1">
         {/* Header */}
         <div className="flex items-start justify-between">
           <h2
+            id={`project-title-${project.id}`}
             className="text-xl md:text-2xl font-semibold text-base-content line-clamp-2"
             title={project.name}
           >
             {project.name}
           </h2>
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary font-medium">
-            <BookOpen className="w-4 h-4" />
+          <div 
+            className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary font-medium"
+            role="status"
+            aria-label={`${flashcardCount} flashcards in this project`}
+          >
+            <BookOpen className="w-4 h-4" aria-hidden="true" />
             <span>{flashcardCount}</span>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-base text-base-content/80 line-clamp-3">
+        <p 
+          id={`project-description-${project.id}`}
+          className="text-base text-base-content/80 line-clamp-3"
+        >
           {project.description || "No description provided"}
         </p>
 
         {/* SRS Statistics */}
         {srsStats && (
-          <div className="flex items-center justify-center gap-4 p-3 bg-base-200/50 rounded-lg border border-base-300/50">
+          <div 
+            className="flex items-center justify-center gap-4 p-3 bg-base-200/50 rounded-lg border border-base-300/50"
+            role="status"
+            aria-label="Study progress statistics"
+          >
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
                   srsStats.dueCards > 0 ? "text-red-600" : "text-gray-400"
                 }`}
+                aria-label={`${srsStats.dueCards} cards due for review`}
               >
                 {srsStats.dueCards}
               </div>
@@ -98,6 +116,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 className={`text-lg font-bold ${
                   srsStats.newCards > 0 ? "text-blue-600" : "text-gray-400"
                 }`}
+                aria-label={`${srsStats.newCards} new cards available`}
               >
                 {srsStats.newCards}
               </div>
@@ -110,6 +129,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                     ? "text-orange-600"
                     : "text-gray-400"
                 }`}
+                aria-label={`${srsStats.learningCards} cards currently being learned`}
               >
                 {srsStats.learningCards}
               </div>
@@ -121,7 +141,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {/* Next Review Date or Creation Date */}
         {srsStats?.nextReviewDate ? (
           <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4" aria-hidden="true" />
             <span>
               Next review: {srsStats.nextReviewDate.toLocaleDateString()} at{" "}
               {srsStats.nextReviewDate.toLocaleTimeString([], {
@@ -132,18 +152,25 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         ) : hasFlashcards ? (
           <div className="flex items-center gap-2 text-sm text-green-600 pt-2 border-t border-base-300/50 mt-2">
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-4 h-4" aria-hidden="true" />
             <span>Ready for review!</span>
           </div>
         ) : null}
       </div>
 
       {/* Actions */}
-      <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
+      <div 
+        className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3"
+        role="group"
+        aria-label="Project actions"
+      >
         {hasCardsToStudy ? (
           <Link href={`/projects/${project.id}`} prefetch={false}>
-            <button className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]">
-              <Play className="w-4 h-4" />
+            <button 
+              className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]"
+              aria-label={`Start studying ${project.name}`}
+            >
+              <Play className="w-4 h-4" aria-hidden="true" />
               Study
             </button>
           </Link>
@@ -151,6 +178,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           <button
             disabled
             className="btn btn-md btn-disabled gap-2 flex-auto max-w-[8rem]"
+            aria-label={`Cannot study: ${!hasFlashcards
+              ? "No flashcards available"
+              : srsStats &&
+                srsStats.dueCards === 0 &&
+                srsStats.newCards === 0 &&
+                srsStats.learningCards === 0
+              ? "Daily study limit reached"
+              : "No cards due for review"}`}
           >
             <span className="text-xs text-warning">
               {!hasFlashcards
@@ -166,8 +201,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         )}
 
         <Link href={`/projects/${project.id}/edit`} prefetch={false}>
-          <button className="btn btn-md btn-outline gap-2 flex-auto max-w-[6rem]">
-            <Edit2 className="w-4 h-4" />
+          <button 
+            className="btn btn-md btn-outline gap-2 flex-auto max-w-[6rem]"
+            aria-label={`Edit project ${project.name}`}
+          >
+            <Edit2 className="w-4 h-4" aria-hidden="true" />
             Edit
           </button>
         </Link>
@@ -178,11 +216,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           className={`btn btn-md btn-outline btn-error gap-2 flex-auto max-w-[6rem] ${
             isDeleting ? "loading" : ""
           }`}
+          aria-label={`Delete project ${project.name}`}
+          aria-describedby={`delete-warning-${project.id}`}
         >
-          {!isDeleting && <Trash2 className="w-4 h-4" />}
-          Delete
+          {!isDeleting && <Trash2 className="w-4 h-4" aria-hidden="true" />}
+          {isDeleting ? "Deleting..." : "Delete"}
         </button>
+        
+        {/* Hidden warning for screen readers */}
+        <div 
+          id={`delete-warning-${project.id}`} 
+          className="sr-only"
+        >
+          Warning: This action cannot be undone
+        </div>
       </div>
-    </div>
+    </article>
   );
 };
