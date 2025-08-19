@@ -63,7 +63,7 @@ type DatabaseSRSState = {
   user_id: string;
   project_id: string;
   card_id: string;
-  interval: number;
+  card_interval: number; // Updated column name
   ease: number;
   due: string; // ISO timestamp
   last_reviewed: string; // ISO timestamp
@@ -73,9 +73,11 @@ type DatabaseSRSState = {
   // New fields for complete Anki implementation
   state: "new" | "learning" | "review" | "relearning";
   lapses: number;
-  learning_step: number;
+  learning_step: number; // Updated column name
   is_leech: boolean;
   is_suspended: boolean;
+  last_session_id?: string;
+  session_started_at?: string;
 };
 
 /**
@@ -90,14 +92,14 @@ function srsStateToDatabase(
     user_id: userId,
     project_id: projectId,
     card_id: cardState.id,
-    interval: cardState.interval,
+    card_interval: cardState.interval, // Updated column name
     ease: cardState.ease,
     due: new Date(cardState.due).toISOString(),
     last_reviewed: new Date(cardState.lastReviewed).toISOString(),
     repetitions: cardState.repetitions,
     state: cardState.state,
     lapses: cardState.lapses,
-    learning_step: cardState.learningStep,
+    learning_step: cardState.learningStep, // Updated column name
     is_leech: cardState.isLeech,
     is_suspended: cardState.isSuspended,
   };
@@ -110,13 +112,13 @@ function databaseToSRSState(dbState: DatabaseSRSState, projectId: string): SRSCa
   return {
     id: dbState.card_id,
     state: dbState.state,
-    interval: dbState.interval,
+    interval: dbState.card_interval, // Updated column name
     ease: dbState.ease,
     due: new Date(dbState.due).getTime(),
     lastReviewed: new Date(dbState.last_reviewed).getTime(),
     repetitions: dbState.repetitions,
     lapses: dbState.lapses,
-    learningStep: dbState.learning_step,
+    learningStep: dbState.learning_step, // Updated column name
     isLeech: dbState.is_leech,
     isSuspended: dbState.is_suspended,
     projectId: projectId,

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { Project, Flashcard } from "@/src/types";
 
 // Fetch a single project by id for the current user
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -24,7 +25,15 @@ export async function getProjectById(id: string): Promise<Project | null> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, description, created_at, user_id, new_cards_per_day, max_reviews_per_day")
+    .select(`
+      id, name, description, created_at, updated_at, user_id, 
+      new_cards_per_day, max_reviews_per_day,
+      learning_steps, relearning_steps, graduating_interval, easy_interval,
+      starting_ease, minimum_ease, easy_bonus, hard_interval_factor,
+      easy_interval_factor, lapse_recovery_factor, leech_threshold,
+      leech_action, new_card_order, review_ahead, bury_siblings,
+      max_interval, lapse_ease_penalty
+    `)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();

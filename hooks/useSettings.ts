@@ -25,12 +25,15 @@ export interface SRSSettings {
   MAX_INTERVAL: number;
 }
 
-// User settings interface
+// User settings interface (updated to match schema)
 export interface UserSettings {
+  user_id: string;
   theme: "light" | "dark" | "system";
-  notificationsEnabled: boolean;
-  dailyReminder: boolean;
-  reminderTime: string;
+  notifications_enabled: boolean;
+  daily_reminder: boolean;
+  reminder_time: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Default settings - same as before for compatibility
@@ -58,15 +61,18 @@ const defaultSRSSettings: SRSSettings = {
 };
 
 const defaultUserSettings: UserSettings = {
+  user_id: "", // Will be set when creating
   theme: "system",
-  notificationsEnabled: true,
-  dailyReminder: true,
-  reminderTime: "09:00",
+  notifications_enabled: true,
+  daily_reminder: true,
+  reminder_time: "09:00:00",
+  created_at: "",
+  updated_at: "",
 };
 
 // Simplified settings API
 const settingsApi = {
-  async loadSettings() {
+  async loadUserSettings(): Promise<UserSettings> {
     const supabase = createClient();
     const {
       data: { user },
@@ -83,49 +89,23 @@ const settingsApi = {
     if (error) {
       if (error.code === "PGRST116") {
         // No settings found, create defaults
-        await supabase.from("user_settings").insert({ user_id: user.id });
-        return { srs: defaultSRSSettings, user: defaultUserSettings };
+        const newSettings = {
+          user_id: user.id,
+          theme: defaultUserSettings.theme,
+          notifications_enabled: defaultUserSettings.notifications_enabled,
+          daily_reminder: defaultUserSettings.daily_reminder,
+          reminder_time: defaultUserSettings.reminder_time,
+        };
+        await supabase.from("user_settings").insert(newSettings);
+        return { ...newSettings, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
       }
       throw error;
     }
 
-    // Simple transformation - remove complex validation
-    return {
-      srs: {
-        NEW_CARDS_PER_DAY: data.new_cards_per_day,
-        MAX_REVIEWS_PER_DAY: data.max_reviews_per_day,
-        LEARNING_STEPS: data.learning_steps,
-        RELEARNING_STEPS: data.relearning_steps,
-        GRADUATING_INTERVAL: data.graduating_interval,
-        EASY_INTERVAL: data.easy_interval,
-        STARTING_EASE: data.starting_ease,
-        MINIMUM_EASE: data.minimum_ease,
-        EASY_BONUS: data.easy_bonus,
-        HARD_INTERVAL_FACTOR: data.hard_interval_factor,
-        EASY_INTERVAL_FACTOR: data.easy_interval_factor,
-        LAPSE_RECOVERY_FACTOR: data.lapse_recovery_factor,
-        LAPSE_EASE_PENALTY: data.lapse_ease_penalty,
-        INTERVAL_MODIFIER: data.interval_modifier,
-        LEECH_THRESHOLD: data.leech_threshold,
-        LEECH_ACTION: data.leech_action as "suspend" | "tag",
-        NEW_CARD_ORDER: data.new_card_order,
-        REVIEW_AHEAD: data.review_ahead,
-        BURY_SIBLINGS: data.bury_siblings,
-        MAX_INTERVAL: data.max_interval,
-      },
-      user: {
-        theme: data.theme as "light" | "dark" | "system",
-        notificationsEnabled: data.notifications_enabled,
-        dailyReminder: data.daily_reminder,
-        reminderTime: data.reminder_time,
-      },
-    };
+    return data;
   },
 
-  async updateSettings(
-    srs?: Partial<SRSSettings>,
-    user?: Partial<UserSettings>
-  ) {
+  async updateUserSettings(updates: Partial<UserSettings>): Promise<void> {
     const supabase = createClient();
     const {
       data: { user: authUser },
@@ -133,112 +113,64 @@ const settingsApi = {
 
     if (!authUser) throw new Error("No authenticated user");
 
-    const updates: Record<string, unknown> = {};
+    const dbUpdates: Record<string, unknown> = {};
 
-    // Simple mapping without complex validation
-    if (srs?.NEW_CARDS_PER_DAY !== undefined)
-      updates.new_cards_per_day = srs.NEW_CARDS_PER_DAY;
-    if (srs?.MAX_REVIEWS_PER_DAY !== undefined)
-      updates.max_reviews_per_day = srs.MAX_REVIEWS_PER_DAY;
-    if (srs?.LEARNING_STEPS !== undefined)
-      updates.learning_steps = srs.LEARNING_STEPS;
-    if (srs?.RELEARNING_STEPS !== undefined)
-      updates.relearning_steps = srs.RELEARNING_STEPS;
-    if (srs?.GRADUATING_INTERVAL !== undefined)
-      updates.graduating_interval = srs.GRADUATING_INTERVAL;
-    if (srs?.EASY_INTERVAL !== undefined)
-      updates.easy_interval = srs.EASY_INTERVAL;
-    if (srs?.STARTING_EASE !== undefined)
-      updates.starting_ease = srs.STARTING_EASE;
-    if (srs?.MINIMUM_EASE !== undefined)
-      updates.minimum_ease = srs.MINIMUM_EASE;
-    if (srs?.EASY_BONUS !== undefined) updates.easy_bonus = srs.EASY_BONUS;
-    if (srs?.HARD_INTERVAL_FACTOR !== undefined)
-      updates.hard_interval_factor = srs.HARD_INTERVAL_FACTOR;
-    if (srs?.EASY_INTERVAL_FACTOR !== undefined)
-      updates.easy_interval_factor = srs.EASY_INTERVAL_FACTOR;
-    if (srs?.LAPSE_RECOVERY_FACTOR !== undefined)
-      updates.lapse_recovery_factor = srs.LAPSE_RECOVERY_FACTOR;
-    if (srs?.LEECH_THRESHOLD !== undefined)
-      updates.leech_threshold = srs.LEECH_THRESHOLD;
-    if (srs?.LEECH_ACTION !== undefined)
-      updates.leech_action = srs.LEECH_ACTION;
-
-    if (user?.theme !== undefined) updates.theme = user.theme;
-    if (user?.notificationsEnabled !== undefined)
-      updates.notifications_enabled = user.notificationsEnabled;
-    if (user?.dailyReminder !== undefined)
-      updates.daily_reminder = user.dailyReminder;
-    if (user?.reminderTime !== undefined)
-      updates.reminder_time = user.reminderTime;
+    // Map user settings to database columns
+    if (updates.theme !== undefined) dbUpdates.theme = updates.theme;
+    if (updates.notifications_enabled !== undefined)
+      dbUpdates.notifications_enabled = updates.notifications_enabled;
+    if (updates.daily_reminder !== undefined)
+      dbUpdates.daily_reminder = updates.daily_reminder;
+    if (updates.reminder_time !== undefined)
+      dbUpdates.reminder_time = updates.reminder_time;
 
     const { error } = await supabase
       .from("user_settings")
-      .update(updates)
+      .update(dbUpdates)
       .eq("user_id", authUser.id);
 
     if (error) throw error;
   },
 };
 
-// Simplified Zustand store
+// Simplified Zustand store for user settings only
+// SRS settings are now per-project and handled in Project components
 interface SettingsState {
-  srsSettings: SRSSettings;
-  userSettings: UserSettings;
+  userSettings: UserSettings | null;
   isLoading: boolean;
   error: string | null;
 
-  loadSettings: () => Promise<void>;
-  updateSRSSettings: (updates: Partial<SRSSettings>) => Promise<void>;
+  loadUserSettings: () => Promise<void>;
   updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
-  resetSRSSettings: () => Promise<void>;
-  resetAllSettings: () => Promise<void>;
-  validateSRSSettings: (settings: Partial<SRSSettings>) => string[];
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
-  srsSettings: defaultSRSSettings,
-  userSettings: defaultUserSettings,
+  userSettings: null,
   isLoading: false,
   error: null,
 
-  loadSettings: async () => {
+  loadUserSettings: async () => {
     set({ isLoading: true, error: null });
     try {
-      const { srs, user } = await settingsApi.loadSettings();
-      set({ srsSettings: srs, userSettings: user, isLoading: false });
+      const userSettings = await settingsApi.loadUserSettings();
+      set({ userSettings, isLoading: false });
     } catch (error) {
       set({
         error:
-          error instanceof Error ? error.message : "Failed to load settings",
+          error instanceof Error ? error.message : "Failed to load user settings",
         isLoading: false,
-      });
-    }
-  },
-
-  updateSRSSettings: async (updates) => {
-    const current = get().srsSettings;
-    const newSettings = { ...current, ...updates };
-
-    try {
-      await settingsApi.updateSettings(updates);
-      set({ srsSettings: newSettings });
-    } catch (error) {
-      set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update SRS settings",
       });
     }
   },
 
   updateUserSettings: async (updates) => {
     const current = get().userSettings;
+    if (!current) return;
+    
     const newSettings = { ...current, ...updates };
 
     try {
-      await settingsApi.updateSettings(undefined, updates);
+      await settingsApi.updateUserSettings(updates);
       set({ userSettings: newSettings });
     } catch (error) {
       set({
@@ -249,68 +181,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       });
     }
   },
-
-  resetSRSSettings: async () => {
-    try {
-      await settingsApi.updateSettings(defaultSRSSettings);
-      set({ srsSettings: defaultSRSSettings });
-    } catch (error) {
-      set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to reset SRS settings",
-      });
-    }
-  },
-
-  resetAllSettings: async () => {
-    try {
-      await settingsApi.updateSettings(defaultSRSSettings, defaultUserSettings);
-      set({
-        srsSettings: defaultSRSSettings,
-        userSettings: defaultUserSettings,
-      });
-    } catch (error) {
-      set({
-        error:
-          error instanceof Error ? error.message : "Failed to reset settings",
-      });
-    }
-  },
-
-  // Simplified validation - basic checks only
-  validateSRSSettings: (settings) => {
-    const errors: string[] = [];
-
-    if (
-      settings.NEW_CARDS_PER_DAY !== undefined &&
-      settings.NEW_CARDS_PER_DAY < 0
-    ) {
-      errors.push("New cards per day must be non-negative");
-    }
-    if (
-      settings.MAX_REVIEWS_PER_DAY !== undefined &&
-      settings.MAX_REVIEWS_PER_DAY < 0
-    ) {
-      errors.push("Max reviews per day must be non-negative");
-    }
-    if (settings.LEARNING_STEPS && settings.LEARNING_STEPS.length === 0) {
-      errors.push("Learning steps cannot be empty");
-    }
-    if (
-      settings.STARTING_EASE !== undefined &&
-      (settings.STARTING_EASE < 1.3 || settings.STARTING_EASE > 5.0)
-    ) {
-      errors.push("Starting ease must be between 1.3 and 5.0");
-    }
-    if (
-      settings.MINIMUM_EASE !== undefined &&
-      (settings.MINIMUM_EASE < 1.0 || settings.MINIMUM_EASE > 3.0)
-    ) {
-      errors.push("Minimum ease must be between 1.0 and 3.0");
-    }
-
-    return errors;
-  },
 }));
+
+// Convenience hook
+export const useSettings = () => {
+  const { userSettings, isLoading, error, loadUserSettings, updateUserSettings } = useSettingsStore();
+  return { userSettings, isLoading, error, loadUserSettings, updateUserSettings };
+};

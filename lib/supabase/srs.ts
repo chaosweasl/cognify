@@ -17,7 +17,7 @@ export async function upsertSRSState(state: {
   user_id: string;
   project_id: string;
   card_id: string;
-  interval: number;
+  card_interval: number; // Updated column name
   ease: number;
   due: string;
   last_reviewed: string;
