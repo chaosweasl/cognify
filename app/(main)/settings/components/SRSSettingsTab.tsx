@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import { useSettingsStore } from "@/hooks/useSettings";
-import { useToast } from "@/components/toast-provider";
 import { Info, RotateCcw } from "lucide-react";
 
 export function SRSSettingsTab() {
