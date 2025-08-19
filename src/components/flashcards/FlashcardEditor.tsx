@@ -10,9 +10,9 @@ import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
-import { useFlashcardsStore } from "@/hooks/useFlashcards";
 import ProjectResetComponent from "../projects/ProjectResetComponent";
 import { CreateFlashcardData } from "../../types";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 // Working flashcard type for the editor (without full database fields)
 type EditorFlashcard = {
@@ -28,12 +28,6 @@ interface FlashcardEditorProps {
 
 export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const router = useRouter();
-  const {
-    flashcards: dbFlashcards,
-    loading: flashcardsLoading,
-    fetchFlashcards,
-    replaceAllFlashcards,
-  } = useFlashcardsStore();
 
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
@@ -48,38 +42,40 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const [isValid, setIsValid] = useState(false);
   const isAddingCard = useRef(false);
 
-  // Load flashcards on component mount
+  // Load flashcards on component mount using API instead of direct Supabase
   useEffect(() => {
-    fetchFlashcards(project.id);
-  }, [project.id, fetchFlashcards]);
+    async function loadFlashcards() {
+      try {
+        const response = await fetch(`/api/flashcards?project_id=${project.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Update local state directly instead of using the store
+          const editorFlashcards = data
+            .filter((card: any) => card && typeof card === "object")
+            .map((card: any) => ({
+              id: card.id,
+              front: card.front || "",
+              back: card.back || "",
+            }));
 
-  // Update local flashcards when database flashcards change
-  useEffect(() => {
-    const editorFlashcards = dbFlashcards
-      .filter((card) => card && typeof card === "object") // Filter out null/undefined entries
-      .map(
-        (card): EditorFlashcard => ({
-          id: card.id,
-          front: card.front || "",
-          back: card.back || "",
-        })
-      );
+          // Ensure there's always at least one flashcard for editing
+          if (editorFlashcards.length === 0) {
+            editorFlashcards.push({ front: "", back: "" });
+          }
 
-    // Ensure there's always at least one flashcard for editing
-    if (editorFlashcards.length === 0) {
-      editorFlashcards.push({ front: "", back: "" });
-    }
-
-    setFlashcards(editorFlashcards);
-
-    // Only update current if it's out of bounds
-    setCurrent((prevCurrent) => {
-      if (prevCurrent >= editorFlashcards.length) {
-        return Math.max(0, editorFlashcards.length - 1);
+          setFlashcards(editorFlashcards);
+          setCurrent(0);
+        }
+      } catch (error) {
+        console.error("Error loading flashcards:", error);
+        // Fallback to empty flashcard
+        setFlashcards([{ front: "", back: "" }]);
+        setCurrent(0);
       }
-      return prevCurrent;
-    });
-  }, [dbFlashcards]); // Removed 'current' from dependencies
+    }
+    
+    loadFlashcards();
+  }, [project.id]);
 
   useEffect(() => {
     // Allow saving as long as project name is present
@@ -192,8 +188,26 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
           extra: {},
         }));
 
-      // Save flashcards using new API
-      await replaceAllFlashcards(project.id, flashcardData);
+      // Save flashcards using API endpoint instead of direct Supabase client
+      const response = await fetch("/api/flashcards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          project_id: project.id,
+          flashcards: flashcardData,
+          replace: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save flashcards: ${response.statusText}`);
+      }
+
+      // Invalidate cache to ensure fresh data on projects page
+      CacheInvalidation.invalidatePattern('user_projects');
+      CacheInvalidation.invalidatePattern(`project_${project.id}`);
 
       router.push("/projects?refresh=1");
     } catch (error) {
@@ -249,7 +263,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
         (typeof fc.back === "string" && fc.back.trim()))
   ).length;
 
-  const isLoading = saving || flashcardsLoading;
+  const isLoading = saving;
 
   return (
     <div className="min-h-screen pt-5 bg-gradient-to-br from-base-200 to-base-300/50">
