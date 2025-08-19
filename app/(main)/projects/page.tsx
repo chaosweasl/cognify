@@ -37,6 +37,26 @@ function ProjectsPageContent() {
     }
   }, [searchParams, loadProjects, projects.length]);
 
+  // IMPROVEMENT: Refresh projects when page regains focus (user comes back from editing)
+  // This helps ensure they see their latest changes without manual refresh
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log("[ProjectsPage] Page regained focus, refreshing projects");
+      setLoading(true);
+      setError(null);
+      
+      loadProjects()
+        .then(() => setLoading(false))
+        .catch((err) => {
+          setError(err.message || "Failed to load projects");
+          setLoading(false);
+        });
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [loadProjects]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">

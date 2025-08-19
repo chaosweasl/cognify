@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createProject } from "../actions";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 export default function CreateProjectPage() {
   const router = useRouter();
@@ -21,6 +22,12 @@ export default function CreateProjectPage() {
             "[CreateProject] Project created, redirecting to edit:",
             projectId
           );
+          
+          // CRITICAL FIX: Invalidate cache after creating project
+          // This ensures when user navigates back to projects page, they see the new project
+          CacheInvalidation.invalidatePattern('user_projects');
+          console.log("[CreateProject] Cache invalidated for user projects");
+          
           // Navigate to edit page immediately
           router.push(`/projects/${projectId}/edit`);
         } else {

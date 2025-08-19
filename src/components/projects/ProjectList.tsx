@@ -1,22 +1,16 @@
 import { ProjectCard } from "./ProjectCard";
 import { useProjectsStore } from "@/hooks/useProjects";
-import { useEffect } from "react";
 
 export function ProjectList() {
   const { 
     projects, 
     deleteProject, 
-    loadProjects, 
   } = useProjectsStore();
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
-  // Load projects with stats
-  useEffect(() => {
-    loadProjects().catch((error) => {
-      console.error("[ProjectList] Error loading projects:", error);
-    });
-  }, [loadProjects]);
+  // REMOVED: Redundant useEffect that loads projects 
+  // Projects are now loaded by the parent page component to avoid race conditions
 
   if (projects.length === 0) {
     return (

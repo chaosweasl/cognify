@@ -71,6 +71,20 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
       if (insertError) throw insertError;
       
       set({ flashcards: data || [], loading: false });
+      
+      // CRITICAL FIX: Invalidate project cache after flashcard changes
+      // This ensures project stats (flashcard counts) are updated when navigating back
+      if (typeof window !== 'undefined') {
+        try {
+          const { CacheInvalidation } = await import("@/hooks/useCache");
+          CacheInvalidation.invalidatePattern('user_projects');
+          CacheInvalidation.invalidatePattern(`project_${projectId}`);
+          CacheInvalidation.invalidatePattern(`project_stats_${projectId}`);
+          console.log(`[Flashcards] replaceAllFlashcards - Cache invalidated for project: ${projectId}`);
+        } catch (cacheError) {
+          console.warn(`[Flashcards] replaceAllFlashcards - Failed to invalidate cache:`, cacheError);
+        }
+      }
     } catch (error) {
       console.error("Error replacing flashcards:", error);
       set({ 
