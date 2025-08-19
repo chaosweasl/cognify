@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
-import { useSettingsStore } from "@/hooks/useSettings";
 import { scheduleSRSReminderForProject } from "@/lib/utils/scheduleSRSReminderClient";
 import { createClient } from "@/lib/supabase/client";
 import { saveSRSStates } from "@/lib/srs/SRSDBUtils";
@@ -30,16 +29,13 @@ import { CardTypeIndicator } from "./CardTypeIndicator";
 import { FlashcardDisplay } from "../flashcards/FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "../flashcards/EmptyFlashcardState";
-import { Flashcard } from "../../types";
+import { Flashcard, Project } from "../../types";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Pencil } from "lucide-react";
 
 interface StudyFlashcardsProps {
   flashcards: Flashcard[];
-  projectName: string;
-  projectId: string;
-  newCardsPerDay: number;
-  maxReviewsPerDay: number;
+  project: Project;
   existingSRSStates?: Record<string, SRSCardState>;
 }
 
@@ -51,6 +47,7 @@ const demoFlashcards: Flashcard[] = [
     back: "Paris",
     project_id: "demo",
     extra: {},
+    is_ai_generated: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -60,6 +57,7 @@ const demoFlashcards: Flashcard[] = [
     back: "4",
     project_id: "demo",
     extra: {},
+    is_ai_generated: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -69,6 +67,7 @@ const demoFlashcards: Flashcard[] = [
     back: "William Shakespeare",
     project_id: "demo",
     extra: {},
+    is_ai_generated: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -208,24 +207,44 @@ function SessionProgress({
 
 export default function StudyFlashcards({
   flashcards,
-  projectName,
-  projectId,
-  newCardsPerDay,
-  maxReviewsPerDay,
+  project,
   existingSRSStates,
 }: StudyFlashcardsProps) {
   const userId = useUserId();
   const supabase = createClient();
-  const { srsSettings } = useSettingsStore();
 
-  // Create project-specific settings
+  // Convert project settings to SRSSettings format
+  const srsSettings = React.useMemo(() => ({
+    NEW_CARDS_PER_DAY: project.new_cards_per_day,
+    MAX_REVIEWS_PER_DAY: project.max_reviews_per_day,
+    LEARNING_STEPS: project.learning_steps,
+    RELEARNING_STEPS: project.relearning_steps,
+    GRADUATING_INTERVAL: project.graduating_interval,
+    EASY_INTERVAL: project.easy_interval,
+    STARTING_EASE: project.starting_ease,
+    MINIMUM_EASE: project.minimum_ease,
+    EASY_BONUS: project.easy_bonus,
+    HARD_INTERVAL_FACTOR: project.hard_interval_factor,
+    EASY_INTERVAL_FACTOR: project.easy_interval_factor,
+    LAPSE_RECOVERY_FACTOR: project.lapse_recovery_factor,
+    LAPSE_EASE_PENALTY: project.lapse_ease_penalty,
+    INTERVAL_MODIFIER: 1.0, // Not stored in project, use default
+    LEECH_THRESHOLD: project.leech_threshold,
+    LEECH_ACTION: project.leech_action,
+    NEW_CARD_ORDER: project.new_card_order,
+    REVIEW_AHEAD: project.review_ahead,
+    BURY_SIBLINGS: project.bury_siblings,
+    MAX_INTERVAL: project.max_interval,
+  }), [project]);
+
+  // Create project-specific settings from project data
   const projectSettings: ProjectSRSSettings = React.useMemo(
     () => ({
-      projectId,
-      newCardsPerDay,
-      maxReviewsPerDay,
+      projectId: project.id,
+      newCardsPerDay: project.new_cards_per_day,
+      maxReviewsPerDay: project.max_reviews_per_day,
     }),
-    [projectId, newCardsPerDay, maxReviewsPerDay]
+    [project.id, project.new_cards_per_day, project.max_reviews_per_day]
   );
 
   // Settings are auto-loaded by the enhanced hook
@@ -259,7 +278,7 @@ export default function StudyFlashcards({
     const cardIds = (flashcards?.length > 0 ? flashcards : demoFlashcards).map(
       (c) => c.id
     );
-    return initSRSStateWithSettings(cardIds, srsSettings, projectId);
+    return initSRSStateWithSettings(cardIds, srsSettings, project.id);
   });
 
   // Study session state - initialize with empty session, load async
@@ -299,16 +318,16 @@ export default function StudyFlashcards({
   // Auto-save SRS states to database with debounce
   const saveSRSStatesToDB = useCallback(
     async (states: Record<string, SRSCardState>) => {
-      if (userId && projectId) {
+      if (userId && project.id) {
         try {
-          await saveSRSStates(supabase, userId, projectId, states);
+          await saveSRSStates(supabase, userId, project.id, states);
           console.log("SRS states saved to database");
         } catch (error) {
           console.error("Failed to save SRS states:", error);
         }
       }
     },
-    [userId, projectId, supabase]
+    [userId, project.id, supabase]
   );
 
   // Debounced save function to prevent excessive database calls
@@ -567,7 +586,7 @@ export default function StudyFlashcards({
     projectSettings,
   ]);
   useEffect(() => {
-    if (sessionComplete && userId && projectId && projectName) {
+    if (sessionComplete && userId && project.id && project.name) {
       // Only schedule reminders if there are NO learning cards left
       if (!hasLearningCards(srsState)) {
         const nextDue = Math.min(
@@ -578,23 +597,23 @@ export default function StudyFlashcards({
         if (nextDue && nextDue < Infinity) {
           scheduleSRSReminderForProject({
             user_id: userId,
-            project_id: projectId,
-            project_name: projectName,
+            project_id: project.id,
+            project_name: project.name,
             due: nextDue,
           });
         }
       }
     }
-  }, [sessionComplete, userId, projectId, projectName, srsState]);
+  }, [sessionComplete, userId, project.id, project.name, srsState]);
 
   // Save on component unmount
   useEffect(() => {
     return () => {
-      if (userId && projectId) {
+      if (userId && project.id) {
         saveSRSStatesToDB(srsState);
       }
     };
-  }, [userId, projectId, srsState, saveSRSStatesToDB]);
+  }, [userId, project.id, srsState, saveSRSStatesToDB]);
 
   // Render conditions
   if (!cards || cards.length === 0) {
@@ -659,8 +678,8 @@ export default function StudyFlashcards({
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh]">
       <StudyHeader
-        projectName={projectName}
-        projectId={projectId}
+        projectName={project.name}
+        projectId={project.id}
         onReset={handleReset}
       />
 
@@ -676,7 +695,7 @@ export default function StudyFlashcards({
           reviewsCompleted={studySession.reviewsCompleted}
         />
 
-        <CardTypeIndicator cardState={currentCardState} />
+        <CardTypeIndicator cardState={currentCardState} srsSettings={srsSettings} />
       </div>
 
       <FlashcardDisplay

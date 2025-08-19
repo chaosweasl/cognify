@@ -12,10 +12,10 @@ export function UserSettingsTab() {
   const [formData, setFormData] = React.useState({
     displayName: userProfile?.display_name || "",
     bio: userProfile?.bio || "",
-    theme: userSettings.theme,
-    notificationsEnabled: userSettings.notificationsEnabled,
-    dailyReminder: userSettings.dailyReminder,
-    reminderTime: userSettings.reminderTime,
+    theme: userSettings?.theme || "system",
+    notificationsEnabled: userSettings?.notifications_enabled ?? true,
+    dailyReminder: userSettings?.daily_reminder ?? true,
+    reminderTime: userSettings?.reminder_time || "09:00:00",
   });
   const [pending, setPending] = React.useState(false);
 
@@ -28,6 +28,18 @@ export function UserSettingsTab() {
       }));
     }
   }, [userProfile]);
+
+  React.useEffect(() => {
+    if (userSettings) {
+      setFormData((prev) => ({
+        ...prev,
+        theme: userSettings.theme,
+        notificationsEnabled: userSettings.notifications_enabled,
+        dailyReminder: userSettings.daily_reminder,
+        reminderTime: userSettings.reminder_time,
+      }));
+    }
+  }, [userSettings]);
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +59,9 @@ export function UserSettingsTab() {
       });
       await updateUserSettings({
         theme: formData.theme,
-        notificationsEnabled: formData.notificationsEnabled,
-        dailyReminder: formData.dailyReminder,
-        reminderTime: formData.reminderTime,
+        notifications_enabled: formData.notificationsEnabled,
+        daily_reminder: formData.dailyReminder,
+        reminder_time: formData.reminderTime,
       });
     } finally {
       setPending(false);

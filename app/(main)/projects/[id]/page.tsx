@@ -112,10 +112,7 @@ export default async function ProjectStudyPage(props: {
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8 overflow-auto">
       <StudyFlashcards
         flashcards={flashcards}
-        projectName={project.name}
-        projectId={project.id}
-        newCardsPerDay={project.new_cards_per_day ?? 20}
-        maxReviewsPerDay={project.max_reviews_per_day ?? 100}
+        project={project}
         existingSRSStates={existingSRSStates}
       />
     </main>

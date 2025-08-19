@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Settings, User, Brain, RotateCcw, Shield } from "lucide-react";
-import { useSettingsStore } from "@/hooks/useSettings";
+import { Settings, User, Brain, Shield } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
 // Sub-components
@@ -10,23 +9,12 @@ import { SRSSettingsTab } from "./components/SRSSettingsTab";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("user");
-  const { resetAllSettings } = useSettingsStore();
   const { userProfile, isLoading } = useUserProfile();
 
   const tabs = [
     { id: "user", label: "User Settings", icon: User },
     { id: "srs", label: "Card Settings", icon: Brain },
   ];
-
-  const handleResetAll = () => {
-    if (
-      confirm(
-        "Are you sure you want to reset all settings to default? This action cannot be undone."
-      )
-    ) {
-      resetAllSettings();
-    }
-  };
 
   return (
     <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8">
@@ -43,13 +31,6 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-          <button
-            onClick={handleResetAll}
-            className="btn btn-outline btn-error gap-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset All
-          </button>
         </div>
 
         <div className="bg-base-100 rounded-lg shadow-lg overflow-hidden">
