@@ -20,7 +20,7 @@ function ProjectsPageContent() {
     if (shouldForceRefresh || shouldInitialLoad) {
       setLoading(true);
       setError(null);
-      
+
       loadProjects()
         .then(() => setLoading(false))
         .catch((err) => {
@@ -32,7 +32,11 @@ function ProjectsPageContent() {
         // Remove the refresh param from the URL
         const url = new URL(window.location.href);
         url.searchParams.delete("refresh");
-        window.history.replaceState({}, document.title, url.pathname + url.search);
+        window.history.replaceState(
+          {},
+          document.title,
+          url.pathname + url.search
+        );
       }
     }
   }, [searchParams, loadProjects, projects.length]);
@@ -57,8 +61,8 @@ function ProjectsPageContent() {
             No projects yet
           </div>
           <div className="mb-8 text-lg text-base-content/80 max-w-md">
-            Start by creating your first flashcard project. Organize your learning and
-            track your progress with beautiful, interactive cards.
+            Start by creating your first flashcard project. Organize your
+            learning and track your progress with beautiful, interactive cards.
           </div>
         </div>
         {error && (
@@ -84,7 +88,9 @@ function ProjectsPageContent() {
 
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={<div className="loading loading-spinner loading-lg"></div>}>
+    <Suspense
+      fallback={<div className="loading loading-spinner loading-lg"></div>}
+    >
       <ProjectsPageContent />
     </Suspense>
   );
