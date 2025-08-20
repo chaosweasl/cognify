@@ -83,6 +83,12 @@ export function NotificationBell() {
   }, [userId]);
 
   useEffect(() => {
+    // Only fetch app notifications if user is authenticated
+    if (!userId) {
+      console.log("[Supabase] Skipping app notifications - user not authenticated");
+      return;
+    }
+    
     console.log("[Supabase] getAppNotifications");
     getAppNotifications().then(
       ({
@@ -96,7 +102,7 @@ export function NotificationBell() {
         if (data) setAppNotifications(data);
       }
     );
-  }, []);
+  }, [userId]); // Add userId as dependency
 
   // Fetch app notification reads for this user
   useEffect(() => {

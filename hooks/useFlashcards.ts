@@ -11,6 +11,7 @@ interface FlashcardsState {
   fetchFlashcards: (projectId: string) => Promise<void>;
   replaceAllFlashcards: (projectId: string, flashcards: CreateFlashcardData[]) => Promise<void>;
   setFlashcards: (flashcards: Flashcard[]) => void;
+  reset: () => void; // Added reset method
 }
 
 export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
@@ -82,5 +83,13 @@ export const useFlashcardsStore = create<FlashcardsState>((set, get) => ({
 
   setFlashcards: (flashcards: Flashcard[]) => {
     set({ flashcards });
+  },
+
+  reset: () => {
+    set({ 
+      flashcards: [], 
+      loading: false, 
+      error: null 
+    });
   },
 }));

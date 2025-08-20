@@ -35,11 +35,11 @@ export async function scheduleSRSReminder({
   const { error } = await supabase.from("user_notifications").insert([
     {
       user_id,
-      type: "srs_reminder",
+      type: "study_reminder",
       title: "Time to review your project!",
       message: "Your project '" + project_name + "' is due for review.",
       url: "/projects/" + project_id + "/study",
-      trigger_at,
+      scheduled_for: trigger_at,
     },
   ]);
   if (error) throw error;

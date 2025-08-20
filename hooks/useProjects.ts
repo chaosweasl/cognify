@@ -18,6 +18,7 @@ interface ProjectsGlobalState {
   addProject: (project: Project) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   removeProject: (projectId: string) => void;
+  reset: () => void; // Added reset method
 }
 
 // Keep minimal global state for project list
@@ -35,6 +36,7 @@ const useProjectsGlobalStore = create<ProjectsGlobalState>((set) => ({
   removeProject: (projectId) => set(state => ({
     projects: state.projects.filter(p => p.id !== projectId)
   })),
+  reset: () => set({ projects: [] }),
 }));
 
 // Simplified project management functions with cache-first approach

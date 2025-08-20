@@ -142,6 +142,7 @@ interface SettingsState {
 
   loadUserSettings: () => Promise<void>;
   updateUserSettings: (updates: Partial<UserSettings>) => Promise<void>;
+  reset: () => void; // Added reset method
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -181,10 +182,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       });
     }
   },
+
+  reset: () => {
+    set({ 
+      userSettings: null, 
+      isLoading: false, 
+      error: null 
+    });
+  },
 }));
 
 // Convenience hook
 export const useSettings = () => {
-  const { userSettings, isLoading, error, loadUserSettings, updateUserSettings } = useSettingsStore();
-  return { userSettings, isLoading, error, loadUserSettings, updateUserSettings };
+  const { userSettings, isLoading, error, loadUserSettings, updateUserSettings, reset } = useSettingsStore();
+  return { userSettings, isLoading, error, loadUserSettings, updateUserSettings, reset };
 };
