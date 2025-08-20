@@ -13,9 +13,6 @@ This document lists the remaining features and improvements needed to complete t
 
 ### 2. Flashcard Study & Review System
 
-- [ ] Implement spaced repetition system (Anki-like) for flashcard review scheduling.
-- [ ] After each flashcard, prompt user to rate recall (e.g., "Again", "Hard", "Good", "Easy").
-- [ ] Use ratings to schedule next review (spaced repetition algorithm).
 - [ ] Track user performance and show reminders for overdue flashcards.
 - [ ] UI for upcoming/review due flashcards (dashboard or notifications).
 
