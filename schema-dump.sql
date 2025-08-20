@@ -74,7 +74,7 @@ BEGIN
         project_id,
         card_id,
         state,
-        interval,
+        card_interval,  -- Fixed: was 'interval'
         ease,
         due,
         last_reviewed,
@@ -98,7 +98,6 @@ BEGIN
         false, -- not a leech
         false -- not suspended
     );
-    
     RETURN NEW;
 END;
 $$;
