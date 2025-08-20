@@ -5,6 +5,7 @@ const supabase = createClient();
 
 export interface UserProfile {
   id: string;
+  username: string | null;
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -50,8 +51,8 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
             .insert([
               {
                 id: user.id,
-                display_name:
-                  user.user_metadata?.name || user.email?.split("@")[0] || "",
+                username: null, // Let user set username later
+                display_name: null, // Let user set display name later
                 avatar_url: user.user_metadata?.avatar_url || null,
                 bio: "",
                 email: user.email || null,

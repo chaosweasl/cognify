@@ -7,7 +7,7 @@ export async function getUserNotifications(userId: string) {
     .from("user_notifications")
     .select("*")
     .eq("user_id", userId)
-    .order("trigger_at", { ascending: false });
+    .order("scheduled_for", { ascending: false });
 }
 
 export async function markNotificationRead(notificationId: string) {
@@ -16,7 +16,7 @@ export async function markNotificationRead(notificationId: string) {
   );
   return supabase
     .from("user_notifications")
-    .update({ read: true })
+    .update({ is_read: true })
     .eq("id", notificationId);
 }
 

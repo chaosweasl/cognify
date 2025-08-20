@@ -4,12 +4,14 @@ import Image from "next/image";
 
 export interface ProfileSettingsFormProps {
   userProfile?: {
+    username?: string;
     displayName?: string;
     bio?: string;
     avatarUrl?: string;
   };
   isLoading: boolean;
   onSave: (data: {
+    username: string;
     displayName: string;
     bio: string;
     profilePicture: File | null;
@@ -19,6 +21,7 @@ export interface ProfileSettingsFormProps {
 const ProfileSettingsForm: React.FC<ProfileSettingsFormProps> = React.memo(
   ({ userProfile, isLoading, onSave }) => {
     // Local state for form fields
+    const [username, setUsername] = useState(userProfile?.username || "");
     const [displayName, setDisplayName] = useState(
       userProfile?.displayName || ""
     );
@@ -28,6 +31,7 @@ const ProfileSettingsForm: React.FC<ProfileSettingsFormProps> = React.memo(
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
+      setUsername(userProfile?.username || "");
       setDisplayName(userProfile?.displayName || "");
       setBio(userProfile?.bio || "");
     }, [userProfile]);
@@ -48,7 +52,7 @@ const ProfileSettingsForm: React.FC<ProfileSettingsFormProps> = React.memo(
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      onSave({ displayName, bio, profilePicture });
+      onSave({ username, displayName, bio, profilePicture });
     };
 
     return (
@@ -153,10 +157,38 @@ const ProfileSettingsForm: React.FC<ProfileSettingsFormProps> = React.memo(
               )}
             </div>
             <div className="divider"></div>
+            {/* Username Input */}
+            <div className="form-control mb-6">
+              <label className="label">
+                <span className="label-text font-medium">Username</span>
+                <span className="label-text-alt text-base-content/60">
+                  3-30 characters, letters, numbers, - and _ only
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  className="input input-bordered w-full pl-10"
+                  pattern="^[a-zA-Z0-9_-]+$"
+                  minLength={3}
+                  maxLength={30}
+                />
+                <User
+                  className="absolute left-3 top-3.5 text-base-content/40"
+                  size={18}
+                />
+              </div>
+            </div>
             {/* Display Name Input */}
             <div className="form-control mb-6">
               <label className="label">
                 <span className="label-text font-medium">Display Name</span>
+                <span className="label-text-alt text-base-content/60">
+                  Optional - shown to other users
+                </span>
               </label>
               <div className="relative">
                 <input

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ManageFlashcardsModal } from "./ManageFlashcardsModal";
 import { ProjectInfoForm } from "../projects/ProjectInfoForm";
+import { ProjectSRSSettings } from "../projects/ProjectSRSSettings";
 import { FlashcardCardEditor } from "./FlashcardCardEditor";
 import { FlashcardNavigation } from "./FlashcardNavigation";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const [description, setDescription] = useState(project.description);
   const [newCardsPerDay, setNewCardsPerDay] = useState(project.new_cards_per_day || 20);
   const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(project.max_reviews_per_day || 100);
+  const [projectUpdates, setProjectUpdates] = useState<Partial<NormalizedProject>>({});
   const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([
     { front: "", back: "" },
   ]); // Always start with at least one card
@@ -165,13 +167,14 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   async function handleSave() {
     setSaving(true);
     try {
-      // Update project info
+      // Update project info including SRS settings
       await updateProject({
         id: project.id,
         name,
         description,
         new_cards_per_day: newCardsPerDay,
         max_reviews_per_day: maxReviewsPerDay,
+        ...projectUpdates, // Include any SRS setting updates
       });
 
       // Only save non-empty cards (at least one non-empty field)
@@ -309,6 +312,13 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
               setMaxReviewsPerDay={setMaxReviewsPerDay}
               isValid={isValid}
               saving={isLoading}
+            />
+
+            {/* SRS Settings */}
+            <ProjectSRSSettings
+              project={{ ...project, ...projectUpdates }}
+              onChange={setProjectUpdates}
+              disabled={isLoading}
             />
 
             {/* Reset SRS Data Section */}

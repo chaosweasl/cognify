@@ -150,6 +150,8 @@ export async function createProject({
   console.log(
     `[Projects] createProject - Creating project for user: ${user.id}`
   );
+  
+  // Create project with default SRS settings based on Anki defaults
   const { data, error } = await supabase
     .from("projects")
     .insert([
@@ -159,6 +161,24 @@ export async function createProject({
         description,
         new_cards_per_day,
         max_reviews_per_day,
+        // Default SRS settings (Anki-compatible)
+        learning_steps: [1, 10],
+        relearning_steps: [10],
+        graduating_interval: 1,
+        easy_interval: 4,
+        starting_ease: 2.5,
+        minimum_ease: 1.3,
+        easy_bonus: 1.3,
+        hard_interval_factor: 1.2,
+        easy_interval_factor: 1.3,
+        lapse_recovery_factor: 0.5,
+        leech_threshold: 8,
+        leech_action: 'suspend',
+        new_card_order: 'random',
+        review_ahead: false,
+        bury_siblings: false,
+        max_interval: 36500,
+        lapse_ease_penalty: 0.2,
       },
     ])
     .select();
@@ -175,26 +195,31 @@ export async function createProject({
   return projectId;
 }
 
-export async function updateProject({
-  id,
-  name,
-  description,
-  new_cards_per_day,
-  max_reviews_per_day,
-}: {
+export async function updateProject(projectData: {
   id: string;
-  name: string;
-  description: string;
+  name?: string;
+  description?: string;
   new_cards_per_day?: number;
   max_reviews_per_day?: number;
+  learning_steps?: number[];
+  relearning_steps?: number[];
+  graduating_interval?: number;
+  easy_interval?: number;
+  starting_ease?: number;
+  minimum_ease?: number;
+  easy_bonus?: number;
+  hard_interval_factor?: number;
+  easy_interval_factor?: number;
+  lapse_recovery_factor?: number;
+  leech_threshold?: number;
+  leech_action?: 'suspend' | 'tag';
+  new_card_order?: 'random' | 'fifo';
+  review_ahead?: boolean;
+  bury_siblings?: boolean;
+  max_interval?: number;
+  lapse_ease_penalty?: number;
 }) {
-  console.log("projectsActions: updateProject called", {
-    id,
-    name,
-    description,
-    new_cards_per_day,
-    max_reviews_per_day,
-  });
+  console.log("projectsActions: updateProject called", projectData);
   const supabase = await createClient();
   const {
     data: { user },
@@ -202,13 +227,18 @@ export async function updateProject({
   } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("Not authenticated");
 
-  const updateData: Record<string, unknown> = { name, description };
-  if (new_cards_per_day !== undefined) updateData.new_cards_per_day = new_cards_per_day;
-  if (max_reviews_per_day !== undefined) updateData.max_reviews_per_day = max_reviews_per_day;
+  const { id, ...updateData } = projectData;
+  
+  // Remove undefined values to avoid updating fields unnecessarily
+  const cleanUpdateData = Object.fromEntries(
+    Object.entries(updateData).filter(([, value]) => value !== undefined)
+  );
+
+  console.log("updateProject: sending data to database", cleanUpdateData);
 
   const { error } = await supabase
     .from("projects")
-    .update(updateData)
+    .update(cleanUpdateData)
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw error;
