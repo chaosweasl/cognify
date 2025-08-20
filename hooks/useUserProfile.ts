@@ -13,6 +13,7 @@ export interface UserProfile {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+  onboarding_completed: boolean; // <-- Added field
 }
 
 interface UserProfileState {
@@ -40,7 +41,7 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       }
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, onboarding_completed")
         .eq("id", user.id)
         .single();
       if (error) {
@@ -73,7 +74,13 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         }
       }
       if (profile) {
-        set({ userProfile: { ...profile, email: user.email || null } });
+        set({
+          userProfile: {
+            ...profile,
+            email: user.email || null,
+            onboarding_completed: !!profile.onboarding_completed,
+          },
+        });
       }
     } catch (err) {
       set({ error: "An unexpected error occurred" });
@@ -125,22 +132,22 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
 
 // Simple hook to match the interface expected by simplified components
 export const useUserProfile = () => {
-  const { 
-    userProfile, 
-    isLoading, 
-    error, 
-    fetchUserProfile, 
-    updateUserProfile, 
+  const {
+    userProfile,
+    isLoading,
+    error,
+    fetchUserProfile,
+    updateUserProfile,
     uploadAvatar,
-    setUserProfile 
+    setUserProfile,
   } = useUserProfileStore();
-  return { 
-    userProfile, 
-    isLoading, 
-    error, 
-    fetchUserProfile, 
-    updateUserProfile, 
+  return {
+    userProfile,
+    isLoading,
+    error,
+    fetchUserProfile,
+    updateUserProfile,
     uploadAvatar,
-    setUserProfile 
+    setUserProfile,
   };
 };

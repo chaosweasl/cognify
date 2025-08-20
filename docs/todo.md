@@ -50,6 +50,10 @@ This document lists the remaining features and improvements needed to complete t
 - [ ] Add more test coverage for new features.
 - [ ] Update README and CONTRIBUTING docs as features are added.
 
+## Refactor user state hooks
+
+- [ ] Refactor codebase to use `useUserProfile` everywhere instead of `useUserId` for unified user state management
+
 ---
 
 For details on current conventions and architecture, see `/CONTRIBUTING.md` and `/README.md`.

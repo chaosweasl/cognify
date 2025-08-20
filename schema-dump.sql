@@ -74,7 +74,7 @@ BEGIN
         project_id,
         card_id,
         state,
-        interval,
+        card_interval,  -- Fixed: was 'interval'
         ease,
         due,
         last_reviewed,
@@ -98,7 +98,6 @@ BEGIN
         false, -- not a leech
         false -- not suspended
     );
-    
     RETURN NEW;
 END;
 $$;
@@ -323,6 +322,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "is_admin" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "onboarding_completed" boolean DEFAULT false NOT NULL,
     CONSTRAINT "profiles_age_range" CHECK ((("age" IS NULL) OR (("age" >= 13) AND ("age" <= 120)))),
     CONSTRAINT "profiles_username_format" CHECK (("username" ~ '^[a-zA-Z0-9_-]+$'::"text")),
     CONSTRAINT "profiles_username_length" CHECK ((("char_length"("username") >= 3) AND ("char_length"("username") <= 30)))
