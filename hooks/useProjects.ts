@@ -176,7 +176,8 @@ export const useProjectsStore = () => {
     setProjects, 
     addProject, 
     updateProject, 
-    removeProject 
+    removeProject,
+    reset
   } = useProjectsGlobalStore();
 
   // Create stable function references using useCallback with proper dependencies
@@ -269,5 +270,8 @@ export const useProjectsStore = () => {
     
     // Cache management
     invalidateCache,
+    
+    // Store reset
+    reset,
   };
 };

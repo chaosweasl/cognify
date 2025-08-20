@@ -12,6 +12,7 @@ import { updateProject } from "@/app/(main)/projects/actions";
 import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { useFlashcardsStore } from "@/hooks/useFlashcards";
+import { useProjectsStore } from "@/hooks/useProjects";
 import ProjectResetComponent from "../projects/ProjectResetComponent";
 import { CreateFlashcardData } from "../../types";
 
@@ -34,7 +35,10 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
     loading: flashcardsLoading,
     fetchFlashcards,
     replaceAllFlashcards,
+    reset: resetFlashcards,
   } = useFlashcardsStore();
+
+  const { reset: resetProjects } = useProjectsStore();
 
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
@@ -198,7 +202,11 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
       // Save flashcards using new API
       await replaceAllFlashcards(project.id, flashcardData);
 
-      router.push("/projects?refresh=1");
+      // Reset stores to ensure fresh data is loaded
+      resetFlashcards();
+      resetProjects();
+
+      router.push("/projects");
     } catch (error) {
       console.error("Error saving project:", error);
     } finally {
@@ -207,7 +215,7 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   }
 
   function handleCancel() {
-    router.push("/projects?refresh=1");
+    router.push("/projects");
   }
 
   function handleImportFlashcards(

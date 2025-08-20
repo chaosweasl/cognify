@@ -4,20 +4,17 @@ import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectList } from "@/src/components/projects/ProjectList";
 import { BookOpen } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 
 function ProjectsPageContent() {
   const { projects, loadProjects } = useProjectsStore();
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load projects on mount or when refresh param is present
+  // Load projects on mount when store is empty
   useEffect(() => {
-    const shouldForceRefresh = searchParams.get("refresh") === "1";
     const shouldInitialLoad = projects.length === 0;
 
-    if (shouldForceRefresh || shouldInitialLoad) {
+    if (shouldInitialLoad) {
       setLoading(true);
       setError(null);
 
@@ -27,19 +24,8 @@ function ProjectsPageContent() {
           setError(err.message || "Failed to load projects");
           setLoading(false);
         });
-
-      if (shouldForceRefresh) {
-        // Remove the refresh param from the URL
-        const url = new URL(window.location.href);
-        url.searchParams.delete("refresh");
-        window.history.replaceState(
-          {},
-          document.title,
-          url.pathname + url.search
-        );
-      }
     }
-  }, [searchParams, loadProjects, projects.length]);
+  }, [loadProjects, projects.length]);
 
   if (loading) {
     return (
