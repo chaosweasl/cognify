@@ -1,28 +1,26 @@
 "use client";
 import React from "react";
-import { DEFAULT_SRS_SETTINGS } from "@/lib/srs/SRSScheduler";
 
 interface DailyLimitsProgressProps {
   newCardsStudied: number;
   reviewsCompleted: number;
+  newCardsPerDay: number;
+  maxReviewsPerDay: number;
 }
 
 export function DailyLimitsProgress({
   newCardsStudied,
   reviewsCompleted,
+  newCardsPerDay,
+  maxReviewsPerDay,
 }: DailyLimitsProgressProps) {
-  const newCardsProgress =
-    (newCardsStudied / DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY) * 100;
+  const newCardsProgress = (newCardsStudied / newCardsPerDay) * 100;
   const reviewsProgress =
-    DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY > 0
-      ? (reviewsCompleted / DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY) * 100
-      : 0;
+    maxReviewsPerDay > 0 ? (reviewsCompleted / maxReviewsPerDay) * 100 : 0;
 
-  const newCardsLimitReached =
-    newCardsStudied >= DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY;
+  const newCardsLimitReached = newCardsStudied >= newCardsPerDay;
   const reviewsLimitReached =
-    DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY > 0 &&
-    reviewsCompleted >= DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY;
+    maxReviewsPerDay > 0 && reviewsCompleted >= maxReviewsPerDay;
 
   return (
     <div className="space-y-3 mb-4 p-4 bg-base-100 rounded-lg border border-base-300">
@@ -37,7 +35,7 @@ export function DailyLimitsProgress({
               newCardsLimitReached ? "text-orange-600" : ""
             }`}
           >
-            {newCardsStudied} / {DEFAULT_SRS_SETTINGS.NEW_CARDS_PER_DAY}
+            {newCardsStudied} / {newCardsPerDay}
             {newCardsLimitReached && " (Limit reached)"}
           </span>
         </div>
@@ -54,7 +52,7 @@ export function DailyLimitsProgress({
       </div>
 
       {/* Reviews */}
-      {DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY > 0 && (
+      {maxReviewsPerDay > 0 && (
         <div className="space-y-2">
           <div className="flex justify-between items-center text-sm">
             <span className="text-base-content/70">Reviews today</span>
@@ -63,7 +61,7 @@ export function DailyLimitsProgress({
                 reviewsLimitReached ? "text-red-600" : ""
               }`}
             >
-              {reviewsCompleted} / {DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY}
+              {reviewsCompleted} / {maxReviewsPerDay}
               {reviewsLimitReached && " (Limit reached)"}
             </span>
           </div>
@@ -81,7 +79,7 @@ export function DailyLimitsProgress({
       )}
 
       {/* Unlimited reviews message */}
-      {DEFAULT_SRS_SETTINGS.MAX_REVIEWS_PER_DAY <= 0 && (
+      {maxReviewsPerDay <= 0 && (
         <div className="text-sm text-base-content/70">
           Reviews: {reviewsCompleted} (unlimited)
         </div>

@@ -259,7 +259,7 @@ export default function StudyFlashcards({
         }
 
         // Initialize session with database or fallback to localStorage
-        const session = await initStudySessionWithFallback(userId || undefined);
+        const session = await initStudySessionWithFallback(userId || undefined, project.id);
         setStudySession(session);
       } catch (error) {
         console.error("Failed to initialize study session:", error);
@@ -268,7 +268,7 @@ export default function StudyFlashcards({
     };
 
     initSession();
-  }, [userId]);
+  }, [userId, project.id]);
 
   // Initialize SRS state
   const [srsState, setSRSState] = useState<Record<string, SRSCardState>>(() => {
@@ -426,7 +426,8 @@ export default function StudyFlashcards({
           newCardState,
           srsState,
           srsSettings,
-          userId || ""
+          userId || "",
+          project.id // Pass the project ID
         );
         setStudySession(updatedSession);
       } catch (error) {
@@ -489,6 +490,7 @@ export default function StudyFlashcards({
       studySession,
       userId,
       projectSettings,
+      project.id,
     ]
   );
 
@@ -691,8 +693,10 @@ export default function StudyFlashcards({
         />
 
         <DailyLimitsProgress
-          newCardsStudied={studySession.newCardsStudied}
-          reviewsCompleted={studySession.reviewsCompleted}
+          newCardsStudied={studySession.projectStats[project.id]?.newCardsStudied || 0}
+          reviewsCompleted={studySession.projectStats[project.id]?.reviewsCompleted || 0}
+          newCardsPerDay={project.new_cards_per_day}
+          maxReviewsPerDay={project.max_reviews_per_day}
         />
 
         <CardTypeIndicator cardState={currentCardState} srsSettings={srsSettings} />
