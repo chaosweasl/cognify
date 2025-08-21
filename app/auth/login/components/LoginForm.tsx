@@ -1,9 +1,13 @@
 import { Github, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import React from "react";
-
 import { useState } from "react";
 import { create } from "zustand";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginState {
   signupSuccess: boolean;
@@ -127,83 +131,96 @@ export const LoginForm: React.FC = () => {
       {!signupSuccess ? (
         <div>
           <form className="space-y-6">
-            <div className="form-control flex flex-col">
-              <label className="label">
-                <span className="label-text font-medium text-base">Email</span>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
               </label>
-              <input
+              <Input
+                id="email"
                 name="email"
                 type="email"
                 required
-                className="input input-bordered input-lg w-full"
                 placeholder="you@example.com"
                 autoComplete="email"
+                className="h-11"
               />
             </div>
-            <div className="form-control flex flex-col">
-              <label className="label">
-                <span className="label-text font-medium text-base">
-                  Password
-                </span>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
               </label>
-              <input
+              <Input
+                id="password"
                 name="password"
                 type="password"
                 required
-                className="input input-bordered input-lg w-full"
                 placeholder="••••••••"
                 autoComplete="current-password"
+                className="h-11"
               />
             </div>
-            {error && <div className="text-error text-sm mb-2">{error}</div>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
+              <Button
                 type="submit"
                 formAction={handleLogin}
-                className="btn btn-primary btn-lg flex-1"
+                className="flex-1 h-11"
                 disabled={loading}
               >
                 Log in
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 formAction={handleSignup}
-                className="btn btn-outline btn-secondary btn-lg flex-1"
+                variant="outline"
+                className="flex-1 h-11"
                 disabled={loading}
               >
                 Sign up
-              </button>
+              </Button>
             </div>
           </form>
-          <div className="divider text-base-content/50">OR</div>
-          <button
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">OR</span>
+            </div>
+          </div>
+          <Button
             type="button"
             onClick={handleGithubLogin}
-            className="btn btn-outline btn-accent btn-lg w-full gap-2"
+            variant="outline"
+            className="w-full h-11 gap-2"
             disabled={loading}
           >
             <Github size={20} />
             Continue with GitHub
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <CheckCircle2 className="w-16 h-16 text-success" />
+            <CheckCircle2 className="w-16 h-16 text-green-600" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-base-content">
+            <h2 className="text-2xl font-bold">
               Check your email
             </h2>
-            <p className="text-base-content/70">
+            <p className="text-muted-foreground">
               We&apos;ve sent you a confirmation link to complete your
               registration.
             </p>
           </div>
           <div className="pt-4">
-            <Link href="/" className="btn btn-outline btn-sm">
-              Back to Home
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">Back to Home</Link>
+            </Button>
           </div>
         </div>
       )}
