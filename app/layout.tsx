@@ -51,7 +51,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-base-100`}
+        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-background`}
       >
         <SpeedInsights />
         <Analytics />
