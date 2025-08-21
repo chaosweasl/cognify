@@ -15,6 +15,7 @@ import { useFlashcardsStore } from "@/hooks/useFlashcards";
 import { useProjectsStore } from "@/hooks/useProjects";
 import ProjectResetComponent from "../projects/ProjectResetComponent";
 import { CreateFlashcardData } from "../../types";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 // Working flashcard type for the editor (without full database fields)
 type EditorFlashcard = {
@@ -43,9 +44,15 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
-  const [newCardsPerDay, setNewCardsPerDay] = useState(project.new_cards_per_day || 20);
-  const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(project.max_reviews_per_day || 100);
-  const [projectUpdates, setProjectUpdates] = useState<Partial<NormalizedProject>>({});
+  const [newCardsPerDay, setNewCardsPerDay] = useState(
+    project.new_cards_per_day || 20
+  );
+  const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(
+    project.max_reviews_per_day || 100
+  );
+  const [projectUpdates, setProjectUpdates] = useState<
+    Partial<NormalizedProject>
+  >({});
   const [flashcards, setFlashcards] = useState<EditorFlashcard[]>([
     { front: "", back: "" },
   ]); // Always start with at least one card
@@ -201,6 +208,9 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
 
       // Save flashcards using new API
       await replaceAllFlashcards(project.id, flashcardData);
+
+      // Invalidate project list cache to force reload
+      CacheInvalidation.invalidate("user_projects");
 
       // Reset stores to ensure fresh data is loaded
       resetFlashcards();

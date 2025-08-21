@@ -172,7 +172,7 @@ const ProfileSettingsForm: React.FC<ProfileSettingsFormProps> = React.memo(
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
                   className="input input-bordered w-full pl-10"
-                  pattern="^[a-zA-Z0-9_-]+$"
+                  pattern="^[a-zA-Z0-9_\-]+$"
                   minLength={3}
                   maxLength={30}
                 />

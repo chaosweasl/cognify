@@ -76,12 +76,25 @@ export function UserSettingsTab() {
       {/* First-time user profile setup prompt */}
       {userProfile && !userProfile.username && !userProfile.display_name && (
         <div className="alert alert-info">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            className="stroke-current shrink-0 w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
           </svg>
           <div>
             <h3 className="font-bold">Welcome to Cognify!</h3>
-            <div className="text-xs">Please set up your profile by adding a username. Display name and profile picture are optional.</div>
+            <div className="text-xs">
+              Please set up your profile by adding a username. Display name and
+              profile picture are optional.
+            </div>
           </div>
         </div>
       )}
@@ -121,7 +134,9 @@ export function UserSettingsTab() {
           <div className="form-control">
             <label className="label">
               <span className="label-text">Username</span>
-              <span className="label-text-alt">3-30 characters, letters, numbers, - and _ only</span>
+              <span className="label-text-alt">
+                3-30 characters, letters, numbers, - and _ only
+              </span>
             </label>
             <input
               type="text"
@@ -134,7 +149,7 @@ export function UserSettingsTab() {
               }
               className="input input-bordered"
               placeholder="Your unique username"
-              pattern="^[a-zA-Z0-9_-]+$"
+              pattern="^[a-zA-Z0-9_\-]+$"
               minLength={3}
               maxLength={30}
             />
@@ -143,7 +158,9 @@ export function UserSettingsTab() {
           <div className="form-control">
             <label className="label">
               <span className="label-text">Display Name</span>
-              <span className="label-text-alt">Optional - shown to other users</span>
+              <span className="label-text-alt">
+                Optional - shown to other users
+              </span>
             </label>
             <input
               type="text"

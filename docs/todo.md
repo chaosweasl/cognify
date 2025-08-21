@@ -44,6 +44,10 @@ This document lists the remaining features and improvements needed to complete t
   - Explain privacy and TOS
   - Set initial preferences
 
+### 7. Cache Invalidation Consistency
+
+- [ ] Audit the codebase and ensure that `CacheInvalidation.invalidate('user_projects')` or the appropriate cache key is called after any project mutation (create, update, delete, flashcard changes, SRS settings, etc.), not just in `/projects`. This includes all places where project data is changed to prevent stale UI across the app.
+
 ## Additional Improvements
 
 - [ ] Polish UI/UX for DaisyUI components and mobile responsiveness.

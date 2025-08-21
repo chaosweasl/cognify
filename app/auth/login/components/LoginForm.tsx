@@ -26,7 +26,7 @@ export const LoginForm: React.FC = () => {
   const handleLogin = async (formData: FormData) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
@@ -55,14 +55,14 @@ export const LoginForm: React.FC = () => {
       console.error("Login error:", error);
       setError("Network error. Please try again.");
     }
-    
+
     setLoading(false);
   };
 
   const handleSignup = async (formData: FormData) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
@@ -90,14 +90,14 @@ export const LoginForm: React.FC = () => {
       console.error("Signup error:", error);
       setError("Network error. Please try again.");
     }
-    
+
     setLoading(false);
   };
 
   const handleGithubLogin = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch("/api/auth/github", {
         method: "POST",
@@ -118,7 +118,7 @@ export const LoginForm: React.FC = () => {
       console.error("GitHub login error:", error);
       setError("Network error. Please try again.");
     }
-    
+
     setLoading(false);
   };
 
@@ -196,7 +196,8 @@ export const LoginForm: React.FC = () => {
               Check your email
             </h2>
             <p className="text-base-content/70">
-              We&apos;ve sent you a confirmation link to complete your registration.
+              We&apos;ve sent you a confirmation link to complete your
+              registration.
             </p>
           </div>
           <div className="pt-4">

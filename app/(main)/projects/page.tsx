@@ -6,26 +6,22 @@ import { BookOpen } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
 
 function ProjectsPageContent() {
-  const { projects, loadProjects } = useProjectsStore();
+  const { projects, loadProjects, reset } = useProjectsStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load projects on mount when store is empty
+  // Always reload projects on mount, and reset store to avoid stale state
   useEffect(() => {
-    const shouldInitialLoad = projects.length === 0;
-
-    if (shouldInitialLoad) {
-      setLoading(true);
-      setError(null);
-
-      loadProjects()
-        .then(() => setLoading(false))
-        .catch((err) => {
-          setError(err.message || "Failed to load projects");
-          setLoading(false);
-        });
-    }
-  }, [loadProjects, projects.length]);
+    reset();
+    setLoading(true);
+    setError(null);
+    loadProjects()
+      .then(() => setLoading(false))
+      .catch((err) => {
+        setError(err.message || "Failed to load projects");
+        setLoading(false);
+      });
+  }, [loadProjects, reset]);
 
   if (loading) {
     return (
