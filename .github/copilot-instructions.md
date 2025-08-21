@@ -53,7 +53,7 @@ Cognify is an Anki-like spaced repetition learning platform with AI-powered flas
 
 **Framework**: Next.js 15 (App Router), React 19, TypeScript  
 **Database**: Supabase (PostgreSQL) with Row Level Security  
-**Styling**: Tailwind CSS + DaisyUI  
+**Styling**: Tailwind CSS v4+ + shadcn/ui  
 **State**: Zustand (minimal global state only)  
 **Auth**: Supabase Auth with JWT tokens  
 **Database Schema**: Available in `schema-dump.sql` at repository root
