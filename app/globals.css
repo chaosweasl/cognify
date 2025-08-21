@@ -2,85 +2,6 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-@plugin "daisyui" {
-  themes: dim --default --prefersdark, lightgreen, darkgreen;
-}
-
-@plugin "daisyui/theme" {
-  name: "darkgreen";
-  color-scheme: dark;
-
-  /* Neutral slate base — classic dark UI */
-  --color-base-100: oklch(20% 0.005 260); /* dark slate */
-  --color-base-200: oklch(26% 0.005 260);
-  --color-base-300: oklch(32% 0.005 260);
-  --color-base-content: oklch(92% 0.01 260); /* readable light text */
-
-  /* Primary: muted soft green for buttons/highlights */
-  --color-primary: oklch(
-    55% 0.12 140
-  ); /* not moss, not mint — just calm green */
-  --color-primary-content: oklch(98% 0.005 140);
-
-  /* Secondary: slate, not green */
-  --color-secondary: oklch(30% 0.01 260);
-  --color-secondary-content: oklch(85% 0.005 260);
-
-  /* Accent: very subtle light green if needed */
-  --color-accent: oklch(65% 0.04 140);
-  --color-accent-content: oklch(18% 0.01 140);
-
-  /* Neutral and text: clean and cold */
-  --color-neutral: oklch(25% 0.005 260);
-  --color-neutral-content: oklch(88% 0.01 260);
-
-  /* States: stay consistent and calm */
-  --color-info: oklch(68% 0.1 240);
-  --color-success: oklch(52% 0.12 140);
-  --color-warning: oklch(72% 0.15 85);
-  --color-error: oklch(70% 0.18 30);
-}
-
-@plugin "daisyui/theme" {
-  name: "lightgreen";
-  default: true;
-  color-scheme: light;
-
-  /* Softer, less glaring base */
-  --color-base-100: oklch(98% 0.01 240);
-  --color-base-200: oklch(95% 0.015 240);
-  --color-base-300: oklch(92% 0.02 240);
-  --color-base-content: oklch(18% 0.04 240);
-
-  /* Lower chroma primary/secondary greens */
-  --color-primary: oklch(60% 0.15 140);
-  --color-primary-content: oklch(98% 0.01 140);
-
-  --color-secondary: oklch(75% 0.06 140);
-  --color-secondary-content: oklch(98% 0.01 140);
-
-  --color-accent: oklch(85% 0.04 140);
-  --color-accent-content: oklch(20% 0.05 140);
-
-  /* Neutrals only slightly tinted */
-  --color-neutral: oklch(50% 0.02 240);
-  --color-neutral-content: oklch(20% 0.03 240);
-
-  /* States unchanged or slightly toned */
-  --color-info: oklch(70% 0.1 220);
-  --color-info-content: oklch(98% 0.01 220);
-
-  --color-success: oklch(65% 0.15 140);
-  --color-success-content: oklch(98% 0.01 140);
-
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(18% 0.04 80);
-
-  --color-error: oklch(65% 0.2 30);
-  --color-error-content: oklch(98% 0.01 30);
-
-  /* optionally fine‑tune radii, border depths from dim theme */
-}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -122,71 +43,75 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Light theme with subtle green accent - matching lightgreen DaisyUI theme */
+  --background: oklch(98% 0.01 240); /* --color-base-100 */
+  --foreground: oklch(18% 0.04 240); /* --color-base-content */
+  --card: oklch(98% 0.01 240);
+  --card-foreground: oklch(18% 0.04 240);
+  --popover: oklch(98% 0.01 240);
+  --popover-foreground: oklch(18% 0.04 240);
+  --primary: oklch(60% 0.15 140); /* --color-primary - muted green */
+  --primary-foreground: oklch(98% 0.01 140); /* --color-primary-content */
+  --secondary: oklch(95% 0.015 240); /* --color-base-200 */
+  --secondary-foreground: oklch(18% 0.04 240);
+  --muted: oklch(92% 0.02 240); /* --color-base-300 */
+  --muted-foreground: oklch(50% 0.02 240); /* --color-neutral */
+  --accent: oklch(85% 0.04 140); /* --color-accent - subtle light green */
+  --accent-foreground: oklch(20% 0.05 140); /* --color-accent-content */
+  --destructive: oklch(65% 0.2 30); /* --color-error */
+  --destructive-foreground: oklch(98% 0.01 30);
+  --border: oklch(92% 0.02 240);
+  --input: oklch(95% 0.015 240);
+  --ring: oklch(60% 0.15 140); /* primary green for focus rings */
+  --chart-1: oklch(60% 0.15 140); /* Green theme */
+  --chart-2: oklch(70% 0.1 220); /* Info blue */
+  --chart-3: oklch(65% 0.15 140); /* Success green */
+  --chart-4: oklch(80% 0.15 80); /* Warning yellow */
+  --chart-5: oklch(65% 0.2 30); /* Error red */
+  --sidebar: oklch(98% 0.01 240);
+  --sidebar-foreground: oklch(18% 0.04 240);
+  --sidebar-primary: oklch(60% 0.15 140);
+  --sidebar-primary-foreground: oklch(98% 0.01 140);
+  --sidebar-accent: oklch(95% 0.015 240);
+  --sidebar-accent-foreground: oklch(18% 0.04 240);
+  --sidebar-border: oklch(92% 0.02 240);
+  --sidebar-ring: oklch(60% 0.15 140);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Dark theme with subtle green accent - matching darkgreen DaisyUI theme */
+  --background: oklch(20% 0.005 260); /* --color-base-100 - dark slate */
+  --foreground: oklch(92% 0.01 260); /* --color-base-content - readable light text */
+  --card: oklch(26% 0.005 260); /* --color-base-200 */
+  --card-foreground: oklch(92% 0.01 260);
+  --popover: oklch(26% 0.005 260);
+  --popover-foreground: oklch(92% 0.01 260);
+  --primary: oklch(55% 0.12 140); /* --color-primary - muted soft green */
+  --primary-foreground: oklch(98% 0.005 140); /* --color-primary-content */
+  --secondary: oklch(32% 0.005 260); /* --color-base-300 */
+  --secondary-foreground: oklch(92% 0.01 260);
+  --muted: oklch(32% 0.005 260);
+  --muted-foreground: oklch(88% 0.01 260); /* --color-neutral-content */
+  --accent: oklch(65% 0.04 140); /* --color-accent - very subtle light green */
+  --accent-foreground: oklch(18% 0.01 140); /* --color-accent-content */
+  --destructive: oklch(70% 0.18 30); /* --color-error */
+  --destructive-foreground: oklch(98% 0.005 140);
+  --border: oklch(32% 0.005 260);
+  --input: oklch(32% 0.005 260);
+  --ring: oklch(55% 0.12 140); /* primary green for focus rings */
+  --chart-1: oklch(55% 0.12 140); /* Green theme */
+  --chart-2: oklch(68% 0.1 240); /* Info blue */
+  --chart-3: oklch(52% 0.12 140); /* Success green */
+  --chart-4: oklch(72% 0.15 85); /* Warning yellow */
+  --chart-5: oklch(70% 0.18 30); /* Error red */
+  --sidebar: oklch(20% 0.005 260);
+  --sidebar-foreground: oklch(92% 0.01 260);
+  --sidebar-primary: oklch(55% 0.12 140);
+  --sidebar-primary-foreground: oklch(98% 0.005 140);
+  --sidebar-accent: oklch(26% 0.005 260);
+  --sidebar-accent-foreground: oklch(92% 0.01 260);
+  --sidebar-border: oklch(32% 0.005 260);
+  --sidebar-ring: oklch(55% 0.12 140);
 }
 
 @layer base {

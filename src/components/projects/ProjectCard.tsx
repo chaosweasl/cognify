@@ -1,6 +1,9 @@
 import { BookOpen, Edit2, Trash2, Play, Calendar } from "lucide-react";
 import React, { useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 type Project = {
   id: string;
@@ -58,69 +61,70 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col justify-between w-full bg-base-100 border border-base-300 rounded-2xl shadow-md hover:shadow-lg transition duration-200 overflow-hidden group focus-within:ring-2 focus-within:ring-primary">
-      {/* Project Info */}
-      <div className="p-6 space-y-3 flex-1">
+    <Card className="w-full hover:shadow-lg transition-shadow duration-200 group focus-within:ring-2 focus-within:ring-ring">
+      <CardHeader className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
           <h2
-            className="text-xl md:text-2xl font-semibold text-base-content line-clamp-2"
+            className="text-xl md:text-2xl font-semibold text-foreground line-clamp-2"
             title={project.name}
           >
             {project.name}
           </h2>
-          <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded-full text-sm text-primary font-medium">
+          <Badge variant="secondary" className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
             <span>{flashcardCount}</span>
-          </div>
+          </Badge>
         </div>
 
         {/* Description */}
-        <p className="text-base text-base-content/80 line-clamp-3">
+        <p className="text-base text-muted-foreground line-clamp-3">
           {project.description || "No description provided"}
         </p>
+      </CardHeader>
 
+      <CardContent className="space-y-4">
         {/* SRS Statistics */}
         {srsStats && (
-          <div className="flex items-center justify-center gap-4 p-3 bg-base-200/50 rounded-lg border border-base-300/50">
+          <div className="flex items-center justify-center gap-4 p-3 bg-muted/50 rounded-lg border">
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
-                  srsStats.dueCards > 0 ? "text-red-600" : "text-gray-400"
+                  srsStats.dueCards > 0 ? "text-red-600" : "text-muted-foreground"
                 }`}
               >
                 {srsStats.dueCards}
               </div>
-              <div className="text-xs text-base-content/70">Due</div>
+              <div className="text-xs text-muted-foreground">Due</div>
             </div>
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
-                  srsStats.newCards > 0 ? "text-blue-600" : "text-gray-400"
+                  srsStats.newCards > 0 ? "text-blue-600" : "text-muted-foreground"
                 }`}
               >
                 {srsStats.newCards}
               </div>
-              <div className="text-xs text-base-content/70">New</div>
+              <div className="text-xs text-muted-foreground">New</div>
             </div>
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
                   srsStats.learningCards > 0
                     ? "text-orange-600"
-                    : "text-gray-400"
+                    : "text-muted-foreground"
                 }`}
               >
                 {srsStats.learningCards}
               </div>
-              <div className="text-xs text-base-content/70">Learning</div>
+              <div className="text-xs text-muted-foreground">Learning</div>
             </div>
           </div>
         )}
 
         {/* Next Review Date or Creation Date */}
         {srsStats?.nextReviewDate ? (
-          <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300/50 mt-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t mt-2">
             <Calendar className="w-4 h-4" />
             <span>
               Next review: {srsStats.nextReviewDate.toLocaleDateString()} at{" "}
@@ -131,28 +135,29 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </span>
           </div>
         ) : hasFlashcards ? (
-          <div className="flex items-center gap-2 text-sm text-green-600 pt-2 border-t border-base-300/50 mt-2">
+          <div className="flex items-center gap-2 text-sm text-green-600 pt-2 border-t mt-2">
             <Calendar className="w-4 h-4" />
             <span>Ready for review!</span>
           </div>
         ) : null}
-      </div>
+      </CardContent>
 
-      {/* Actions */}
-      <div className="bg-base-200 px-6 py-4 border-t border-base-300 flex flex-wrap justify-center items-center gap-3">
+      <CardFooter className="bg-muted/30 flex flex-wrap justify-center items-center gap-3">
         {hasCardsToStudy ? (
-          <Link href={`/projects/${project.id}`} prefetch={false}>
-            <button className="btn btn-md btn-primary gap-2 flex-auto max-w-[6rem]">
-              <Play className="w-4 h-4" />
+          <Button asChild size="sm" className="flex-auto max-w-[6rem]">
+            <Link href={`/projects/${project.id}`} prefetch={false}>
+              <Play className="w-4 h-4 mr-2" />
               Study
-            </button>
-          </Link>
+            </Link>
+          </Button>
         ) : (
-          <button
+          <Button
             disabled
-            className="btn btn-md btn-disabled gap-2 flex-auto max-w-[8rem]"
+            size="sm"
+            variant="outline"
+            className="flex-auto max-w-[8rem]"
           >
-            <span className="text-xs text-warning">
+            <span className="text-xs text-yellow-600">
               {!hasFlashcards
                 ? "No flashcards"
                 : srsStats &&
@@ -162,27 +167,27 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 ? "Daily limit reached"
                 : "No cards due"}
             </span>
-          </button>
+          </Button>
         )}
 
-        <Link href={`/projects/${project.id}/edit`} prefetch={false}>
-          <button className="btn btn-md btn-outline gap-2 flex-auto max-w-[6rem]">
-            <Edit2 className="w-4 h-4" />
+        <Button asChild variant="outline" size="sm" className="flex-auto max-w-[6rem]">
+          <Link href={`/projects/${project.id}/edit`} prefetch={false}>
+            <Edit2 className="w-4 h-4 mr-2" />
             Edit
-          </button>
-        </Link>
+          </Link>
+        </Button>
 
-        <button
+        <Button
           onClick={handleDelete}
           disabled={isDeleting}
-          className={`btn btn-md btn-outline btn-error gap-2 flex-auto max-w-[6rem] ${
-            isDeleting ? "loading" : ""
-          }`}
+          variant="outline"
+          size="sm"
+          className="flex-auto max-w-[6rem] text-destructive hover:text-destructive"
         >
-          {!isDeleting && <Trash2 className="w-4 h-4" />}
-          Delete
-        </button>
-      </div>
-    </div>
+          {!isDeleting && <Trash2 className="w-4 h-4 mr-2" />}
+          {isDeleting ? "Deleting..." : "Delete"}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
