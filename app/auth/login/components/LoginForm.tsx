@@ -5,8 +5,7 @@ import { useState } from "react";
 import { create } from "zustand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LoginState {

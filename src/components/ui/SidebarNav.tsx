@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useProjectsStore } from "@/hooks/useProjects";
 import { Layers, Plus, FolderOpen, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface SidebarNavProps {
   activeTab: "all" | "create";
