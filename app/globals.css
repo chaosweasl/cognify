@@ -86,7 +86,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-slate-200 dark:border-slate-800;
   }
   body {
     @apply bg-background text-foreground;

@@ -6,12 +6,12 @@ import Image from "next/image";
 export default function PrivatePage() {
   // Get user profile from cached store
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto p-8">
-        <div className="hero bg-base-200 rounded-box mb-8">
-          <div className="hero-content text-center">
-            <div className="max-w-md">
-              <h1 className="text-4xl font-bold text-base-content mb-5">
+        <div className="rounded-lg bg-muted p-8 mb-8">
+          <div className="text-center">
+            <div className="max-w-md mx-auto">
+              <h1 className="text-4xl font-bold mb-5">
                 Welcome!
               </h1>
               <UserProfileInline />
@@ -35,17 +35,17 @@ function UserProfileInline() {
           alt="Avatar"
           width={64}
           height={64}
-          className="w-16 h-16 rounded-full mb-2 object-cover"
+          className="mb-2 h-16 w-16 rounded-full object-cover"
           priority
         />
       )}
-      <div className="font-bold text-lg text-primary">
+      <div className="text-lg font-bold text-primary">
         {userProfile.display_name || "No name"}
       </div>
-      <div className="text-base-content/70 text-sm">
+      <div className="text-sm text-muted-foreground">
         {userProfile.bio || "No bio"}
       </div>
-      <p className="py-6 text-base-content/70">
+      <p className="py-6 text-muted-foreground">
         Hello{" "}
         <span className="font-semibold text-primary">
           {userProfile.email || "No email"}
