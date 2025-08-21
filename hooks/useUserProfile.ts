@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 const supabase = createClient();
 
@@ -99,6 +100,9 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         .eq("id", user.id);
       if (updateError) throw updateError;
       await get().fetchUserProfile();
+      
+      // Invalidate user-related cache to ensure UI updates
+      CacheInvalidation.invalidateUserData(user.id);
     } catch (err) {
       set({ error: "Error updating profile" });
       throw err;
@@ -121,6 +125,10 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
       const publicUrl = urlData.publicUrl;
       // Update the profile with the new avatar URL
       await get().updateUserProfile({ avatar_url: publicUrl });
+      
+      // Invalidate user-related cache for avatar updates
+      CacheInvalidation.invalidateUserData(user.id);
+      
       return publicUrl;
     } catch (err) {
       set({ error: "Error uploading avatar" });

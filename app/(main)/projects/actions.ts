@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 // Fetch a single project by id for the current user
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -192,6 +193,10 @@ export async function createProject({
   console.log(
     `[Projects] createProject - Successfully created project with ID: ${projectId}`
   );
+  
+  // Invalidate project cache to ensure UI updates
+  CacheInvalidation.invalidatePattern('user_projects');
+  
   return projectId;
 }
 
@@ -242,6 +247,10 @@ export async function updateProject(projectData: {
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw error;
+  
+  // Invalidate cache to ensure UI updates across the app
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${id}`);
 }
 
 export async function deleteProject(id: string) {
@@ -344,6 +353,11 @@ export async function deleteProject(id: string) {
     console.log(
       `[Projects] deleteProject - Successfully deleted project: ${id}`
     );
+    
+    // Invalidate cache to ensure UI updates across the app
+    CacheInvalidation.invalidatePattern('user_projects');
+    CacheInvalidation.invalidatePattern(`project_${id}`);
+    CacheInvalidation.invalidatePattern('project_stats_');
   } catch (error) {
     console.error("[Projects] deleteProject - Error during deletion:", error);
     throw error;

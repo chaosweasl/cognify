@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnkiRatingControls } from "./AnkiRatingControls";
 import { useUserId } from "@/hooks/useUserId";
+import { CacheInvalidation } from "@/hooks/useCache";
 import { scheduleSRSReminderForProject } from "@/lib/utils/scheduleSRSReminderClient";
 import { createClient } from "@/lib/supabase/client";
 import { saveSRSStates } from "@/lib/srs/SRSDBUtils";
@@ -322,6 +323,11 @@ export default function StudyFlashcards({
         try {
           await saveSRSStates(supabase, userId, project.id, states);
           console.log("SRS states saved to database");
+          
+          // Invalidate cache to ensure project stats update across the app
+          CacheInvalidation.invalidatePattern('user_projects');
+          CacheInvalidation.invalidatePattern(`project_${project.id}`);
+          CacheInvalidation.invalidatePattern('project_stats_');
         } catch (error) {
           console.error("Failed to save SRS states:", error);
         }

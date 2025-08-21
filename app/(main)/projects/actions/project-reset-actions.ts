@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { CacheInvalidation } from "@/hooks/useCache";
 
 /**
  * Reset all SRS data for a project
@@ -91,6 +92,11 @@ export async function resetProjectSRSData(
         return { success: false, error: result.error.message };
       }
     }
+
+    // Invalidate cache to ensure UI updates across the app
+    CacheInvalidation.invalidatePattern('user_projects');
+    CacheInvalidation.invalidatePattern(`project_${projectId}`);
+    CacheInvalidation.invalidatePattern('project_stats_');
 
     return { success: true };
   } catch (error) {

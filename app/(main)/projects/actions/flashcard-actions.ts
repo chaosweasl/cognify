@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { CacheInvalidation } from "@/hooks/useCache";
 import {
   Flashcard,
   CreateFlashcardData,
@@ -210,6 +211,10 @@ export async function createFlashcard(
     }
   );
 
+  // Invalidate cache to ensure UI updates across the app
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+
   return data;
 }
 
@@ -295,6 +300,10 @@ export async function createFlashcards(
     );
   }
 
+  // Invalidate cache to ensure UI updates across the app
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+
   return data || [];
 }
 
@@ -338,6 +347,12 @@ export async function updateFlashcard(
     .single();
 
   if (error) throw error;
+  
+  // Invalidate cache to ensure UI updates
+  const projectId = flashcard.project_id;
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+  
   return data;
 }
 
@@ -373,6 +388,12 @@ export async function deleteFlashcard(flashcardId: string): Promise<boolean> {
     .eq("id", flashcardId);
 
   if (error) throw error;
+  
+  // Invalidate cache to ensure UI updates
+  const projectId = flashcard.project_id;
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+  
   return true;
 }
 
@@ -404,6 +425,11 @@ export async function deleteAllFlashcardsForProject(
     .eq("project_id", projectId);
 
   if (error) throw error;
+  
+  // Invalidate cache to ensure UI updates
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+  
   return true;
 }
 
@@ -453,5 +479,10 @@ export async function replaceAllFlashcardsForProject(
   }
 
   console.log("[Flashcards] No flashcards to create, returning empty array");
+  
+  // Always invalidate cache when replacing all flashcards (even if empty)
+  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern(`project_${projectId}`);
+  
   return [];
 }
