@@ -39,24 +39,64 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users: only allow /, /login, /auth/callback, /auth/confirm
+  // Redirect unauthenticated users: only allow /, /auth/login, /auth/onboarding, /auth/callback, /auth/confirm
   if (
     !user &&
     request.nextUrl.pathname !== "/" &&
-    request.nextUrl.pathname !== "/login" &&
+    request.nextUrl.pathname !== "/auth/login" &&
+    request.nextUrl.pathname !== "/auth/onboarding" &&
     request.nextUrl.pathname !== "/auth/callback" &&
     request.nextUrl.pathname !== "/auth/confirm" &&
-    request.nextUrl.pathname !== "/auth/auth-code-error"
+    request.nextUrl.pathname !== "/auth/auth-code-error" &&
+    request.nextUrl.pathname !== "/login" // Keep old login path temporarily for compatibility
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname.startsWith("/login")) {
+  // Redirect old paths to new auth paths
+  if (request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/auth/login";
     return NextResponse.redirect(url);
+  }
+
+  if (request.nextUrl.pathname === "/onboarding") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/onboarding";
+    return NextResponse.redirect(url);
+  }
+
+  // Handle authenticated users
+  if (user) {
+    // If user is trying to access login page, redirect to dashboard
+    if (request.nextUrl.pathname.startsWith("/auth/login")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user has completed onboarding (except for onboarding and auth pages)
+    if (
+      !request.nextUrl.pathname.startsWith("/auth/") &&
+      request.nextUrl.pathname !== "/dashboard" &&
+      request.nextUrl.pathname !== "/"
+    ) {
+      // Get user profile to check onboarding status
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .single();
+
+      // If no profile exists or onboarding not completed, redirect to onboarding
+      if (error || !profile || !profile.onboarding_completed) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/onboarding";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

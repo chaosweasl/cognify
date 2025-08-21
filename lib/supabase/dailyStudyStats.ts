@@ -238,14 +238,15 @@ export async function updateProjectDailyStudyStats(
  * FIXED: Skip operation since schema doesn't support global stats
  */
 export async function incrementDailyStudyCounters(
-  userId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
-  incrementNewCards = 0, // eslint-disable-line @typescript-eslint/no-unused-vars
-  incrementReviews = 0 // eslint-disable-line @typescript-eslint/no-unused-vars
+  userId: string,
+  incrementNewCards = 0,
+  incrementReviews = 0
 ): Promise<void> {
   // FIXED: Schema constraint requires project_id NOT NULL
   // Global stats are not supported by current schema
   console.log(`[DailyStats] Skipping global stats increment due to schema constraints`);
   console.log(`[DailyStats] Use project-specific functions for per-project tracking`);
+  console.log(`[DailyStats] Parameters: userId=${userId}, newCards=${incrementNewCards}, reviews=${incrementReviews}`);
   return;
 }
 
