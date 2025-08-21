@@ -1,4 +1,12 @@
 import React, { ReactNode } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from './dialog';
+import { Button } from './Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,21 +16,22 @@ interface ModalProps {
   className?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
-  if (!isOpen) return null;
-
+export function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
   return (
-    <div className="modal modal-open">
-      <div className={`modal-box ${className}`}>
-        {title && <h3 className="font-bold text-lg mb-4">{title}</h3>}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className={className}>
+        {title && (
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+        )}
         {children}
-        <div className="modal-action">
-          <button className="btn" onClick={onClose}>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Close
-          </button>
-        </div>
-      </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

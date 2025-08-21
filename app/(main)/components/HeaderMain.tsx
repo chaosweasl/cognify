@@ -18,6 +18,21 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useState, useEffect } from "react";
 import { signOut } from "../dashboard/actions";
+import { Button } from "@/src/components/ui/Button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/src/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/src/components/ui/dropdown-menu";
 
 export function HeaderMain() {
   const { theme, toggleTheme } = useThemeStore();
@@ -36,144 +51,136 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="navbar bg-base-100 border-b border-base-200 px-4 min-h-16 sticky top-0 z-40">
-      {/* Mobile menu button */}
-      <div className="navbar-start md:hidden">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
-            <Menu className="w-5 h-5" />
-          </div>
-          <ul className="menu menu-sm dropdown-content mt-3 z-50 p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
-            {navItems.map(({ href, label, icon: Icon }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center px-4">
+        {/* Mobile menu button */}
+        <div className="mr-4 md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              {navItems.map(({ href, label, icon: Icon }) => (
+                <DropdownMenuItem key={href}>
+                  <Link href={href} className="flex w-full items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
 
-      {/* Logo */}
-      <div className="navbar-start hidden md:flex">
-        <Link href="/dashboard" className="btn btn-ghost text-xl font-bold">
-          <Image
-            src="/favicon.svg"
-            alt="Cognify"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-            priority
-          />
-          Cognify
-        </Link>
-      </div>
+        {/* Logo */}
+        <div className="mr-6 flex items-center space-x-2 md:mr-0">
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <Image
+              src="/favicon.svg"
+              alt="Cognify"
+              width={24}
+              height={24}
+              className="h-6 w-6"
+              priority
+            />
+            <span className="hidden font-bold md:inline-block">Cognify</span>
+          </Link>
+        </div>
 
-      {/* Center logo for mobile */}
-      <div className="navbar-center md:hidden">
-        <Link href="/dashboard" className="btn btn-ghost text-xl font-bold">
-          <Image
-            src="/favicon.svg"
-            alt="Cognify"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-            priority
-          />
-          Cognify
-        </Link>
-      </div>
+        {/* Desktop navigation */}
+        <NavigationMenu className="mx-6 hidden md:flex">
+          <NavigationMenuList>
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <NavigationMenuItem key={href}>
+                <Link href={href} legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <Icon className="mr-2 h-4 w-4" />
+                    {label}
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
 
-      {/* Desktop navigation */}
-      <div className="navbar-center hidden md:flex">
-        <ul className="menu menu-horizontal px-1 gap-1">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <li key={href}>
-              <Link href={href} className="flex items-center gap-2">
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Right side actions */}
-      <div className="navbar-end gap-3">
-        <NotificationBell />
-        {/* Theme toggle with better styling */}
-        <button
-          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          {mounted && theme === "darkgreen" ? (
-            <Sun className="w-5 h-5" />
-          ) : (
-            <Moon className="w-5 h-5" />
-          )}
-        </button>
-
-        {/* Enhanced User dropdown */}
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-ghost btn-circle avatar border-2 border-primary hover:scale-105 transition-transform"
+        {/* Right side actions */}
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          <NotificationBell />
+          
+          {/* Theme toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
           >
-            <div className="w-10 rounded-full overflow-hidden bg-base-200">
-              <Image
-                src={userProfile?.avatar_url || "/assets/nopfp.png"}
-                alt="Avatar"
-                width={40}
-                height={40}
-                className="object-cover w-full h-full"
-                priority
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/assets/nopfp.png";
-                }}
-              />
-            </div>
-          </div>
-          <ul className="menu menu-sm dropdown-content mt-3 z-50 p-3 shadow-lg bg-base-100 rounded-box w-64 border border-base-200">
-            <li className="font-bold text-base-content/80 px-2 py-1 mb-1 border-b border-base-200 text-lg">
-              {userProfile?.display_name || "User"}
-            </li>
-            <li>
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-primary hover:text-primary-content transition-colors"
+            {mounted && theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+
+          {/* User dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full border-2 border-primary"
               >
-                <Home className="w-4 h-4" />
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/settings"
-                className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-primary hover:text-primary-content transition-colors"
-              >
-                <Settings className="w-4 h-4" />
-                Settings
-              </Link>
-            </li>
-            <li>
-              <form
-                action={signOut}
-                className="w-full m-0 p-0 flex items-center gap-2 px-2 py-2 rounded-md transition-colors hover:bg-error hover:text-error-content cursor-pointer"
-              >
-                <button
-                  type="submit"
-                  className="w-full h-full flex items-center gap-2 bg-transparent border-0 shadow-none p-0 m-0 text-left justify-start cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </form>
-            </li>
-          </ul>
+                <div className="h-8 w-8 overflow-hidden rounded-full bg-muted">
+                  <Image
+                    src={userProfile?.avatar_url || "/assets/nopfp.png"}
+                    alt="Avatar"
+                    width={32}
+                    height={32}
+                    className="h-full w-full object-cover"
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/assets/nopfp.png";
+                    }}
+                  />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64" align="end" forceMount>
+              <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex flex-col space-y-1 leading-none">
+                  <p className="font-medium">
+                    {userProfile?.display_name || "User"}
+                  </p>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Link href="/dashboard" className="flex w-full items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/settings" className="flex w-full items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <form action={signOut} className="w-full">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center gap-2 text-left"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
+                </form>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

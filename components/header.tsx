@@ -6,6 +6,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
 import { useEffect, useState } from "react";
+import { Button } from "@/src/components/ui/Button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/src/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 
 export function Header() {
   const { theme, toggleTheme } = useThemeStore();
@@ -16,82 +30,102 @@ export function Header() {
   }, []);
 
   return (
-    <header className="navbar bg-base-100 shadow-sm sticky top-0 z-50 border-b border-base-200">
-      {/* Mobile view */}
-      <div className="navbar-start">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-            <Menu className="h-6 w-6" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
-          >
-            <li>
-              <Link href="#features">Features</Link>
-            </li>
-            <li>
-              <Link href="https://github.com/chaosweasl/cognify#readme">
-                How it Works
-              </Link>
-            </li>
-            <li>
-              <Link href="https://github.com/chaosweasl/cognify">GitHub</Link>
-            </li>
-            <li className="mt-2">
-              <Link href="/auth/login" className="btn btn-primary btn-sm">
-                Get Started
-              </Link>
-            </li>
-          </ul>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        {/* Mobile menu */}
+        <div className="mr-4 lg:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuItem>
+                <Link href="#features" className="w-full">Features</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="https://github.com/chaosweasl/cognify#readme" className="w-full">
+                  How it Works
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="https://github.com/chaosweasl/cognify" className="w-full">GitHub</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/auth/login" className="w-full">
+                  <Button size="sm" className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <Link href="/" className="btn btn-ghost text-xl font-bold">
-          <Image
-            src="/favicon.svg"
-            alt="Cognify Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
-          />
-          Cognify
-        </Link>
-      </div>
 
-      {/* Desktop view */}
-      <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-          <li>
-            <Link href="#features">Features</Link>
-          </li>
-          <li>
-            <Link href="https://github.com/chaosweasl/cognify#readme">
-              How it Works
-            </Link>
-          </li>
-          <li>
-            <Link href="https://github.com/chaosweasl/cognify">GitHub</Link>
-          </li>
-        </ul>
-      </div>
+        {/* Logo */}
+        <div className="mr-6 flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
+            <Image
+              src="/favicon.svg"
+              alt="Cognify Logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
+            <span className="hidden font-bold sm:inline-block">Cognify</span>
+          </Link>
+        </div>
 
-      <div className="navbar-end flex items-center gap-2">
-        <NotificationBell />
-        <button
-          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          {mounted ? (
-            theme === "darkgreen" ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )
-          ) : null}
-        </button>
-        <Link href="/auth/login" className="btn btn-primary">
-          Get Started
-        </Link>
+        {/* Desktop navigation */}
+        <NavigationMenu className="hidden lg:flex">
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <Link href="#features" legacyBehavior passHref>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Features
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link href="https://github.com/chaosweasl/cognify#readme" legacyBehavior passHref>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  How it Works
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link href="https://github.com/chaosweasl/cognify" legacyBehavior passHref>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  GitHub
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+
+        {/* Right side actions */}
+        <div className="flex flex-1 items-center justify-end space-x-2">
+          <NotificationBell />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            {mounted ? (
+              theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )
+            ) : null}
+          </Button>
+          <Button asChild>
+            <Link href="/auth/login">Get Started</Link>
+          </Button>
+        </div>
       </div>
     </header>
   );
