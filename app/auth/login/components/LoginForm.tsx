@@ -4,6 +4,10 @@ import React from "react";
 
 import { useState } from "react";
 import { create } from "zustand";
+import { Button } from "@/src/components/ui/Button";
+import { Input } from "@/src/components/ui/input";
+import { Label } from "@/src/components/ui/label";
+import { Separator } from "@/src/components/ui/separator";
 
 interface LoginState {
   signupSuccess: boolean;
@@ -127,83 +131,93 @@ export const LoginForm: React.FC = () => {
       {!signupSuccess ? (
         <div>
           <form className="space-y-6">
-            <div className="form-control flex flex-col">
-              <label className="label">
-                <span className="label-text font-medium text-base">Email</span>
-              </label>
-              <input
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="email" className="text-base font-medium">
+                Email
+              </Label>
+              <Input
+                id="email"
                 name="email"
                 type="email"
                 required
-                className="input input-bordered input-lg w-full"
+                className="h-12"
                 placeholder="you@example.com"
                 autoComplete="email"
               />
             </div>
-            <div className="form-control flex flex-col">
-              <label className="label">
-                <span className="label-text font-medium text-base">
-                  Password
-                </span>
-              </label>
-              <input
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="password" className="text-base font-medium">
+                Password
+              </Label>
+              <Input
+                id="password"
                 name="password"
                 type="password"
                 required
-                className="input input-bordered input-lg w-full"
+                className="h-12"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
             </div>
-            {error && <div className="text-error text-sm mb-2">{error}</div>}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
+            {error && <div className="text-sm text-destructive">{error}</div>}
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Button
                 type="submit"
                 formAction={handleLogin}
-                className="btn btn-primary btn-lg flex-1"
+                size="lg"
+                className="flex-1"
                 disabled={loading}
               >
                 Log in
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 formAction={handleSignup}
-                className="btn btn-outline btn-secondary btn-lg flex-1"
+                variant="outline"
+                size="lg"
+                className="flex-1"
                 disabled={loading}
               >
                 Sign up
-              </button>
+              </Button>
             </div>
           </form>
-          <div className="divider text-base-content/50">OR</div>
-          <button
+          <div className="relative my-6">
+            <Separator />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-background px-2 text-sm text-muted-foreground">OR</span>
+            </div>
+          </div>
+          <Button
             type="button"
             onClick={handleGithubLogin}
-            className="btn btn-outline btn-accent btn-lg w-full gap-2"
+            variant="outline"
+            size="lg"
+            className="w-full gap-2"
             disabled={loading}
           >
             <Github size={20} />
             Continue with GitHub
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <div className="flex justify-center">
-            <CheckCircle2 className="w-16 h-16 text-success" />
+            <CheckCircle2 className="h-16 w-16 text-green-600" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-base-content">
+            <h2 className="text-2xl font-bold">
               Check your email
             </h2>
-            <p className="text-base-content/70">
+            <p className="text-muted-foreground">
               We&apos;ve sent you a confirmation link to complete your
               registration.
             </p>
           </div>
           <div className="pt-4">
-            <Link href="/" className="btn btn-outline btn-sm">
-              Back to Home
-            </Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/">Back to Home</Link>
+            </Button>
           </div>
         </div>
       )}

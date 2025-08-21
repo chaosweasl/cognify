@@ -34,7 +34,8 @@ const themeInitScript = `
     try {
       const t = localStorage.getItem('theme');
       const theme = t || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(theme);
     } catch {}
   })();
 `;
@@ -51,7 +52,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-base-100`}
+        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-background text-foreground`}
       >
         <SpeedInsights />
         <Analytics />
