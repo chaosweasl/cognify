@@ -53,44 +53,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Onboarding: Redirect authenticated users who haven't completed onboarding
-
-  if (user) {
-    // Fetch onboarding_completed from the profiles table
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("id", user.id)
-      .single();
-
-    // If no profile, force login
-    if (error || !profile) {
-      if (!request.nextUrl.pathname.startsWith("/login")) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        return NextResponse.redirect(url);
-      }
-    } else if (profile.onboarding_completed === false) {
-      // If onboarding not complete, force onboarding
-      if (!request.nextUrl.pathname.startsWith("/onboarding")) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/onboarding";
-        return NextResponse.redirect(url);
-      }
-    } else if (profile.onboarding_completed === true) {
-      // If onboarding complete, block /onboarding and redirect to dashboard
-      if (
-        request.nextUrl.pathname.startsWith("/onboarding") ||
-        request.nextUrl.pathname === "/"
-      ) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
-      }
-    }
-  }
-
-  // Redirect authenticated users away from /login
   if (user && request.nextUrl.pathname.startsWith("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
