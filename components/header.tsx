@@ -39,7 +39,7 @@ export function Header() {
               <Link href="https://github.com/chaosweasl/cognify">GitHub</Link>
             </li>
             <li className="mt-2">
-              <Link href="/login" className="btn btn-primary btn-sm">
+              <Link href="/auth/login" className="btn btn-primary btn-sm">
                 Get Started
               </Link>
             </li>
@@ -89,7 +89,7 @@ export function Header() {
             )
           ) : null}
         </button>
-        <Link href="/login" className="btn btn-primary">
+        <Link href="/auth/login" className="btn btn-primary">
           Get Started
         </Link>
       </div>

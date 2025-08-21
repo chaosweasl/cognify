@@ -14,5 +14,5 @@ export async function signOut() {
     throw new Error("Failed to sign out");
   }
 
-  redirect("/login");
+  redirect("/auth/login");
 }

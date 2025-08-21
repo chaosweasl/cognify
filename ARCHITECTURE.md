@@ -70,10 +70,12 @@ Cognify is designed to be **lightweight and maintainable**. Every architectural 
 
 ### 1. Authentication Flow
 
-1. User signs up/in via Supabase Auth
-2. JWT token stored in httpOnly cookies
-3. Middleware validates tokens on protected routes
-4. Row Level Security enforces data isolation
+1. User accesses login page at `/auth/login` 
+2. Login/signup handled via API routes (`/api/auth/login`, `/api/auth/github`)
+3. JWT token stored in httpOnly cookies via Supabase Auth
+4. Middleware validates tokens and handles auth redirects
+5. Onboarding flow at `/auth/onboarding` for new users
+6. Row Level Security enforces data isolation
 
 ### 2. Application Data Flow
 
@@ -161,9 +163,16 @@ profiles (1) ──── (∞) srs_states
 ```
 cognify/
 ├── app/                    # Next.js App Router
-│   ├── (main)/            # Main application pages
+│   ├── (main)/            # Main application pages (protected)
 │   ├── api/               # API routes
+│   │   ├── auth/          # Authentication endpoints (login, github)
+│   │   ├── flashcards/    # Flashcard CRUD operations
+│   │   └── projects/      # Project management
 │   └── auth/              # Authentication pages
+│       ├── login/         # Login/signup form
+│       ├── onboarding/    # Profile setup for new users
+│       ├── callback/      # OAuth callback handler
+│       └── confirm/       # Email confirmation
 ├── src/
 │   ├── components/        # Reusable UI components
 │   └── types/            # TypeScript type definitions
@@ -172,7 +181,7 @@ cognify/
 │   ├── srs/              # Spaced repetition logic
 │   ├── supabase/         # Database clients
 │   └── utils/            # Utility functions
-├── middleware.ts         # Auth middleware
+├── middleware.ts         # Auth middleware with onboarding checks
 └── schema-dump.sql       # Database schema
 ```
 
@@ -249,9 +258,11 @@ npm start        # Start production server
 
 ### Authentication
 
-- Supabase Auth with JWT tokens
-- httpOnly cookies for token storage
-- Automatic token refresh
+- **API Routes**: Login/signup via `/api/auth/login`, GitHub OAuth via `/api/auth/github`
+- **Client-side**: Form submissions use fetch() to API endpoints
+- **Token Storage**: JWT tokens in httpOnly cookies via Supabase Auth
+- **Middleware**: Handles auth redirects and onboarding checks
+- **Onboarding**: New users redirected to `/auth/onboarding` to complete profile
 
 ### Authorization
 

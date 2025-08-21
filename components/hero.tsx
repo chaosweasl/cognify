@@ -18,7 +18,7 @@ export function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Link href="/login" className="btn btn-primary btn-lg">
+            <Link href="/auth/login" className="btn btn-primary btn-lg">
               Start Creating Flashcards
               <ArrowRight className="w-5 h-5" />
             </Link>
