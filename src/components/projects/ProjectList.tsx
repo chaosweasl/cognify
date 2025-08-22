@@ -7,7 +7,6 @@ export function ProjectList() {
 
   console.log("[ProjectList] Rendering with projects:", projects.length);
 
-  // Load projects with stats
   useEffect(() => {
     loadProjects().catch((error) => {
       console.error("[ProjectList] Error loading projects:", error);
@@ -17,8 +16,10 @@ export function ProjectList() {
   if (projects.length === 0) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold mb-4">No projects yet</h2>
-        <p className="text-gray-600 mb-6">
+        <h2 className="text-xl font-semibold mb-4 text-primary">
+          No projects yet
+        </h2>
+        <p className="text-secondary mb-6">
           Create your first project to get started with flashcards!
         </p>
       </div>

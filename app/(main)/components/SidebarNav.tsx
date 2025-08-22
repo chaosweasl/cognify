@@ -45,7 +45,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  // track whether any project's dropdown is open
 
   // Handle client-side hydration and mobile detection
   useEffect(() => {
@@ -112,7 +111,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
       {isMobile && (
         <div
           className={cn(
-            "fixed top-1/2 -translate-y-1/2 z-50 transition-all duration-500",
+            "fixed top-1/2 -translate-y-1/2 z-50 transition-all duration-slow",
             isOpen ? "left-64" : "left-0"
           )}
         >
@@ -121,19 +120,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
             size="sm"
             className={cn(
               "w-12 h-16 rounded-r-2xl border-l-0 shadow-2xl group relative overflow-hidden",
-              "bg-gradient-to-r from-slate-900 to-slate-800 border-slate-700",
-              "hover:from-blue-500/20 hover:to-violet-500/20 hover:border-blue-500/50",
-              "transform hover:scale-105 hover:shadow-blue-500/25 transition-all duration-300"
+              "bg-gradient-to-r from-surface-secondary to-surface-elevated border-subtle",
+              "hover:bg-gradient-brand hover:border-brand",
+              "transform hover:scale-105 hover:shadow-brand transition-all transition-normal"
             )}
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 transform group-hover:scale-110 transition-transform duration-300">
+            <div className="absolute inset-0 bg-gradient-glass opacity-0 group-hover:opacity-100 transition-opacity transition-normal" />
+            <div className="relative z-10 transform group-hover:scale-110 transition-transform transition-normal">
               {isOpen ? (
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-primary" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-white group-hover:text-blue-300" />
+                <ChevronRight className="w-5 h-5 text-primary group-hover:brand-primary" />
               )}
             </div>
           </Button>
@@ -143,7 +142,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
       {/* Enhanced Mobile Overlay */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all transition-normal"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -152,11 +151,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
       <nav
         className={cn(
           "flex flex-col w-64 relative",
-          "bg-gradient-to-b from-slate-900/95 via-slate-800/95 to-slate-900/95",
-          "backdrop-blur-xl border-r border-slate-700/50 shadow-2xl",
+          "glass-surface shadow-brand-lg",
           isMobile
             ? cn(
-                "fixed top-0 left-0 h-screen z-40 transition-all duration-500",
+                "fixed top-0 left-0 h-screen z-40 transition-all duration-slow",
                 isOpen ? "translate-x-0" : "-translate-x-full"
               )
             : "fixed top-[64px] left-0 h-[calc(100vh-4rem)] hidden md:flex z-30"
@@ -165,26 +163,26 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
         {/* Animated Background Gradients */}
         <div className="absolute inset-0 opacity-30 pointer-events-none">
           <div
-            className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-br from-blue-500/10 to-transparent animate-pulse"
+            className="absolute top-0 left-0 w-full h-1/3 bg-gradient-glass animate-pulse"
             style={{ animationDuration: "4s" }}
           />
           <div
-            className="absolute bottom-0 right-0 w-full h-1/3 bg-gradient-to-tl from-violet-500/10 to-transparent animate-pulse"
+            className="absolute bottom-0 right-0 w-full h-1/3 bg-gradient-glass animate-pulse"
             style={{ animationDuration: "6s", animationDelay: "2s" }}
           />
         </div>
 
         {/* Enhanced Header Section */}
-        <div className="relative p-6 border-b border-slate-700/50">
+        <div className="relative p-6 border-b border-subtle">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3 group">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-violet-500 rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
+                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-normal shadow-brand">
                   <FolderOpen className="w-5 h-5 text-white" />
                 </div>
-                <div className="absolute -inset-1 bg-gradient-to-br from-blue-500/30 to-violet-500/30 rounded-xl blur opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                <div className="absolute -inset-1 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
               </div>
-              <h2 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors duration-300">
+              <h2 className="text-xl font-bold text-primary group-hover:brand-primary transition-colors transition-normal">
                 Projects
               </h2>
             </div>
@@ -194,7 +192,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg"
+                className="h-8 w-8 p-0 text-muted hover:text-primary interactive-hover rounded-lg"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -205,8 +203,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           <div className="relative group">
             <Search
               className={cn(
-                "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-300",
-                isSearchFocused ? "text-blue-400 scale-110" : "text-slate-400"
+                "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-all transition-normal",
+                isSearchFocused ? "brand-primary scale-110" : "text-muted"
               )}
             />
             <Input
@@ -216,10 +214,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
               className={cn(
-                "pl-10 h-10 transition-all duration-300",
-                "bg-slate-800/50 border-slate-600/50 text-white placeholder-slate-400",
-                "focus:bg-slate-700/50 focus:border-blue-500/50 focus:shadow-lg focus:shadow-blue-500/10",
-                "hover:bg-slate-700/30"
+                "pl-10 h-10 transition-all transition-normal",
+                "surface-secondary border-secondary text-primary placeholder:text-muted",
+                "focus:surface-elevated focus:border-brand focus:shadow-brand interactive-focus",
+                "interactive-hover"
               )}
             />
             {searchQuery && (
@@ -227,7 +225,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-slate-400 hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted hover:text-primary"
               >
                 <X className="w-3 h-3" />
               </Button>
@@ -241,23 +239,23 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           <Button
             variant={activeTab === "all" ? "default" : "ghost"}
             className={cn(
-              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all duration-300 group relative overflow-hidden",
+              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden",
               activeTab === "all"
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50 border-slate-600/30"
+                ? "bg-gradient-brand text-white shadow-brand hover:shadow-brand-lg"
+                : "text-secondary hover:text-primary interactive-hover border-secondary"
             )}
             onClick={() => handleNavigation("all", "/projects")}
           >
             {activeTab === "all" && (
-              <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-12" />
+              <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
             )}
             <div className="relative z-10 flex items-center gap-3">
               <Layers
                 className={cn(
-                  "w-5 h-5 transition-all duration-300",
+                  "w-5 h-5 transition-all transition-normal",
                   activeTab === "all"
                     ? "text-white"
-                    : "text-slate-400 group-hover:text-blue-400"
+                    : "text-muted group-hover:brand-primary"
                 )}
               />
               <span className="font-semibold">All Projects</span>
@@ -265,10 +263,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 <Badge
                   variant={activeTab === "all" ? "secondary" : "outline"}
                   className={cn(
-                    "ml-auto text-xs px-2.5 py-0.5 transition-all duration-300",
+                    "ml-auto text-xs px-2.5 py-0.5 transition-all transition-normal",
                     activeTab === "all"
                       ? "bg-white/20 text-white border-white/30"
-                      : "bg-slate-700 text-slate-300 border-slate-600"
+                      : "surface-elevated text-secondary border-secondary"
                   )}
                 >
                   {projects.length}
@@ -281,23 +279,23 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           <Button
             variant={activeTab === "create" ? "default" : "ghost"}
             className={cn(
-              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all duration-300 group relative overflow-hidden",
+              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden",
               activeTab === "create"
-                ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
-                : "text-slate-300 hover:text-white hover:bg-slate-700/50 border-slate-600/30"
+                ? "bg-gradient-to-r from-brand-secondary to-brand-accent text-white shadow-brand hover:shadow-brand-lg"
+                : "text-secondary hover:text-primary interactive-hover border-secondary"
             )}
             onClick={() => handleNavigation("create", "/projects/create")}
           >
             {activeTab === "create" && (
-              <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-12" />
+              <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
             )}
             <div className="relative z-10 flex items-center gap-3">
               <Plus
                 className={cn(
-                  "w-5 h-5 transition-all duration-300",
+                  "w-5 h-5 transition-all transition-normal",
                   activeTab === "create"
                     ? "text-white"
-                    : "text-slate-400 group-hover:text-violet-400"
+                    : "text-muted group-hover:brand-secondary"
                 )}
               />
               <span className="font-semibold">Create New</span>
@@ -307,21 +305,21 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
 
         {/* Animated Divider */}
         <div className="mx-4 my-2 relative">
-          <div className="h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
-          <div className="absolute inset-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent animate-pulse" />
+          <div className="h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
+          <div className="absolute inset-0 h-px bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent animate-pulse" />
         </div>
 
         {/* Enhanced Projects List Section */}
         <div className="flex-1 overflow-hidden flex flex-col relative">
           <div className="px-6 py-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Recent Projects
             </h3>
             {searchQuery && (
               <Badge
                 variant="outline"
-                className="text-xs bg-slate-700/50 text-slate-300 border-slate-600"
+                className="text-xs surface-elevated text-secondary border-secondary"
               >
                 {filteredProjects.length} found
               </Badge>
@@ -333,19 +331,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
             {loading && projects.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="relative mb-6">
-                  <div className="w-12 h-12 border-3 border-slate-600 border-t-blue-500 rounded-full animate-spin" />
+                  <div className="w-12 h-12 border-3 border-secondary border-t-brand-primary rounded-full animate-spin" />
                   <div
-                    className="absolute inset-0 w-12 h-12 border-3 border-transparent border-r-violet-500 rounded-full animate-spin"
+                    className="absolute inset-0 w-12 h-12 border-3 border-transparent border-r-brand-secondary rounded-full animate-spin"
                     style={{
                       animationDirection: "reverse",
                       animationDuration: "1.5s",
                     }}
                   />
                 </div>
-                <p className="text-slate-300 font-medium">
+                <p className="text-secondary font-medium">
                   Loading projects...
                 </p>
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-muted text-sm mt-1">
                   Preparing your workspace
                 </p>
               </div>
@@ -371,24 +369,24 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
               !searchQuery && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="relative mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl flex items-center justify-center">
-                      <FolderOpen className="w-8 h-8 text-slate-400" />
+                    <div className="w-16 h-16 surface-elevated rounded-2xl flex items-center justify-center">
+                      <FolderOpen className="w-8 h-8 text-muted" />
                     </div>
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center animate-bounce">
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-brand rounded-full flex items-center justify-center animate-bounce">
                       <Sparkles className="w-3 h-3 text-white" />
                     </div>
                   </div>
-                  <p className="text-slate-200 font-semibold text-lg mb-2">
+                  <p className="text-primary font-semibold text-lg mb-2">
                     No projects yet
                   </p>
-                  <p className="text-slate-400 text-sm mb-6 max-w-48 leading-relaxed">
+                  <p className="text-muted text-sm mb-6 max-w-48 leading-relaxed">
                     Create your first project and start building your knowledge
                     base
                   </p>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-gradient-to-r from-blue-500/10 to-violet-500/10 border-blue-500/30 text-blue-300 hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-violet-500/20 hover:border-blue-500/50"
+                    className="bg-gradient-glass border-brand text-brand-primary hover:bg-gradient-brand hover:border-brand hover:text-white"
                     onClick={() =>
                       handleNavigation("create", "/projects/create")
                     }
@@ -404,13 +402,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
               filteredProjects.length === 0 &&
               searchQuery && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 bg-slate-700/50 rounded-2xl flex items-center justify-center mb-4">
-                    <Search className="w-8 h-8 text-slate-400" />
+                  <div className="w-16 h-16 surface-elevated rounded-2xl flex items-center justify-center mb-4">
+                    <Search className="w-8 h-8 text-muted" />
                   </div>
-                  <p className="text-slate-200 font-medium">
-                    No projects found
-                  </p>
-                  <p className="text-slate-400 text-sm mt-1">
+                  <p className="text-primary font-medium">No projects found</p>
+                  <p className="text-muted text-sm mt-1">
                     Try a different search term
                   </p>
                 </div>
@@ -427,11 +423,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                   )
                 }
                 className={cn(
-                  "group relative rounded-xl transition-all duration-300 transform",
-                  "hover:bg-slate-700/30 hover:shadow-lg hover:scale-[1.02]",
-                  "hover:shadow-blue-500/10",
+                  "group relative rounded-xl transition-all transition-normal transform",
+                  "interactive-hover hover:shadow-brand hover:scale-[1.02]",
                   hoveredProject === project.id &&
-                    "bg-slate-700/20 scale-[1.01]"
+                    "surface-elevated scale-[1.01]"
                 )}
                 style={{
                   animation: `slideInLeft 0.5s ease-out ${index * 0.1}s both`,
@@ -440,7 +435,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 {/* Hover glow effect */}
                 <div
                   className={cn(
-                    "absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-violet-500/20 rounded-xl blur opacity-0 transition-opacity duration-300",
+                    "absolute -inset-0.5 bg-gradient-glass rounded-xl blur opacity-0 transition-opacity transition-normal",
                     hoveredProject === project.id && "opacity-100"
                   )}
                 />
@@ -456,16 +451,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                     <div className="relative flex-shrink-0">
                       <div
                         className={cn(
-                          "w-3 h-3 rounded-full transition-all duration-300",
+                          "w-3 h-3 rounded-full transition-all transition-normal",
                           index % 4 === 0
-                            ? "bg-blue-500"
+                            ? "bg-brand-primary"
                             : index % 4 === 1
-                            ? "bg-violet-500"
+                            ? "bg-brand-secondary"
                             : index % 4 === 2
-                            ? "bg-teal-500"
+                            ? "bg-brand-tertiary"
                             : "bg-pink-500",
                           hoveredProject === project.id
-                            ? "scale-125 shadow-lg"
+                            ? "scale-125 shadow-brand"
                             : "scale-100"
                         )}
                       />
@@ -474,11 +469,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                           className={cn(
                             "absolute inset-0 w-3 h-3 rounded-full animate-ping",
                             index % 4 === 0
-                              ? "bg-blue-500/40"
+                              ? "bg-brand-primary/40"
                               : index % 4 === 1
-                              ? "bg-violet-500/40"
+                              ? "bg-brand-secondary/40"
                               : index % 4 === 2
-                              ? "bg-teal-500/40"
+                              ? "bg-brand-tertiary/40"
                               : "bg-pink-500/40"
                           )}
                         />
@@ -486,11 +481,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                     </div>
 
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="font-semibold text-white/90 group-hover:text-white truncate transition-colors duration-300 mb-1">
+                      <div className="font-semibold text-primary group-hover:text-primary truncate transition-colors transition-normal mb-1">
                         {truncateTitle(project.name)}
                       </div>
                       <div className="flex items-center gap-3 text-xs">
-                        <div className="flex items-center gap-1 text-slate-400 group-hover:text-slate-300 transition-colors duration-300">
+                        <div className="flex items-center gap-1 text-muted group-hover:text-secondary transition-colors transition-normal">
                           <BookOpen className="w-3 h-3" />
                           <span>
                             {project.stats ? project.stats.totalFlashcards : 0}{" "}
@@ -517,13 +512,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 {/* Enhanced Project Actions Dropdown */}
                 <div
                   className={cn(
-                    "absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-all duration-300 transform scale-95",
+                    "absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-all transition-normal transform scale-95",
                     "group-hover:opacity-100 group-hover:scale-100"
                   )}
                 >
-                  {/* onOpenChange used to clear hovered state when the menu is opened. This fixes the issue where
-                      the mouse can move into a portal-hosted dropdown content without firing a mouseleave on the original element
-                      (which can happen when the window loses focus). */}
                   <DropdownMenu
                     onOpenChange={(open) => {
                       if (open) setHoveredProject(null);
@@ -533,40 +525,36 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 rounded-lg backdrop-blur-sm"
+                        className="h-7 w-7 p-0 surface-secondary interactive-hover border border-subtle rounded-lg glass-surface"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreHorizontal className="w-3 h-3 text-slate-300" />
+                        <MoreHorizontal className="w-3 h-3 text-secondary" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-44 bg-slate-800/95 backdrop-blur-xl border-slate-700"
+                      className="w-44 surface-overlay glass-surface border-subtle"
                     >
                       <DropdownMenuItem
-                        className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50"
+                        className="text-primary hover:text-primary interactive-hover interactive-focus"
                         onSelect={() => router.push(`/projects/${project.id}`)}
                       >
                         Study Project
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50"
+                        className="text-primary hover:text-primary interactive-hover interactive-focus"
                         onSelect={() =>
                           router.push(`/projects/${project.id}/edit`)
                         }
                       >
                         Edit Project
                       </DropdownMenuItem>
-                      {/* <DropdownMenuItem className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50">
-                        Duplicate
-                      </DropdownMenuItem> */}
                       <DropdownMenuItem
                         className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus-visible:text-red-300 focus-visible:bg-red-500/10"
                         onSelect={async () => {
                           try {
                             await deleteProject(project.id);
                           } catch (err) {
-                            // Optionally, show a toast or error message
                             console.error("Failed to delete project", err);
                           }
                         }}
@@ -582,9 +570,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
         </div>
 
         {/* Enhanced Footer */}
-        <div className="relative p-4 border-t border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
+        <div className="relative p-4 border-t border-subtle surface-secondary glass-surface">
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-400">
+            <div className="flex items-center gap-2 text-muted">
               <Brain className="w-4 h-4" />
               <span>
                 {filteredProjects.length}{" "}
@@ -603,35 +591,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           </div>
         </div>
       </nav>
-
-      {/* Custom Scrollbar Styles */}
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(51, 65, 85, 0.3);
-          border-radius: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
-          border-radius: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #2563eb, #7c3aed);
-        }
-
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </>
   );
 };

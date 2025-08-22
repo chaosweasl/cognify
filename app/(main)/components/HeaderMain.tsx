@@ -46,7 +46,7 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="bg-slate-800/70 backdrop-blur-xl border-b border-slate-600/50 sticky top-0 z-50 px-4 h-16 flex items-center">
+    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 h-16 flex items-center">
       {/* Mobile menu button */}
       <div className="md:hidden">
         <Sheet>
@@ -54,21 +54,21 @@ export function HeaderMain() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-slate-200 hover:text-white hover:bg-slate-700/50"
+              className="text-secondary hover:text-primary interactive-hover transition-normal"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="w-64 bg-slate-800/95 backdrop-blur-xl border-slate-600/50"
+            className="w-64 surface-overlay glass-surface border-subtle"
           >
             <nav className="flex flex-col space-y-2">
               {navItems.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-slate-200 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal"
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -83,17 +83,19 @@ export function HeaderMain() {
       <div className="flex-1 md:flex-none">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 font-bold text-xl text-white"
+          className="flex items-center gap-2 font-bold text-xl text-primary group"
         >
           <Image
             src="/favicon.png"
             alt="Cognify Logo"
             width={32}
             height={32}
-            className="w-8 h-8 rounded-lg hover:scale-110 transition-transform duration-200"
+            className="w-8 h-8 rounded-lg hover:scale-110 transition-transform transition-normal"
             priority
           />
-          Cognify
+          <span className="group-hover:brand-primary transition-colors transition-normal">
+            Cognify
+          </span>
         </Link>
       </div>
 
@@ -104,9 +106,9 @@ export function HeaderMain() {
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-slate-200 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal group"
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
               {label}
             </Link>
           ))}
@@ -123,12 +125,12 @@ export function HeaderMain() {
           size="icon"
           onClick={toggleTheme}
           aria-label="Toggle theme"
-          className="text-slate-200 hover:text-white hover:bg-slate-700/50"
+          className="text-secondary hover:text-primary interactive-hover transition-normal group"
         >
           {mounted && theme === "dark" ? (
-            <Sun className="h-5 w-5" />
+            <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
           ) : (
-            <Moon className="h-5 w-5" />
+            <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
           )}
         </Button>
 
@@ -138,14 +140,14 @@ export function HeaderMain() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full border-2 border-blue-400/40 hover:border-blue-400/60 hover:scale-105 transition-all duration-200"
+              className="rounded-full border-2 border-brand-primary/40 hover:border-brand-primary/60 hover:scale-105 transition-all transition-normal shadow-brand"
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage
                   src={userProfile?.avatar_url || "/assets/nopfp.png"}
                   alt="Avatar"
                 />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white">
+                <AvatarFallback className="bg-gradient-brand text-white">
                   {userProfile?.display_name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -153,37 +155,37 @@ export function HeaderMain() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-64 bg-slate-800/95 backdrop-blur-xl border-slate-600/50"
+            className="w-64 surface-overlay glass-surface border-subtle"
           >
-            <div className="px-3 py-2 text-sm font-medium border-b border-slate-600/50 text-white">
+            <div className="px-3 py-2 text-sm font-medium border-b border-subtle text-primary">
               {userProfile?.display_name || "User"}
             </div>
             <DropdownMenuItem asChild>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 text-slate-200 hover:text-white hover:bg-slate-700/50"
+                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
               >
-                <Home className="h-4 w-4" />
+                <Home className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
                 Dashboard
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link
                 href="/settings"
-                className="flex items-center gap-2 text-slate-200 hover:text-white hover:bg-slate-700/50"
+                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
                 Settings
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-slate-600/50" />
+            <DropdownMenuSeparator className="bg-border-subtle" />
             <DropdownMenuItem asChild>
               <form action={signOut} className="w-full">
                 <button
                   type="submit"
-                  className="flex items-center gap-2 w-full text-left text-slate-200 hover:text-white hover:bg-slate-700/50 px-2 py-1.5 text-sm rounded-sm transition-colors"
+                  className="flex items-center gap-2 w-full text-left text-secondary hover:text-primary interactive-hover px-2 py-1.5 text-sm rounded-sm transition-colors transition-normal group"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 group-hover:text-red-400 transition-colors transition-normal" />
                   Sign Out
                 </button>
               </form>
