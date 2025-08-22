@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 
 function ProjectsPageContent() {
   const { projects, loadProjects, reset } = useProjectsStore();
-  const [loading, setLoading] = useState(false);
+  const loading = true;
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
@@ -16,18 +16,15 @@ function ProjectsPageContent() {
     mountedRef.current = true;
     reset();
 
-    setLoading(true);
     setError(null);
 
     loadProjects()
       .then(() => {
         if (!mountedRef.current) return;
-        setLoading(false);
       })
       .catch((err) => {
         if (!mountedRef.current) return;
         setError(err?.message || "Failed to load projects");
-        setLoading(false);
       });
 
     return () => {
@@ -37,7 +34,7 @@ function ProjectsPageContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center relative">
+      <div className="flex-1 min-h-screen flex items-center justify-center relative">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse opacity-30" />
