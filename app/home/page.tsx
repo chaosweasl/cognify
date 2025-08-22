@@ -182,7 +182,7 @@ const DemoSection = () => {
                 Live Demo
               </span>
             </div>
-            <div className="bg-brand-primary/20 text-white border border-brand px-3 py-1 rounded-full text-sm self-start sm:self-center animate-pulse">
+            <div className="bg-brand-primary/10 text-brand-primary dark:text-white border border-brand px-3 py-1 rounded-full text-sm self-start sm:self-center animate-pulse font-semibold shadow-sm">
               AI Processing
             </div>
           </div>
@@ -219,7 +219,7 @@ const DemoSection = () => {
                     className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"
                     style={{ animationDelay: "0.2s" }}
                   ></div>
-                  <span className="text-xs sm:text-sm text-muted ml-2">
+                  <span className="text-xs sm:text-sm text-brand-primary dark:text-white ml-2 font-semibold">
                     AI Processing
                   </span>
                 </div>
@@ -369,7 +369,7 @@ const HeroSection = () => {
     <section className="py-16 sm:py-20 px-4 relative">
       <div className="max-w-6xl mx-auto text-center">
         <div className="animate-pulse mb-6 sm:mb-8">
-          <div className="inline-flex items-center border border-brand bg-brand-primary/10 text-white hover:bg-brand-primary/20 transition-normal px-3 py-1 rounded-full">
+          <div className="inline-flex items-center border border-brand bg-brand-primary/10 text-brand-primary dark:text-white hover:bg-brand-primary/20 transition-normal px-3 py-1 rounded-full font-semibold shadow-sm">
             <Star
               className="w-4 h-4 mr-2 text-yellow-400 animate-spin"
               style={{ animationDuration: "3s" }}
