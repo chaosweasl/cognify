@@ -30,7 +30,7 @@ export default function ProjectsLayout({
   return (
     <div className="flex flex-1">
       <SidebarNav activeTab="all" onTab={handleTab} />
-      <div className="flex-1 flex flex-col md:ml-64 md:p-0">{children}</div>
+      <div className="flex-1 flex flex-col">{children}</div>
     </div>
   );
 }

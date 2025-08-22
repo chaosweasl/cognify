@@ -51,12 +51,19 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-background`}
+        className={`${fontSans.variable} ${fontMono.variable} antialiased bg-background min-h-screen`}
       >
         <SpeedInsights />
         <Analytics />
         <ToasterProvider />
-        <ProfileProvider>{children}</ProfileProvider>
+        <ProfileProvider>
+          {/* Responsive flex container for sidebar and main content */}
+          <div className="flex min-h-screen w-full">
+            {/* Sidebar slot: expects sidebar to be rendered as a flex child in page layouts */}
+            {/* Main content area fills remaining space */}
+            <div className="flex-1 flex flex-col min-w-0">{children}</div>
+          </div>
+        </ProfileProvider>
       </body>
     </html>
   );

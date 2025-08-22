@@ -157,7 +157,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 "fixed top-0 left-0 h-screen z-40 transition-all duration-slow",
                 isOpen ? "translate-x-0" : "-translate-x-full"
               )
-            : "fixed top-[64px] left-0 h-[calc(100vh-4rem)] hidden md:flex z-30"
+            : "hidden md:flex"
         )}
       >
         {/* Animated Background Gradients */}
