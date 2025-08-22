@@ -46,7 +46,7 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 h-16 flex items-center">
+    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 h-20 flex items-center">
       {/* Mobile menu button */}
       <div className="md:hidden">
         <Sheet>
