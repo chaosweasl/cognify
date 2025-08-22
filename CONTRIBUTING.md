@@ -8,7 +8,7 @@ Cognify has a **selective contribution model**. We welcome contributions in thes
 
 ### 🎨 **Themes & UI Improvements**
 
-- Create new DaisyUI themes
+- Create new shadcn themes
 - Improve existing component designs
 - Enhance mobile responsiveness
 - Add animations and visual polish
@@ -126,7 +126,7 @@ If you're working on code changes (themes, UI improvements), please:
 
    - Provide CSS snippets or design mockups
    - Include screenshots or previews
-   - Reference DaisyUI documentation for compatibility
+   - Reference shadcn/ui documentation for compatibility and best practices
 
 4. **Submit Pull Request**
    - Use a descriptive title
@@ -139,6 +139,7 @@ If you're working on code changes (themes, UI improvements), please:
 ### Before Submitting a PR
 
 **Code Quality Checklist**:
+
 - [ ] ESLint passes without warnings (`pnpm lint`)
 - [ ] TypeScript compilation succeeds (`npx tsc --noEmit`)
 - [ ] Build succeeds (`pnpm build`)
@@ -146,6 +147,7 @@ If you're working on code changes (themes, UI improvements), please:
 - [ ] Changes tested in multiple browsers/devices
 
 **Performance Checklist**:
+
 - [ ] No N+1 database queries introduced
 - [ ] API endpoints use batch operations where possible
 - [ ] Components use React.memo/useCallback for optimization
@@ -154,6 +156,7 @@ If you're working on code changes (themes, UI improvements), please:
 - [ ] Bundle size impact considered
 
 **Documentation Checklist**:
+
 - [ ] README updated if functionality changed
 - [ ] Comments added for complex logic
 - [ ] Type definitions updated if needed
@@ -165,9 +168,11 @@ Use this template for your pull request:
 
 ```markdown
 ## Description
+
 Brief description of what this PR does.
 
 ## Type of Change
+
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
@@ -176,21 +181,25 @@ Brief description of what this PR does.
 - [ ] ⚡ Performance improvement
 
 ## Testing
+
 - [ ] Tested locally in development mode
 - [ ] Tested build version
 - [ ] Cross-browser testing completed
 - [ ] Mobile responsiveness verified
 
 ## Screenshots (if applicable)
+
 Include before/after screenshots for UI changes.
 
 ## Performance Impact
+
 - [ ] No performance degradation
 - [ ] Database queries optimized
 - [ ] No infinite loops or excessive re-renders
 - [ ] Bundle size impact acceptable
 
 ## Checklist
+
 - [ ] ESLint passes
 - [ ] TypeScript compiles without errors
 - [ ] Build succeeds
@@ -209,38 +218,22 @@ Include before/after screenshots for UI changes.
 5. **Code Quality**: Consistent patterns, readable code, proper error handling
 
 **Review Timeline**:
+
 - Initial feedback within 48 hours
 - Final approval within 1 week
 - Merge after all checks pass
 
 ## 🎨 Theme Contribution Guide
 
-We especially welcome new themes! Here's how to contribute:
-
-### Creating a New Theme
+We especially welcome new themes!:
 
 1. **Design Your Theme**
 
-   - Create a color palette following DaisyUI conventions
+   - Create a color palette following shadcn practices
    - Ensure accessibility with sufficient contrast ratios
    - Consider both light and dark mode preferences
 
 2. **Provide Theme Definition**
-
-   ```css
-   /* Custom DaisyUI theme example for globals.css */
-   @plugin "daisyui/theme" {
-     name: "your-theme-name";
-     color-scheme: light;
-
-     /* Base colors */
-     --color-base-100: oklch(98% 0.01 240);
-     --color-base-200: oklch(95% 0.015 240);
-     /* ...etc */
-
-     /* ...add or adjust variables as needed for your theme */
-   }
-   ```
 
 3. **Submit Your Theme**
    - Create a GitHub issue with your theme
