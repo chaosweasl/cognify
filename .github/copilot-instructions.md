@@ -290,6 +290,26 @@ export async function cleanupProjectNotifications(projectId: string) {
 }
 ```
 
+## Toast Notifications (shadcn/sonner)
+
+### Usage
+
+- Use the `ToasterProvider` component (in `components/ui/toaster-provider.tsx`) to enable toast notifications across the app.
+
+**Setup:**
+
+- Use the `toast` API from `sonner` in your client components for notifications.
+
+### Example: Showing a Toast
+
+```tsx
+import { toast } from "sonner";
+
+// Example usage:
+toast.success("Project deleted successfully!");
+toast.error("Failed to delete project");
+```
+
 ## What NOT to Do
 
 ### ❌ Avoid Over-Engineering

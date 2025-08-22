@@ -1,3 +1,16 @@
+## Toast Notification Architecture
+
+- Toast notifications are provided via [shadcn/ui] and [sonner].
+- The `ToasterProvider` component (in `components/ui/toaster-provider.tsx`) should be included at the root layout level.
+- Use the `toast` API from `sonner` in any client component for user feedback (success, error, info, etc).
+
+**Example:**
+
+```tsx
+import { toast } from "sonner";
+toast.success("Project deleted successfully!");
+```
+
 # Cognify Architecture
 
 ## Core Philosophy
