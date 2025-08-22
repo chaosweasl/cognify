@@ -34,9 +34,48 @@ Cognify is designed to be **lightweight and maintainable**. Every architectural 
 - Easy debugging and error tracking
 - Minimal external dependencies
 
-## Technical Stack
+## Design System & Color Palette
 
-### Core Technologies
+### Core Palette
+
+- **Primary (Accent):** Blue-500 (#3B82F6)
+  - Calming, futuristic blue for trust, focus, and a modern AI feel
+- **Secondary (Highlight/Contrast):** Violet-500 (#8B5CF6)
+  - Vibrant, creative, and tech-forward; used for highlights and CTAs
+- **Optional Secondary:** Teal-500 (#14B8A6)
+  - Balanced, calming; can be swapped for a more serious tone
+- **Neutral Backgrounds:**
+  - Light: Gray-50 (#F9FAFB) background, Gray-900 (#111827) text
+  - Dark: Slate-900 (#0F172A) background, Gray-50 (#F9FAFB) text
+- **Success/Progress:** Green-500 (#22C55E) for mastered cards
+- **Warning/Error:** Red-500 (#EF4444), softened for non-hostile feedback
+
+#### Light vs. Dark Mode
+
+- **Light mode:** Bright backgrounds, blue as main accent, violet for highlights
+- **Dark mode:** Deep slate-900 with glowing blue/violet highlights for immersive study
+
+#### UX Rationale
+
+- Avoid harsh pure black/white for long study sessions
+- Blue + violet combo differentiates Cognify from typical academic apps
+- Consistent palette across flashcards, dashboards, and analytics for strong brand identity
+
+**Locked-in Theme:**
+
+- Primary: Blue-500 (#3B82F6)
+- Secondary: Violet-500 (#8B5CF6)
+- Background (Light): Gray-50 (#F9FAFB)
+- Background (Dark): Slate-900 (#0F172A)
+
+This gives Cognify a crisp, intelligent, and slightly futuristic aesthetic without being overwhelming.
+
+---
+
+## Copilot Instructions
+
+- See `.github/copilot-instructions.md` for detailed guidelines on code patterns, file structure, and design consistency.
+- All UI and code contributions should follow the color palette and design system above for a unified user experience.
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 - **Styling**: Tailwind CSS, DaisyUI for components
@@ -70,7 +109,7 @@ Cognify is designed to be **lightweight and maintainable**. Every architectural 
 
 ### 1. Authentication Flow
 
-1. User accesses login page at `/auth/login` 
+1. User accesses login page at `/auth/login`
 2. Login/signup handled via API routes (`/api/auth/login`, `/api/auth/github`)
 3. JWT token stored in httpOnly cookies via Supabase Auth
 4. Middleware validates tokens and handles auth redirects

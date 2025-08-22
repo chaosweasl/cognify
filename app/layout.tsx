@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ToastProvider } from "@/components/toast-provider";
 import { ProfileProvider } from "@/components/profile-provider";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -56,11 +55,7 @@ export default function RootLayout({
         <SpeedInsights />
         <Analytics />
 
-        <ToastProvider>
-          <ProfileProvider>
-            {children}
-          </ProfileProvider>
-        </ToastProvider>
+        <ProfileProvider>{children}</ProfileProvider>
       </body>
     </html>
   );
