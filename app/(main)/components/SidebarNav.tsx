@@ -33,7 +33,12 @@ interface SidebarNavProps {
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
-  const { projects, isLoadingProjects: loading, error } = useProjectsStore();
+  const {
+    projects,
+    isLoadingProjects: loading,
+    error,
+    deleteProject,
+  } = useProjectsStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -416,7 +421,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
             {filteredProjects.map((project, index) => (
               <div
                 key={project.id}
-                // switched to pointer events for more reliable cross-window behavior
                 onPointerEnter={() => setHoveredProject(project.id)}
                 onPointerLeave={() =>
                   setHoveredProject((prev) =>
@@ -541,16 +545,34 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                       align="end"
                       className="w-44 bg-slate-800/95 backdrop-blur-xl border-slate-700"
                     >
-                      <DropdownMenuItem className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50">
+                      <DropdownMenuItem
+                        className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50"
+                        onSelect={() => router.push(`/projects/${project.id}`)}
+                      >
                         Study Project
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50">
+                      <DropdownMenuItem
+                        className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50"
+                        onSelect={() =>
+                          router.push(`/projects/${project.id}/edit`)
+                        }
+                      >
                         Edit Project
                       </DropdownMenuItem>
                       {/* <DropdownMenuItem className="text-slate-200 hover:text-white hover:bg-slate-700/50 focus-visible:text-white focus-visible:bg-slate-700/50">
                         Duplicate
                       </DropdownMenuItem> */}
-                      <DropdownMenuItem className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus-visible:text-red-300 focus-visible:bg-red-500/10">
+                      <DropdownMenuItem
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus-visible:text-red-300 focus-visible:bg-red-500/10"
+                        onSelect={async () => {
+                          try {
+                            await deleteProject(project.id);
+                          } catch (err) {
+                            // Optionally, show a toast or error message
+                            console.error("Failed to delete project", err);
+                          }
+                        }}
+                      >
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
