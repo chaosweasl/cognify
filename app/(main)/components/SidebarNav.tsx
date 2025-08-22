@@ -12,11 +12,7 @@ interface SidebarNavProps {
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
-  const {
-    projects,
-    isLoadingProjects: loading,
-    error,
-  } = useProjectsStore();
+  const { projects, isLoadingProjects: loading, error } = useProjectsStore();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);

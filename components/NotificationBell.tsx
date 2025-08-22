@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { Button } from "./ui/button";
 
 import { useUserId } from "@/hooks/useUserId";
 import { getAppNotifications } from "@/lib/supabase/appNotifications";
@@ -85,10 +86,12 @@ export function NotificationBell() {
   useEffect(() => {
     // Only fetch app notifications if user is authenticated
     if (!userId) {
-      console.log("[Supabase] Skipping app notifications - user not authenticated");
+      console.log(
+        "[Supabase] Skipping app notifications - user not authenticated"
+      );
       return;
     }
-    
+
     console.log("[Supabase] getAppNotifications");
     getAppNotifications().then(
       ({
@@ -189,10 +192,12 @@ export function NotificationBell() {
 
   return (
     <div className="relative m-0 p-0">
-      <button
-        className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors m-0 p-0"
-        aria-label="Notifications"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen((o) => !o)}
+        aria-label="Toggle theme"
+        className="text-slate-200 hover:text-white hover:bg-slate-700/50"
       >
         <Bell className="w-5 h-5" />
         {notificationCount > 0 && (
@@ -200,7 +205,7 @@ export function NotificationBell() {
             {notificationCount}
           </span>
         )}
-      </button>
+      </Button>
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-base-100 shadow-lg rounded-lg z-50 border border-base-200">
           {/* Simple header tabs */}

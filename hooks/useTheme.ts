@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 const THEME_KEY = "theme";
-const DEFAULT_THEME = "darkgreen";
+const DEFAULT_THEME = "dark";
 
 interface ThemeState {
   theme: string;
@@ -13,19 +13,26 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   theme:
     typeof window !== "undefined"
       ? localStorage.getItem(THEME_KEY) ||
-        document.documentElement.getAttribute("data-theme") ||
+        (document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light") ||
         DEFAULT_THEME
       : DEFAULT_THEME,
   setTheme: (theme) => {
     set({ theme });
     if (typeof window !== "undefined") {
-      document.documentElement.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
       localStorage.setItem(THEME_KEY, theme);
     }
   },
   toggleTheme: () => {
     const current = get().theme;
-    const next = current === "darkgreen" ? "lightgreen" : "darkgreen";
+    const next = current === "dark" ? "light" : "dark";
     get().setTheme(next);
   },
 }));

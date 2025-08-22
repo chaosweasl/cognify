@@ -1,6 +1,6 @@
 "use client";
 
-import { SidebarNav } from "@/src/components/ui/SidebarNav";
+import { SidebarNav } from "@/app/(main)/components/SidebarNav";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { createProject } from "./components/../actions";

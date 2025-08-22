@@ -125,7 +125,7 @@ export function HeaderMain() {
           aria-label="Toggle theme"
           className="text-slate-200 hover:text-white hover:bg-slate-700/50"
         >
-          {mounted && theme === "darkgreen" ? (
+          {mounted && theme === "dark" ? (
             <Sun className="h-5 w-5" />
           ) : (
             <Moon className="h-5 w-5" />
