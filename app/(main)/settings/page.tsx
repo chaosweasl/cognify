@@ -17,15 +17,17 @@ export default function SettingsPage() {
   ];
 
   return (
-    <main className="flex-1 min-h-screen bg-base-200 px-4 md:px-12 py-4 md:py-8">
-      <div className="max-w-4xl mx-auto">
+    <main className="flex-1 min-h-screen relative px-4 md:px-12 py-4 md:py-8">
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <Settings className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold text-base-content">Settings</h1>
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-violet-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+              <Settings className="w-5 h-5 text-blue-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Settings</h1>
             {!isLoading && userProfile?.is_admin && (
-              <div className="badge badge-primary gap-1">
+              <div className="bg-violet-500/20 text-violet-200 border border-violet-500/30 px-3 py-1 rounded-full text-sm flex items-center gap-1">
                 <Shield className="w-3 h-3" />
                 Admin
               </div>
@@ -33,9 +35,9 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="bg-base-100 rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-slate-800/40 border border-slate-600 backdrop-blur-sm rounded-lg shadow-2xl overflow-hidden">
           {/* Tab Navigation */}
-          <div className="border-b border-base-300">
+          <div className="border-b border-slate-600">
             <div className="flex">
               {tabs.map((tab) => {
                 const TabIcon = tab.icon;
@@ -43,10 +45,10 @@ export default function SettingsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-all duration-200 ${
                       activeTab === tab.id
-                        ? "text-primary border-b-2 border-primary bg-primary/5"
-                        : "text-base-content/70 hover:text-base-content hover:bg-base-200"
+                        ? "text-blue-300 border-b-2 border-blue-400 bg-blue-500/10"
+                        : "text-slate-300 hover:text-white hover:bg-slate-700/50"
                     }`}
                   >
                     <TabIcon className="w-4 h-4" />

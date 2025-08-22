@@ -61,24 +61,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   return (
-    <Card className="w-full hover:shadow-lg transition-shadow duration-200 group focus-within:ring-2 focus-within:ring-ring">
+    <Card className="w-full bg-slate-800/40 border border-slate-600 backdrop-blur-sm hover:bg-slate-800/50 hover:border-slate-500 transition-all duration-500 group shadow-2xl hover:shadow-xl">
       <CardHeader className="space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
           <h2
-            className="text-xl md:text-2xl font-semibold text-foreground line-clamp-2"
+            className="text-xl md:text-2xl font-semibold text-white line-clamp-2 group-hover:text-blue-300 transition-colors"
             title={project.name}
           >
             {project.name}
           </h2>
-          <Badge variant="secondary" className="flex items-center gap-1">
+          <Badge variant="secondary" className="flex items-center gap-1 bg-blue-500/20 text-blue-200 border border-blue-500/30">
             <BookOpen className="w-4 h-4" />
             <span>{flashcardCount}</span>
           </Badge>
         </div>
 
         {/* Description */}
-        <p className="text-base text-muted-foreground line-clamp-3">
+        <p className="text-base text-slate-300 line-clamp-3">
           {project.description || "No description provided"}
         </p>
       </CardHeader>
@@ -86,45 +86,45 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       <CardContent className="space-y-4">
         {/* SRS Statistics */}
         {srsStats && (
-          <div className="flex items-center justify-center gap-4 p-3 bg-muted/50 rounded-lg border">
+          <div className="flex items-center justify-center gap-4 p-3 bg-slate-700/40 rounded-lg border border-slate-600">
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
-                  srsStats.dueCards > 0 ? "text-red-600" : "text-muted-foreground"
+                  srsStats.dueCards > 0 ? "text-red-400" : "text-slate-400"
                 }`}
               >
                 {srsStats.dueCards}
               </div>
-              <div className="text-xs text-muted-foreground">Due</div>
+              <div className="text-xs text-slate-400">Due</div>
             </div>
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
-                  srsStats.newCards > 0 ? "text-blue-600" : "text-muted-foreground"
+                  srsStats.newCards > 0 ? "text-blue-400" : "text-slate-400"
                 }`}
               >
                 {srsStats.newCards}
               </div>
-              <div className="text-xs text-muted-foreground">New</div>
+              <div className="text-xs text-slate-400">New</div>
             </div>
             <div className="text-center">
               <div
                 className={`text-lg font-bold ${
                   srsStats.learningCards > 0
-                    ? "text-orange-600"
-                    : "text-muted-foreground"
+                    ? "text-violet-400"
+                    : "text-slate-400"
                 }`}
               >
                 {srsStats.learningCards}
               </div>
-              <div className="text-xs text-muted-foreground">Learning</div>
+              <div className="text-xs text-slate-400">Learning</div>
             </div>
           </div>
         )}
 
         {/* Next Review Date or Creation Date */}
         {srsStats?.nextReviewDate ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t mt-2">
+          <div className="flex items-center gap-2 text-sm text-slate-300 pt-2 border-t border-slate-600 mt-2">
             <Calendar className="w-4 h-4" />
             <span>
               Next review: {srsStats.nextReviewDate.toLocaleDateString()} at{" "}
@@ -135,16 +135,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </span>
           </div>
         ) : hasFlashcards ? (
-          <div className="flex items-center gap-2 text-sm text-green-600 pt-2 border-t mt-2">
+          <div className="flex items-center gap-2 text-sm text-green-400 pt-2 border-t border-slate-600 mt-2">
             <Calendar className="w-4 h-4" />
             <span>Ready for review!</span>
           </div>
         ) : null}
       </CardContent>
 
-      <CardFooter className="bg-muted/30 flex flex-wrap justify-center items-center gap-3">
+      <CardFooter className="bg-slate-700/30 border-t border-slate-600 flex flex-wrap justify-center items-center gap-3">
         {hasCardsToStudy ? (
-          <Button asChild size="sm" className="flex-auto max-w-[6rem]">
+          <Button asChild size="sm" className="flex-auto max-w-[6rem] bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white border-none">
             <Link href={`/projects/${project.id}`} prefetch={false}>
               <Play className="w-4 h-4 mr-2" />
               Study
@@ -155,9 +155,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             disabled
             size="sm"
             variant="outline"
-            className="flex-auto max-w-[8rem]"
+            className="flex-auto max-w-[8rem] bg-slate-600/20 border-slate-500/50 text-slate-400"
           >
-            <span className="text-xs text-yellow-600">
+            <span className="text-xs text-yellow-400">
               {!hasFlashcards
                 ? "No flashcards"
                 : srsStats &&
@@ -170,7 +170,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           </Button>
         )}
 
-        <Button asChild variant="outline" size="sm" className="flex-auto max-w-[6rem]">
+        <Button asChild variant="outline" size="sm" className="flex-auto max-w-[6rem] bg-slate-600/20 border-slate-500/50 text-slate-200 hover:bg-slate-600/40 hover:text-white">
           <Link href={`/projects/${project.id}/edit`} prefetch={false}>
             <Edit2 className="w-4 h-4 mr-2" />
             Edit
@@ -182,7 +182,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
           disabled={isDeleting}
           variant="outline"
           size="sm"
-          className="flex-auto max-w-[6rem] text-destructive hover:text-destructive"
+          className="flex-auto max-w-[6rem] bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300"
         >
           {!isDeleting && <Trash2 className="w-4 h-4 mr-2" />}
           {isDeleting ? "Deleting..." : "Delete"}

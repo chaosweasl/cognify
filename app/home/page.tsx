@@ -143,7 +143,7 @@ const DemoSection = () => {
       setCurrentCardIndex((prev) => (prev + 1) % demoCards.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [demoCards.length]);
 
   return (
     <div className="w-full max-w-5xl mx-auto">
@@ -174,9 +174,9 @@ const DemoSection = () => {
               <div className="bg-slate-700/40 border border-slate-600 hover:bg-slate-700/60 transition-all duration-300 rounded-lg">
                 <div className="p-3 sm:p-4">
                   <p className="text-slate-200 text-xs sm:text-sm leading-relaxed">
-                    "Photosynthesis is the process by which plants convert
+                    &quot;Photosynthesis is the process by which plants convert
                     sunlight into energy using chlorophyll. This fundamental
-                    biological process occurs in the chloroplasts..."
+                    biological process occurs in the chloroplasts...&quot;
                   </p>
                 </div>
               </div>
@@ -431,7 +431,7 @@ const CTASection = () => {
           Ready to Study Smarter?
         </h2>
         <p className="text-base sm:text-lg text-slate-200 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
-          Start creating AI-powered flashcards from your study materials. It's
+          Start creating AI-powered flashcards from your study materials. It&apos;s
           free, open-source, and works with your own AI API.
         </p>
 
