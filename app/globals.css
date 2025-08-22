@@ -4,10 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Base radius values */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Original shadcn colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -39,5 +42,309 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand colors - Same for both themes */
+  --color-brand-primary: oklch(0.65 0.15 250); /* blue-500 */
+  --color-brand-secondary: oklch(0.6 0.15 270); /* violet-500 */
+  --color-brand-tertiary: oklch(0.65 0.12 200); /* teal-500 */
+  --color-brand-accent: oklch(0.7 0.15 330); /* pink-500 */
+
+  /* Brand hover states */
+  --color-brand-primary-hover: oklch(0.6 0.15 250); /* blue-600 */
+  --color-brand-secondary-hover: oklch(0.55 0.15 270); /* violet-600 */
+
+  /* Status colors - Same for both themes */
+  --color-status-success: oklch(0.6 0.12 150); /* green-500 */
+  --color-status-warning: oklch(0.75 0.12 60); /* yellow-400 */
+  --color-status-error: oklch(0.6 0.15 30); /* red-500 */
+  --color-status-info: oklch(0.65 0.15 250); /* blue-500 */
+
+  /* Animation durations */
+  --duration-instant: 150ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+
+  /* Spacing scale */
+  --space-xs: 0.25rem; /* 4px */
+  --space-sm: 0.5rem; /* 8px */
+  --space-md: 1rem; /* 16px */
+  --space-lg: 1.5rem; /* 24px */
+  --space-xl: 2rem; /* 32px */
+  --space-2xl: 3rem; /* 48px */
+
+  /* Border radius scale */
+  --radius-xs: 0.25rem; /* 4px */
+  --radius-sm: 0.5rem; /* 8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px */
+  --radius-xl: 1.5rem; /* 24px */
+  --radius-2xl: 2rem; /* 32px */
+
+  /* Base radius for consistency with shadcn */
   --radius: 0.625rem;
+}
+
+/* ===== LIGHT THEME (Default) ===== */
+:root,
+.light {
+  /* Surface colors - Light */
+  --color-surface-primary: oklch(0.98 0.001 240); /* white/slate-50 */
+  --color-surface-secondary: oklch(0.95 0.005 240); /* slate-100 */
+  --color-surface-elevated: oklch(0.92 0.008 240); /* slate-200 */
+  --color-surface-overlay: oklch(0.98 0.001 240 / 0.95); /* white/95 */
+  --color-surface-glass: oklch(
+    0.95 0.005 240 / 0.8
+  ); /* backdrop blur surfaces */
+
+  /* Text colors - Light */
+  --color-text-primary: oklch(0.15 0.02 240); /* slate-900 */
+  --color-text-secondary: oklch(0.18 0.015 240); /* slate-800 */
+  --color-text-tertiary: oklch(0.21 0.01 240); /* slate-700 */
+  --color-text-muted: oklch(0.35 0.02 240); /* slate-600 */
+  --color-text-subtle: oklch(0.45 0.024 240); /* slate-500 */
+  --color-text-disabled: oklch(0.55 0.016 240); /* slate-400 */
+
+  /* Interactive states - Light */
+  --color-interactive-hover: oklch(0.92 0.008 240 / 0.7); /* slate-200/70 */
+  --color-interactive-active: oklch(0.88 0.012 240 / 0.8); /* slate-300/80 */
+  --color-interactive-focus: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+
+  /* Border colors - Light */
+  --color-border-primary: oklch(0.75 0.008 240 / 0.3); /* slate-300/30 */
+  --color-border-secondary: oklch(0.85 0.004 240 / 0.5); /* slate-200/50 */
+  --color-border-subtle: oklch(0.88 0.012 240 / 0.5); /* slate-300/50 */
+  --color-border-brand: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+
+  /* Shadow colors - Light */
+  --color-shadow-default: oklch(0 0 0 / 0.1); /* black/10 */
+  --color-shadow-brand: oklch(0.65 0.15 250 / 0.15); /* blue-500/15 */
+  --color-shadow-brand-hover: oklch(0.65 0.15 250 / 0.25); /* blue-500/25 */
+}
+
+/* ===== DARK THEME ===== */
+.dark {
+  /* Surface colors - Dark */
+  --color-surface-primary: oklch(24.957% 0.04947 248.603); /* slate-900 */
+  --color-surface-secondary: oklch(0.18 0.015 240); /* slate-800 */
+  --color-surface-elevated: oklch(0.21 0.01 240); /* slate-700 */
+  --color-surface-overlay: oklch(0.15 0.02 240 / 0.95); /* slate-900/95 */
+  --color-surface-glass: oklch(
+    0.15 0.02 240 / 0.4
+  ); /* backdrop blur surfaces */
+
+  /* Text colors - Dark */
+  --color-text-primary: oklch(0.98 0 0); /* white */
+  --color-text-secondary: oklch(0.95 0.002 240); /* slate-100 */
+  --color-text-tertiary: oklch(0.85 0.004 240); /* slate-200 */
+  --color-text-muted: oklch(0.75 0.008 240); /* slate-300 */
+  --color-text-subtle: oklch(0.65 0.012 240); /* slate-400 */
+  --color-text-disabled: oklch(0.55 0.016 240); /* slate-500 */
+
+  /* Interactive states - Dark */
+  --color-interactive-hover: oklch(0.21 0.01 240 / 0.5); /* slate-700/50 */
+  --color-interactive-active: oklch(0.18 0.015 240 / 0.8); /* slate-800/80 */
+  --color-interactive-focus: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+
+  /* Border colors - Dark */
+  --color-border-primary: oklch(0.35 0.02 240 / 0.5); /* slate-600/50 */
+  --color-border-secondary: oklch(0.35 0.02 240 / 0.3); /* slate-600/30 */
+  --color-border-subtle: oklch(0.21 0.01 240 / 0.5); /* slate-700/50 */
+  --color-border-brand: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+
+  /* Shadow colors - Dark */
+  --color-shadow-default: oklch(0 0 0 / 0.4); /* black/40 */
+  --color-shadow-brand: oklch(0.65 0.15 250 / 0.25); /* blue-500/25 */
+  --color-shadow-brand-hover: oklch(0.65 0.15 250 / 0.4); /* blue-500/40 */
+}
+
+/* Gradient definitions - Available to both themes */
+:root {
+  --gradient-brand-primary: linear-gradient(
+    135deg,
+    var(--color-brand-primary),
+    var(--color-brand-secondary)
+  );
+  --gradient-brand-hover: linear-gradient(
+    135deg,
+    var(--color-brand-primary-hover),
+    var(--color-brand-secondary-hover)
+  );
+  --gradient-surface: linear-gradient(
+    180deg,
+    var(--color-surface-primary),
+    var(--color-surface-secondary)
+  );
+  --gradient-glass: linear-gradient(
+    135deg,
+    var(--color-surface-primary) / 0.1,
+    var(--color-surface-secondary) / 0.1
+  );
+}
+
+/* Utility classes using semantic variables */
+.surface-primary {
+  background-color: var(--color-surface-primary);
+}
+.surface-secondary {
+  background-color: var(--color-surface-secondary);
+}
+.surface-elevated {
+  background-color: var(--color-surface-elevated);
+}
+.surface-overlay {
+  background-color: var(--color-surface-overlay);
+}
+.surface-glass {
+  background-color: var(--color-surface-glass);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
+.text-subtle {
+  color: var(--color-text-subtle);
+}
+
+.brand-primary {
+  color: var(--color-brand-primary);
+}
+.brand-secondary {
+  color: var(--color-brand-secondary);
+}
+.brand-tertiary {
+  color: var(--color-brand-tertiary);
+}
+.brand-accent {
+  color: var(--color-brand-accent);
+}
+
+.bg-brand-primary {
+  background-color: var(--color-brand-primary);
+}
+.bg-brand-secondary {
+  background-color: var(--color-brand-secondary);
+}
+.bg-gradient-brand {
+  background: var(--gradient-brand-primary);
+}
+.bg-gradient-brand-hover {
+  background: var(--gradient-brand-hover);
+}
+
+.border-primary {
+  border-color: var(--color-border-primary);
+}
+.border-secondary {
+  border-color: var(--color-border-secondary);
+}
+.border-subtle {
+  border-color: var(--color-border-subtle);
+}
+.border-brand {
+  border-color: var(--color-border-brand);
+}
+
+.shadow-brand {
+  box-shadow: 0 4px 6px -1px var(--color-shadow-brand);
+}
+.shadow-brand-lg {
+  box-shadow: 0 10px 15px -3px var(--color-shadow-brand);
+}
+
+.transition-fast {
+  transition-duration: var(--duration-fast);
+}
+.transition-normal {
+  transition-duration: var(--duration-normal);
+}
+.transition-slow {
+  transition-duration: var(--duration-slow);
+}
+
+/* Interactive state utilities */
+.interactive-hover:hover {
+  background-color: var(--color-interactive-hover);
+}
+.interactive-active:active {
+  background-color: var(--color-interactive-active);
+}
+.interactive-focus:focus {
+  outline: 2px solid var(--color-interactive-focus);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar with semantic colors */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-surface-elevated);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gradient-brand-primary);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-brand-hover);
+}
+
+/* Animation keyframes */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Glass morphism utility */
+.glass-surface {
+  background: var(--color-surface-overlay);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-subtle);
+}
+
+button {
+  border-radius: var(--radius-md); /* or whichever fits */
 }
