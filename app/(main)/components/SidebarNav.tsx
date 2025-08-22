@@ -46,7 +46,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   // track whether any project's dropdown is open
-  const [menuOpen, setMenuOpen] = useState(false);
 
   // Handle client-side hydration and mobile detection
   useEffect(() => {
@@ -527,7 +526,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                       (which can happen when the window loses focus). */}
                   <DropdownMenu
                     onOpenChange={(open) => {
-                      setMenuOpen(open);
                       if (open) setHoveredProject(null);
                     }}
                   >
