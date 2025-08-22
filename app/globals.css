@@ -43,21 +43,21 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Brand colors - Same for both themes */
-  --color-brand-primary: oklch(0.65 0.15 250); /* blue-500 */
-  --color-brand-secondary: oklch(0.6 0.15 270); /* violet-500 */
-  --color-brand-tertiary: oklch(0.65 0.12 200); /* teal-500 */
-  --color-brand-accent: oklch(0.7 0.15 330); /* pink-500 */
+  /* Brand colors - Updated to match your palette */
+  --color-brand-primary: #3b82f6; /* Blue-500 - Primary accent */
+  --color-brand-secondary: #8b5cf6; /* Violet-500 - Secondary/highlights */
+  --color-brand-tertiary: #14b8a6; /* Teal-500 - Optional secondary */
+  --color-brand-accent: #8b5cf6; /* Using violet for accent consistency */
 
   /* Brand hover states */
-  --color-brand-primary-hover: oklch(0.6 0.15 250); /* blue-600 */
-  --color-brand-secondary-hover: oklch(0.55 0.15 270); /* violet-600 */
+  --color-brand-primary-hover: #2563eb; /* Blue-600 */
+  --color-brand-secondary-hover: #7c3aed; /* Violet-600 */
 
-  /* Status colors - Same for both themes */
-  --color-status-success: oklch(0.6 0.12 150); /* green-500 */
-  --color-status-warning: oklch(0.75 0.12 60); /* yellow-400 */
-  --color-status-error: oklch(0.6 0.15 30); /* red-500 */
-  --color-status-info: oklch(0.65 0.15 250); /* blue-500 */
+  /* Status colors - Updated to match your palette */
+  --color-status-success: #22c55e; /* Green-500 for mastered cards */
+  --color-status-warning: #f59e0b; /* Amber-500 for warnings */
+  --color-status-error: #ef4444; /* Red-500 for errors */
+  --color-status-info: #3b82f6; /* Blue-500 for info */
 
   /* Animation durations */
   --duration-instant: 150ms;
@@ -89,88 +89,94 @@
 /* ===== LIGHT THEME (Default) ===== */
 :root,
 .light {
-  /* Surface colors - Light */
-  --color-surface-primary: oklch(0.98 0.001 240); /* white/slate-50 */
-  --color-surface-secondary: oklch(0.95 0.005 240); /* slate-100 */
-  --color-surface-elevated: oklch(0.92 0.008 240); /* slate-200 */
-  --color-surface-overlay: oklch(0.98 0.001 240 / 0.95); /* white/95 */
-  --color-surface-glass: oklch(
-    0.95 0.005 240 / 0.8
-  ); /* backdrop blur surfaces */
+  /* Surface colors - Light - Updated to match Gray-50 background */
+  --color-surface-primary: #f9fafb; /* Gray-50 - Main background */
+  --color-surface-secondary: #f3f4f6; /* Gray-100 - Elevated surfaces */
+  --color-surface-elevated: #e5e7eb; /* Gray-200 - Cards, modals */
+  --color-surface-overlay: rgba(249, 250, 251, 0.95); /* Gray-50/95 */
+  --color-surface-glass: rgba(
+    243,
+    244,
+    246,
+    0.8
+  ); /* Gray-100/80 for backdrop blur */
 
-  /* Text colors - Light */
-  --color-text-primary: oklch(0.15 0.02 240); /* slate-900 */
-  --color-text-secondary: oklch(0.18 0.015 240); /* slate-800 */
-  --color-text-tertiary: oklch(0.21 0.01 240); /* slate-700 */
-  --color-text-muted: oklch(0.35 0.02 240); /* slate-600 */
-  --color-text-subtle: oklch(0.45 0.024 240); /* slate-500 */
-  --color-text-disabled: oklch(0.55 0.016 240); /* slate-400 */
+  /* Text colors - Light - Updated to Gray-900 primary text */
+  --color-text-primary: #111827; /* Gray-900 - Primary text */
+  --color-text-secondary: #1f2937; /* Gray-800 - Secondary text */
+  --color-text-tertiary: #374151; /* Gray-700 - Tertiary text */
+  --color-text-muted: #6b7280; /* Gray-500 - Muted text */
+  --color-text-subtle: #9ca3af; /* Gray-400 - Subtle text */
+  --color-text-disabled: #d1d5db; /* Gray-300 - Disabled text */
 
   /* Interactive states - Light */
-  --color-interactive-hover: oklch(0.92 0.008 240 / 0.7); /* slate-200/70 */
-  --color-interactive-active: oklch(0.88 0.012 240 / 0.8); /* slate-300/80 */
-  --color-interactive-focus: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+  --color-interactive-hover: rgba(229, 231, 235, 0.7); /* Gray-200/70 */
+  --color-interactive-active: rgba(209, 213, 219, 0.8); /* Gray-300/80 */
+  --color-interactive-focus: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
 
   /* Border colors - Light */
-  --color-border-primary: oklch(0.75 0.008 240 / 0.3); /* slate-300/30 */
-  --color-border-secondary: oklch(0.85 0.004 240 / 0.5); /* slate-200/50 */
-  --color-border-subtle: oklch(0.88 0.012 240 / 0.5); /* slate-300/50 */
-  --color-border-brand: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+  --color-border-primary: rgba(209, 213, 219, 0.5); /* Gray-300/50 */
+  --color-border-secondary: rgba(229, 231, 235, 0.5); /* Gray-200/50 */
+  --color-border-subtle: rgba(243, 244, 246, 0.8); /* Gray-100/80 */
+  --color-border-brand: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
 
   /* Shadow colors - Light */
-  --color-shadow-default: oklch(0 0 0 / 0.1); /* black/10 */
-  --color-shadow-brand: oklch(0.65 0.15 250 / 0.15); /* blue-500/15 */
-  --color-shadow-brand-hover: oklch(0.65 0.15 250 / 0.25); /* blue-500/25 */
+  --color-shadow-default: rgba(0, 0, 0, 0.1); /* black/10 */
+  --color-shadow-brand: rgba(59, 130, 246, 0.15); /* Blue-500/15 */
+  --color-shadow-brand-hover: rgba(59, 130, 246, 0.25); /* Blue-500/25 */
 }
 
 /* ===== DARK THEME ===== */
 .dark {
-  /* Surface colors - Dark */
-  --color-surface-primary: oklch(24.957% 0.04947 248.603); /* slate-900 */
-  --color-surface-secondary: oklch(0.18 0.015 240); /* slate-800 */
-  --color-surface-elevated: oklch(0.21 0.01 240); /* slate-700 */
-  --color-surface-overlay: oklch(0.15 0.02 240 / 0.95); /* slate-900/95 */
-  --color-surface-glass: oklch(
-    0.15 0.02 240 / 0.4
-  ); /* backdrop blur surfaces */
+  /* Surface colors - Dark - Updated to Slate-900 background */
+  --color-surface-primary: #0f172a; /* Slate-900 - Main background */
+  --color-surface-secondary: #1e293b; /* Slate-800 - Elevated surfaces */
+  --color-surface-elevated: #334155; /* Slate-700 - Cards, modals */
+  --color-surface-overlay: rgba(15, 23, 42, 0.95); /* Slate-900/95 */
+  --color-surface-glass: rgba(
+    30,
+    41,
+    59,
+    0.4
+  ); /* Slate-800/40 for backdrop blur */
 
-  /* Text colors - Dark */
-  --color-text-primary: oklch(0.98 0 0); /* white */
-  --color-text-secondary: oklch(0.95 0.002 240); /* slate-100 */
-  --color-text-tertiary: oklch(0.85 0.004 240); /* slate-200 */
-  --color-text-muted: oklch(0.75 0.008 240); /* slate-300 */
-  --color-text-subtle: oklch(0.65 0.012 240); /* slate-400 */
-  --color-text-disabled: oklch(0.55 0.016 240); /* slate-500 */
+  /* Text colors - Dark - Updated to Gray-50 primary text */
+  --color-text-primary: #f9fafb; /* Gray-50 - Primary text */
+  --color-text-secondary: #f3f4f6; /* Gray-100 - Secondary text */
+  --color-text-tertiary: #e5e7eb; /* Gray-200 - Tertiary text */
+  --color-text-muted: #9ca3af; /* Gray-400 - Muted text */
+  --color-text-subtle: #6b7280; /* Gray-500 - Subtle text */
+  --color-text-disabled: #4b5563; /* Gray-600 - Disabled text */
 
   /* Interactive states - Dark */
-  --color-interactive-hover: oklch(0.21 0.01 240 / 0.5); /* slate-700/50 */
-  --color-interactive-active: oklch(0.18 0.015 240 / 0.8); /* slate-800/80 */
-  --color-interactive-focus: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+  --color-interactive-hover: rgba(51, 65, 85, 0.5); /* Slate-700/50 */
+  --color-interactive-active: rgba(30, 41, 59, 0.8); /* Slate-800/80 */
+  --color-interactive-focus: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
 
   /* Border colors - Dark */
-  --color-border-primary: oklch(0.35 0.02 240 / 0.5); /* slate-600/50 */
-  --color-border-secondary: oklch(0.35 0.02 240 / 0.3); /* slate-600/30 */
-  --color-border-subtle: oklch(0.21 0.01 240 / 0.5); /* slate-700/50 */
-  --color-border-brand: oklch(0.65 0.15 250 / 0.5); /* blue-500/50 */
+  --color-border-primary: rgba(75, 85, 99, 0.5); /* Gray-600/50 */
+  --color-border-secondary: rgba(75, 85, 99, 0.3); /* Gray-600/30 */
+  --color-border-subtle: rgba(51, 65, 85, 0.5); /* Slate-700/50 */
+  --color-border-brand: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
 
   /* Shadow colors - Dark */
-  --color-shadow-default: oklch(0 0 0 / 0.4); /* black/40 */
-  --color-shadow-brand: oklch(0.65 0.15 250 / 0.25); /* blue-500/25 */
-  --color-shadow-brand-hover: oklch(0.65 0.15 250 / 0.4); /* blue-500/40 */
+  --color-shadow-default: rgba(0, 0, 0, 0.4); /* black/40 */
+  --color-shadow-brand: rgba(59, 130, 246, 0.25); /* Blue-500/25 */
+  --color-shadow-brand-hover: rgba(59, 130, 246, 0.4); /* Blue-500/40 */
 }
 
-/* Gradient definitions - Available to both themes */
+/* Gradient definitions - Updated with your brand colors */
 :root {
   --gradient-brand-primary: linear-gradient(
     135deg,
-    var(--color-brand-primary),
-    var(--color-brand-secondary)
-  );
+    #3b82f6,
+    #8b5cf6
+  ); /* Blue-500 to Violet-500 */
   --gradient-brand-hover: linear-gradient(
     135deg,
-    var(--color-brand-primary-hover),
-    var(--color-brand-secondary-hover)
-  );
+    #2563eb,
+    #7c3aed
+  ); /* Blue-600 to Violet-600 */
   --gradient-surface: linear-gradient(
     180deg,
     var(--color-surface-primary),
@@ -178,9 +184,9 @@
   );
   --gradient-glass: linear-gradient(
     135deg,
-    var(--color-surface-primary) / 0.1,
-    var(--color-surface-secondary) / 0.1
-  );
+    rgba(59, 130, 246, 0.1),
+    rgba(139, 92, 246, 0.1)
+  ); /* Brand colors with transparency */
 }
 
 /* Utility classes using semantic variables */
@@ -284,7 +290,7 @@
   outline-offset: 2px;
 }
 
-/* Custom scrollbar with semantic colors */
+/* Custom scrollbar with brand colors */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -346,5 +352,44 @@
 }
 
 button {
-  border-radius: var(--radius-md); /* or whichever fits */
+  border-radius: var(--radius-md);
+}
+
+/* Additional Cognify-specific utilities */
+.btn-primary {
+  background: var(--gradient-brand-primary);
+  color: white;
+  border: none;
+  transition: all var(--duration-fast);
+}
+
+.btn-primary:hover {
+  background: var(--gradient-brand-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--color-shadow-brand-hover);
+}
+
+.card-flashcard {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 4px var(--color-shadow-default);
+  transition: all var(--duration-normal);
+}
+
+.card-flashcard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px var(--color-shadow-brand);
+}
+
+.progress-mastered {
+  background-color: var(--color-status-success);
+}
+
+.progress-learning {
+  background-color: var(--color-brand-primary);
+}
+
+.progress-new {
+  background-color: var(--color-text-muted);
 }

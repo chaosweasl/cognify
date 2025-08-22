@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useThemeStore } from "@/hooks/useTheme";
 import {
   ArrowRight,
   Brain,
@@ -12,11 +13,22 @@ import {
   X,
   Star,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 // Navigation Component
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useThemeStore();
+
+  // Use Lucide icons for theme toggle to avoid hydration mismatch
+  const ThemeIcon =
+    theme === "dark" ? (
+      <Sun className="w-5 h-5" />
+    ) : (
+      <Moon className="w-5 h-5" />
+    );
 
   return (
     <nav className="surface-overlay backdrop-blur-xl border-b border-subtle sticky top-0 z-50">
@@ -51,6 +63,14 @@ const Navigation = () => {
             </button>
             <button className="bg-gradient-brand hover:bg-gradient-brand-hover transform hover:scale-105 transition-normal shadow-brand px-4 py-2 rounded-md text-white font-medium">
               <a href="/auth/login">Get Started</a>
+            </button>
+            {/* Theme Toggle Button */}
+            <button
+              aria-label="Toggle theme"
+              className="ml-2 p-2 rounded-md border border-subtle bg-surface-elevated hover:bg-surface-glass transition-normal"
+              onClick={toggleTheme}
+            >
+              {ThemeIcon}
             </button>
           </div>
 
@@ -94,6 +114,17 @@ const Navigation = () => {
               >
                 GitHub
               </a>
+              {/* Theme Toggle Button (Mobile) */}
+              <button
+                aria-label="Toggle theme"
+                className="mt-2 w-full flex items-center justify-center p-2 rounded-md border border-subtle bg-surface-elevated hover:bg-surface-glass transition-normal"
+                onClick={toggleTheme}
+              >
+                {ThemeIcon}
+                <span className="ml-2">
+                  {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                </span>
+              </button>
               <div className="pt-2">
                 <button className="w-full bg-gradient-brand hover:bg-gradient-brand-hover px-4 py-2 rounded-md text-white font-medium">
                   <a href="/auth/login" onClick={() => setIsMenuOpen(false)}>
@@ -531,6 +562,20 @@ const Footer = () => {
 // Main Component
 export default function CognifyLanding() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const { theme } = useThemeStore();
+
+  // Ensure dark class is always synced on <html> and <body>
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        document.body.classList.remove("dark");
+      }
+    }
+  }, [theme]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -541,7 +586,7 @@ export default function CognifyLanding() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-primary via-brand-primary/10 to-surface-primary text-primary overflow-hidden">
+    <div className="min-h-screen surface-primary text-primary overflow-hidden">
       {/* Animated background elements */}
       <div className="fixed inset-0 pointer-events-none">
         <div
