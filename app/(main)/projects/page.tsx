@@ -37,7 +37,7 @@ function ProjectsPageContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh] relative">
+      <div className="flex items-center justify-center relative">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse opacity-30" />
@@ -116,7 +116,7 @@ function ProjectsPageContent() {
 
   if (projects.length === 0 && !error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] relative overflow-hidden">
+      <div className="flex flex-col items-center justify-center relative overflow-hidden">
         {/* Animated background grid */}
         <div className="absolute inset-0 pointer-events-none opacity-30">
           <div
@@ -260,7 +260,7 @@ function ProjectsPageContent() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Animated background elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
         <div
@@ -289,7 +289,7 @@ function ProjectsPageContent() {
       </div>
 
       {/* Main content */}
-      <main className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 transition-all">
+      <main className="relative z-10 flex-1 px-4 sm:px-6 lg:px-8 py-8 md:py-12 transition-all">
         <div className="max-w-7xl mx-auto">
           <ProjectList />
         </div>
