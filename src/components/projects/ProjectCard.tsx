@@ -249,7 +249,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="border-subtle" />
                   <DropdownMenuItem
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus-visible:text-red-300 focus-visible:bg-red-500/10 flex items-center gap-2"
+                    className={cn(
+                      "flex items-center gap-2",
+                      "text-destructive hover:text-destructive focus-visible:text-destructive",
+                      "hover:bg-destructive/10 focus-visible:bg-destructive/10",
+                      "transition-colors interactive-hover"
+                    )}
                     onSelect={handleDelete}
                     disabled={isDeleting}
                   >
@@ -365,36 +370,41 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={cn(
-                    "h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-slower",
-                    "surface-secondary border border-subtle interactive-hover rounded-lg glass-surface"
-                  )}
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-slower surface-secondary border border-subtle interactive-hover rounded-lg glass-surface"
                 >
                   <MoreVertical className="w-3 h-3 text-secondary" />
                 </Button>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 align="end"
                 className="w-44 surface-overlay glass-surface border-subtle"
               >
                 <DropdownMenuItem
-                  className="interactive-hover"
+                  className="flex items-center gap-2 text-primary transition-colors interactive-hover hover:surface-secondary focus-visible:surface-secondary"
                   onSelect={() => router.push(`/projects/${project.id}`)}
                 >
                   View Project
                 </DropdownMenuItem>
+
                 <DropdownMenuItem
-                  className="interactive-hover"
+                  className="flex items-center gap-2 text-primary transition-colors interactive-hover hover:surface-secondary focus-visible:surface-secondary"
                   onSelect={() => router.push(`/projects/${project.id}/edit`)}
                 >
                   Edit Project
                 </DropdownMenuItem>
+
                 <DropdownMenuSeparator className="border-subtle" />
+
                 <DropdownMenuItem
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus-visible:text-red-300 focus-visible:bg-red-500/10"
+                  className={`flex items-center gap-2 hover:bg-destructive/10 focus-visible:bg-destructive/10 transition-colors interactive-hover ${
+                    isDeleting ? "opacity-50 pointer-events-none" : ""
+                  }`}
+                  style={{ color: "var(--color-status-error)" }}
                   onSelect={handleDelete}
                   disabled={isDeleting}
                 >
+                  <Trash2 className="w-4 h-4" />
                   {isDeleting ? "Deleting..." : "Delete"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
