@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 
 function ProjectsPageContent() {
   const { projects, loadProjects, reset } = useProjectsStore();
-  const loading = true;
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
@@ -16,15 +16,18 @@ function ProjectsPageContent() {
     mountedRef.current = true;
     reset();
 
+    setLoading(true);
     setError(null);
 
     loadProjects()
       .then(() => {
         if (!mountedRef.current) return;
+        setLoading(false);
       })
       .catch((err) => {
         if (!mountedRef.current) return;
         setError(err?.message || "Failed to load projects");
+        setLoading(false);
       });
 
     return () => {
@@ -48,57 +51,57 @@ function ProjectsPageContent() {
           />
         </div>
 
-        <div className="surface-elevated glass-surface border border-subtle rounded-2xl p-8 relative z-10 shadow-brand-lg">
-          <div className="flex flex-col items-center space-y-6">
-            {/* Multi-layered loading animation */}
-            <div className="relative">
+        <div className="surface-elevated glass-surface border border-subtle rounded-3xl p-12 max-w-lg w-full relative z-10 shadow-brand-lg">
+          <div className="flex flex-col items-center space-y-10">
+            {/* Multi-layered loading animation - larger */}
+            <div className="relative mb-4">
               {/* Outer ring */}
-              <div className="w-16 h-16 border-4 border-secondary/20 border-t-brand-primary rounded-full animate-spin" />
+              <div className="w-28 h-28 border-8 border-secondary/20 border-t-brand-primary rounded-full animate-spin" />
               {/* Middle ring */}
               <div
-                className="absolute inset-2 w-12 h-12 border-3 border-transparent border-r-brand-secondary rounded-full animate-spin"
+                className="absolute inset-3 w-20 h-20 border-4 border-transparent border-r-brand-secondary rounded-full animate-spin"
                 style={{
                   animationDirection: "reverse",
                   animationDuration: "1.5s",
                 }}
               />
               {/* Inner glow */}
-              <div className="absolute inset-4 w-8 h-8 bg-gradient-brand rounded-full animate-pulse opacity-60" />
+              <div className="absolute inset-6 w-12 h-12 bg-gradient-brand rounded-full animate-pulse opacity-60" />
               {/* Center icon */}
-              <div className="absolute inset-6 w-4 h-4 flex items-center justify-center">
-                <Brain className="w-3 h-3 text-white animate-pulse" />
+              <div className="absolute inset-10 w-8 h-8 flex items-center justify-center">
+                <Brain className="w-7 h-7 text-white animate-pulse" />
               </div>
             </div>
 
-            <div className="text-center space-y-3">
-              <h2 className="text-xl font-bold text-primary">
+            <div className="text-center space-y-5">
+              <h2 className="text-3xl font-bold text-primary">
                 Loading Projects
               </h2>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
+              <div className="flex items-center justify-center space-x-3">
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-brand-primary rounded-full animate-bounce"></div>
                   <div
-                    className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"
+                    className="w-3 h-3 bg-brand-secondary rounded-full animate-bounce"
                     style={{ animationDelay: "0.1s" }}
                   ></div>
                   <div
-                    className="w-2 h-2 bg-brand-accent rounded-full animate-bounce"
+                    className="w-3 h-3 bg-brand-accent rounded-full animate-bounce"
                     style={{ animationDelay: "0.2s" }}
                   ></div>
                 </div>
-                <span className="text-sm text-secondary ml-3 animate-pulse">
+                <span className="text-lg text-secondary ml-3 animate-pulse">
                   Preparing your workspace...
                 </span>
               </div>
             </div>
 
-            {/* Progress indicators */}
-            <div className="w-full max-w-xs space-y-2">
-              <div className="flex justify-between text-xs text-muted">
+            {/* Progress indicators - larger */}
+            <div className="w-full max-w-md space-y-3">
+              <div className="flex justify-between text-base text-muted">
                 <span>Initializing</span>
                 <span>100%</span>
               </div>
-              <div className="w-full bg-surface-secondary rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-surface-secondary rounded-full h-2 overflow-hidden">
                 <div
                   className="h-full bg-gradient-brand rounded-full animate-pulse"
                   style={{ width: "100%" }}
