@@ -7,7 +7,16 @@ import { ProjectSRSSettings } from "../projects/ProjectSRSSettings";
 import { FlashcardCardEditor } from "./FlashcardCardEditor";
 import { FlashcardNavigation } from "./FlashcardNavigation";
 import { useRouter } from "next/navigation";
-import { Plus, Save, X, Loader2, BookOpen, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Save,
+  X,
+  Loader2,
+  BookOpen,
+  CheckCircle2,
+  Edit3,
+  Sparkles,
+} from "lucide-react";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
@@ -273,124 +282,205 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
   const isLoading = saving || flashcardsLoading;
 
   return (
-    <div className="min-h-screen pt-5 bg-gradient-to-br from-base-200 to-base-300/50">
-      <div className="container mx-auto px-4 pb-12 md:pb-6">
+    <div className="min-h-screen surface-primary">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute top-20 left-10 w-32 h-32 bg-gradient-brand opacity-5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "4s" }}
+        />
+        <div
+          className="absolute bottom-32 right-16 w-48 h-48 bg-gradient-to-r from-brand-secondary to-brand-tertiary opacity-5 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "6s", animationDelay: "2s" }}
+        />
+      </div>
+
+      <div className="relative container mx-auto px-4 pb-12 md:pb-6 pt-8">
         {/* Enhanced Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BookOpen className="w-6 h-6 text-primary" />
+          <div className="flex items-center gap-4 mb-4">
+            <div className="relative group">
+              <div className="p-3 bg-gradient-brand rounded-2xl shadow-brand transform group-hover:scale-110 transition-all transition-normal">
+                <Edit3 className="w-7 h-7 text-white" />
+              </div>
+              <div className="absolute -inset-1 bg-gradient-glass rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-base-content">
-                Edit Flashcard Set
+              <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                Edit Project
               </h1>
-              <p className="text-base-content/60 text-sm md:text-base">
-                Create and manage your flashcards with ease
+              <p className="text-text-muted text-lg">
+                Fine-tune your flashcards and study settings
               </p>
             </div>
           </div>
 
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <div className="stats stats-horizontal shadow-sm bg-base-100/80 backdrop-blur">
-                <div className="stat py-2 px-4">
-                  <div className="stat-title text-xs">Total Cards</div>
-                  <div className="stat-value text-lg">{flashcards.length}</div>
+          {/* Enhanced Progress Indicator */}
+          <div className="flex flex-wrap items-center gap-4 mt-6">
+            <div className="stats stats-horizontal shadow-brand surface-elevated border border-subtle backdrop-blur">
+              <div className="stat py-3 px-4">
+                <div className="stat-title text-xs text-muted uppercase tracking-wider">
+                  Total Cards
                 </div>
-                <div className="stat py-2 px-4">
-                  <div className="stat-title text-xs">Completed</div>
-                  <div className="stat-value text-lg text-success">
-                    {completedCards}
-                  </div>
+                <div className="stat-value text-xl text-primary">
+                  {flashcards.length}
+                </div>
+              </div>
+              <div className="stat py-3 px-4">
+                <div className="stat-title text-xs text-muted uppercase tracking-wider">
+                  Completed
+                </div>
+                <div className="stat-value text-xl text-green-500">
+                  {completedCards}
+                </div>
+              </div>
+              <div className="stat py-3 px-4">
+                <div className="stat-title text-xs text-muted uppercase tracking-wider">
+                  Progress
+                </div>
+                <div className="stat-value text-xl brand-secondary">
+                  {flashcards.length > 0
+                    ? Math.round((completedCards / flashcards.length) * 100)
+                    : 0}
+                  %
                 </div>
               </div>
             </div>
+
             {isValid && (
-              <div className="badge badge-success gap-1">
-                <CheckCircle2 className="w-3 h-3" />
+              <div className="badge badge-lg bg-green-500/10 text-green-400 border-green-500/30 gap-2 px-4 py-3">
+                <CheckCircle2 className="w-4 h-4" />
                 Ready to Save
+              </div>
+            )}
+
+            {currentCardValid && (
+              <div className="badge badge-lg bg-gradient-glass border-brand-primary text-brand-primary gap-2 px-4 py-3">
+                <Sparkles className="w-4 h-4" />
+                Current Card Valid
               </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Project Info Form */}
-          <div className="xl:col-span-1 space-y-6">
-            <ProjectInfoForm
-              name={name}
-              setName={setName}
-              description={description}
-              setDescription={setDescription}
-              newCardsPerDay={newCardsPerDay}
-              setNewCardsPerDay={setNewCardsPerDay}
-              maxReviewsPerDay={maxReviewsPerDay}
-              setMaxReviewsPerDay={setMaxReviewsPerDay}
-              isValid={isValid}
-              saving={isLoading}
-            />
+          <div className="xl:col-span-1 space-y-8">
+            {/* Project Details Card */}
+            <div className="card surface-elevated border border-subtle shadow-brand-lg backdrop-blur">
+              <div className="card-body p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gradient-glass rounded-lg">
+                    <BookOpen className="w-5 h-5 brand-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold text-primary">
+                    Project Details
+                  </h2>
+                </div>
 
-            {/* SRS Settings */}
-            <ProjectSRSSettings
-              project={{ ...project, ...projectUpdates }}
-              onChange={setProjectUpdates}
-              disabled={isLoading}
-            />
+                <ProjectInfoForm
+                  name={name}
+                  setName={setName}
+                  description={description}
+                  setDescription={setDescription}
+                  newCardsPerDay={newCardsPerDay}
+                  setNewCardsPerDay={setNewCardsPerDay}
+                  maxReviewsPerDay={maxReviewsPerDay}
+                  setMaxReviewsPerDay={setMaxReviewsPerDay}
+                  isValid={isValid}
+                  saving={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* SRS Settings Card */}
+            <div className="card surface-elevated border border-subtle shadow-brand-lg backdrop-blur">
+              <div className="card-body p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gradient-glass rounded-lg">
+                    <div className="w-5 h-5 bg-gradient-brand rounded-sm" />
+                  </div>
+                  <h2 className="text-xl font-bold text-primary">
+                    Study Settings
+                  </h2>
+                </div>
+
+                <ProjectSRSSettings
+                  project={{ ...project, ...projectUpdates }}
+                  onChange={setProjectUpdates}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
 
             {/* Reset SRS Data Section */}
-            <ProjectResetComponent
-              projectId={project.id}
-              projectName={project.name}
-              onResetComplete={() => {
-                // Optionally refresh the page or show additional feedback
-                window.location.reload();
-              }}
-            />
+            <div className="card surface-elevated border border-subtle shadow-brand backdrop-blur">
+              <div className="card-body p-6">
+                <ProjectResetComponent
+                  projectId={project.id}
+                  projectName={project.name}
+                  onResetComplete={() => {
+                    window.location.reload();
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Card Editor and Navigation */}
           <div className="xl:col-span-2">
-            <div className="card bg-base-100/90 backdrop-blur shadow-lg border border-base-300/50">
-              <div className="card-body p-6">
-                {/* Card Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="card surface-elevated border border-subtle shadow-brand-lg backdrop-blur overflow-hidden">
+              {/* Card with gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-glass opacity-20 pointer-events-none" />
+
+              <div className="card-body p-8 relative z-10">
+                {/* Enhanced Card Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
                   <div className="flex items-center gap-4">
-                    <h2 className="card-title text-xl">Flashcard Editor</h2>
-                    <div className="flex items-center gap-2">
-                      <div className="badge badge-primary badge-lg">
-                        {current + 1} of {flashcards.length}
-                      </div>
-                      {currentCardValid && (
-                        <div className="badge badge-success badge-sm">
-                          <CheckCircle2 className="w-3 h-3" />
+                    <div className="relative">
+                      <h2 className="text-2xl font-bold text-primary">
+                        Flashcard Editor
+                      </h2>
+                      <div className="flex items-center gap-3 mt-2">
+                        <div className="badge badge-lg bg-gradient-brand text-white px-4 py-2">
+                          {current + 1} of {flashcards.length}
                         </div>
-                      )}
+                        {currentCardValid && (
+                          <div className="badge badge-success badge-lg gap-2 px-3 py-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Valid
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="flex flex-wrap gap-3">
                     <FlashcardJsonImporter
                       onImport={handleImportFlashcards}
                       disabled={isLoading}
                       existingFlashcards={flashcards}
                     />
                     <button
-                      className="btn btn-outline btn-info"
+                      className="btn btn-outline border-brand-primary text-brand-primary hover:bg-gradient-brand hover:border-brand hover:text-white interactive-hover transition-all transition-normal"
                       onClick={() => setManageModalOpen(true)}
                       disabled={isLoading || flashcards.length === 0}
                     >
                       Manage Cards
                     </button>
                     <button
-                      className="btn btn-primary shadow-md hover:shadow-lg transition-all duration-200"
+                      className="btn bg-gradient-brand hover:bg-gradient-brand-hover text-white border-0 shadow-brand hover:shadow-brand-lg transition-all transition-normal relative overflow-hidden group"
                       onClick={handleAdd}
                       disabled={isLoading}
                     >
-                      <Plus className="w-4 h-4" />
-                      Add Card
+                      <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+                      <div className="relative z-10 flex items-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        Add Card
+                      </div>
                     </button>
                   </div>
+
                   <ManageFlashcardsModal
                     open={manageModalOpen}
                     onClose={() => setManageModalOpen(false)}
@@ -400,12 +490,16 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
                     onDeleteAll={handleDeleteAll}
                   />
                 </div>
+
                 {/* Card Content */}
-                <FlashcardCardEditor
-                  card={card}
-                  handleChange={handleChange}
-                  saving={isLoading}
-                />
+                <div className="mb-8">
+                  <FlashcardCardEditor
+                    card={card}
+                    handleChange={handleChange}
+                    saving={isLoading}
+                  />
+                </div>
+
                 {/* Card Navigation */}
                 <FlashcardNavigation
                   current={current}
@@ -422,9 +516,9 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
         </div>
 
         {/* Enhanced Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 mt-8">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-4 mt-12">
           <button
-            className="btn btn-ghost btn-lg hover:shadow-md transition-all duration-200"
+            className="btn btn-ghost btn-lg border border-subtle interactive-hover hover:shadow-brand transition-all transition-normal"
             onClick={handleCancel}
             disabled={isLoading}
           >
@@ -433,23 +527,29 @@ export function FlashcardEditor({ project }: FlashcardEditorProps) {
           </button>
 
           <button
-            className={`btn btn-lg shadow-lg hover:shadow-xl transition-all duration-200 ${
-              isValid && !isLoading ? "btn-success" : "btn-disabled"
+            className={`btn btn-lg shadow-brand hover:shadow-brand-lg transition-all transition-normal relative overflow-hidden group ${
+              isValid && !isLoading
+                ? "bg-gradient-brand hover:bg-gradient-brand-hover text-white border-0"
+                : "btn-disabled"
             }`}
             onClick={handleSave}
             disabled={!isValid || isLoading}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Saving Project...
-              </>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Project
-              </>
-            )}
+            <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+
+            <div className="relative z-10 flex items-center gap-3">
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving Project...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Project
+                </>
+              )}
+            </div>
           </button>
         </div>
       </div>

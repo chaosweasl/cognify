@@ -25,7 +25,8 @@ export async function getProjectById(id: string): Promise<Project | null> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select(`
+    .select(
+      `
       id, name, description, created_at, updated_at, user_id, 
       new_cards_per_day, max_reviews_per_day,
       learning_steps, relearning_steps, graduating_interval, easy_interval,
@@ -33,7 +34,8 @@ export async function getProjectById(id: string): Promise<Project | null> {
       easy_interval_factor, lapse_recovery_factor, leech_threshold,
       leech_action, new_card_order, review_ahead, bury_siblings,
       max_interval, lapse_ease_penalty
-    `)
+    `
+    )
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -53,7 +55,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
     ...data,
     flashcards: [], // Flashcards are now loaded separately
   };
-} // Update only the flashcards array for a project
+}
 
 // --- Types ---
 export type Flashcard = {
@@ -84,7 +86,8 @@ export async function getProjects(): Promise<Project[]> {
   );
   const { data, error } = await supabase
     .from("projects")
-    .select(`
+    .select(
+      `
       id, name, description, created_at, updated_at, user_id, 
       new_cards_per_day, max_reviews_per_day,
       learning_steps, relearning_steps, graduating_interval, easy_interval,
@@ -92,7 +95,8 @@ export async function getProjects(): Promise<Project[]> {
       easy_interval_factor, lapse_recovery_factor, leech_threshold,
       leech_action, new_card_order, review_ahead, bury_siblings,
       max_interval, lapse_ease_penalty
-    `)
+    `
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -110,23 +114,76 @@ export async function getProjects(): Promise<Project[]> {
   }));
 }
 
+// Enhanced createProject function with full SRS settings support
 export async function createProject({
   name,
   description,
   new_cards_per_day = 20,
   max_reviews_per_day = 100,
+  learning_steps = [1, 10],
+  relearning_steps = [10],
+  graduating_interval = 1,
+  easy_interval = 4,
+  starting_ease = 2.5,
+  minimum_ease = 1.3,
+  easy_bonus = 1.3,
+  hard_interval_factor = 1.2,
+  easy_interval_factor = 1.3,
+  lapse_recovery_factor = 0.5,
+  leech_threshold = 8,
+  leech_action = "suspend" as "suspend" | "tag",
+  new_card_order = "random" as "random" | "fifo",
+  review_ahead = false,
+  bury_siblings = false,
+  max_interval = 36500,
+  lapse_ease_penalty = 0.2,
 }: {
   name: string;
   description: string;
   new_cards_per_day?: number;
   max_reviews_per_day?: number;
+  learning_steps?: number[];
+  relearning_steps?: number[];
+  graduating_interval?: number;
+  easy_interval?: number;
+  starting_ease?: number;
+  minimum_ease?: number;
+  easy_bonus?: number;
+  hard_interval_factor?: number;
+  easy_interval_factor?: number;
+  lapse_recovery_factor?: number;
+  leech_threshold?: number;
+  leech_action?: "suspend" | "tag";
+  new_card_order?: "random" | "fifo";
+  review_ahead?: boolean;
+  bury_siblings?: boolean;
+  max_interval?: number;
+  lapse_ease_penalty?: number;
 }) {
-  console.log(`[Projects] createProject called:`, { 
-    name, 
-    description, 
-    new_cards_per_day, 
-    max_reviews_per_day 
+  console.log(`[Projects] createProject called:`, {
+    name,
+    description,
+    new_cards_per_day,
+    max_reviews_per_day,
+    learning_steps,
+    relearning_steps,
+    graduating_interval,
+    easy_interval,
+    starting_ease,
+    minimum_ease,
+    easy_bonus,
+    hard_interval_factor,
+    easy_interval_factor,
+    lapse_recovery_factor,
+    leech_threshold,
+    leech_action,
+    new_card_order,
+    review_ahead,
+    bury_siblings,
+    max_interval,
+    lapse_ease_penalty,
   });
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -144,8 +201,8 @@ export async function createProject({
   console.log(
     `[Projects] createProject - Creating project for user: ${user.id}`
   );
-  
-  // Create project with default SRS settings based on Anki defaults
+
+  // Create project with all provided settings
   const { data, error } = await supabase
     .from("projects")
     .insert([
@@ -155,24 +212,23 @@ export async function createProject({
         description,
         new_cards_per_day,
         max_reviews_per_day,
-        // Default SRS settings (Anki-compatible)
-        learning_steps: [1, 10],
-        relearning_steps: [10],
-        graduating_interval: 1,
-        easy_interval: 4,
-        starting_ease: 2.5,
-        minimum_ease: 1.3,
-        easy_bonus: 1.3,
-        hard_interval_factor: 1.2,
-        easy_interval_factor: 1.3,
-        lapse_recovery_factor: 0.5,
-        leech_threshold: 8,
-        leech_action: 'suspend',
-        new_card_order: 'random',
-        review_ahead: false,
-        bury_siblings: false,
-        max_interval: 36500,
-        lapse_ease_penalty: 0.2,
+        learning_steps,
+        relearning_steps,
+        graduating_interval,
+        easy_interval,
+        starting_ease,
+        minimum_ease,
+        easy_bonus,
+        hard_interval_factor,
+        easy_interval_factor,
+        lapse_recovery_factor,
+        leech_threshold,
+        leech_action,
+        new_card_order,
+        review_ahead,
+        bury_siblings,
+        max_interval,
+        lapse_ease_penalty,
       },
     ])
     .select();
@@ -186,10 +242,10 @@ export async function createProject({
   console.log(
     `[Projects] createProject - Successfully created project with ID: ${projectId}`
   );
-  
+
   // Invalidate project cache to ensure UI updates
-  CacheInvalidation.invalidatePattern('user_projects');
-  
+  CacheInvalidation.invalidatePattern("user_projects");
+
   return projectId;
 }
 
@@ -210,8 +266,8 @@ export async function updateProject(projectData: {
   easy_interval_factor?: number;
   lapse_recovery_factor?: number;
   leech_threshold?: number;
-  leech_action?: 'suspend' | 'tag';
-  new_card_order?: 'random' | 'fifo';
+  leech_action?: "suspend" | "tag";
+  new_card_order?: "random" | "fifo";
   review_ahead?: boolean;
   bury_siblings?: boolean;
   max_interval?: number;
@@ -226,7 +282,7 @@ export async function updateProject(projectData: {
   if (userError || !user) throw new Error("Not authenticated");
 
   const { id, ...updateData } = projectData;
-  
+
   // Remove undefined values to avoid updating fields unnecessarily
   const cleanUpdateData = Object.fromEntries(
     Object.entries(updateData).filter(([, value]) => value !== undefined)
@@ -240,9 +296,9 @@ export async function updateProject(projectData: {
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw error;
-  
+
   // Invalidate cache to ensure UI updates across the app
-  CacheInvalidation.invalidatePattern('user_projects');
+  CacheInvalidation.invalidatePattern("user_projects");
   CacheInvalidation.invalidatePattern(`project_${id}`);
 }
 
@@ -310,7 +366,7 @@ export async function deleteProject(id: string) {
       notificationResults
     );
 
-    // 2. Delete per-project daily study stats 
+    // 2. Delete per-project daily study stats
     console.log(
       `[Projects] deleteProject - Deleting per-project daily study stats`
     );
@@ -346,11 +402,11 @@ export async function deleteProject(id: string) {
     console.log(
       `[Projects] deleteProject - Successfully deleted project: ${id}`
     );
-    
+
     // Invalidate cache to ensure UI updates across the app
-    CacheInvalidation.invalidatePattern('user_projects');
+    CacheInvalidation.invalidatePattern("user_projects");
     CacheInvalidation.invalidatePattern(`project_${id}`);
-    CacheInvalidation.invalidatePattern('project_stats_');
+    CacheInvalidation.invalidatePattern("project_stats_");
   } catch (error) {
     console.error("[Projects] deleteProject - Error during deletion:", error);
     throw error;
