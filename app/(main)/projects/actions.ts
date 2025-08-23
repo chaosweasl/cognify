@@ -54,13 +54,6 @@ export async function getProjectById(id: string): Promise<Project | null> {
     flashcards: [], // Flashcards are now loaded separately
   };
 } // Update only the flashcards array for a project
-// DEPRECATED: Use flashcard-specific actions instead
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function updateFlashcards(_id: string, _flashcards: Flashcard[]) {
-  throw new Error(
-    "updateFlashcards is deprecated. Use flashcard-specific actions instead."
-  );
-}
 
 // --- Types ---
 export type Flashcard = {
