@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Filter,
   Plus,
-  Sparkles,
   Brain,
   X,
   FolderOpen,
@@ -59,7 +58,7 @@ export function ProjectList() {
 
   // Filter and sort projects
   const filteredAndSortedProjects = React.useMemo(() => {
-    let filtered = projects.filter((project) => {
+    const filtered = projects.filter((project) => {
       // Search filter
       if (
         searchQuery &&
@@ -296,64 +295,72 @@ export function ProjectList() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 surface-overlay glass-surface border-subtle">
+                <DropdownMenuContent className="w-48 surface-elevated glass-surface border border-secondary shadow-lg p-1">
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 interactive-hover",
-                      filterBy === "all" && "bg-brand-primary/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover",
+                      filterBy === "all" &&
+                        "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setFilterBy("all")}
                   >
-                    <FolderOpen className="w-4 h-4" />
-                    <span className="flex-1">All Projects</span>
-                    <Badge variant="outline" className="text-xs">
+                    <FolderOpen className="w-4 h-4 text-current" />
+                    <span className="flex-1 font-medium">All Projects</span>
+                    <Badge variant="outline" className="text-xs border-current">
                       {filterCounts.all}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 interactive-hover",
-                      filterBy === "active" && "bg-green-500/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-green-500/10 focus:bg-green-500/10",
+                      filterBy === "active" &&
+                        "bg-green-500/15 text-green-600 dark:text-green-400"
                     )}
                     onSelect={() => setFilterBy("active")}
                   >
-                    <Brain className="w-4 h-4 text-green-400" />
-                    <span className="flex-1">Ready to Study</span>
+                    <Brain className="w-4 h-4 text-green-500" />
+                    <span className="flex-1 font-medium">Ready to Study</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-green-400 border-green-500/30"
+                      className="text-xs text-green-500 border-green-500/40"
                     >
                       {filterCounts.active}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 interactive-hover",
-                      filterBy === "completed" && "bg-blue-500/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-blue-500/10 focus:bg-blue-500/10",
+                      filterBy === "completed" &&
+                        "bg-blue-500/15 text-blue-600 dark:text-blue-400"
                     )}
                     onSelect={() => setFilterBy("completed")}
                   >
-                    <BookOpen className="w-4 h-4 text-blue-400" />
-                    <span className="flex-1">Completed</span>
+                    <BookOpen className="w-4 h-4 text-blue-500" />
+                    <span className="flex-1 font-medium">Completed</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-blue-400 border-blue-500/30"
+                      className="text-xs text-blue-500 border-blue-500/40"
                     >
                       {filterCounts.completed}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 interactive-hover",
-                      filterBy === "empty" && "bg-gray-500/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-gray-500/10 focus:bg-gray-500/10",
+                      filterBy === "empty" &&
+                        "bg-gray-500/15 text-gray-600 dark:text-gray-400"
                     )}
                     onSelect={() => setFilterBy("empty")}
                   >
-                    <Plus className="w-4 h-4 text-gray-400" />
-                    <span className="flex-1">Empty</span>
+                    <Plus className="w-4 h-4 text-gray-500" />
+                    <span className="flex-1 font-medium">Empty</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-gray-400 border-gray-500/30"
+                      className="text-xs text-gray-500 border-gray-500/40"
                     >
                       {filterCounts.empty}
                     </Badge>
@@ -380,62 +387,70 @@ export function ProjectList() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 surface-overlay glass-surface border-subtle">
+                <DropdownMenuContent className="w-48 surface-elevated glass-surface border border-secondary shadow-lg p-1">
                   <DropdownMenuItem
                     className={cn(
-                      "interactive-hover",
-                      sortBy === "name" && "bg-brand-primary/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      sortBy === "name" &&
+                        "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("name")}
                   >
-                    <SortAsc className="w-4 h-4 mr-2" />
+                    <SortAsc className="w-4 h-4" />
                     Sort by Name
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "interactive-hover",
-                      sortBy === "created" && "bg-brand-primary/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      sortBy === "created" &&
+                        "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("created")}
                   >
-                    <Calendar className="w-4 h-4 mr-2" />
+                    <Calendar className="w-4 h-4" />
                     Sort by Date
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "interactive-hover",
-                      sortBy === "cards" && "bg-brand-primary/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      sortBy === "cards" &&
+                        "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("cards")}
                   >
-                    <BookOpen className="w-4 h-4 mr-2" />
+                    <BookOpen className="w-4 h-4" />
                     Sort by Cards
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "interactive-hover",
-                      sortBy === "activity" && "bg-brand-primary/10"
+                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
+                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      sortBy === "activity" &&
+                        "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("activity")}
                   >
-                    <TrendingUp className="w-4 h-4 mr-2" />
+                    <TrendingUp className="w-4 h-4" />
                     Sort by Activity
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="border-subtle" />
+                  <DropdownMenuSeparator className="border-secondary my-1" />
                   <DropdownMenuItem
-                    className="interactive-hover"
+                    className="flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium"
                     onSelect={() =>
                       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
                     }
                   >
                     {sortDirection === "desc" ? (
                       <>
-                        <SortAsc className="w-4 h-4 mr-2" />
+                        <SortAsc className="w-4 h-4" />
                         Ascending
                       </>
                     ) : (
                       <>
-                        <SortDesc className="w-4 h-4 mr-2" />
+                        <SortDesc className="w-4 h-4" />
                         Descending
                       </>
                     )}
@@ -484,7 +499,7 @@ export function ProjectList() {
               </span>
               {searchQuery && (
                 <Badge variant="outline" className="text-xs">
-                  Search: "{searchQuery}"
+                  Search: &ldquo;{searchQuery}&rdquo;
                 </Badge>
               )}
               {filterBy !== "all" && (
