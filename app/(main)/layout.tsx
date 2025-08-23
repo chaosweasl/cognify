@@ -1,5 +1,3 @@
-"use client";
-
 import { HeaderMain } from "./components/HeaderMain";
 import { ToasterProvider } from "@/components/ui/toaster-provider";
 
@@ -11,7 +9,7 @@ export default function MainLayout({
   return (
     <>
       <ToasterProvider />
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+      <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white flex flex-col overflow-hidden">
         {/* Animated background elements - matching home page */}
         <div className="fixed inset-0 pointer-events-none">
           <div
@@ -24,12 +22,11 @@ export default function MainLayout({
           />
         </div>
 
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <HeaderMain />
-          <main className="flex-1 flex flex-col overflow-y-auto">
-            {children}
-          </main>
-        </div>
+        {/* Fixed header */}
+        <HeaderMain />
+
+        {/* Main content area with proper flex and overflow handling */}
+        <main className="flex-1 flex overflow-hidden">{children}</main>
       </div>
     </>
   );
