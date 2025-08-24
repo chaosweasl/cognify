@@ -4,25 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
-  Save,
-  X,
-  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Brain,
+  Target,
   Sparkles,
   BookOpen,
-  Target,
-  Lightbulb,
-  ArrowRight,
-  Brain,
   Clock,
   Zap,
-  TrendingUp,
+  Settings,
+  Lightbulb,
+  Star,
 } from "lucide-react";
 import { createProject } from "@/app/(main)/projects/actions";
-import { ProjectInfoForm } from "./ProjectInfoForm";
-import { ProjectSRSSettings } from "./ProjectSRSSettings";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CacheInvalidation } from "@/hooks/useCache";
 import { useProjectsStore } from "@/hooks/useProjects";
-import { NormalizedProject } from "@/lib/utils/normalizeProject";
 
 // Default project data for new projects
 const DEFAULT_PROJECT = {
@@ -30,7 +32,6 @@ const DEFAULT_PROJECT = {
   description: "",
   new_cards_per_day: 20,
   max_reviews_per_day: 100,
-  // Default SRS settings (Anki-compatible)
   learning_steps: [1, 10],
   relearning_steps: [10],
   graduating_interval: 1,
@@ -50,9 +51,46 @@ const DEFAULT_PROJECT = {
   lapse_ease_penalty: 0.2,
 };
 
+const STEPS = [
+  {
+    id: "welcome",
+    title: "Welcome",
+    subtitle: "Let's create something amazing",
+    icon: Sparkles,
+  },
+  {
+    id: "basics",
+    title: "Project Basics",
+    subtitle: "Tell us about your project",
+    icon: BookOpen,
+  },
+  {
+    id: "goals",
+    title: "Study Goals",
+    subtitle: "Set your learning pace",
+    icon: Target,
+  },
+  {
+    id: "advanced",
+    title: "Advanced Settings",
+    subtitle: "Fine-tune your experience",
+    icon: Settings,
+  },
+  {
+    id: "ready",
+    title: "Ready to Go!",
+    subtitle: "Your project is ready",
+    icon: Check,
+  },
+];
+
 export function ProjectCreator() {
   const router = useRouter();
   const { reset: resetProjects } = useProjectsStore();
+
+  // Step management
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   // Form state
   const [name, setName] = useState("");
@@ -63,6 +101,7 @@ export function ProjectCreator() {
   const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(
     DEFAULT_PROJECT.max_reviews_per_day
   );
+  const [useAdvancedSettings, setUseAdvancedSettings] = useState(false);
   const [srsSettings, setSrsSettings] = useState({
     learning_steps: DEFAULT_PROJECT.learning_steps,
     relearning_steps: DEFAULT_PROJECT.relearning_steps,
@@ -87,24 +126,60 @@ export function ProjectCreator() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form validation
-  const isValid = name.trim().length > 0;
-  const isLoading = creating;
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 0: // Welcome
+        return true;
+      case 1: // Basics
+        return name.trim().length > 0;
+      case 2: // Goals
+        return newCardsPerDay > 0 && maxReviewsPerDay > 0;
+      case 3: // Advanced
+        return true;
+      case 4: // Ready
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const canProceed = validateCurrentStep();
+
+  const handleNext = () => {
+    if (canProceed && currentStep < STEPS.length - 1) {
+      setCompletedSteps((prev) => new Set([...prev, currentStep]));
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  const handleSkipToStep = (stepIndex: number) => {
+    if (stepIndex <= currentStep || completedSteps.has(stepIndex - 1)) {
+      setCurrentStep(stepIndex);
+    }
+  };
 
   const handleCreate = async () => {
-    if (!isValid) return;
+    if (!name.trim()) return;
 
     setCreating(true);
     setError(null);
 
     try {
-      const projectId = await createProject({
+      const projectData = {
         name: name.trim(),
         description: description.trim(),
         new_cards_per_day: newCardsPerDay,
         max_reviews_per_day: maxReviewsPerDay,
-        ...srsSettings,
-      });
+        ...(useAdvancedSettings ? srsSettings : DEFAULT_PROJECT),
+      };
+
+      const projectId = await createProject(projectData);
 
       // Invalidate cache to ensure UI updates
       CacheInvalidation.invalidatePattern("user_projects");
@@ -122,350 +197,623 @@ export function ProjectCreator() {
     }
   };
 
-  const handleCancel = () => {
-    router.push("/projects");
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Welcome
+        return (
+          <div className="text-center space-y-8">
+            <div className="relative">
+              <div className="w-32 h-32 bg-gradient-brand rounded-full flex items-center justify-center mx-auto shadow-brand-lg">
+                <Brain className="w-16 h-16 text-white" />
+              </div>
+              <div className="absolute -top-4 -right-4 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-4xl font-bold text-primary mb-4">
+                Welcome to Your Learning Journey!
+              </h2>
+              <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
+                Let&apos;s create a personalized learning project that adapts to
+                your pace and helps you master new knowledge effectively.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <Card className="surface-elevated border border-subtle hover:surface-glass transition-all transition-normal">
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Lightbulb className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-primary mb-2">
+                    Smart Learning
+                  </h3>
+                  <p className="text-sm text-secondary">
+                    AI-powered spaced repetition algorithm
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="surface-elevated border border-subtle hover:surface-glass transition-all transition-normal">
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-primary mb-2">
+                    Flexible Pacing
+                  </h3>
+                  <p className="text-sm text-secondary">
+                    Study at your own comfortable speed
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="surface-elevated border border-subtle hover:surface-glass transition-all transition-normal">
+                <CardContent className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-brand-tertiary to-green-400 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="font-bold text-primary mb-2">
+                    Proven Results
+                  </h3>
+                  <p className="text-sm text-secondary">
+                    Memory science-backed methodology
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 1: // Basics
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand">
+                <BookOpen className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary mb-4">
+                Project Basics
+              </h2>
+              <p className="text-lg text-secondary max-w-2xl mx-auto">
+                Give your project a memorable name and description to keep you
+                motivated.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div>
+                <label className="block text-lg font-semibold text-secondary mb-3">
+                  Project Name *
+                </label>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Spanish Vocabulary, Biology Terms, History Facts..."
+                  className="h-14 text-lg surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-lg font-semibold text-secondary mb-3">
+                  Description (Optional)
+                </label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What will you be learning? Add some motivation for yourself..."
+                  rows={4}
+                  className="text-lg surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal resize-none"
+                />
+              </div>
+
+              {name.trim() && (
+                <Card className="bg-green-500/10 border border-green-500/30 animate-[slideUp_0.3s_ease-out]">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-green-400">
+                          Looking great!
+                        </p>
+                        <p className="text-sm text-green-400/80">
+                          Your project &quot;{name}&quot; is ready to go.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        );
+
+      case 2: // Goals
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand">
+                <Target className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary mb-4">
+                Study Goals
+              </h2>
+              <p className="text-lg text-secondary max-w-2xl mx-auto">
+                Set realistic daily limits to build a sustainable learning
+                habit.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="surface-elevated border border-subtle hover:surface-glass transition-all transition-normal">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center">
+                        <Plus className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-primary">
+                        New Cards per Day
+                      </h3>
+                    </div>
+                    <Input
+                      type="number"
+                      value={newCardsPerDay}
+                      onChange={(e) =>
+                        setNewCardsPerDay(parseInt(e.target.value) || 0)
+                      }
+                      min={1}
+                      max={100}
+                      className="h-12 text-lg surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                    />
+                    <p className="text-sm text-muted mt-2">
+                      How many new flashcards to learn each day
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="surface-elevated border border-subtle hover:surface-glass transition-all transition-normal">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-xl flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-primary">
+                        Max Reviews per Day
+                      </h3>
+                    </div>
+                    <Input
+                      type="number"
+                      value={maxReviewsPerDay}
+                      onChange={(e) =>
+                        setMaxReviewsPerDay(parseInt(e.target.value) || 0)
+                      }
+                      min={10}
+                      max={500}
+                      className="h-12 text-lg surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                    />
+                    <p className="text-sm text-muted mt-2">
+                      Maximum daily reviews to prevent overwhelm
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="bg-brand-primary/5 border border-brand-primary/20">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="w-5 h-5 text-brand-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-primary mb-2">
+                        Recommended Settings
+                      </h3>
+                      <p className="text-secondary text-sm leading-relaxed">
+                        For beginners, we recommend 15-25 new cards and 50-100
+                        reviews per day. You can always adjust these later as
+                        you find your optimal pace.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 3: // Advanced
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand">
+                <Settings className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary mb-4">
+                Advanced Settings
+              </h2>
+              <p className="text-lg text-secondary max-w-2xl mx-auto">
+                Our default settings work great for most learners, but you can
+                customize them if needed.
+              </p>
+            </div>
+
+            <div className="max-w-3xl mx-auto space-y-6">
+              <Card className="surface-elevated border border-subtle">
+                <CardContent className="p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-primary mb-2">
+                        Use Advanced SRS Settings
+                      </h3>
+                      <p className="text-secondary">
+                        Customize learning steps, ease factors, and intervals
+                      </p>
+                    </div>
+                    <Button
+                      variant={useAdvancedSettings ? "default" : "outline"}
+                      onClick={() =>
+                        setUseAdvancedSettings(!useAdvancedSettings)
+                      }
+                      className={useAdvancedSettings ? "bg-gradient-brand" : ""}
+                    >
+                      {useAdvancedSettings ? "Advanced" : "Default"}
+                    </Button>
+                  </div>
+
+                  {!useAdvancedSettings ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex justify-between py-3 border-b border-subtle">
+                          <span className="font-medium text-secondary">
+                            Learning Steps
+                          </span>
+                          <span className="text-muted">1, 10 minutes</span>
+                        </div>
+                        <div className="flex justify-between py-3 border-b border-subtle">
+                          <span className="font-medium text-secondary">
+                            Graduating Interval
+                          </span>
+                          <span className="text-muted">1 day</span>
+                        </div>
+                        <div className="flex justify-between py-3 border-b border-subtle">
+                          <span className="font-medium text-secondary">
+                            Easy Interval
+                          </span>
+                          <span className="text-muted">4 days</span>
+                        </div>
+                        <div className="flex justify-between py-3 border-b border-subtle">
+                          <span className="font-medium text-secondary">
+                            Starting Ease
+                          </span>
+                          <span className="text-muted">250%</span>
+                        </div>
+                      </div>
+                      <Card className="bg-green-500/10 border border-green-500/30">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-green-400">
+                                Perfect for most learners!
+                              </p>
+                              <p className="text-sm text-green-400/80">
+                                These settings are optimized for effective
+                                retention.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-secondary mb-2">
+                            Learning Steps (minutes)
+                          </label>
+                          <Input
+                            type="text"
+                            value={srsSettings.learning_steps.join(", ")}
+                            onChange={(e) =>
+                              setSrsSettings((prev) => ({
+                                ...prev,
+                                learning_steps: e.target.value
+                                  .split(",")
+                                  .map((s) => parseInt(s.trim()) || 1),
+                              }))
+                            }
+                            className="surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-secondary mb-2">
+                            Graduating Interval (days)
+                          </label>
+                          <Input
+                            type="number"
+                            value={srsSettings.graduating_interval}
+                            onChange={(e) =>
+                              setSrsSettings((prev) => ({
+                                ...prev,
+                                graduating_interval:
+                                  parseInt(e.target.value) || 1,
+                              }))
+                            }
+                            className="surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-secondary mb-2">
+                            Easy Interval (days)
+                          </label>
+                          <Input
+                            type="number"
+                            value={srsSettings.easy_interval}
+                            onChange={(e) =>
+                              setSrsSettings((prev) => ({
+                                ...prev,
+                                easy_interval: parseInt(e.target.value) || 4,
+                              }))
+                            }
+                            className="surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-secondary mb-2">
+                            Starting Ease (%)
+                          </label>
+                          <Input
+                            type="number"
+                            value={Math.round(srsSettings.starting_ease * 100)}
+                            onChange={(e) =>
+                              setSrsSettings((prev) => ({
+                                ...prev,
+                                starting_ease:
+                                  (parseInt(e.target.value) || 250) / 100,
+                              }))
+                            }
+                            className="surface-secondary border-secondary focus:border-brand-primary transition-all transition-normal"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 4: // Ready
+        return (
+          <div className="text-center space-y-8">
+            <div className="relative">
+              <div className="w-32 h-32 bg-gradient-brand rounded-full flex items-center justify-center mx-auto shadow-brand-lg">
+                <Check className="w-16 h-16 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+                <Star className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-4xl font-bold text-primary mb-4">
+                🎉 Your Project is Ready!
+              </h2>
+              <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
+                <strong className="text-brand-primary">
+                  &quot;{name}&quot;
+                </strong>{" "}
+                has been configured with your preferences. Let&apos;s add some
+                flashcards and start your learning journey!
+              </p>
+            </div>
+
+            <div className="max-w-md mx-auto">
+              <Card className="bg-gradient-glass border border-brand">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-primary mb-4">
+                    Project Summary
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Daily new cards:</span>
+                      <Badge variant="secondary">{newCardsPerDay}</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">Max daily reviews:</span>
+                      <Badge variant="secondary">{maxReviewsPerDay}</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary">SRS settings:</span>
+                      <Badge variant="outline">
+                        {useAdvancedSettings ? "Custom" : "Optimized"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {error && (
+              <Card className="border-red-500/20 bg-red-500/5 max-w-md mx-auto">
+                <CardContent className="p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-red-400 font-semibold mb-1">
+                      Creation Failed
+                    </p>
+                    <p className="text-xs text-red-400/80">{error}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="min-h-screen surface-primary">
+    <div className="min-h-screen surface-primary relative overflow-hidden">
       {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-15">
         <div
-          className="absolute top-20 left-10 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "4s" }}
+          className="absolute top-0 right-0 w-96 h-96 bg-gradient-glass rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "8s" }}
         />
         <div
-          className="absolute bottom-32 right-16 w-48 h-48 bg-gradient-glass rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "6s", animationDelay: "2s" }}
+          className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-r from-brand-secondary/30 to-brand-accent/30 rounded-full blur-3xl animate-pulse"
+          style={{ animationDuration: "12s", animationDelay: "4s" }}
         />
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-glass rounded-full blur-3xl opacity-20 animate-pulse"
-          style={{ animationDuration: "8s", animationDelay: "1s" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-primary/20 rounded-full blur-2xl animate-pulse"
+          style={{ animationDuration: "10s", animationDelay: "2s" }}
         />
       </div>
 
-      <div className="relative container mx-auto px-4 py-8">
-        {/* Enhanced Header with Animation */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 mb-6 group">
-            <div className="relative">
-              <div className="w-20 h-20 bg-gradient-brand rounded-3xl flex items-center justify-center shadow-brand-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-slow">
-                <Plus className="w-10 h-10 text-white" />
-              </div>
-              <div className="absolute -inset-2 bg-gradient-glass rounded-3xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-              {/* Floating sparkles */}
-              <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-bounce opacity-80">
-                <Sparkles className="w-3 h-3 text-white m-0.5" />
-              </div>
-            </div>
-          </div>
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Progress Steps */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="flex items-center justify-between mb-8">
+            {STEPS.map((step, index) => {
+              const StepIcon = step.icon;
+              const isActive = index === currentStep;
+              const isCompleted = completedSteps.has(index);
+              const isClickable = index <= currentStep || isCompleted;
 
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent">
-            Create New Project
-          </h1>
-
-          <p className="text-text-muted text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
-            Transform your learning with AI-powered spaced repetition.{" "}
-            <span className="text-brand-primary font-semibold">
-              Start your knowledge journey today.
-            </span>
-          </p>
-        </div>
-
-        {/* Enhanced Error Alert */}
-        {error && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="relative overflow-hidden rounded-2xl border border-red-500/20 glass-surface shadow-brand-lg backdrop-blur group">
-              <div className="absolute inset-0 bg-red-500/5" />
-              <div className="relative p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
-                    <X className="w-6 h-6 text-red-400" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-red-400 text-lg mb-1">
-                      Creation Failed
-                    </div>
-                    <div className="text-red-400/80">{error}</div>
-                  </div>
+              return (
+                <div key={step.id} className="flex items-center">
                   <button
-                    onClick={() => setError(null)}
-                    className="ml-auto p-2 hover:bg-red-500/10 rounded-lg transition-colors"
+                    onClick={() => handleSkipToStep(index)}
+                    disabled={!isClickable}
+                    className={`relative flex flex-col items-center group transition-all transition-normal ${
+                      isClickable ? "cursor-pointer" : "cursor-not-allowed"
+                    }`}
                   >
-                    <X className="w-4 h-4 text-red-400" />
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-2 transition-all transition-normal ${
+                        isActive
+                          ? "bg-gradient-brand shadow-brand-lg scale-110"
+                          : isCompleted
+                          ? "bg-green-500 shadow-brand"
+                          : "surface-elevated border border-subtle"
+                      } ${isClickable ? "hover:scale-105" : ""}`}
+                    >
+                      <StepIcon
+                        className={`w-6 h-6 ${
+                          isActive || isCompleted ? "text-white" : "text-muted"
+                        }`}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <div
+                        className={`text-sm font-semibold ${
+                          isActive
+                            ? "text-brand-primary"
+                            : isCompleted
+                            ? "text-green-400"
+                            : "text-muted"
+                        }`}
+                      >
+                        {step.title}
+                      </div>
+                      <div className="text-xs text-muted hidden sm:block">
+                        {step.subtitle}
+                      </div>
+                    </div>
                   </button>
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`h-px w-8 md:w-16 mx-2 transition-all transition-normal ${
+                        isCompleted ? "bg-green-500" : "border-subtle"
+                      }`}
+                      style={{ borderTopWidth: 1, borderTopStyle: "dashed" }}
+                    />
+                  )}
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-            {/* Left Column - Project Info (2 columns on xl) */}
-            <div className="xl:col-span-3 space-y-8">
-              {/* Project Information Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand-lg backdrop-blur group">
-                {/* Card glow effect */}
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-
-                <div className="relative p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-14 h-14 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand">
-                      <BookOpen className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-primary mb-1">
-                        Project Details
-                      </h2>
-                      <p className="text-text-muted">
-                        Give your project a name and set your study goals
-                      </p>
-                    </div>
-                  </div>
-
-                  <ProjectInfoForm
-                    name={name}
-                    setName={setName}
-                    description={description}
-                    setDescription={setDescription}
-                    newCardsPerDay={newCardsPerDay}
-                    setNewCardsPerDay={setNewCardsPerDay}
-                    maxReviewsPerDay={maxReviewsPerDay}
-                    setMaxReviewsPerDay={setMaxReviewsPerDay}
-                    isValid={isValid}
-                    saving={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Study Settings Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand-lg backdrop-blur group">
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-
-                <div className="relative p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-14 h-14 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center shadow-brand">
-                      <Target className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-primary mb-1">
-                        Study Settings
-                      </h2>
-                      <p className="text-text-muted">
-                        Configure your spaced repetition algorithm
-                      </p>
-                    </div>
-                  </div>
-
-                  <ProjectSRSSettings
-                    project={
-                      {
-                        ...DEFAULT_PROJECT,
-                        ...srsSettings,
-                      } as NormalizedProject
-                    }
-                    onChange={(updates) => {
-                      // Filter updates to only include SRS settings that match our state shape
-                      const srsUpdates = Object.fromEntries(
-                        Object.entries(updates).filter(
-                          ([key]) => key in srsSettings
-                        )
-                      ) as Partial<typeof srsSettings>;
-
-                      setSrsSettings((prev) => ({ ...prev, ...srsUpdates }));
-                    }}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Tips & Preview (1 column on xl) */}
-            <div className="xl:col-span-1 space-y-6">
-              {/* Quick Tips Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur group">
-                <div className="absolute inset-0 bg-gradient-glass opacity-20" />
-                <div className="relative p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center">
-                      <Lightbulb className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">Pro Tips</h3>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-brand mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Descriptive Names
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Choose clear, specific names that reflect your study
-                          topic for easy organization
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-brand-secondary to-brand-accent mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Realistic Goals
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Set achievable daily limits to build consistent study
-                          habits without burnout
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-brand-tertiary to-green-400 mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Smart Defaults
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Our optimized SRS settings work great for most
-                          learners - no need to change them
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Learning Journey Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur">
-                <div className="absolute inset-0 bg-gradient-glass opacity-30" />
-                <div className="relative p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
-                      <Brain className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">
-                      Your Journey
-                    </h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 surface-elevated rounded-xl border border-subtle group hover:shadow-brand transition-all transition-normal">
-                      <div className="w-8 h-8 rounded-full bg-gradient-brand text-white text-sm flex items-center justify-center font-bold shadow-brand">
-                        1
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-secondary font-semibold">
-                          Create Project
-                        </span>
-                        <div className="w-full bg-brand-primary/20 rounded-full h-1 mt-2">
-                          <div className="bg-gradient-brand h-1 rounded-full w-full shadow-brand" />
-                        </div>
-                      </div>
-                      <Zap className="w-4 h-4 text-brand-primary opacity-60" />
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 surface-secondary rounded-xl border border-subtle opacity-60 group">
-                      <div className="w-8 h-8 rounded-full bg-text-muted text-white text-sm flex items-center justify-center font-bold">
-                        2
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-muted font-semibold">
-                          Add Flashcards
-                        </span>
-                        <div className="w-full bg-text-muted/20 rounded-full h-1 mt-2">
-                          <div className="bg-text-muted/40 h-1 rounded-full w-0" />
-                        </div>
-                      </div>
-                      <Clock className="w-4 h-4 text-muted" />
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 surface-secondary rounded-xl border border-subtle opacity-60 group">
-                      <div className="w-8 h-8 rounded-full bg-text-muted text-white text-sm flex items-center justify-center font-bold">
-                        3
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-muted font-semibold">
-                          Start Learning
-                        </span>
-                        <div className="w-full bg-text-muted/20 rounded-full h-1 mt-2">
-                          <div className="bg-text-muted/40 h-1 rounded-full w-0" />
-                        </div>
-                      </div>
-                      <TrendingUp className="w-4 h-4 text-muted" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistics Preview */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur">
-                <div className="absolute inset-0 bg-gradient-glass opacity-20" />
-                <div className="relative p-6">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-brand">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-bold text-primary mb-2">
-                      Ready to Start?
-                    </h3>
-                    <p className="text-muted text-sm leading-relaxed">
-                      Join thousands of learners using AI-powered spaced
-                      repetition to master new skills faster than ever.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Enhanced Action Buttons */}
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="flex flex-col sm:flex-row sm:justify-end gap-6">
-            <button
-              className="btn btn-ghost btn-lg interactive-hover border-2 border-subtle hover:border-brand hover:shadow-brand transition-all transition-normal group relative overflow-hidden rounded-xl px-8 py-4"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
-              <div className="absolute inset-0 bg-gradient-glass opacity-0 group-hover:opacity-100 transition-opacity transition-normal" />
-              <div className="relative flex items-center gap-3">
-                <X className="w-5 h-5" />
-                <span className="font-semibold">Cancel</span>
-              </div>
-            </button>
+        {/* Step Content */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <Card className="surface-elevated glass-surface border border-subtle shadow-brand-lg">
+            <CardContent className="p-8 md:p-12">
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
 
-            <button
-              className={`relative overflow-hidden rounded-xl px-8 py-4 font-semibold transition-all transition-normal group ${
-                isValid && !isLoading
-                  ? "bg-gradient-brand hover:shadow-brand-lg text-white border-0 hover:scale-[1.02] shadow-brand"
-                  : "bg-surface-secondary text-muted border border-subtle cursor-not-allowed"
-              }`}
-              onClick={handleCreate}
-              disabled={!isValid || isLoading}
+        {/* Navigation */}
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={
+                currentStep === 0
+                  ? () => router.push("/projects")
+                  : handlePrevious
+              }
+              className="px-6 py-3 surface-elevated border-subtle hover:surface-glass hover:border-brand transition-all transition-normal"
             >
-              {/* Button shine effect */}
-              {isValid && !isLoading && (
-                <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
-              )}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {currentStep === 0 ? "Back to Projects" : "Previous"}
+            </Button>
 
-              <div className="relative flex items-center gap-3">
-                {isLoading ? (
+            <div className="flex items-center gap-2">
+              {STEPS.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all transition-normal ${
+                    index === currentStep
+                      ? "bg-brand-primary w-8"
+                      : completedSteps.has(index)
+                      ? "bg-green-500"
+                      : "bg-subtle"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {currentStep < STEPS.length - 1 ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed}
+                className={`px-6 py-3 ${
+                  canProceed
+                    ? "bg-gradient-brand hover:shadow-brand-lg"
+                    : "surface-secondary border border-subtle"
+                }`}
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreate}
+                disabled={creating || !canProceed}
+                className="px-8 py-3 bg-gradient-brand hover:shadow-brand-lg"
+              >
+                {creating ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Creating Project...</span>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Creating...
                   </>
                 ) : (
                   <>
-                    <Save className="w-5 h-5" />
-                    <span>Create & Add Cards</span>
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform transition-fast" />
+                    Create & Add Cards
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
-              </div>
-            </button>
+              </Button>
+            )}
           </div>
         </div>
       </div>
