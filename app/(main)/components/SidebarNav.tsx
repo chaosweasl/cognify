@@ -284,7 +284,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 ? "bg-gradient-to-r from-brand-secondary to-brand-accent text-white shadow-brand hover:shadow-brand-lg"
                 : "text-secondary hover:text-primary interactive-hover border-secondary"
             )}
-            onClick={() => handleNavigation("create", "/projects/create")}
+            onClick={() => handleNavigation("create", "/create")}
           >
             {activeTab === "create" && (
               <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
@@ -388,7 +388,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                     size="sm"
                     className="bg-gradient-glass border-brand text-brand-primary hover:bg-gradient-brand hover:border-brand hover:text-white"
                     onClick={() =>
-                      handleNavigation("create", "/projects/create")
+                      handleNavigation("create", "/create")
                     }
                   >
                     <Plus className="w-4 h-4 mr-2" />

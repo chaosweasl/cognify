@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import {
   Plus,
@@ -52,6 +53,7 @@ const mockFlashcards = [
 ];
 
 export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
+  const router = useRouter();
   // Use project data or fallback to mock data
   console.log("Project data:", project);
   const [flashcards, setFlashcards] = useState(mockFlashcards);
@@ -65,8 +67,13 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
     mockProject.max_reviews_per_day
   );
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const saving = false; // TODO: implement actual saving state
   const isAddingCard = useRef(false);
+
+  const handleGoBack = () => {
+    router.push("/projects");
+  };
 
   const handleChange = (field: string, value: string) => {
     setFlashcards((prev) => {
@@ -111,7 +118,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
     flashcards.length > 0 ? ((current + 1) / flashcards.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen surface-primary relative overflow-hidden">
       {/* Enhanced animated background elements matching projects page */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-15">
         <div
@@ -143,23 +150,26 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
         {/* Header Section */}
         <div className="mb-12 animate-[slideUp_0.6s_ease-out]">
           <div className="flex items-start gap-6 mb-8">
-            <button className="p-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300 group">
-              <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
+            <button 
+              onClick={handleGoBack}
+              className="p-3 surface-elevated glass-surface border border-subtle rounded-2xl hover:surface-glass hover:shadow-brand hover:scale-105 transition-all transition-normal group"
+            >
+              <ArrowLeft className="w-5 h-5 text-secondary group-hover:text-brand-primary transition-colors" />
             </button>
 
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-500 group cursor-pointer">
-                    <Edit3 className="w-8 h-8 text-white group-hover:rotate-12 transition-transform duration-300" />
+                  <div className="w-16 h-16 bg-gradient-brand rounded-3xl flex items-center justify-center shadow-brand hover:shadow-brand-lg hover:scale-110 transition-all transition-slow group cursor-pointer">
+                    <Edit3 className="w-8 h-8 text-white group-hover:rotate-12 transition-transform transition-normal" />
                   </div>
-                  <div className="absolute -inset-2 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -inset-2 bg-gradient-glass rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity transition-normal" />
                 </div>
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
+                  <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent mb-2">
                     Edit Project
                   </h1>
-                  <p className="text-xl text-gray-600 font-medium">
+                  <p className="text-xl text-secondary font-medium">
                     Fine-tune your flashcards and study settings
                   </p>
                 </div>
@@ -170,13 +180,13 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
           {/* Status Badges */}
           <div className="flex flex-wrap gap-3 mt-6 animate-[slideUp_1s_ease-out_0.4s_both]">
             {isValid && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform duration-200">
+              <div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform transition-fast">
                 <CheckCircle2 className="w-4 h-4" />
                 Ready to Save
               </div>
             )}
             {currentCardValid && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform duration-200">
+              <div className="bg-brand-primary/10 border border-brand-primary/30 text-brand-primary px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform transition-fast">
                 <Sparkles className="w-4 h-4" />
                 Current Card Valid
               </div>
@@ -189,22 +199,22 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
           {/* Left Column - Project Settings */}
           <div className="xl:col-span-1 space-y-8">
             {/* Project Info */}
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 animate-[slideUp_1.2s_ease-out_0.6s_both]">
+            <div className="surface-elevated glass-surface border border-subtle rounded-3xl p-8 hover:surface-glass hover:shadow-brand transition-all transition-normal animate-[slideUp_1.2s_ease-out_0.6s_both]">
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand">
                   <BookOpen className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-primary">
                     Project Details
                   </h2>
-                  <p className="text-gray-600">Basic information</p>
+                  <p className="text-secondary">Basic information</p>
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-secondary mb-3">
                     Project Name
                   </label>
                   <input
@@ -213,17 +223,17 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                     onChange={(e) => setName(e.target.value)}
                     onFocus={() => setFocusedField("name")}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full px-4 py-4 rounded-2xl bg-gray-50 border-2 transition-all duration-300 text-gray-900 placeholder:text-gray-500 ${
+                    className={`w-full px-4 py-4 rounded-2xl surface-secondary border-2 border-secondary transition-all transition-normal text-primary placeholder:text-muted ${
                       focusedField === "name"
-                        ? "border-blue-500 bg-white shadow-lg scale-[1.02]"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-brand-primary surface-elevated shadow-brand scale-[1.02]"
+                        : "hover:border-primary"
                     }`}
                     placeholder="Enter project name..."
                   />
                 </div>
 
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-secondary mb-3">
                     Description
                   </label>
                   <textarea
@@ -232,10 +242,10 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                     onFocus={() => setFocusedField("description")}
                     onBlur={() => setFocusedField(null)}
                     rows={3}
-                    className={`w-full px-4 py-4 rounded-2xl bg-gray-50 border-2 transition-all duration-300 text-gray-900 placeholder:text-gray-500 resize-none ${
+                    className={`w-full px-4 py-4 rounded-2xl surface-secondary border-2 border-secondary transition-all transition-normal text-primary placeholder:text-muted resize-none ${
                       focusedField === "description"
-                        ? "border-blue-500 bg-white shadow-lg scale-[1.01]"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-brand-primary surface-elevated shadow-brand scale-[1.01]"
+                        : "hover:border-primary"
                     }`}
                     placeholder="Describe your project..."
                   />
@@ -243,7 +253,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-secondary mb-3">
                       New Cards/Day
                     </label>
                     <input
@@ -252,11 +262,11 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                       onChange={(e) =>
                         setNewCardsPerDay(parseInt(e.target.value) || 0)
                       }
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:bg-white transition-all duration-300 text-gray-900"
+                      className="w-full px-4 py-3 rounded-xl surface-secondary border-2 border-secondary hover:border-primary focus:border-brand-primary focus:surface-elevated transition-all transition-normal text-primary"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-secondary mb-3">
                       Max Reviews/Day
                     </label>
                     <input
@@ -265,7 +275,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                       onChange={(e) =>
                         setMaxReviewsPerDay(parseInt(e.target.value) || 0)
                       }
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:bg-white transition-all duration-300 text-gray-900"
+                      className="w-full px-4 py-3 rounded-xl surface-secondary border-2 border-secondary hover:border-primary focus:border-brand-primary focus:surface-elevated transition-all transition-normal text-primary"
                     />
                   </div>
                 </div>
@@ -273,60 +283,116 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
             </div>
 
             {/* SRS Settings Preview */}
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 animate-[slideUp_1.4s_ease-out_0.8s_both]">
+            <div className="surface-elevated glass-surface border border-subtle rounded-3xl p-8 hover:surface-glass hover:shadow-brand transition-all transition-normal animate-[slideUp_1.4s_ease-out_0.8s_both]">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center shadow-brand">
                   <Settings className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-primary">
                     Study Settings
                   </h2>
-                  <p className="text-gray-600">Spaced repetition config</p>
+                  <p className="text-secondary">Spaced repetition config</p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="font-medium text-gray-700">
-                    Learning Steps
-                  </span>
-                  <span className="text-gray-600">1, 10 min</span>
+              {!showAdvancedSettings ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-subtle">
+                    <span className="font-medium text-secondary">
+                      Learning Steps
+                    </span>
+                    <span className="text-muted">1, 10 min</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-subtle">
+                    <span className="font-medium text-secondary">
+                      Graduating Interval
+                    </span>
+                    <span className="text-muted">1 day</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-subtle">
+                    <span className="font-medium text-secondary">
+                      Starting Ease
+                    </span>
+                    <span className="text-muted">250%</span>
+                  </div>
+                  <button 
+                    onClick={() => setShowAdvancedSettings(true)}
+                    className="w-full mt-4 px-4 py-3 bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20 rounded-xl font-medium hover:bg-brand-secondary/20 transition-colors transition-fast"
+                  >
+                    Advanced Settings
+                  </button>
                 </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="font-medium text-gray-700">
-                    Graduating Interval
-                  </span>
-                  <span className="text-gray-600">1 day</span>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-secondary mb-2">
+                        Learning Steps (min)
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue="1, 10"
+                        className="w-full px-3 py-2 rounded-lg surface-secondary border border-secondary hover:border-primary focus:border-brand-primary transition-all transition-fast text-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-secondary mb-2">
+                        Graduating Interval (days)
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue="1"
+                        className="w-full px-3 py-2 rounded-lg surface-secondary border border-secondary hover:border-primary focus:border-brand-primary transition-all transition-fast text-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-secondary mb-2">
+                        Starting Ease (%)
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue="250"
+                        className="w-full px-3 py-2 rounded-lg surface-secondary border border-secondary hover:border-primary focus:border-brand-primary transition-all transition-fast text-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-secondary mb-2">
+                        Easy Interval (days)
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue="4"
+                        className="w-full px-3 py-2 rounded-lg surface-secondary border border-secondary hover:border-primary focus:border-brand-primary transition-all transition-fast text-primary"
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowAdvancedSettings(false)}
+                    className="w-full mt-4 px-4 py-3 bg-muted/10 text-muted border border-subtle rounded-xl font-medium hover:bg-muted/20 transition-colors transition-fast"
+                  >
+                    Hide Advanced Settings
+                  </button>
                 </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="font-medium text-gray-700">
-                    Starting Ease
-                  </span>
-                  <span className="text-gray-600">250%</span>
-                </div>
-                <button className="w-full mt-4 px-4 py-3 bg-purple-50 text-purple-700 rounded-xl font-medium hover:bg-purple-100 transition-colors duration-200">
-                  Advanced Settings
-                </button>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Right Column - Flashcard Editor */}
           <div className="xl:col-span-2">
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-3xl overflow-hidden hover:bg-white hover:shadow-xl transition-all duration-300 animate-[slideUp_1.6s_ease-out_1s_both]">
+            <div className="surface-elevated glass-surface border border-subtle rounded-3xl overflow-hidden hover:surface-glass hover:shadow-brand transition-all transition-normal animate-[slideUp_1.6s_ease-out_1s_both]">
               {/* Editor Header */}
-              <div className="p-8 border-b border-gray-100">
+              <div className="p-8 border-b border-subtle">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand">
                       <Edit3 className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-bold text-gray-900">
+                      <h2 className="text-3xl font-bold text-primary">
                         Flashcard Editor
                       </h2>
-                      <p className="text-gray-600">
+                      <p className="text-secondary">
                         Create and edit your study cards
                       </p>
                     </div>
@@ -334,7 +400,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
 
                   <button
                     onClick={handleAdd}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-semibold hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                    className="px-6 py-3 bg-gradient-brand text-white rounded-2xl font-semibold hover:shadow-brand-lg hover:scale-105 transition-all transition-normal flex items-center gap-2"
                   >
                     <Plus className="w-5 h-5" />
                     Add Card
@@ -343,14 +409,14 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
 
                 {/* Progress Indicator */}
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-2xl">
-                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse" />
-                    <span className="text-sm font-semibold text-gray-700">
+                  <div className="flex items-center gap-3 px-4 py-2 surface-secondary rounded-2xl">
+                    <div className="w-3 h-3 bg-gradient-brand rounded-full animate-pulse" />
+                    <span className="text-sm font-semibold text-secondary">
                       Card {current + 1} of {flashcards.length}
                     </span>
                   </div>
                   {currentCardValid && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl text-sm font-medium">
                       <CheckCircle2 className="w-4 h-4" />
                       Valid
                     </div>
@@ -358,9 +424,9 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 surface-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 ease-out relative"
+                    className="h-full bg-gradient-brand rounded-full transition-all transition-slow ease-out relative"
                     style={{ width: `${progressPercent}%` }}
                   >
                     <div className="absolute inset-0 bg-white/30 animate-pulse" />
@@ -374,14 +440,14 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                   {/* Front Side */}
                   <div className="group">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-xl flex items-center justify-center shadow-brand">
                         <Type className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">
+                        <h3 className="text-xl font-bold text-primary">
                           Front Side
                         </h3>
-                        <p className="text-gray-600 text-sm">
+                        <p className="text-secondary text-sm">
                           Question or prompt
                         </p>
                       </div>
@@ -391,32 +457,32 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                       onChange={(e) => handleChange("front", e.target.value)}
                       placeholder="What would you like to ask? Be clear and specific..."
                       rows={4}
-                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-gray-200 hover:border-gray-300 focus:border-blue-500 focus:bg-white focus:shadow-lg transition-all duration-300 text-gray-900 placeholder:text-gray-500 resize-none text-lg"
+                      className="w-full px-6 py-4 rounded-2xl surface-secondary border-2 border-secondary hover:border-primary focus:border-brand-primary focus:surface-elevated focus:shadow-brand transition-all transition-normal text-primary placeholder:text-muted resize-none text-lg"
                     />
                   </div>
 
                   {/* Visual Separator */}
                   <div className="flex items-center justify-center py-6">
                     <div className="flex items-center gap-4">
-                      <div className="h-px bg-gray-200 w-20" />
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center animate-pulse">
+                      <div className="h-px border-secondary w-20" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-brand-secondary to-brand-accent rounded-full flex items-center justify-center animate-pulse shadow-brand">
                         <div className="w-2 h-2 bg-white rounded-full" />
                       </div>
-                      <div className="h-px bg-gray-200 w-20" />
+                      <div className="h-px border-secondary w-20" />
                     </div>
                   </div>
 
                   {/* Back Side */}
                   <div className="group">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-br from-brand-secondary to-brand-accent rounded-xl flex items-center justify-center shadow-brand">
                         <MessageSquare className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">
+                        <h3 className="text-xl font-bold text-primary">
                           Back Side
                         </h3>
-                        <p className="text-gray-600 text-sm">
+                        <p className="text-secondary text-sm">
                           Answer or explanation
                         </p>
                       </div>
@@ -426,34 +492,34 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                       onChange={(e) => handleChange("back", e.target.value)}
                       placeholder="Provide a clear, concise answer..."
                       rows={4}
-                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-gray-200 hover:border-gray-300 focus:border-purple-500 focus:bg-white focus:shadow-lg transition-all duration-300 text-gray-900 placeholder:text-gray-500 resize-none text-lg"
+                      className="w-full px-6 py-4 rounded-2xl surface-secondary border-2 border-secondary hover:border-primary focus:border-brand-secondary focus:surface-elevated focus:shadow-brand transition-all transition-normal text-primary placeholder:text-muted resize-none text-lg"
                     />
                   </div>
 
                   {/* Card Preview */}
                   {(card.front?.trim() || card.back?.trim()) && (
-                    <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 rounded-2xl animate-[slideUp_0.4s_ease-out]">
+                    <div className="mt-8 p-6 bg-brand-primary/5 border border-brand-primary/20 rounded-2xl animate-[slideUp_0.4s_ease-out]">
                       <div className="flex items-center gap-2 mb-4">
-                        <Eye className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-blue-800">
+                        <Eye className="w-4 h-4 text-brand-primary" />
+                        <span className="text-sm font-semibold text-brand-primary">
                           Card Preview
                         </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {card.front?.trim() && (
-                          <div className="bg-white rounded-xl p-4 shadow-sm">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                          <div className="surface-elevated rounded-xl p-4 shadow-brand border border-subtle">
+                            <div className="text-xs text-muted uppercase tracking-wider font-semibold mb-2">
                               Front
                             </div>
-                            <div className="text-gray-900">{card.front}</div>
+                            <div className="text-primary">{card.front}</div>
                           </div>
                         )}
                         {card.back?.trim() && (
-                          <div className="bg-white rounded-xl p-4 shadow-sm">
-                            <div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                          <div className="surface-elevated rounded-xl p-4 shadow-brand border border-subtle">
+                            <div className="text-xs text-muted uppercase tracking-wider font-semibold mb-2">
                               Back
                             </div>
-                            <div className="text-gray-900">{card.back}</div>
+                            <div className="text-primary">{card.back}</div>
                           </div>
                         )}
                       </div>
@@ -463,12 +529,12 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
               </div>
 
               {/* Navigation Footer */}
-              <div className="p-6 bg-gray-50/80 border-t border-gray-100">
+              <div className="p-6 surface-secondary border-t border-subtle">
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => navigate(-1)}
                     disabled={current === 0}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed text-blue-700 bg-blue-50 hover:bg-blue-100 hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all transition-normal disabled:opacity-40 disabled:cursor-not-allowed text-brand-primary surface-elevated hover:surface-glass hover:scale-105 border border-brand-primary/20"
                   >
                     <ChevronLeft className="w-5 h-5" />
                     Previous
@@ -478,7 +544,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                     <button
                       onClick={handleDelete}
                       disabled={flashcards.length <= 1}
-                      className="p-3 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105"
+                      className="p-3 text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-xl transition-all transition-normal disabled:opacity-40 disabled:cursor-not-allowed hover:scale-105"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -487,7 +553,7 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
                   <button
                     onClick={() => navigate(1)}
                     disabled={current === flashcards.length - 1}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed text-blue-700 bg-blue-50 hover:bg-blue-100 hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all transition-normal disabled:opacity-40 disabled:cursor-not-allowed text-brand-primary surface-elevated hover:surface-glass hover:scale-105 border border-brand-primary/20"
                   >
                     Next
                     <ChevronRight className="w-5 h-5" />
@@ -500,15 +566,18 @@ export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-end gap-4 animate-[slideUp_2s_ease-out_1.2s_both]">
-          <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 hover:scale-105 transition-all duration-300">
+          <button 
+            onClick={handleGoBack}
+            className="px-8 py-4 border-2 border-subtle text-secondary rounded-2xl font-semibold hover:surface-glass hover:border-brand hover:text-brand-primary hover:scale-105 transition-all transition-normal"
+          >
             Cancel
           </button>
           <button
             disabled={!isValid || saving}
-            className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center gap-3 ${
+            className={`px-8 py-4 rounded-2xl font-semibold transition-all transition-normal flex items-center gap-3 ${
               isValid && !saving
-                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-xl hover:scale-105"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                ? "bg-gradient-brand text-white hover:shadow-brand-lg hover:scale-105"
+                : "surface-secondary text-muted cursor-not-allowed border border-subtle"
             }`}
           >
             {saving ? (
