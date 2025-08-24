@@ -3,16 +3,13 @@
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectList } from "@/src/components/projects/ProjectList";
 import {
-  BookOpen,
   Sparkles,
   Brain,
-  Zap,
   Loader2,
   FolderOpen,
   Plus,
   Coffee,
   Lightbulb,
-  Target,
   TrendingUp,
   Star,
   Clock,
@@ -20,7 +17,6 @@ import {
 import { useEffect, useState, useRef, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 function ProjectsPageContent() {
   const { projects, loadProjects, reset } = useProjectsStore();

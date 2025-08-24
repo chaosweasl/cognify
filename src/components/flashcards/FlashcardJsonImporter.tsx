@@ -349,7 +349,7 @@ export function FlashcardJsonImporter({
                   <div className="collapse-content">
                     <div className="text-sm text-muted mb-3">
                       Your JSON file should contain an array of objects with
-                      "front" and "back" properties (or equivalent names):
+                      &quot;front&quot; and &quot;back&quot; properties (or equivalent names):
                     </div>
                     <div className="mockup-code text-xs surface-elevated border border-subtle rounded-lg">
                       <pre className="text-primary">

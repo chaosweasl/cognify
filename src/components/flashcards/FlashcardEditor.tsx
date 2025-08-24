@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { NormalizedProject } from "@/lib/utils/normalizeProject";
 import {
   Plus,
   Save,
-  X,
   Loader2,
   BookOpen,
   CheckCircle2,
@@ -12,24 +12,12 @@ import {
   Sparkles,
   ArrowLeft,
   Settings,
-  RotateCcw,
   Type,
   MessageSquare,
   ChevronLeft,
   ChevronRight,
   Trash2,
-  AlertTriangle,
-  Navigation,
-  Zap,
-  Target,
-  Clock,
-  Brain,
-  Users,
-  Calendar,
-  TrendingUp,
   Eye,
-  MoreHorizontal,
-  Layers,
 } from "lucide-react";
 
 // Mock data for demonstration
@@ -63,7 +51,9 @@ const mockFlashcards = [
   { id: "3", front: "", back: "" },
 ];
 
-export function FlashcardEditor() {
+export function FlashcardEditor({ project }: { project?: NormalizedProject }) {
+  // Use project data or fallback to mock data
+  console.log("Project data:", project);
   const [flashcards, setFlashcards] = useState(mockFlashcards);
   const [current, setCurrent] = useState(0);
   const [name, setName] = useState(mockProject.name);
@@ -74,17 +64,15 @@ export function FlashcardEditor() {
   const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(
     mockProject.max_reviews_per_day
   );
-  const [saving, setSaving] = useState(false);
-  const [isValid, setIsValid] = useState(true);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [projectUpdates, setProjectUpdates] = useState({});
+  const saving = false; // TODO: implement actual saving state
   const isAddingCard = useRef(false);
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: string, value: string) => {
     setFlashcards((prev) => {
       const updated = [...prev];
       if (!updated[current]) {
-        updated[current] = { front: "", back: "" };
+        updated[current] = { id: `temp-${Date.now()}`, front: "", back: "" };
       }
       updated[current] = { ...updated[current], [field]: value };
       return updated;
@@ -93,7 +81,7 @@ export function FlashcardEditor() {
 
   const handleAdd = () => {
     isAddingCard.current = true;
-    setFlashcards((prev) => [...prev, { front: "", back: "" }]);
+    setFlashcards((prev) => [...prev, { id: `temp-${Date.now()}`, front: "", back: "" }]);
   };
 
   useEffect(() => {
@@ -103,7 +91,7 @@ export function FlashcardEditor() {
     }
   }, [flashcards.length]);
 
-  const navigate = (dir) => {
+  const navigate = (dir: number) => {
     setCurrent((p) => Math.max(0, Math.min(p + dir, flashcards.length - 1)));
   };
 
@@ -116,11 +104,9 @@ export function FlashcardEditor() {
     setCurrent((prev) => Math.max(0, prev - 1));
   };
 
-  const card = flashcards[current] || { front: "", back: "" };
+  const card = flashcards[current] || { id: "temp", front: "", back: "" };
   const currentCardValid = card.front?.trim() || card.back?.trim();
-  const completedCards = flashcards.filter(
-    (fc) => fc.front?.trim() || fc.back?.trim()
-  ).length;
+  const isValid = flashcards.some(fc => fc.front?.trim() || fc.back?.trim());
   const progressPercent =
     flashcards.length > 0 ? ((current + 1) / flashcards.length) * 100 : 0;
 

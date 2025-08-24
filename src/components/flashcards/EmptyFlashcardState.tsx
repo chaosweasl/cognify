@@ -511,7 +511,7 @@ export function EmptyFlashcardState({
                 </div>
 
                 <p className="text-muted leading-relaxed text-lg mb-6">
-                  You've completed all your scheduled cards for today. Your
+                  You&apos;ve completed all your scheduled cards for today. Your
                   brain is building stronger neural pathways with each review
                   session.
                 </p>

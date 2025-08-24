@@ -197,7 +197,7 @@ export function ProjectSRSSettings({
                 disabled={disabled}
               />
               <p className="text-xs text-muted mt-2">
-                Days when you click "Easy" on a new card
+                Days when you click &quot;Easy&quot; on a new card
               </p>
             </label>
           </div>
@@ -325,7 +325,7 @@ export function ProjectSRSSettings({
                 disabled={disabled}
               />
               <p className="text-xs text-muted mt-2">
-                Extra multiplier when you click "Easy"
+                Extra multiplier when you click &quot;Easy&quot;
               </p>
             </label>
           </div>
@@ -356,7 +356,7 @@ export function ProjectSRSSettings({
                 disabled={disabled}
               />
               <p className="text-xs text-muted mt-2">
-                Interval multiplier when you click "Hard"
+                Interval multiplier when you click &quot;Hard&quot;
               </p>
             </label>
           </div>
@@ -386,7 +386,7 @@ export function ProjectSRSSettings({
                 disabled={disabled}
               />
               <p className="text-xs text-muted mt-2">
-                Lapses before a card becomes a "leech"
+                Lapses before a card becomes a &quot;leech&quot;
               </p>
             </label>
           </div>
@@ -572,7 +572,7 @@ export function ProjectSRSSettings({
                       Review Ahead
                     </div>
                     <div className="text-xs text-muted">
-                      Study cards before they're due
+                      Study cards before they&apos;re due
                     </div>
                   </div>
                 </div>
@@ -636,7 +636,7 @@ export function ProjectSRSSettings({
               </h4>
               <div className="space-y-2 text-sm text-blue-400/80">
                 <p>
-                  • These settings control how your project's spaced repetition
+                  • These settings control how your project&apos;s spaced repetition
                   algorithm works
                 </p>
                 <p>

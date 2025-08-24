@@ -43,7 +43,7 @@ export function ProjectInfoForm({
     className,
     style,
   }: {
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
     className: string;
     style: React.CSSProperties;
   }) => (
