@@ -122,8 +122,6 @@ export function InteractiveProjectCreator() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const currentStepData = STEPS[currentStep];
-
   const validateCurrentStep = () => {
     switch (currentStep) {
       case 0: // Welcome
@@ -213,7 +211,7 @@ export function InteractiveProjectCreator() {
                 Welcome to Your Learning Journey!
               </h2>
               <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
-                Let's create a personalized learning project that adapts to your pace and helps you master new knowledge effectively.
+                Let&apos;s create a personalized learning project that adapts to your pace and helps you master new knowledge effectively.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -297,7 +295,7 @@ export function InteractiveProjectCreator() {
                       </div>
                       <div>
                         <p className="font-semibold text-green-400">Looking great!</p>
-                        <p className="text-sm text-green-400/80">Your project "{name}" is ready to go.</p>
+                        <p className="text-sm text-green-400/80">Your project &quot;{name}&quot; is ready to go.</p>
                       </div>
                     </div>
                   </CardContent>
@@ -539,8 +537,8 @@ export function InteractiveProjectCreator() {
                 🎉 Your Project is Ready!
               </h2>
               <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
-                <strong className="text-brand-primary">"{name}"</strong> has been configured with your preferences. 
-                Let's add some flashcards and start your learning journey!
+                <strong className="text-brand-primary">&quot;{name}&quot;</strong> has been configured with your preferences. 
+                Let&apos;s add some flashcards and start your learning journey!
               </p>
             </div>
 

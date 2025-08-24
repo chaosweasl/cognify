@@ -81,7 +81,7 @@ export function SRSSettingsTab() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-primary mb-1">Smart Defaults</h4>
-                  <p className="text-sm text-secondary">New projects use sensible defaults based on Anki's proven algorithms</p>
+                  <p className="text-sm text-secondary">New projects use sensible defaults based on Anki&apos;s proven algorithms</p>
                 </div>
               </div>
 
