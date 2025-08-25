@@ -1,9 +1,7 @@
 "use client";
 
-import { SidebarNav } from "@/src/components/ui/SidebarNav";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { createProject } from "./components/../actions";
+import { SidebarNav } from "@/app/(main)/components/SidebarNav";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ProjectsLayout({
   children,
@@ -11,26 +9,23 @@ export default function ProjectsLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
 
-  const handleTab = async (tab: "all" | "create") => {
+  // Hide sidebar on create page for full immersion
+  const isCreatePage = pathname?.includes("/create");
+
+  const handleTab = (tab: "all" | "create") => {
     if (tab === "all") {
       router.push("/projects");
     } else if (tab === "create") {
-      startTransition(async () => {
-        const id = await createProject({
-          name: "Untitled Project",
-          description: "",
-        });
-        if (id) router.push(`/projects/${id}/edit`);
-      });
+      router.push("/projects/create");
     }
   };
 
   return (
-    <div className="flex flex-1">
-      <SidebarNav activeTab="all" onTab={handleTab} />
-      <div className="flex-1 flex flex-col md:ml-64 md:p-0">{children}</div>
+    <div className="flex flex-1 h-screen">
+      {!isCreatePage && <SidebarNav activeTab="all" onTab={handleTab} />}
+      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
     </div>
   );
 }

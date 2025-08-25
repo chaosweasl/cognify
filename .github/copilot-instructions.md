@@ -290,6 +290,66 @@ export async function cleanupProjectNotifications(projectId: string) {
 }
 ```
 
+## Toast Notifications (shadcn/sonner)
+
+### Usage
+
+**Setup:**
+
+### Example: Showing a Toast
+
+````tsx
+## Toast Notifications (shadcn/sonner)
+
+### Usage
+
+- The `ToasterProvider` is already included in the root layout (`app/layout.tsx`).
+- Use the `toast` API from `sonner` in your client components for notifications.
+
+#### Basic Toast
+
+```tsx
+import { toast } from "sonner";
+toast("Event has been created.");
+````
+
+#### Success/Error Toast
+
+```tsx
+toast.success("Project deleted successfully!");
+toast.error("Failed to delete project");
+```
+
+#### Toast with Undo Button
+
+```tsx
+toast("Card deleted", {
+  action: {
+    label: "Undo",
+    onClick: () => restoreCard(),
+  },
+});
+```
+
+#### Toast with Confirmation/Custom Actions
+
+```tsx
+toast("Are you sure?", {
+  action: {
+    label: "Confirm",
+    onClick: () => doSomething(),
+  },
+  cancel: {
+    label: "Cancel",
+    onClick: () => {},
+  },
+});
+```
+
+See the [Sonner documentation](https://sonner.emilkowal.ski) for more advanced usage and customization options.
+
+````
+
 ## What NOT to Do
 
 ### ❌ Avoid Over-Engineering
@@ -357,7 +417,7 @@ export function useStudySession(projectId: string) {
     );
   };
 }
-```
+````
 
 ### ✅ Efficient Data Loading
 

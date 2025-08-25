@@ -22,7 +22,6 @@ export default function ProjectResetComponent({
       const result = await resetProjectSRSData(projectId);
 
       if (result.success) {
-        // Show success message
         const toast = document.createElement("div");
         toast.className = "toast toast-top toast-end";
         toast.innerHTML = `
@@ -32,14 +31,12 @@ export default function ProjectResetComponent({
         `;
         document.body.appendChild(toast);
 
-        // Remove toast after 3 seconds
         setTimeout(() => {
           document.body.removeChild(toast);
         }, 3000);
 
         onResetComplete?.();
       } else {
-        // Show error message
         const toast = document.createElement("div");
         toast.className = "toast toast-top toast-end";
         toast.innerHTML = `
@@ -49,7 +46,6 @@ export default function ProjectResetComponent({
         `;
         document.body.appendChild(toast);
 
-        // Remove toast after 5 seconds
         setTimeout(() => {
           document.body.removeChild(toast);
         }, 5000);
@@ -57,7 +53,6 @@ export default function ProjectResetComponent({
     } catch (error) {
       console.error("Reset failed:", error);
 
-      // Show error message
       const toast = document.createElement("div");
       toast.className = "toast toast-top toast-end";
       toast.innerHTML = `
@@ -67,7 +62,6 @@ export default function ProjectResetComponent({
       `;
       document.body.appendChild(toast);
 
-      // Remove toast after 5 seconds
       setTimeout(() => {
         document.body.removeChild(toast);
       }, 5000);
@@ -79,9 +73,9 @@ export default function ProjectResetComponent({
 
   return (
     <>
-      <div className="card bg-base-100 shadow-xl border border-warning">
+      <div className="card surface-primary shadow-xl border border-status-warning">
         <div className="card-body">
-          <h3 className="card-title text-warning">
+          <h3 className="card-title text-status-warning">
             <svg
               className="w-6 h-6"
               fill="none"
@@ -97,21 +91,21 @@ export default function ProjectResetComponent({
             </svg>
             Reset SRS Data
           </h3>
-          <p className="text-base-content/80">
+          <p className="text-secondary">
             This will permanently delete all SRS learning progress for this
             project, including:
           </p>
-          <ul className="list-disc list-inside text-sm text-base-content/70 ml-4">
+          <ul className="list-disc list-inside text-sm text-tertiary ml-4">
             <li>All flashcard learning states and schedules</li>
             <li>Daily study statistics for today</li>
             <li>Related notifications</li>
           </ul>
-          <p className="text-warning font-medium">
+          <p className="text-status-warning font-medium">
             ⚠️ This action cannot be undone!
           </p>
           <div className="card-actions justify-end">
             <button
-              className="btn btn-warning"
+              className="btn btn-warning bg-status-warning text-white hover:bg-status-warning/90"
               onClick={() => setShowConfirmModal(true)}
               disabled={isResetting}
             >
@@ -128,29 +122,30 @@ export default function ProjectResetComponent({
         </div>
       </div>
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg text-error">Confirm Reset</h3>
-            <p className="py-4">
+          <div className="modal-box surface-primary">
+            <h3 className="font-bold text-lg text-status-error">
+              Confirm Reset
+            </h3>
+            <p className="py-4 text-primary">
               Are you sure you want to reset all SRS data for{" "}
               <span className="font-semibold">&quot;{projectName}&quot;</span>?
             </p>
-            <p className="text-sm text-base-content/70 mb-4">
+            <p className="text-sm text-tertiary mb-4">
               This will permanently delete all learning progress and cannot be
               undone.
             </p>
             <div className="modal-action">
               <button
-                className="btn btn-ghost"
+                className="btn btn-ghost text-secondary hover:text-primary"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={isResetting}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-error"
+                className="btn btn-error bg-status-error text-white hover:bg-status-error/90"
                 onClick={handleReset}
                 disabled={isResetting}
               >

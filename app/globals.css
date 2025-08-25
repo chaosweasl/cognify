@@ -2,91 +2,15 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-@plugin "daisyui" {
-  themes: dim --default --prefersdark, lightgreen, darkgreen;
-}
-
-@plugin "daisyui/theme" {
-  name: "darkgreen";
-  color-scheme: dark;
-
-  /* Neutral slate base — classic dark UI */
-  --color-base-100: oklch(20% 0.005 260); /* dark slate */
-  --color-base-200: oklch(26% 0.005 260);
-  --color-base-300: oklch(32% 0.005 260);
-  --color-base-content: oklch(92% 0.01 260); /* readable light text */
-
-  /* Primary: muted soft green for buttons/highlights */
-  --color-primary: oklch(
-    55% 0.12 140
-  ); /* not moss, not mint — just calm green */
-  --color-primary-content: oklch(98% 0.005 140);
-
-  /* Secondary: slate, not green */
-  --color-secondary: oklch(30% 0.01 260);
-  --color-secondary-content: oklch(85% 0.005 260);
-
-  /* Accent: very subtle light green if needed */
-  --color-accent: oklch(65% 0.04 140);
-  --color-accent-content: oklch(18% 0.01 140);
-
-  /* Neutral and text: clean and cold */
-  --color-neutral: oklch(25% 0.005 260);
-  --color-neutral-content: oklch(88% 0.01 260);
-
-  /* States: stay consistent and calm */
-  --color-info: oklch(68% 0.1 240);
-  --color-success: oklch(52% 0.12 140);
-  --color-warning: oklch(72% 0.15 85);
-  --color-error: oklch(70% 0.18 30);
-}
-
-@plugin "daisyui/theme" {
-  name: "lightgreen";
-  default: true;
-  color-scheme: light;
-
-  /* Softer, less glaring base */
-  --color-base-100: oklch(98% 0.01 240);
-  --color-base-200: oklch(95% 0.015 240);
-  --color-base-300: oklch(92% 0.02 240);
-  --color-base-content: oklch(18% 0.04 240);
-
-  /* Lower chroma primary/secondary greens */
-  --color-primary: oklch(60% 0.15 140);
-  --color-primary-content: oklch(98% 0.01 140);
-
-  --color-secondary: oklch(75% 0.06 140);
-  --color-secondary-content: oklch(98% 0.01 140);
-
-  --color-accent: oklch(85% 0.04 140);
-  --color-accent-content: oklch(20% 0.05 140);
-
-  /* Neutrals only slightly tinted */
-  --color-neutral: oklch(50% 0.02 240);
-  --color-neutral-content: oklch(20% 0.03 240);
-
-  /* States unchanged or slightly toned */
-  --color-info: oklch(70% 0.1 220);
-  --color-info-content: oklch(98% 0.01 220);
-
-  --color-success: oklch(65% 0.15 140);
-  --color-success-content: oklch(98% 0.01 140);
-
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(18% 0.04 80);
-
-  --color-error: oklch(65% 0.2 30);
-  --color-error-content: oklch(98% 0.01 30);
-
-  /* optionally fine‑tune radii, border depths from dim theme */
-}
 
 @theme inline {
+  /* Base radius values */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Original shadcn colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -118,82 +42,369 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-}
 
-:root {
+  /* Brand colors - Updated to match your palette */
+  --color-brand-primary: #3b82f6; /* Blue-500 - Primary accent */
+  --color-brand-secondary: #8b5cf6; /* Violet-500 - Secondary/highlights */
+  --color-brand-tertiary: #14b8a6; /* Teal-500 - Optional secondary */
+  --color-brand-accent: #8b5cf6; /* Using violet for accent consistency */
+
+  /* Brand hover states */
+  --color-brand-primary-hover: #2563eb; /* Blue-600 */
+  --color-brand-secondary-hover: #7c3aed; /* Violet-600 */
+
+  /* Status colors - Updated to match your palette */
+  --color-status-success: #22c55e; /* Green-500 for mastered cards */
+  --color-status-warning: #f59e0b; /* Amber-500 for warnings */
+  --color-status-error: #ef4444; /* Red-500 for errors */
+  --color-status-info: #3b82f6; /* Blue-500 for info */
+
+  /* Animation durations */
+  --duration-instant: 150ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 700ms;
+
+  /* Spacing scale */
+  --space-xs: 0.25rem; /* 4px */
+  --space-sm: 0.5rem; /* 8px */
+  --space-md: 1rem; /* 16px */
+  --space-lg: 1.5rem; /* 24px */
+  --space-xl: 2rem; /* 32px */
+  --space-2xl: 3rem; /* 48px */
+
+  /* Border radius scale */
+  --radius-xs: 0.25rem; /* 4px */
+  --radius-sm: 0.5rem; /* 8px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-lg: 1rem; /* 16px */
+  --radius-xl: 1.5rem; /* 24px */
+  --radius-2xl: 2rem; /* 32px */
+
+  /* Base radius for consistency with shadcn */
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* ===== LIGHT THEME (Default) ===== */
+:root,
+.light {
+  /* Surface colors - Light - Updated to match Gray-50 background */
+  --color-surface-primary: #f9fafb; /* Gray-50 - Main background */
+  --color-surface-secondary: #f3f4f6; /* Gray-100 - Elevated surfaces */
+  --color-surface-elevated: #e5e7eb; /* Gray-200 - Cards, modals */
+  --color-surface-overlay: rgba(249, 250, 251, 0.95); /* Gray-50/95 */
+  --color-surface-glass: rgba(
+    243,
+    244,
+    246,
+    0.8
+  ); /* Gray-100/80 for backdrop blur */
+
+  /* Text colors - Light - Updated to Gray-900 primary text */
+  --color-text-primary: #111827; /* Gray-900 - Primary text */
+  --color-text-secondary: #1f2937; /* Gray-800 - Secondary text */
+  --color-text-tertiary: #374151; /* Gray-700 - Tertiary text */
+  --color-text-muted: #6b7280; /* Gray-500 - Muted text */
+  --color-text-subtle: #9ca3af; /* Gray-400 - Subtle text */
+  --color-text-disabled: #d1d5db; /* Gray-300 - Disabled text */
+
+  /* Interactive states - Light */
+  --color-interactive-hover: rgba(229, 231, 235, 0.7); /* Gray-200/70 */
+  --color-interactive-active: rgba(209, 213, 219, 0.8); /* Gray-300/80 */
+  --color-interactive-focus: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
+
+  /* Border colors - Light */
+  --color-border-primary: rgba(209, 213, 219, 0.5); /* Gray-300/50 */
+  --color-border-secondary: rgba(229, 231, 235, 0.5); /* Gray-200/50 */
+  --color-border-subtle: rgba(243, 244, 246, 0.8); /* Gray-100/80 */
+  --color-border-brand: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
+
+  /* Shadow colors - Light */
+  --color-shadow-default: rgba(0, 0, 0, 0.1); /* black/10 */
+  --color-shadow-brand: rgba(59, 130, 246, 0.15); /* Blue-500/15 */
+  --color-shadow-brand-hover: rgba(59, 130, 246, 0.25); /* Blue-500/25 */
+}
+
+/* ===== DARK THEME ===== */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Surface colors - Dark - Updated to Slate-900 background */
+  --color-surface-primary: #0f172a; /* Slate-900 - Main background */
+  --color-surface-secondary: #1e293b; /* Slate-800 - Elevated surfaces */
+  --color-surface-elevated: #334155; /* Slate-700 - Cards, modals */
+  --color-surface-overlay: rgba(15, 23, 42, 0.95); /* Slate-900/95 */
+  --color-surface-glass: rgba(
+    30,
+    41,
+    59,
+    0.4
+  ); /* Slate-800/40 for backdrop blur */
+
+  /* Text colors - Dark - Updated to Gray-50 primary text */
+  --color-text-primary: #f9fafb; /* Gray-50 - Primary text */
+  --color-text-secondary: #f3f4f6; /* Gray-100 - Secondary text */
+  --color-text-tertiary: #e5e7eb; /* Gray-200 - Tertiary text */
+  --color-text-muted: #9ca3af; /* Gray-400 - Muted text */
+  --color-text-subtle: #6b7280; /* Gray-500 - Subtle text */
+  --color-text-disabled: #4b5563; /* Gray-600 - Disabled text */
+
+  /* Interactive states - Dark */
+  --color-interactive-hover: rgba(51, 65, 85, 0.5); /* Slate-700/50 */
+  --color-interactive-active: rgba(30, 41, 59, 0.8); /* Slate-800/80 */
+  --color-interactive-focus: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
+
+  /* Border colors - Dark */
+  --color-border-primary: rgba(75, 85, 99, 0.5); /* Gray-600/50 */
+  --color-border-secondary: rgba(75, 85, 99, 0.3); /* Gray-600/30 */
+  --color-border-subtle: rgba(51, 65, 85, 0.5); /* Slate-700/50 */
+  --color-border-brand: rgba(59, 130, 246, 0.5); /* Blue-500/50 */
+
+  /* Shadow colors - Dark */
+  --color-shadow-default: rgba(0, 0, 0, 0.4); /* black/40 */
+  --color-shadow-brand: rgba(59, 130, 246, 0.25); /* Blue-500/25 */
+  --color-shadow-brand-hover: rgba(59, 130, 246, 0.4); /* Blue-500/40 */
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+/* Gradient definitions - Updated with your brand colors */
+:root {
+  --gradient-brand-primary: linear-gradient(
+    135deg,
+    #3b82f6,
+    #8b5cf6
+  ); /* Blue-500 to Violet-500 */
+  --gradient-brand-hover: linear-gradient(
+    135deg,
+    #2563eb,
+    #7c3aed
+  ); /* Blue-600 to Violet-600 */
+  --gradient-surface: linear-gradient(
+    180deg,
+    var(--color-surface-primary),
+    var(--color-surface-secondary)
+  );
+  --gradient-glass: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(139, 92, 246, 0.1)
+  ); /* Brand colors with transparency */
+}
+
+/* Utility classes using semantic variables */
+.surface-primary {
+  background-color: var(--color-surface-primary);
+}
+.surface-secondary {
+  background-color: var(--color-surface-secondary);
+}
+.surface-elevated {
+  background-color: var(--color-surface-elevated);
+}
+.surface-overlay {
+  background-color: var(--color-surface-overlay);
+}
+.surface-glass {
+  background-color: var(--color-surface-glass);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
+.text-subtle {
+  color: var(--color-text-subtle);
+}
+
+.brand-primary {
+  color: var(--color-brand-primary);
+}
+.brand-secondary {
+  color: var(--color-brand-secondary);
+}
+.brand-tertiary {
+  color: var(--color-brand-tertiary);
+}
+.brand-accent {
+  color: var(--color-brand-accent);
+}
+
+.bg-brand-primary {
+  background-color: var(--color-brand-primary);
+}
+.bg-brand-secondary {
+  background-color: var(--color-brand-secondary);
+}
+.bg-gradient-brand {
+  background: var(--gradient-brand-primary);
+}
+.bg-gradient-brand-hover {
+  background: var(--gradient-brand-hover);
+}
+
+.border-primary {
+  border-color: var(--color-border-primary);
+}
+.border-secondary {
+  border-color: var(--color-border-secondary);
+}
+.border-subtle {
+  border-color: var(--color-border-subtle);
+}
+.border-brand {
+  border-color: var(--color-border-brand);
+}
+
+.shadow-brand {
+  box-shadow: 0 4px 6px -1px var(--color-shadow-brand);
+}
+.shadow-brand-lg {
+  box-shadow: 0 10px 15px -3px var(--color-shadow-brand);
+}
+
+.transition-fast {
+  transition-duration: var(--duration-fast);
+}
+.transition-normal {
+  transition-duration: var(--duration-normal);
+}
+.transition-slow {
+  transition-duration: var(--duration-slow);
+}
+
+/* Interactive state utilities */
+.interactive-hover:hover {
+  background-color: var(--color-interactive-hover);
+}
+.interactive-active:active {
+  background-color: var(--color-interactive-active);
+}
+.interactive-focus:focus {
+  outline: 2px solid var(--color-interactive-focus);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar with brand colors */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-surface-elevated);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gradient-brand-primary);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-brand-hover);
+}
+
+/* Animation keyframes */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  body {
-    @apply bg-background text-foreground;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Glass morphism utility */
+.glass-surface {
+  background: var(--color-surface-overlay);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-subtle);
+}
+
+button {
+  border-radius: var(--radius-md);
+}
+
+/* Additional Cognify-specific utilities */
+.btn-primary {
+  background: var(--gradient-brand-primary);
+  color: white;
+  border: none;
+  transition: all var(--duration-fast);
+}
+
+.btn-primary:hover {
+  background: var(--gradient-brand-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--color-shadow-brand-hover);
+}
+
+.card-flashcard {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 4px var(--color-shadow-default);
+  transition: all var(--duration-normal);
+}
+
+.card-flashcard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px var(--color-shadow-brand);
+}
+
+.progress-mastered {
+  background-color: var(--color-status-success);
+}
+
+.progress-learning {
+  background-color: var(--color-brand-primary);
+}
+
+.progress-new {
+  background-color: var(--color-text-muted);
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wizard-enter {
+  animation: slideInFromRight 0.5s ease-out;
 }

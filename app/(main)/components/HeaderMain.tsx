@@ -16,17 +16,26 @@ import { useThemeStore } from "@/hooks/useTheme";
 import React from "react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { signOut } from "../dashboard/actions";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function HeaderMain() {
-  const { theme, toggleTheme } = useThemeStore();
+  const { theme, toggleTheme, isHydrated, hydrate } = useThemeStore();
   const { userProfile } = useUserProfile();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    hydrate();
+  }, [hydrate]);
 
   const navItems = [
     { href: "/projects", label: "Projects", icon: FolderOpen },
@@ -36,145 +45,152 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="navbar bg-base-100 border-b border-base-200 px-4 min-h-16 sticky top-0 z-40">
+    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 h-20 flex items-center">
       {/* Mobile menu button */}
-      <div className="navbar-start md:hidden">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
-            <Menu className="w-5 h-5" />
-          </div>
-          <ul className="menu menu-sm dropdown-content mt-3 z-50 p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-200">
-            {navItems.map(({ href, label, icon: Icon }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
+      <div className="md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-secondary hover:text-primary interactive-hover transition-normal"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="w-64 surface-overlay glass-surface border-subtle"
+          >
+            <nav className="flex flex-col space-y-2">
+              {navItems.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal"
+                >
+                  <Icon className="h-4 w-4" />
                   {label}
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+              ))}
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Logo */}
-      <div className="navbar-start hidden md:flex">
-        <Link href="/dashboard" className="btn btn-ghost text-xl font-bold">
+      <div className="flex-1 md:flex-none">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 font-bold text-xl text-primary group"
+        >
           <Image
-            src="/favicon.svg"
-            alt="Cognify"
-            width={24}
-            height={24}
-            className="w-6 h-6"
+            src="/favicon.png"
+            alt="Cognify Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-lg hover:scale-110 transition-transform transition-normal"
             priority
           />
-          Cognify
-        </Link>
-      </div>
-
-      {/* Center logo for mobile */}
-      <div className="navbar-center md:hidden">
-        <Link href="/dashboard" className="btn btn-ghost text-xl font-bold">
-          <Image
-            src="/favicon.svg"
-            alt="Cognify"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-            priority
-          />
-          Cognify
+          <span className="group-hover:brand-primary transition-colors transition-normal">
+            Cognify
+          </span>
         </Link>
       </div>
 
       {/* Desktop navigation */}
-      <div className="navbar-center hidden md:flex">
-        <ul className="menu menu-horizontal px-1 gap-1">
+      <nav className="hidden md:flex flex-1 justify-center">
+        <div className="flex items-center space-x-1">
           {navItems.map(({ href, label, icon: Icon }) => (
-            <li key={href}>
-              <Link href={href} className="flex items-center gap-2">
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            </li>
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal group"
+            >
+              <Icon className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
+              {label}
+            </Link>
           ))}
-        </ul>
-      </div>
+        </div>
+      </nav>
 
       {/* Right side actions */}
-      <div className="navbar-end gap-3">
+      <div className="flex items-center gap-3">
         <NotificationBell />
-        {/* Theme toggle with better styling */}
-        <button
-          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
+
+        {/* Theme toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={toggleTheme}
           aria-label="Toggle theme"
+          className="text-secondary hover:text-primary interactive-hover transition-normal group"
         >
-          {mounted && theme === "darkgreen" ? (
-            <Sun className="w-5 h-5" />
+          {isHydrated && theme === "dark" ? (
+            <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
           ) : (
-            <Moon className="w-5 h-5" />
+            <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
           )}
-        </button>
+        </Button>
 
-        {/* Enhanced User dropdown */}
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className="btn btn-ghost btn-circle avatar border-2 border-primary hover:scale-105 transition-transform"
+        {/* User dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full border-2 border-brand-primary/40 hover:border-brand-primary/60 hover:scale-105 transition-all transition-normal shadow-brand"
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage
+                  src={userProfile?.avatar_url || "/assets/nopfp.png"}
+                  alt="Avatar"
+                />
+                <AvatarFallback className="bg-gradient-brand text-white">
+                  {userProfile?.display_name?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-64 surface-overlay glass-surface border-subtle"
           >
-            <div className="w-10 rounded-full overflow-hidden bg-base-200">
-              <Image
-                src={userProfile?.avatar_url || "/assets/nopfp.png"}
-                alt="Avatar"
-                width={40}
-                height={40}
-                className="object-cover w-full h-full"
-                priority
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/assets/nopfp.png";
-                }}
-              />
-            </div>
-          </div>
-          <ul className="menu menu-sm dropdown-content mt-3 z-50 p-3 shadow-lg bg-base-100 rounded-box w-64 border border-base-200">
-            <li className="font-bold text-base-content/80 px-2 py-1 mb-1 border-b border-base-200 text-lg">
+            <div className="px-3 py-2 text-sm font-medium border-b border-subtle text-primary">
               {userProfile?.display_name || "User"}
-            </li>
-            <li>
+            </div>
+            <DropdownMenuItem asChild>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-primary hover:text-primary-content transition-colors"
+                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
               >
-                <Home className="w-4 h-4" />
+                <Home className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
                 Dashboard
               </Link>
-            </li>
-            <li>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link
                 href="/settings"
-                className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-primary hover:text-primary-content transition-colors"
+                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
                 Settings
               </Link>
-            </li>
-            <li>
-              <form
-                action={signOut}
-                className="w-full m-0 p-0 flex items-center gap-2 px-2 py-2 rounded-md transition-colors hover:bg-error hover:text-error-content cursor-pointer"
-              >
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-border-subtle" />
+            <DropdownMenuItem asChild>
+              <form action={signOut} className="w-full">
                 <button
                   type="submit"
-                  className="w-full h-full flex items-center gap-2 bg-transparent border-0 shadow-none p-0 m-0 text-left justify-start cursor-pointer"
+                  className="flex items-center gap-2 w-full text-left text-secondary hover:text-primary interactive-hover px-2 py-1.5 text-sm rounded-sm transition-colors transition-normal group"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="h-4 w-4 group-hover:text-red-400 transition-colors transition-normal" />
                   Sign Out
                 </button>
               </form>
-            </li>
-          </ul>
-        </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
