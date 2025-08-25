@@ -1,177 +1,697 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import {
-  Plus,
-  Save,
-  X,
-  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Check,
   Sparkles,
   BookOpen,
   Target,
-  Lightbulb,
-  ArrowRight,
-  Brain,
   Clock,
   Zap,
-  TrendingUp,
-  CheckCircle,
+  User,
+  ChevronDown,
+  Play,
+  Settings,
+  Star,
+  Coffee,
+  GraduationCap,
+  Briefcase,
+  Heart,
+  Code,
+  Palette,
+  Globe,
+  Dumbbell,
+  Rocket,
 } from "lucide-react";
-import { createProject } from "@/app/(main)/projects/actions";
-import { ProjectInfoForm } from "./ProjectInfoForm";
-import { ProjectSRSSettings } from "./ProjectSRSSettings";
-import { CacheInvalidation } from "@/hooks/useCache";
-import { useProjectsStore } from "@/hooks/useProjects";
-import { NormalizedProject } from "@/lib/utils/normalizeProject";
 
-// Default project data for new projects
-const DEFAULT_PROJECT = {
-  name: "",
-  description: "",
-  new_cards_per_day: 20,
-  max_reviews_per_day: 100,
-  // Default SRS settings (Anki-compatible)
-  learning_steps: [1, 10],
-  relearning_steps: [10],
-  graduating_interval: 1,
-  easy_interval: 4,
-  starting_ease: 2.5,
-  minimum_ease: 1.3,
-  easy_bonus: 1.3,
-  hard_interval_factor: 1.2,
-  easy_interval_factor: 1.3,
-  lapse_recovery_factor: 0.5,
-  leech_threshold: 8,
-  leech_action: "suspend" as const,
-  new_card_order: "random" as const,
-  review_ahead: false,
-  bury_siblings: false,
-  max_interval: 36500,
-  lapse_ease_penalty: 0.2,
+// Wizard steps
+const STEPS = {
+  WELCOME: 0,
+  PURPOSE: 1,
+  CATEGORY: 2,
+  INTENSITY: 3,
+  SCHEDULE: 4,
+  ADVANCED: 5,
+  CONFIRMATION: 6,
 };
 
+// Category options with icons and descriptions
+const CATEGORIES = [
+  {
+    id: "language",
+    icon: Globe,
+    title: "Language Learning",
+    description: "Master new languages with smart repetition",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    id: "academic",
+    icon: GraduationCap,
+    title: "Academic Study",
+    description: "Excel in your coursework and exams",
+    color: "from-violet-500 to-purple-500",
+  },
+  {
+    id: "professional",
+    icon: Briefcase,
+    title: "Professional Skills",
+    description: "Advance your career with targeted learning",
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    id: "coding",
+    icon: Code,
+    title: "Programming",
+    description: "Learn coding concepts and syntax",
+    color: "from-orange-500 to-red-500",
+  },
+  {
+    id: "creative",
+    icon: Palette,
+    title: "Creative Arts",
+    description: "Develop your artistic talents",
+    color: "from-pink-500 to-rose-500",
+  },
+  {
+    id: "fitness",
+    icon: Dumbbell,
+    title: "Health & Fitness",
+    description: "Build healthy habits and knowledge",
+    color: "from-green-500 to-lime-500",
+  },
+  {
+    id: "hobby",
+    icon: Heart,
+    title: "Personal Interest",
+    description: "Pursue your passions and hobbies",
+    color: "from-indigo-500 to-blue-500",
+  },
+  {
+    id: "other",
+    icon: Sparkles,
+    title: "Something Else",
+    description: "Create a custom learning experience",
+    color: "from-yellow-500 to-orange-500",
+  },
+];
+
+// Study intensity options
+const INTENSITY_OPTIONS = [
+  {
+    id: "light",
+    title: "Light & Steady",
+    subtitle: "5-10 min/day",
+    newCards: 5,
+    maxReviews: 50,
+    icon: Coffee,
+    color: "from-emerald-400 to-teal-400",
+  },
+  {
+    id: "moderate",
+    title: "Balanced",
+    subtitle: "15-20 min/day",
+    newCards: 15,
+    maxReviews: 100,
+    icon: Target,
+    color: "from-blue-400 to-violet-400",
+  },
+  {
+    id: "intensive",
+    title: "Intensive",
+    subtitle: "30+ min/day",
+    newCards: 30,
+    maxReviews: 200,
+    icon: Zap,
+    color: "from-orange-400 to-red-400",
+  },
+];
+
+// Schedule options
+const SCHEDULE_OPTIONS = [
+  { id: "daily", title: "Daily", subtitle: "Every day", icon: Clock },
+  {
+    id: "weekdays",
+    title: "Weekdays",
+    subtitle: "Monday - Friday",
+    icon: Briefcase,
+  },
+  {
+    id: "flexible",
+    title: "Flexible",
+    subtitle: "When I have time",
+    icon: Star,
+  },
+];
+
+// Add types for options
+type CategoryOption = (typeof CATEGORIES)[number];
+type IntensityOption = (typeof INTENSITY_OPTIONS)[number];
+type ScheduleOption = (typeof SCHEDULE_OPTIONS)[number];
+
 export function ProjectCreator() {
-  const router = useRouter();
-  const { reset: resetProjects } = useProjectsStore();
-
-  // Form state
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [newCardsPerDay, setNewCardsPerDay] = useState(
-    DEFAULT_PROJECT.new_cards_per_day
-  );
-  const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(
-    DEFAULT_PROJECT.max_reviews_per_day
-  );
-  const [srsSettings, setSrsSettings] = useState({
-    learning_steps: DEFAULT_PROJECT.learning_steps,
-    relearning_steps: DEFAULT_PROJECT.relearning_steps,
-    graduating_interval: DEFAULT_PROJECT.graduating_interval,
-    easy_interval: DEFAULT_PROJECT.easy_interval,
-    starting_ease: DEFAULT_PROJECT.starting_ease,
-    minimum_ease: DEFAULT_PROJECT.minimum_ease,
-    easy_bonus: DEFAULT_PROJECT.easy_bonus,
-    hard_interval_factor: DEFAULT_PROJECT.hard_interval_factor,
-    easy_interval_factor: DEFAULT_PROJECT.easy_interval_factor,
-    lapse_recovery_factor: DEFAULT_PROJECT.lapse_recovery_factor,
-    leech_threshold: DEFAULT_PROJECT.leech_threshold,
-    leech_action: DEFAULT_PROJECT.leech_action,
-    new_card_order: DEFAULT_PROJECT.new_card_order,
-    review_ahead: DEFAULT_PROJECT.review_ahead,
-    bury_siblings: DEFAULT_PROJECT.bury_siblings,
-    max_interval: DEFAULT_PROJECT.max_interval,
-    lapse_ease_penalty: DEFAULT_PROJECT.lapse_ease_penalty,
+  const [currentStep, setCurrentStep] = useState(STEPS.WELCOME);
+  const [formData, setFormData] = useState<{
+    name: string;
+    purpose: string;
+    category: CategoryOption | null;
+    intensity: IntensityOption | null;
+    schedule: ScheduleOption | null;
+    customSettings: boolean;
+  }>({
+    name: "",
+    purpose: "",
+    category: null,
+    intensity: null,
+    schedule: null,
+    customSettings: false,
   });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [animationClass, setAnimationClass] = useState("");
 
-  // UI state
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  // Form validation
-  const isValid = name.trim().length > 0;
-  const isLoading = creating;
-
-  const resetForm = () => {
-    setName("");
-    setDescription("");
-    setNewCardsPerDay(DEFAULT_PROJECT.new_cards_per_day);
-    setMaxReviewsPerDay(DEFAULT_PROJECT.max_reviews_per_day);
-    setSrsSettings({
-      learning_steps: DEFAULT_PROJECT.learning_steps,
-      relearning_steps: DEFAULT_PROJECT.relearning_steps,
-      graduating_interval: DEFAULT_PROJECT.graduating_interval,
-      easy_interval: DEFAULT_PROJECT.easy_interval,
-      starting_ease: DEFAULT_PROJECT.starting_ease,
-      minimum_ease: DEFAULT_PROJECT.minimum_ease,
-      easy_bonus: DEFAULT_PROJECT.easy_bonus,
-      hard_interval_factor: DEFAULT_PROJECT.hard_interval_factor,
-      easy_interval_factor: DEFAULT_PROJECT.easy_interval_factor,
-      lapse_recovery_factor: DEFAULT_PROJECT.lapse_recovery_factor,
-      leech_threshold: DEFAULT_PROJECT.leech_threshold,
-      leech_action: DEFAULT_PROJECT.leech_action,
-      new_card_order: DEFAULT_PROJECT.new_card_order,
-      review_ahead: DEFAULT_PROJECT.review_ahead,
-      bury_siblings: DEFAULT_PROJECT.bury_siblings,
-      max_interval: DEFAULT_PROJECT.max_interval,
-      lapse_ease_penalty: DEFAULT_PROJECT.lapse_ease_penalty,
-    });
+  // Animation handler for smooth transitions
+  const handleStepChange = (newStep: React.SetStateAction<number>) => {
+    setAnimationClass("opacity-0 transform translate-x-4");
+    setTimeout(() => {
+      setCurrentStep(newStep);
+      setAnimationClass("opacity-100 transform translate-x-0");
+    }, 150);
   };
 
-  const handleCreate = async () => {
-    if (!isValid) return;
+  // Auto-animate on mount
+  useEffect(() => {
+    setTimeout(() => {
+      setAnimationClass("opacity-100 transform translate-x-0");
+    }, 100);
+  }, []);
 
-    setCreating(true);
-    setError(null);
-    setSuccess(null);
+  // Progress calculation
+  const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100;
 
-    try {
-      console.log("ProjectCreator: Starting project creation...");
+  // Welcome Step Component
+  const WelcomeStep = () => (
+    <div className="text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+      <div className="relative inline-flex items-center justify-center">
+        <div className="w-32 h-32 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-3xl flex items-center justify-center shadow-brand-lg transform hover:scale-105 transition-all transition-slow group">
+          <Rocket className="w-16 h-16 text-white group-hover:animate-bounce" />
+        </div>
+        <div className="absolute -inset-4 bg-gradient-glass rounded-3xl blur opacity-60 animate-pulse" />
 
-      // Use the server action directly - make sure we're calling the right function
-      const projectId = await createProject({
-        name: name.trim(),
-        description: description.trim(),
-        new_cards_per_day: newCardsPerDay,
-        max_reviews_per_day: maxReviewsPerDay,
-        ...srsSettings,
-      });
+        {/* Floating elements */}
+        <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full animate-bounce opacity-80 delay-300">
+          <Sparkles className="w-5 h-5 text-white m-1.5" />
+        </div>
+        <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-pink-400 rounded-full animate-bounce opacity-80 delay-500">
+          <Star className="w-3 h-3 text-white m-1.5" />
+        </div>
+      </div>
 
-      console.log(
-        "ProjectCreator: Project created successfully with ID:",
-        projectId
-      );
+      <div className="space-y-4">
+        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent">
+          Welcome to Cognify
+        </h1>
+        <p className="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
+          Let's create your perfect learning experience in just a few steps.
+          <span className="block mt-2 text-brand-primary font-semibold">
+            ✨ Personalized • 🧠 AI-Powered • 🚀 Effective
+          </span>
+        </p>
+      </div>
 
-      // Invalidate cache to ensure UI updates
-      CacheInvalidation.invalidatePattern("user_projects");
+      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <button
+          onClick={() => handleStepChange(STEPS.PURPOSE)}
+          className="group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-semibold px-8 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand"
+        >
+          <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+          <div className="relative flex items-center gap-3">
+            <Play className="w-5 h-5" />
+            <span>Get Started</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </button>
 
-      // Reset projects store to ensure fresh data
-      resetProjects();
+        <div className="flex items-center gap-2 text-text-muted text-sm">
+          <Clock className="w-4 h-4" />
+          <span>Takes 2 minutes</span>
+        </div>
+      </div>
+    </div>
+  );
 
-      // Show success message and reset form for creating another project
-      setSuccess(`Project "${name.trim()}" created successfully!`);
-      resetForm();
+  // Purpose Step Component
+  const PurposeStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center mx-auto shadow-brand">
+          <User className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-primary">
+          Tell us about your project
+        </h2>
+        <p className="text-text-muted max-w-xl mx-auto">
+          Give your learning project a name and describe what you want to
+          achieve.
+        </p>
+      </div>
 
-      console.log("ProjectCreator: Staying on create page (no redirect)");
-    } catch (err) {
-      console.error("ProjectCreator: Error creating project:", err);
-      setError(err instanceof Error ? err.message : "Failed to create project");
-    } finally {
-      setCreating(false);
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="space-y-3">
+          <label className="block text-secondary font-semibold">
+            Project Name
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="e.g., Spanish Vocabulary, React Fundamentals, MCAT Prep..."
+            className="w-full px-4 py-4 surface-elevated border border-subtle rounded-xl text-primary placeholder:text-muted focus:border-brand focus:shadow-brand transition-all transition-normal text-lg"
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-secondary font-semibold">
+            What's your goal?
+          </label>
+          <textarea
+            value={formData.purpose}
+            onChange={(e) =>
+              setFormData({ ...formData, purpose: e.target.value })
+            }
+            placeholder="Describe what you want to learn and why it's important to you..."
+            rows={4}
+            className="w-full px-4 py-4 surface-elevated border border-subtle rounded-xl text-primary placeholder:text-muted focus:border-brand focus:shadow-brand transition-all transition-normal resize-none"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Category Step Component
+  const CategoryStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-brand-tertiary to-green-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
+          <BookOpen className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-primary">
+          What type of project is this?
+        </h2>
+        <p className="text-text-muted max-w-xl mx-auto">
+          Choose the category that best matches your learning goals.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+        {CATEGORIES.map((category, index) => {
+          const IconComponent = category.icon;
+          const isSelected = formData.category?.id === category.id;
+
+          return (
+            <button
+              key={category.id}
+              onClick={() => setFormData({ ...formData, category })}
+              className={`group relative overflow-hidden p-6 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-left ${
+                isSelected
+                  ? "border-brand surface-elevated shadow-brand"
+                  : "border-subtle surface-secondary hover:border-brand"
+              }`}
+              style={{
+                animationDelay: `${index * 100}ms`,
+                animation: "slideInUp 0.6s ease-out both",
+              }}
+            >
+              {isSelected && (
+                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
+              )}
+
+              <div className="relative space-y-4">
+                <div
+                  className={`w-12 h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center shadow-brand group-hover:scale-110 transition-transform transition-normal`}
+                >
+                  <IconComponent className="w-6 h-6 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-primary mb-1 group-hover:brand-primary transition-colors">
+                    {category.title}
+                  </h3>
+                  <p className="text-sm text-muted leading-relaxed">
+                    {category.description}
+                  </p>
+                </div>
+
+                {isSelected && (
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Intensity Step Component
+  const IntensityStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
+          <Target className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-primary">
+          How intensive should your study sessions be?
+        </h2>
+        <p className="text-text-muted max-w-xl mx-auto">
+          Choose a pace that fits your lifestyle and goals. You can always
+          adjust this later.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        {INTENSITY_OPTIONS.map((option, index) => {
+          const IconComponent = option.icon;
+          const isSelected = formData.intensity?.id === option.id;
+
+          return (
+            <button
+              key={option.id}
+              onClick={() => setFormData({ ...formData, intensity: option })}
+              className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
+                isSelected
+                  ? "border-brand surface-elevated shadow-brand"
+                  : "border-subtle surface-secondary hover:border-brand"
+              }`}
+              style={{
+                animationDelay: `${index * 200}ms`,
+                animation: "slideInUp 0.6s ease-out both",
+              }}
+            >
+              {isSelected && (
+                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
+              )}
+
+              <div className="relative space-y-6">
+                <div
+                  className={`w-16 h-16 bg-gradient-to-br ${option.color} rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal`}
+                >
+                  <IconComponent className="w-8 h-8 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-primary mb-2 group-hover:brand-primary transition-colors">
+                    {option.title}
+                  </h3>
+                  <p className="text-brand-primary font-semibold text-lg mb-3">
+                    {option.subtitle}
+                  </p>
+                  <div className="text-sm text-muted space-y-1">
+                    <div>{option.newCards} new cards/day</div>
+                    <div>Up to {option.maxReviews} reviews/day</div>
+                  </div>
+                </div>
+
+                {isSelected && (
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Schedule Step Component
+  const ScheduleStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
+          <Clock className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-primary">
+          When do you plan to study?
+        </h2>
+        <p className="text-text-muted max-w-xl mx-auto">
+          Set up a schedule that works for you. Consistency is key to effective
+          learning.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        {SCHEDULE_OPTIONS.map((option, index) => {
+          const IconComponent = option.icon;
+          const isSelected = formData.schedule?.id === option.id;
+
+          return (
+            <button
+              key={option.id}
+              onClick={() => setFormData({ ...formData, schedule: option })}
+              className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
+                isSelected
+                  ? "border-brand surface-elevated shadow-brand"
+                  : "border-subtle surface-secondary hover:border-brand"
+              }`}
+              style={{
+                animationDelay: `${index * 200}ms`,
+                animation: "slideInUp 0.6s ease-out both",
+              }}
+            >
+              {isSelected && (
+                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
+              )}
+
+              <div className="relative space-y-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal">
+                  <IconComponent className="w-8 h-8 text-white" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-primary mb-2 group-hover:brand-primary transition-colors">
+                    {option.title}
+                  </h3>
+                  <p className="text-text-muted">{option.subtitle}</p>
+                </div>
+
+                {isSelected && (
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
+                    <Check className="w-5 h-5 text-white" />
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="max-w-2xl mx-auto">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full p-4 surface-secondary border border-subtle rounded-xl text-left transition-all transition-normal hover:border-brand hover:shadow-brand group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Settings className="w-5 h-5 text-muted group-hover:brand-primary transition-colors" />
+              <span className="font-semibold text-secondary group-hover:text-primary transition-colors">
+                Advanced Settings
+              </span>
+            </div>
+            <ChevronDown
+              className={`w-5 h-5 text-muted transition-transform ${
+                showAdvanced ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-4 p-6 surface-elevated border border-subtle rounded-xl space-y-4 animate-in slide-in-from-top-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-secondary">
+                  Custom SRS Settings
+                </div>
+                <div className="text-sm text-muted">
+                  Fine-tune the spaced repetition algorithm
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    customSettings: !formData.customSettings,
+                  })
+                }
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  formData.customSettings ? "bg-brand-primary" : "bg-text-muted"
+                }`}
+              >
+                <div
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    formData.customSettings
+                      ? "translate-x-6"
+                      : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Confirmation Step Component
+  const ConfirmationStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-gradient-brand rounded-3xl flex items-center justify-center mx-auto shadow-brand-lg animate-pulse">
+          <Check className="w-10 h-10 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-primary">
+          Perfect! Your project is ready
+        </h2>
+        <p className="text-text-muted max-w-xl mx-auto">
+          Review your choices below, then create your personalized learning
+          experience.
+        </p>
+      </div>
+
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="surface-elevated border border-subtle rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-primary text-lg">
+                {formData.name || "Untitled Project"}
+              </div>
+              <div className="text-text-muted">
+                {formData.purpose || "No description provided"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {formData.category && (
+          <div className="surface-elevated border border-subtle rounded-xl p-6">
+            <div className="flex items-center gap-4">
+              {React.createElement(formData.category.icon, {
+                className: "w-6 h-6 text-brand-primary",
+              })}
+              <div>
+                <div className="font-semibold text-secondary">Category</div>
+                <div className="text-primary">{formData.category.title}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {formData.intensity && (
+          <div className="surface-elevated border border-subtle rounded-xl p-6">
+            <div className="flex items-center gap-4">
+              <Target className="w-6 h-6 text-brand-primary" />
+              <div>
+                <div className="font-semibold text-secondary">
+                  Study Intensity
+                </div>
+                <div className="text-primary">
+                  {formData.intensity.title} - {formData.intensity.subtitle}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {formData.schedule && (
+          <div className="surface-elevated border border-subtle rounded-xl p-6">
+            <div className="flex items-center gap-4">
+              <Clock className="w-6 h-6 text-brand-primary" />
+              <div>
+                <div className="font-semibold text-secondary">Schedule</div>
+                <div className="text-primary">
+                  {formData.schedule.title} - {formData.schedule.subtitle}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="text-center">
+        <button
+          onClick={() => {
+            // Here you would normally create the project
+            alert("Project created successfully! 🎉");
+          }}
+          className="group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-bold text-lg px-10 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand"
+        >
+          <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+          <div className="relative flex items-center gap-3">
+            <Sparkles className="w-6 h-6" />
+            <span>Create My Project</span>
+            <Rocket className="w-6 h-6 group-hover:animate-bounce" />
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+
+  // Navigation buttons
+  const canGoNext = () => {
+    switch (currentStep) {
+      case STEPS.WELCOME:
+        return true;
+      case STEPS.PURPOSE:
+        return formData.name.trim().length > 0;
+      case STEPS.CATEGORY:
+        return formData.category !== null;
+      case STEPS.INTENSITY:
+        return formData.intensity !== null;
+      case STEPS.SCHEDULE:
+        return formData.schedule !== null;
+      default:
+        return false;
     }
   };
 
-  const handleCancel = () => {
-    router.push("/projects");
+  const handleNext = () => {
+    if (canGoNext() && currentStep < STEPS.CONFIRMATION) {
+      handleStepChange(currentStep + 1);
+    }
   };
 
-  const handleGoToProjects = () => {
-    router.push("/projects");
+  const handlePrev = () => {
+    if (currentStep > STEPS.WELCOME) {
+      handleStepChange(currentStep - 1);
+    }
+  };
+
+  // Step component renderer
+  const renderStep = () => {
+    const steps = [
+      WelcomeStep,
+      PurposeStep,
+      CategoryStep,
+      IntensityStep,
+      ScheduleStep,
+      null, // Advanced settings (handled in schedule)
+      ConfirmationStep,
+    ];
+
+    const StepComponent = steps[currentStep];
+    return StepComponent ? <StepComponent /> : null;
   };
 
   return (
-    <div className="min-h-screen surface-primary">
+    <div className="flex-1 surface-primary relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -188,364 +708,62 @@ export function ProjectCreator() {
         />
       </div>
 
-      <div className="relative container mx-auto px-4 py-8">
-        {/* Enhanced Header with Animation */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-3 mb-6 group">
-            <div className="relative">
-              <div className="w-20 h-20 bg-gradient-brand rounded-3xl flex items-center justify-center shadow-brand-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-slow">
-                <Plus className="w-10 h-10 text-white" />
-              </div>
-              <div className="absolute -inset-2 bg-gradient-glass rounded-3xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-              {/* Floating sparkles */}
-              <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-bounce opacity-80">
-                <Sparkles className="w-3 h-3 text-white m-0.5" />
-              </div>
+      {/* Progress bar */}
+      {currentStep > STEPS.WELCOME && (
+        <div className="relative z-10 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="surface-secondary rounded-full h-2 overflow-hidden shadow-inner">
+              <div
+                className="h-full bg-gradient-brand transition-all duration-1000 ease-out shadow-brand"
+                style={{ width: `${progress}%` }}
+              />
             </div>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent">
-            Create New Project
-          </h1>
-
-          <p className="text-text-muted text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
-            Transform your learning with AI-powered spaced repetition.{" "}
-            <span className="text-brand-primary font-semibold">
-              Start your knowledge journey today.
-            </span>
-          </p>
-        </div>
-
-        {/* Enhanced Success Alert */}
-        {success && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="relative overflow-hidden rounded-2xl border border-green-500/20 glass-surface shadow-brand-lg backdrop-blur group">
-              <div className="absolute inset-0 bg-green-500/5" />
-              <div className="relative p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-green-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-green-400 text-lg mb-1">
-                      Project Created!
-                    </div>
-                    <div className="text-green-400/80">{success}</div>
-                  </div>
-                  <button
-                    onClick={handleGoToProjects}
-                    className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors font-semibold"
-                  >
-                    View Projects
-                  </button>
-                  <button
-                    onClick={() => setSuccess(null)}
-                    className="p-2 hover:bg-green-500/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4 text-green-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Enhanced Error Alert */}
-        {error && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="relative overflow-hidden rounded-2xl border border-red-500/20 glass-surface shadow-brand-lg backdrop-blur group">
-              <div className="absolute inset-0 bg-red-500/5" />
-              <div className="relative p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
-                    <X className="w-6 h-6 text-red-400" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-red-400 text-lg mb-1">
-                      Creation Failed
-                    </div>
-                    <div className="text-red-400/80">{error}</div>
-                  </div>
-                  <button
-                    onClick={() => setError(null)}
-                    className="ml-auto p-2 hover:bg-red-500/10 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4 text-red-400" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-            {/* Left Column - Project Info (2 columns on xl) */}
-            <div className="xl:col-span-3 space-y-8">
-              {/* Project Information Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand-lg backdrop-blur group">
-                {/* Card glow effect */}
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-
-                <div className="relative p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-14 h-14 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand">
-                      <BookOpen className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-primary mb-1">
-                        Project Details
-                      </h2>
-                      <p className="text-text-muted">
-                        Give your project a name and set your study goals
-                      </p>
-                    </div>
-                  </div>
-
-                  <ProjectInfoForm
-                    name={name}
-                    setName={setName}
-                    description={description}
-                    setDescription={setDescription}
-                    newCardsPerDay={newCardsPerDay}
-                    setNewCardsPerDay={setNewCardsPerDay}
-                    maxReviewsPerDay={maxReviewsPerDay}
-                    setMaxReviewsPerDay={setMaxReviewsPerDay}
-                    isValid={isValid}
-                    saving={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Study Settings Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand-lg backdrop-blur group">
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-0 group-hover:opacity-100 transition-all transition-slow" />
-
-                <div className="relative p-8">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="w-14 h-14 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center shadow-brand">
-                      <Target className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-bold text-primary mb-1">
-                        Study Settings
-                      </h2>
-                      <p className="text-text-muted">
-                        Configure your spaced repetition algorithm
-                      </p>
-                    </div>
-                  </div>
-
-                  <ProjectSRSSettings
-                    project={
-                      {
-                        ...DEFAULT_PROJECT,
-                        ...srsSettings,
-                      } as NormalizedProject
-                    }
-                    onChange={(updates) => {
-                      // Filter updates to only include SRS settings that match our state shape
-                      const srsUpdates = Object.fromEntries(
-                        Object.entries(updates).filter(
-                          ([key]) => key in srsSettings
-                        )
-                      ) as Partial<typeof srsSettings>;
-
-                      setSrsSettings((prev) => ({ ...prev, ...srsUpdates }));
-                    }}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Tips & Preview (1 column on xl) */}
-            <div className="xl:col-span-1 space-y-6">
-              {/* Quick Tips Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur group">
-                <div className="absolute inset-0 bg-gradient-glass opacity-20" />
-                <div className="relative p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center">
-                      <Lightbulb className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">Pro Tips</h3>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-brand mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Descriptive Names
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Choose clear, specific names that reflect your study
-                          topic for easy organization
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-brand-secondary to-brand-accent mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Realistic Goals
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Set achievable daily limits to build consistent study
-                          habits without burnout
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-brand-tertiary to-green-400 mt-2 flex-shrink-0 shadow-brand" />
-                      <div>
-                        <div className="font-bold text-secondary mb-1">
-                          Smart Defaults
-                        </div>
-                        <div className="text-muted text-sm leading-relaxed">
-                          Our optimized SRS settings work great for most
-                          learners - no need to change them
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Learning Journey Card */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur">
-                <div className="absolute inset-0 bg-gradient-glass opacity-30" />
-                <div className="relative p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
-                      <Brain className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-primary">
-                      Your Journey
-                    </h3>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 surface-elevated rounded-xl border border-subtle group hover:shadow-brand transition-all transition-normal">
-                      <div className="w-8 h-8 rounded-full bg-gradient-brand text-white text-sm flex items-center justify-center font-bold shadow-brand">
-                        1
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-secondary font-semibold">
-                          Create Project
-                        </span>
-                        <div className="w-full bg-brand-primary/20 rounded-full h-1 mt-2">
-                          <div className="bg-gradient-brand h-1 rounded-full w-full shadow-brand" />
-                        </div>
-                      </div>
-                      <Zap className="w-4 h-4 text-brand-primary opacity-60" />
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 surface-secondary rounded-xl border border-subtle opacity-60 group">
-                      <div className="w-8 h-8 rounded-full bg-text-muted text-white text-sm flex items-center justify-center font-bold">
-                        2
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-muted font-semibold">
-                          Add Flashcards
-                        </span>
-                        <div className="w-full bg-text-muted/20 rounded-full h-1 mt-2">
-                          <div className="bg-text-muted/40 h-1 rounded-full w-0" />
-                        </div>
-                      </div>
-                      <Clock className="w-4 h-4 text-muted" />
-                    </div>
-
-                    <div className="flex items-center gap-4 p-4 surface-secondary rounded-xl border border-subtle opacity-60 group">
-                      <div className="w-8 h-8 rounded-full bg-text-muted text-white text-sm flex items-center justify-center font-bold">
-                        3
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-muted font-semibold">
-                          Start Learning
-                        </span>
-                        <div className="w-full bg-text-muted/20 rounded-full h-1 mt-2">
-                          <div className="bg-text-muted/40 h-1 rounded-full w-0" />
-                        </div>
-                      </div>
-                      <TrendingUp className="w-4 h-4 text-muted" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistics Preview */}
-              <div className="relative overflow-hidden rounded-2xl glass-surface border border-subtle shadow-brand backdrop-blur">
-                <div className="absolute inset-0 bg-gradient-glass opacity-20" />
-                <div className="relative p-6">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-brand">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-bold text-primary mb-2">
-                      Ready to Start?
-                    </h3>
-                    <p className="text-muted text-sm leading-relaxed">
-                      Join thousands of learners using AI-powered spaced
-                      repetition to master new skills faster than ever.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex justify-between items-center mt-4 text-sm">
+              <span className="text-text-muted">
+                Step {currentStep + 1} of {Object.keys(STEPS).length}
+              </span>
+              <span className="text-brand-primary font-semibold">
+                {Math.round(progress)}% complete
+              </span>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Enhanced Action Buttons */}
-        <div className="max-w-7xl mx-auto mt-12">
-          <div className="flex flex-col sm:flex-row sm:justify-end gap-6">
-            <button
-              className="btn btn-ghost btn-lg interactive-hover border-2 border-subtle hover:border-brand hover:shadow-brand transition-all transition-normal group relative overflow-hidden rounded-xl px-8 py-4"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
-              <div className="absolute inset-0 bg-gradient-glass opacity-0 group-hover:opacity-100 transition-opacity transition-normal" />
-              <div className="relative flex items-center gap-3">
-                <X className="w-5 h-5" />
-                <span className="font-semibold">Cancel</span>
-              </div>
-            </button>
-
-            <button
-              className={`relative overflow-hidden rounded-xl px-8 py-4 font-semibold transition-all transition-normal group ${
-                isValid && !isLoading
-                  ? "bg-gradient-brand hover:shadow-brand-lg text-white border-0 hover:scale-[1.02] shadow-brand"
-                  : "bg-surface-secondary text-muted border border-subtle cursor-not-allowed"
-              }`}
-              onClick={handleCreate}
-              disabled={!isValid || isLoading}
-            >
-              {/* Button shine effect */}
-              {isValid && !isLoading && (
-                <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
-              )}
-
-              <div className="relative flex items-center gap-3">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Creating Project...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    <span>Create Project</span>
-                  </>
-                )}
-              </div>
-            </button>
-          </div>
-        </div>
+      {/* Main content */}
+      <div
+        className={`relative z-10 w-full max-w-7xl mx-auto px-6 py-8 md:py-12 transition-all transition-normal ${animationClass}`}
+      >
+        {renderStep()}
       </div>
+
+      {/* Navigation */}
+      {currentStep > STEPS.WELCOME && currentStep < STEPS.CONFIRMATION && (
+        <div className="relative z-10 p-4 md:p-6 border-t border-subtle">
+          <div className="max-w-7xl mx-auto flex justify-between">
+            <button
+              onClick={handlePrev}
+              className="group flex items-center gap-2 px-4 md:px-6 py-3 surface-secondary border border-subtle rounded-xl text-secondary hover:text-primary hover:border-brand transition-all transition-normal interactive-hover"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-semibold">Back</span>
+            </button>
+
+            <button
+              onClick={handleNext}
+              disabled={!canGoNext()}
+              className={`group flex items-center gap-2 px-4 md:px-6 py-3 rounded-xl font-semibold transition-all transition-normal ${
+                canGoNext()
+                  ? "bg-gradient-brand text-white hover:shadow-brand shadow-brand hover:scale-[1.02]"
+                  : "surface-secondary text-muted border border-subtle cursor-not-allowed"
+              }`}
+            >
+              <span>Continue</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
