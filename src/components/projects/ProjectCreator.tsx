@@ -170,8 +170,18 @@ export function ProjectCreator() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [animationClass, setAnimationClass] = useState("");
 
+  // Define ordered steps (controls progress and next/prev reliably)
+  const STEP_ORDER = [
+    STEPS.WELCOME,
+    STEPS.PURPOSE,
+    STEPS.CATEGORY,
+    STEPS.INTENSITY,
+    STEPS.SCHEDULE,
+    STEPS.CONFIRMATION,
+  ];
+
   // Animation handler for smooth transitions
-  const handleStepChange = (newStep: React.SetStateAction<number>) => {
+  const handleStepChange = (newStep: number) => {
     setAnimationClass("opacity-0 transform translate-x-4");
     setTimeout(() => {
       setCurrentStep(newStep);
@@ -179,17 +189,20 @@ export function ProjectCreator() {
     }, 150);
   };
 
-  // Auto-animate on mount
   useEffect(() => {
-    setTimeout(() => {
-      setAnimationClass("opacity-100 transform translate-x-0");
-    }, 100);
+    setTimeout(
+      () => setAnimationClass("opacity-100 transform translate-x-0"),
+      100
+    );
   }, []);
 
-  // Progress calculation
-  const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100;
+  // Progress calculation based on STEP_ORDER
+  const currentIndex = Math.max(0, STEP_ORDER.indexOf(currentStep));
+  const TOTAL_STEPS = STEP_ORDER.length;
+  const progress = ((currentIndex + 1) / TOTAL_STEPS) * 100;
 
-  // Welcome Step Component
+  // --- Steps (identical to your previous ones, only handlers use functional setState) ---
+
   const WelcomeStep = () => (
     <div className="text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
       <div className="relative inline-flex items-center justify-center">
@@ -197,8 +210,6 @@ export function ProjectCreator() {
           <Rocket className="w-16 h-16 text-white group-hover:animate-bounce" />
         </div>
         <div className="absolute -inset-4 bg-gradient-glass rounded-3xl blur opacity-60 animate-pulse" />
-
-        {/* Floating elements */}
         <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full animate-bounce opacity-80 delay-300">
           <Sparkles className="w-5 h-5 text-white m-1.5" />
         </div>
@@ -240,7 +251,6 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Purpose Step Component
   const PurposeStep = () => (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -264,7 +274,9 @@ export function ProjectCreator() {
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
             placeholder="e.g., Spanish Vocabulary, React Fundamentals, MCAT Prep..."
             className="w-full px-4 py-4 surface-elevated border border-subtle rounded-xl text-primary placeholder:text-muted focus:border-brand focus:shadow-brand transition-all transition-normal text-lg"
             autoFocus
@@ -278,7 +290,7 @@ export function ProjectCreator() {
           <textarea
             value={formData.purpose}
             onChange={(e) =>
-              setFormData({ ...formData, purpose: e.target.value })
+              setFormData((prev) => ({ ...prev, purpose: e.target.value }))
             }
             placeholder="Describe what you want to learn and why it's important to you..."
             rows={4}
@@ -289,7 +301,6 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Category Step Component
   const CategoryStep = () => (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -304,7 +315,7 @@ export function ProjectCreator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto mb-10 md:mb-16">
         {CATEGORIES.map((category, index) => {
           const IconComponent = category.icon;
           const isSelected = formData.category?.id === category.id;
@@ -312,7 +323,7 @@ export function ProjectCreator() {
           return (
             <button
               key={category.id}
-              onClick={() => setFormData({ ...formData, category })}
+              onClick={() => setFormData((prev) => ({ ...prev, category }))}
               className={`group relative overflow-hidden p-6 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-left ${
                 isSelected
                   ? "border-brand surface-elevated shadow-brand"
@@ -356,7 +367,6 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Intensity Step Component
   const IntensityStep = () => (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -380,7 +390,9 @@ export function ProjectCreator() {
           return (
             <button
               key={option.id}
-              onClick={() => setFormData({ ...formData, intensity: option })}
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, intensity: option }))
+              }
               className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
                 isSelected
                   ? "border-brand surface-elevated shadow-brand"
@@ -428,7 +440,6 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Schedule Step Component
   const ScheduleStep = () => (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -452,7 +463,9 @@ export function ProjectCreator() {
           return (
             <button
               key={option.id}
-              onClick={() => setFormData({ ...formData, schedule: option })}
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, schedule: option }))
+              }
               className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
                 isSelected
                   ? "border-brand surface-elevated shadow-brand"
@@ -523,10 +536,10 @@ export function ProjectCreator() {
               </div>
               <button
                 onClick={() =>
-                  setFormData({
-                    ...formData,
-                    customSettings: !formData.customSettings,
-                  })
+                  setFormData((prev) => ({
+                    ...prev,
+                    customSettings: !prev.customSettings,
+                  }))
                 }
                 className={`relative w-12 h-6 rounded-full transition-colors ${
                   formData.customSettings ? "bg-brand-primary" : "bg-text-muted"
@@ -547,7 +560,6 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Confirmation Step Component
   const ConfirmationStep = () => (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -627,10 +639,7 @@ export function ProjectCreator() {
 
       <div className="text-center">
         <button
-          onClick={() => {
-            // Here you would normally create the project
-            alert("Project created successfully! 🎉");
-          }}
+          onClick={() => alert("Project created successfully! 🎉")}
           className="group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-bold text-lg px-10 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand"
         >
           <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
@@ -644,7 +653,17 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Navigation buttons
+  // Mapping steps to components
+  const stepsMap: Record<number, React.FC> = {
+    [STEPS.WELCOME]: WelcomeStep,
+    [STEPS.PURPOSE]: PurposeStep,
+    [STEPS.CATEGORY]: CategoryStep,
+    [STEPS.INTENSITY]: IntensityStep,
+    [STEPS.SCHEDULE]: ScheduleStep,
+    [STEPS.CONFIRMATION]: ConfirmationStep,
+  };
+
+  // Navigation helpers
   const canGoNext = () => {
     switch (currentStep) {
       case STEPS.WELCOME:
@@ -663,53 +682,35 @@ export function ProjectCreator() {
   };
 
   const handleNext = () => {
-    if (canGoNext() && currentStep < STEPS.CONFIRMATION) {
-      handleStepChange(currentStep + 1);
-    }
+    if (!canGoNext()) return;
+    const idx = STEP_ORDER.indexOf(currentStep);
+    if (idx === -1) return;
+    const next = STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
+    if (next !== undefined) handleStepChange(next);
   };
 
   const handlePrev = () => {
-    if (currentStep > STEPS.WELCOME) {
-      handleStepChange(currentStep - 1);
-    }
+    const idx = STEP_ORDER.indexOf(currentStep);
+    if (idx <= 0) return;
+    const prev = STEP_ORDER[idx - 1];
+    handleStepChange(prev);
   };
 
-  // Step component renderer
+  // Step renderer
   const renderStep = () => {
-    const steps = [
-      WelcomeStep,
-      PurposeStep,
-      CategoryStep,
-      IntensityStep,
-      ScheduleStep,
-      null, // Advanced settings (handled in schedule)
-      ConfirmationStep,
-    ];
-
-    const StepComponent = steps[currentStep];
+    const StepComponent = stepsMap[currentStep];
     return StepComponent ? <StepComponent /> : null;
   };
 
   return (
-    <div className="flex-1 surface-primary relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-20 left-10 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "4s" }}
-        />
-        <div
-          className="absolute bottom-32 right-16 w-48 h-48 bg-gradient-glass rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: "6s", animationDelay: "2s" }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-glass rounded-full blur-3xl opacity-20 animate-pulse"
-          style={{ animationDuration: "8s", animationDelay: "1s" }}
-        />
-      </div>
-
+    <div
+      className="flex-1 surface-primary relative overflow-hidden"
+      style={{
+        paddingBottom: "calc(76px + env(safe-area-inset-bottom) + 16px)",
+      }}
+    >
       {/* Progress bar */}
-      {currentStep > STEPS.WELCOME && (
+      {currentStep !== STEPS.WELCOME && (
         <div className="relative z-10 p-4 md:p-6">
           <div className="max-w-7xl mx-auto">
             <div className="surface-secondary rounded-full h-2 overflow-hidden shadow-inner">
@@ -720,7 +721,7 @@ export function ProjectCreator() {
             </div>
             <div className="flex justify-between items-center mt-4 text-sm">
               <span className="text-text-muted">
-                Step {currentStep + 1} of {Object.keys(STEPS).length}
+                Step {currentIndex + 1} of {TOTAL_STEPS}
               </span>
               <span className="text-brand-primary font-semibold">
                 {Math.round(progress)}% complete
@@ -729,18 +730,19 @@ export function ProjectCreator() {
           </div>
         </div>
       )}
-
       {/* Main content */}
       <div
         className={`relative z-10 w-full max-w-7xl mx-auto px-6 py-8 md:py-12 transition-all transition-normal ${animationClass}`}
       >
         {renderStep()}
       </div>
-
-      {/* Navigation */}
-      {currentStep > STEPS.WELCOME && currentStep < STEPS.CONFIRMATION && (
-        <div className="relative z-10 p-4 md:p-6 border-t border-subtle">
-          <div className="max-w-7xl mx-auto flex justify-between">
+      {/* Navigation - FIXED so it can't be hidden */}
+      {currentStep !== STEPS.WELCOME && currentStep !== STEPS.CONFIRMATION && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 border-t border-subtle bg-white/5 backdrop-blur-md"
+          style={{ height: "76px", padding: "12px 16px" }}
+        >
+          <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
             <button
               onClick={handlePrev}
               className="group flex items-center gap-2 px-4 md:px-6 py-3 surface-secondary border border-subtle rounded-xl text-secondary hover:text-primary hover:border-brand transition-all transition-normal interactive-hover"
@@ -755,7 +757,7 @@ export function ProjectCreator() {
               className={`group flex items-center gap-2 px-4 md:px-6 py-3 rounded-xl font-semibold transition-all transition-normal ${
                 canGoNext()
                   ? "bg-gradient-brand text-white hover:shadow-brand shadow-brand hover:scale-[1.02]"
-                  : "surface-secondary text-muted border border-subtle cursor-not-allowed"
+                  : "bg-white border border-gray-200 text-gray-400 opacity-95 cursor-not-allowed"
               }`}
             >
               <span>Continue</span>
