@@ -16,6 +16,7 @@ import {
   Clock,
   Zap,
   TrendingUp,
+  CheckCircle,
 } from "lucide-react";
 import { createProject } from "@/app/(main)/projects/actions";
 import { ProjectInfoForm } from "./ProjectInfoForm";
@@ -86,18 +87,49 @@ export function ProjectCreator() {
   // UI state
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Form validation
   const isValid = name.trim().length > 0;
   const isLoading = creating;
+
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setNewCardsPerDay(DEFAULT_PROJECT.new_cards_per_day);
+    setMaxReviewsPerDay(DEFAULT_PROJECT.max_reviews_per_day);
+    setSrsSettings({
+      learning_steps: DEFAULT_PROJECT.learning_steps,
+      relearning_steps: DEFAULT_PROJECT.relearning_steps,
+      graduating_interval: DEFAULT_PROJECT.graduating_interval,
+      easy_interval: DEFAULT_PROJECT.easy_interval,
+      starting_ease: DEFAULT_PROJECT.starting_ease,
+      minimum_ease: DEFAULT_PROJECT.minimum_ease,
+      easy_bonus: DEFAULT_PROJECT.easy_bonus,
+      hard_interval_factor: DEFAULT_PROJECT.hard_interval_factor,
+      easy_interval_factor: DEFAULT_PROJECT.easy_interval_factor,
+      lapse_recovery_factor: DEFAULT_PROJECT.lapse_recovery_factor,
+      leech_threshold: DEFAULT_PROJECT.leech_threshold,
+      leech_action: DEFAULT_PROJECT.leech_action,
+      new_card_order: DEFAULT_PROJECT.new_card_order,
+      review_ahead: DEFAULT_PROJECT.review_ahead,
+      bury_siblings: DEFAULT_PROJECT.bury_siblings,
+      max_interval: DEFAULT_PROJECT.max_interval,
+      lapse_ease_penalty: DEFAULT_PROJECT.lapse_ease_penalty,
+    });
+  };
 
   const handleCreate = async () => {
     if (!isValid) return;
 
     setCreating(true);
     setError(null);
+    setSuccess(null);
 
     try {
+      console.log("ProjectCreator: Starting project creation...");
+
+      // Use the server action directly - make sure we're calling the right function
       const projectId = await createProject({
         name: name.trim(),
         description: description.trim(),
@@ -106,16 +138,24 @@ export function ProjectCreator() {
         ...srsSettings,
       });
 
+      console.log(
+        "ProjectCreator: Project created successfully with ID:",
+        projectId
+      );
+
       // Invalidate cache to ensure UI updates
       CacheInvalidation.invalidatePattern("user_projects");
 
       // Reset projects store to ensure fresh data
       resetProjects();
 
-      // Navigate to the edit page to add flashcards
-      router.push(`/projects/${projectId}/edit`);
+      // Show success message and reset form for creating another project
+      setSuccess(`Project "${name.trim()}" created successfully!`);
+      resetForm();
+
+      console.log("ProjectCreator: Staying on create page (no redirect)");
     } catch (err) {
-      console.error("Error creating project:", err);
+      console.error("ProjectCreator: Error creating project:", err);
       setError(err instanceof Error ? err.message : "Failed to create project");
     } finally {
       setCreating(false);
@@ -123,6 +163,10 @@ export function ProjectCreator() {
   };
 
   const handleCancel = () => {
+    router.push("/projects");
+  };
+
+  const handleGoToProjects = () => {
     router.push("/projects");
   };
 
@@ -171,6 +215,40 @@ export function ProjectCreator() {
             </span>
           </p>
         </div>
+
+        {/* Enhanced Success Alert */}
+        {success && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="relative overflow-hidden rounded-2xl border border-green-500/20 glass-surface shadow-brand-lg backdrop-blur group">
+              <div className="absolute inset-0 bg-green-500/5" />
+              <div className="relative p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-green-400 text-lg mb-1">
+                      Project Created!
+                    </div>
+                    <div className="text-green-400/80">{success}</div>
+                  </div>
+                  <button
+                    onClick={handleGoToProjects}
+                    className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors font-semibold"
+                  >
+                    View Projects
+                  </button>
+                  <button
+                    onClick={() => setSuccess(null)}
+                    className="p-2 hover:bg-green-500/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4 text-green-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Enhanced Error Alert */}
         {error && (
@@ -460,8 +538,7 @@ export function ProjectCreator() {
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    <span>Create & Add Cards</span>
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform transition-fast" />
+                    <span>Create Project</span>
                   </>
                 )}
               </div>

@@ -2,8 +2,6 @@
 
 import { SidebarNav } from "@/app/(main)/components/SidebarNav";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { createProject } from "./components/../actions";
 
 export default function ProjectsLayout({
   children,
@@ -11,19 +9,12 @@ export default function ProjectsLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
 
-  const handleTab = async (tab: "all" | "create") => {
+  const handleTab = (tab: "all" | "create") => {
     if (tab === "all") {
       router.push("/projects");
     } else if (tab === "create") {
-      startTransition(async () => {
-        const id = await createProject({
-          name: "Untitled Project",
-          description: "",
-        });
-        if (id) router.push(`/projects/${id}/edit`);
-      });
+      router.push("/projects/create");
     }
   };
 
