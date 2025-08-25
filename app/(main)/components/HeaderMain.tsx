@@ -16,7 +16,7 @@ import { useThemeStore } from "@/hooks/useTheme";
 import React from "react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { signOut } from "../dashboard/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +30,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function HeaderMain() {
-  const { theme, toggleTheme } = useThemeStore();
+  const { theme, toggleTheme, isHydrated, hydrate } = useThemeStore();
   const { userProfile } = useUserProfile();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    hydrate();
+  }, [hydrate]);
 
   const navItems = [
     { href: "/projects", label: "Projects", icon: FolderOpen },
@@ -127,7 +126,7 @@ export function HeaderMain() {
           aria-label="Toggle theme"
           className="text-secondary hover:text-primary interactive-hover transition-normal group"
         >
-          {mounted && theme === "dark" ? (
+          {isHydrated && theme === "dark" ? (
             <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
           ) : (
             <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />

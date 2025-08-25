@@ -29,13 +29,26 @@ export const metadata: Metadata = {
   description: "A website for creating flashcards from PDFs",
 };
 
+// Script to prevent FOUC by setting theme before any rendering
 const themeInitScript = `
   (function() {
     try {
-      const t = localStorage.getItem('theme');
-      const theme = t || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', theme);
-    } catch {}
+      const storedTheme = localStorage.getItem('theme');
+      const theme = storedTheme || 'dark'; // Default to dark if nothing stored
+      const html = document.documentElement;
+      
+      // Clear any existing theme classes first
+      html.classList.remove('dark', 'light');
+      
+      // Apply the correct theme
+      html.classList.add(theme);
+      
+      // Also set a CSS custom property for immediate styling
+      html.style.setProperty('--initial-theme', theme);
+    } catch (e) {
+      // Fallback to dark mode if localStorage fails
+      document.documentElement.classList.add('dark');
+    }
   })();
 `;
 
