@@ -1,10 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getProjectStudyStats } from "@/lib/srs/SRSDBUtils";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/projects/[id]/stats
-export async function GET(context: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = await context.params;
+// safely resolve id whether context.params is an object or a Promise
+async function resolveProjectId(ctx: unknown): Promise<string | undefined> {
+  if (typeof ctx !== "object" || ctx === null) return undefined;
+  const maybe = ctx as { params?: unknown };
+  const params = maybe.params;
+
+  // params might be a Promise (some codegen/edge cases). handle both.
+  if (params && typeof (params as { then?: unknown })?.then === "function") {
+    const resolvedParams = (await params) as unknown;
+    if (
+      typeof resolvedParams === "object" &&
+      resolvedParams !== null &&
+      "id" in resolvedParams
+    ) {
+      const id = (resolvedParams as { id?: unknown }).id;
+      return typeof id === "string" ? id : undefined;
+    }
+    return undefined;
+  }
+
+  if (
+    typeof params === "object" &&
+    params !== null &&
+    "id" in (params as object)
+  ) {
+    const id = (params as { id?: unknown }).id;
+    return typeof id === "string" ? id : undefined;
+  }
+
+  return undefined;
+}
+
+// Correct handler signature: request first, context second
+export const GET = async (request: NextRequest, context: unknown) => {
+  const projectId = await resolveProjectId(context);
 
   if (!projectId) {
     return NextResponse.json(
@@ -21,6 +53,7 @@ export async function GET(context: { params: Promise<{ id: string }> }) {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
+
     if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -43,4 +76,4 @@ export async function GET(context: { params: Promise<{ id: string }> }) {
       { status: 500 }
     );
   }
-}
+};

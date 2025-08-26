@@ -1,4 +1,5 @@
 import { getProjectById } from "../../actions";
+import { getFlashcardsByProjectId } from "../../actions/flashcard-actions";
 import { notFound } from "next/navigation";
 import { FlashcardEditor } from "@/src/components/flashcards/FlashcardEditor";
 
@@ -20,15 +21,12 @@ export default async function ProjectEditPage(props: {
     return notFound();
   }
 
-  // Normalize project for type compatibility
-  const { normalizeProject } = await import("@/lib/utils/normalizeProject");
-  const normalizedProject = normalizeProject(project);
-
-  console.log(`[EditPage] Normalized project:`, normalizedProject);
+  // Fetch flashcards for this project
+  const flashcards = await getFlashcardsByProjectId(id);
 
   return (
     <main className="flex-1 min-h-screen overflow-auto">
-      <FlashcardEditor project={normalizedProject} />
+      <FlashcardEditor project={project} initialFlashcards={flashcards} />
     </main>
   );
 }
