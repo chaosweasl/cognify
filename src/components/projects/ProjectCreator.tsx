@@ -227,7 +227,8 @@ export function ProjectCreator() {
           Welcome to Cognify
         </h1>
         <p className="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
-          Let's create your perfect learning experience in just a few steps.
+          Let&apos;s create your perfect learning experience in just a few
+          steps.
           <span className="block mt-2 text-brand-primary font-semibold">
             ✨ Personalized • 🧠 AI-Powered • 🚀 Effective
           </span>
@@ -289,7 +290,7 @@ export function ProjectCreator() {
 
         <div className="space-y-3">
           <label className="block text-secondary font-semibold">
-            What's your goal?
+            What&apos;s your goal?
           </label>
           <textarea
             value={formData.purpose}
@@ -570,7 +571,7 @@ export function ProjectCreator() {
     setIsCreating(true);
     try {
       // Compose payload for API
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: formData.name,
         description: formData.purpose,
         // SRS settings from intensity
@@ -597,7 +598,7 @@ export function ProjectCreator() {
       toast.success("Project created successfully!");
       // Optionally: redirect to project page or dashboard
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to create project");
       setIsCreating(false);
     }

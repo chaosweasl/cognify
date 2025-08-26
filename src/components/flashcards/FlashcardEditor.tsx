@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Save,
-  X,
   Loader2,
   BookOpen,
   CheckCircle2,
@@ -12,25 +11,16 @@ import {
   Sparkles,
   ArrowLeft,
   Settings,
-  RotateCcw,
   Type,
   MessageSquare,
   ChevronLeft,
   ChevronRight,
   Trash2,
-  AlertTriangle,
-  Navigation,
-  Zap,
-  Target,
-  Clock,
-  Brain,
-  Users,
-  Calendar,
-  TrendingUp,
   Eye,
-  MoreHorizontal,
-  Layers,
 } from "lucide-react";
+
+import { updateProject } from "@/app/(main)/projects/actions";
+import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
 
 // Mock data for demonstration
 const mockProject = {
@@ -75,25 +65,55 @@ export function FlashcardEditor() {
     mockProject.max_reviews_per_day
   );
   const [saving, setSaving] = useState(false);
-  const [isValid, setIsValid] = useState(true);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [projectUpdates, setProjectUpdates] = useState({});
   const isAddingCard = useRef(false);
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: string, value: string) => {
     setFlashcards((prev) => {
       const updated = [...prev];
       if (!updated[current]) {
-        updated[current] = { front: "", back: "" };
+        updated[current] = { id: `${Date.now()}`, front: "", back: "" };
       }
       updated[current] = { ...updated[current], [field]: value };
       return updated;
     });
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Save project fields
+      await updateProject({
+        id: mockProject.id, // Replace with actual project id in real usage
+        name,
+        description,
+        new_cards_per_day: newCardsPerDay,
+        max_reviews_per_day: maxReviewsPerDay,
+      });
+
+      // Save flashcards (replace all for this project)
+      // Only send cards with at least one non-empty side
+      const cardsToSave = flashcards
+        .filter((card) => card.front?.trim() || card.back?.trim())
+        .map((card) => ({ front: card.front, back: card.back }));
+      await replaceAllFlashcardsForProject(mockProject.id, cardsToSave);
+
+      // Show success message (replace with toast/notification in real app)
+      alert("Project saved successfully!");
+    } catch (error) {
+      console.error("Failed to save project:", error);
+      alert("Failed to save project. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAdd = () => {
     isAddingCard.current = true;
-    setFlashcards((prev) => [...prev, { front: "", back: "" }]);
+    setFlashcards((prev) => [
+      ...prev,
+      { id: `${Date.now()}`, front: "", back: "" },
+    ]);
   };
 
   useEffect(() => {
@@ -103,7 +123,7 @@ export function FlashcardEditor() {
     }
   }, [flashcards.length]);
 
-  const navigate = (dir) => {
+  const navigate = (dir: number) => {
     setCurrent((p) => Math.max(0, Math.min(p + dir, flashcards.length - 1)));
   };
 
@@ -118,9 +138,7 @@ export function FlashcardEditor() {
 
   const card = flashcards[current] || { front: "", back: "" };
   const currentCardValid = card.front?.trim() || card.back?.trim();
-  const completedCards = flashcards.filter(
-    (fc) => fc.front?.trim() || fc.back?.trim()
-  ).length;
+  // Removed unused completedCards
   const progressPercent =
     flashcards.length > 0 ? ((current + 1) / flashcards.length) * 100 : 0;
 
@@ -183,12 +201,6 @@ export function FlashcardEditor() {
 
           {/* Status Badges */}
           <div className="flex flex-wrap gap-3 mt-6 animate-[slideUp_1s_ease-out_0.4s_both]">
-            {isValid && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform duration-200">
-                <CheckCircle2 className="w-4 h-4" />
-                Ready to Save
-              </div>
-            )}
             {currentCardValid && (
               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-full flex items-center gap-2 font-medium hover:scale-105 transition-transform duration-200">
                 <Sparkles className="w-4 h-4" />
@@ -518,9 +530,10 @@ export function FlashcardEditor() {
             Cancel
           </button>
           <button
-            disabled={!isValid || saving}
+            onClick={handleSave}
+            disabled={!currentCardValid || saving}
             className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center gap-3 ${
-              isValid && !saving
+              currentCardValid && !saving
                 ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-xl hover:scale-105"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}

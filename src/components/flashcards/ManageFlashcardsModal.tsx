@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Settings,
-  MoreHorizontal,
 } from "lucide-react";
 
 type ModalFlashcard = {
@@ -38,7 +37,7 @@ export function ManageFlashcardsModal({
   if (!open || typeof window === "undefined") return null;
 
   const validCards = flashcards.filter(
-    (fc, idx) =>
+    (fc) =>
       fc &&
       typeof fc === "object" &&
       ((typeof fc.front === "string" && fc.front.trim()) ||
