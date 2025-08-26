@@ -59,7 +59,7 @@ export default function MainLayout({
         <HeaderMain />
 
         {/* Main content area with proper flex and overflow handling */}
-        <main className="flex-1 flex overflow-hidden relative z-10">
+        <main className="flex-1 flex overflow-y-auto relative z-10">
           {children}
         </main>
       </div>

@@ -23,7 +23,7 @@ export default function ProjectsLayout({
   };
 
   return (
-    <div className="flex flex-1 h-screen">
+    <div className="flex flex-1">
       {!isCreatePage && <SidebarNav activeTab="all" onTab={handleTab} />}
       <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
     </div>
