@@ -615,7 +615,7 @@ export function ProjectCreator() {
       }
       toast.success("Project created successfully!");
       router.push("/dashboard");
-    } catch (err) {
+    } catch {
       toast.error("Network error: Failed to create project");
       setIsCreating(false);
     }

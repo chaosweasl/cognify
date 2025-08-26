@@ -18,7 +18,7 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
@@ -36,7 +36,6 @@ export function FlashcardEditor({
   onSaved,
 }: FlashcardEditorProps) {
   const router = useRouter();
-  const params = useParams();
   const [flashcards, setFlashcards] = useState<
     Pick<Flashcard, "id" | "front" | "back">[]
   >(initialFlashcards.map(({ id, front, back }) => ({ id, front, back })));
