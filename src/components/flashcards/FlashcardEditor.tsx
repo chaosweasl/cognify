@@ -18,51 +18,36 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
-
+import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
+import type { Project, Flashcard } from "@/src/types";
 
-// Mock data for demonstration
-const mockProject = {
-  id: "1",
-  name: "Spanish Vocabulary",
-  description: "Essential Spanish words for everyday conversation",
-  new_cards_per_day: 20,
-  max_reviews_per_day: 100,
-  learning_steps: [1, 10],
-  relearning_steps: [10],
-  graduating_interval: 1,
-  easy_interval: 4,
-  starting_ease: 2.5,
-  minimum_ease: 1.3,
-  easy_bonus: 1.3,
-  hard_interval_factor: 1.2,
-  leech_threshold: 8,
-  max_interval: 36500,
-  lapse_ease_penalty: 0.2,
-  lapse_recovery_factor: 0.5,
-  new_card_order: "random",
-  leech_action: "suspend",
-  review_ahead: false,
-  bury_siblings: false,
-};
+interface FlashcardEditorProps {
+  project: Project;
+  initialFlashcards: Flashcard[];
+  onSaved?: () => void;
+}
 
-const mockFlashcards = [
-  { id: "1", front: 'What is "hello" in Spanish?', back: "Hola" },
-  { id: "2", front: 'How do you say "goodbye"?', back: "Adiós" },
-  { id: "3", front: "", back: "" },
-];
-
-export function FlashcardEditor() {
-  const [flashcards, setFlashcards] = useState(mockFlashcards);
+export function FlashcardEditor({
+  project,
+  initialFlashcards,
+  onSaved,
+}: FlashcardEditorProps) {
+  const router = useRouter();
+  const params = useParams();
+  const [flashcards, setFlashcards] = useState<
+    Pick<Flashcard, "id" | "front" | "back">[]
+  >(initialFlashcards.map(({ id, front, back }) => ({ id, front, back })));
   const [current, setCurrent] = useState(0);
-  const [name, setName] = useState(mockProject.name);
-  const [description, setDescription] = useState(mockProject.description);
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description || "");
   const [newCardsPerDay, setNewCardsPerDay] = useState(
-    mockProject.new_cards_per_day
+    project.new_cards_per_day
   );
   const [maxReviewsPerDay, setMaxReviewsPerDay] = useState(
-    mockProject.max_reviews_per_day
+    project.max_reviews_per_day
   );
   const [saving, setSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -82,27 +67,22 @@ export function FlashcardEditor() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Save project fields
       await updateProject({
-        id: mockProject.id, // Replace with actual project id in real usage
+        id: project.id,
         name,
         description,
         new_cards_per_day: newCardsPerDay,
         max_reviews_per_day: maxReviewsPerDay,
       });
-
-      // Save flashcards (replace all for this project)
-      // Only send cards with at least one non-empty side
       const cardsToSave = flashcards
         .filter((card) => card.front?.trim() || card.back?.trim())
         .map((card) => ({ front: card.front, back: card.back }));
-      await replaceAllFlashcardsForProject(mockProject.id, cardsToSave);
-
-      // Show success message (replace with toast/notification in real app)
-      alert("Project saved successfully!");
+      await replaceAllFlashcardsForProject(project.id, cardsToSave);
+      toast.success("Project saved successfully!");
+      if (onSaved) onSaved();
     } catch (error) {
       console.error("Failed to save project:", error);
-      alert("Failed to save project. Please try again.");
+      toast.error("Failed to save project. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -175,7 +155,11 @@ export function FlashcardEditor() {
         {/* Header Section */}
         <div className="mb-12 animate-[slideUp_0.6s_ease-out]">
           <div className="flex items-start gap-6 mb-8">
-            <button className="p-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300 group">
+            <button
+              className="p-3 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300 group"
+              onClick={() => router.back()}
+              aria-label="Back to project"
+            >
               <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
             </button>
 
@@ -526,7 +510,11 @@ export function FlashcardEditor() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-end gap-4 animate-[slideUp_2s_ease-out_1.2s_both]">
-          <button className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 hover:scale-105 transition-all duration-300">
+          <button
+            className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 hover:scale-105 transition-all duration-300"
+            onClick={() => router.back()}
+            type="button"
+          >
             Cancel
           </button>
           <button

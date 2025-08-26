@@ -565,41 +565,58 @@ export function ProjectCreator() {
     </div>
   );
 
-  // Project creation handler using API
+  // --- Project creation handler using API (production ready) ---
+  type CreateProjectResponse = {
+    id?: string;
+    name?: string;
+    message?: string;
+    error?: string;
+  };
   const createProject = async () => {
     if (isCreating) return;
+    // Validate required fields before submit
+    if (!formData.name.trim()) {
+      toast.error("Project name is required");
+      return;
+    }
+    if (!formData.intensity) {
+      toast.error("Please select a study intensity");
+      return;
+    }
+    if (!formData.schedule) {
+      toast.error("Please select a study schedule");
+      return;
+    }
     setIsCreating(true);
     try {
-      // Compose payload for API
-      const payload: Record<string, unknown> = {
-        name: formData.name,
-        description: formData.purpose,
-        // SRS settings from intensity
-        new_cards_per_day: formData.intensity?.newCards ?? 20,
-        max_reviews_per_day: formData.intensity?.maxReviews ?? 100,
-        // Optionally add more settings here (category, schedule, etc.)
+      // Compose payload for API (only fields supported by backend)
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.purpose?.trim() || undefined,
+        new_cards_per_day: formData.intensity.newCards,
+        max_reviews_per_day: formData.intensity.maxReviews,
+        // Advanced SRS settings could be added here if UI exposes them
       };
-      // Optionally add category, schedule, and customSettings if needed
-      if (formData.category) payload.category = formData.category.id;
-      if (formData.schedule) payload.schedule = formData.schedule.id;
-      if (formData.customSettings) payload.customSettings = true;
-
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      let data: CreateProjectResponse;
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: "Invalid server response" };
+      }
+      if (!res.ok || data.error) {
         toast.error(data.error || "Failed to create project");
         setIsCreating(false);
         return;
       }
       toast.success("Project created successfully!");
-      // Optionally: redirect to project page or dashboard
       router.push("/dashboard");
-    } catch {
-      toast.error("Failed to create project");
+    } catch (err) {
+      toast.error("Network error: Failed to create project");
       setIsCreating(false);
     }
   };
