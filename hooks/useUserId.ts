@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 export function useUserId() {
   const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data?.user?.id ?? null);
-    });
-  }, []);
+  // TODO: Replace with API-based or context-based user ID retrieval
+  // For now, this hook should not use Supabase client directly on the client side.
+  // You may want to pass userId from a higher-level context or fetch from an API route.
 
   return userId;
 }

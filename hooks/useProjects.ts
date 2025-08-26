@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/client";
 import { Project, ProjectStats, CreateProjectData } from "@/src/types";
 import { useCallback } from "react";
 import { cachedFetch, CacheInvalidation } from "@/hooks/useCache";

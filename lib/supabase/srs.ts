@@ -1,41 +1,51 @@
-import { createClient } from "@/lib/supabase/client";
-
-const supabase = createClient();
-
 export async function getSRSStates(userId: string, projectId: string) {
   console.log(
-    `[Supabase] getSRSStates for userId: ${userId}, projectId: ${projectId}`
+    `[API] getSRSStates for userId: ${userId}, projectId: ${projectId}`
   );
-  return supabase
-    .from("srs_states")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("project_id", projectId);
+  const res = await fetch(
+    `/api/srs/states?userId=${encodeURIComponent(
+      userId
+    )}&projectId=${encodeURIComponent(projectId)}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error("Failed to fetch SRS states");
+  }
+  return res.json();
 }
 
 export async function upsertSRSState(state: {
   user_id: string;
   project_id: string;
   card_id: string;
-  card_interval: number; // Updated column name
+  card_interval: number;
   ease: number;
   due: string;
   last_reviewed: string;
   repetitions: number;
 }) {
   console.log(
-    `[Supabase] upsertSRSState for userId: ${state.user_id}, projectId: ${state.project_id}, cardId: ${state.card_id}`
+    `[API] upsertSRSState for userId: ${state.user_id}, projectId: ${state.project_id}, cardId: ${state.card_id}`
   );
-  return supabase
-    .from("srs_states")
-    .upsert([state], { onConflict: "user_id,project_id,card_id" });
+  const res = await fetch(`/api/srs/upsert`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state }),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to upsert SRS state");
+  }
+  return res.json();
 }
 
 export async function getDueSRSProjects(userId: string) {
-  console.log(`[Supabase] getDueSRSProjects for userId: ${userId}`);
-  return supabase
-    .from("srs_states")
-    .select("project_id")
-    .eq("user_id", userId)
-    .lte("due", new Date().toISOString());
+  console.log(`[API] getDueSRSProjects for userId: ${userId}`);
+  const res = await fetch(
+    `/api/srs/due-projects?userId=${encodeURIComponent(userId)}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error("Failed to fetch due SRS projects");
+  }
+  return res.json();
 }
