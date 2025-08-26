@@ -1,12 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getProjectDailyStudyStats } from "@/lib/supabase/dailyStudyStats";
 
 // GET /api/projects/[id]/daily-stats
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
-  const { id: projectId } = context.params;
+export const GET = async (request: NextRequest, context: any) => {
+  const projectId = context?.params?.id as string | undefined;
   const userId = request.headers.get("x-user-id");
 
   if (!projectId || !userId) {
@@ -26,4 +23,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+};
