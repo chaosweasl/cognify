@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowRight,
   ArrowLeft,
@@ -169,6 +171,8 @@ export function ProjectCreator() {
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [animationClass, setAnimationClass] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter();
 
   // Define ordered steps (controls progress and next/prev reliably)
   const STEP_ORDER = [
@@ -559,6 +563,45 @@ export function ProjectCreator() {
       </div>
     </div>
   );
+
+  // Project creation handler using API
+  const createProject = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      // Compose payload for API
+      const payload: any = {
+        name: formData.name,
+        description: formData.purpose,
+        // SRS settings from intensity
+        new_cards_per_day: formData.intensity?.newCards ?? 20,
+        max_reviews_per_day: formData.intensity?.maxReviews ?? 100,
+        // Optionally add more settings here (category, schedule, etc.)
+      };
+      // Optionally add category, schedule, and customSettings if needed
+      if (formData.category) payload.category = formData.category.id;
+      if (formData.schedule) payload.schedule = formData.schedule.id;
+      if (formData.customSettings) payload.customSettings = true;
+
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to create project");
+        setIsCreating(false);
+        return;
+      }
+      toast.success("Project created successfully!");
+      // Optionally: redirect to project page or dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      toast.error("Failed to create project");
+      setIsCreating(false);
+    }
+  };
 
   const ConfirmationStep = () => (
     <div className="space-y-8">
