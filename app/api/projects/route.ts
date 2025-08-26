@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ProjectStats } from "@/src/types";
 
@@ -13,7 +13,8 @@ export async function GET() {
   // Get all projects with their settings
   const { data: projects, error: projectsError } = await supabase
     .from("projects")
-    .select(`
+    .select(
+      `
       id, name, description, created_at, updated_at, 
       new_cards_per_day, max_reviews_per_day,
       learning_steps, relearning_steps, graduating_interval, easy_interval,
@@ -21,12 +22,13 @@ export async function GET() {
       easy_interval_factor, lapse_recovery_factor, leech_threshold,
       leech_action, new_card_order, review_ahead, bury_siblings,
       max_interval, lapse_ease_penalty
-    `)
+    `
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
-    
+
   if (projectsError || !projects) return NextResponse.json([]);
-  
+
   if (projects.length === 0) {
     return NextResponse.json([]);
   }
@@ -56,31 +58,46 @@ export async function GET() {
 
   // Calculate stats for each project
   const now = new Date().toISOString();
-  
+
   const projectsWithStats = projects.map((project) => {
-    const projectFlashcards = flashcards?.filter(f => f.project_id === project.id) || [];
-    const projectSrsStates = srsStates?.filter(s => s.project_id === project.id) || [];
-    const projectDailyStats = dailyStats?.find(ds => ds.project_id === project.id);
-    
+    const projectFlashcards =
+      flashcards?.filter((f) => f.project_id === project.id) || [];
+    const projectSrsStates =
+      srsStates?.filter((s) => s.project_id === project.id) || [];
+    const projectDailyStats = dailyStats?.find(
+      (ds) => ds.project_id === project.id
+    );
+
     const newCardsStudiedToday = projectDailyStats?.new_cards_studied || 0;
     const reviewsCompletedToday = projectDailyStats?.reviews_completed || 0;
 
     // Calculate stats
     const totalFlashcards = projectFlashcards.length;
-    const totalNewCards = projectSrsStates.filter(s => s.state === "new").length;
-    const learningCards = projectSrsStates.filter(s => s.state === "learning").length;
-    const dueReviewCards = projectSrsStates.filter(s => s.due <= now && s.state !== "new").length;
-    
+    const totalNewCards = projectSrsStates.filter(
+      (s) => s.state === "new"
+    ).length;
+    const learningCards = projectSrsStates.filter(
+      (s) => s.state === "learning"
+    ).length;
+    const dueReviewCards = projectSrsStates.filter(
+      (s) => s.due <= now && s.state !== "new"
+    ).length;
+
     // Calculate remaining cards for today
-    const remainingNewCardsToday = Math.max(0, project.new_cards_per_day - newCardsStudiedToday);
+    const remainingNewCardsToday = Math.max(
+      0,
+      project.new_cards_per_day - newCardsStudiedToday
+    );
     const availableNewCards = Math.min(totalNewCards, remainingNewCardsToday);
-    
-    const remainingReviewsToday = project.max_reviews_per_day <= 0 
-      ? Infinity 
-      : Math.max(0, project.max_reviews_per_day - reviewsCompletedToday);
-    const availableDueCards = project.max_reviews_per_day <= 0 
-      ? dueReviewCards 
-      : Math.min(dueReviewCards, remainingReviewsToday);
+
+    const remainingReviewsToday =
+      project.max_reviews_per_day <= 0
+        ? Infinity
+        : Math.max(0, project.max_reviews_per_day - reviewsCompletedToday);
+    const availableDueCards =
+      project.max_reviews_per_day <= 0
+        ? dueReviewCards
+        : Math.min(dueReviewCards, remainingReviewsToday);
 
     const stats: ProjectStats = {
       totalFlashcards,
@@ -101,4 +118,85 @@ export async function GET() {
   });
 
   return NextResponse.json(projectsWithStats);
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const data = await request.json();
+
+    // Validate required fields
+    if (
+      !data.name ||
+      typeof data.name !== "string" ||
+      data.name.trim().length === 0
+    ) {
+      return NextResponse.json(
+        { error: "Project name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Create the project with SRS settings
+    const { data: project, error } = await supabase
+      .from("projects")
+      .insert([
+        {
+          user_id: user.id,
+          name: data.name.trim(),
+          description: data.description?.trim() || null,
+          // SRS settings with defaults
+          new_cards_per_day: data.new_cards_per_day || 20,
+          max_reviews_per_day: data.max_reviews_per_day || 100,
+          learning_steps: data.learning_steps || [1, 10],
+          relearning_steps: data.relearning_steps || [10],
+          graduating_interval: data.graduating_interval || 1,
+          easy_interval: data.easy_interval || 4,
+          starting_ease: data.starting_ease || 2.5,
+          minimum_ease: data.minimum_ease || 1.3,
+          easy_bonus: data.easy_bonus || 1.3,
+          hard_interval_factor: data.hard_interval_factor || 1.2,
+          easy_interval_factor: data.easy_interval_factor || 1.3,
+          lapse_recovery_factor: data.lapse_recovery_factor || 0.5,
+          leech_threshold: data.leech_threshold || 8,
+          leech_action: data.leech_action || "suspend",
+          new_card_order: data.new_card_order || "random",
+          review_ahead: data.review_ahead || false,
+          bury_siblings: data.bury_siblings || false,
+          max_interval: data.max_interval || 36500,
+          lapse_ease_penalty: data.lapse_ease_penalty || 0.2,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Database error creating project:", error);
+      return NextResponse.json(
+        { error: "Failed to create project" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      id: project.id,
+      name: project.name,
+      message: "Project created successfully",
+    });
+  } catch (error) {
+    console.error("API Error creating project:", error);
+    return NextResponse.json(
+      { error: "Failed to create project" },
+      { status: 500 }
+    );
+  }
 }

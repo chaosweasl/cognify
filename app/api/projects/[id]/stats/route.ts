@@ -1,12 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getProjectStudyStats } from "@/lib/srs/SRSDBUtils";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/projects/[id]/stats
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(context: { params: Promise<{ id: string }> }) {
   const { id: projectId } = await context.params;
 
   if (!projectId) {

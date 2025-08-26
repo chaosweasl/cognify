@@ -639,14 +639,23 @@ export function ProjectCreator() {
 
       <div className="text-center">
         <button
-          onClick={() => alert("Project created successfully! 🎉")}
-          className="group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-bold text-lg px-10 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand"
+          onClick={createProject}
+          disabled={isCreating}
+          className={`group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-bold text-lg px-10 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand ${
+            isCreating ? "opacity-75 cursor-not-allowed" : ""
+          }`}
         >
           <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
           <div className="relative flex items-center gap-3">
             <Sparkles className="w-6 h-6" />
-            <span>Create My Project</span>
-            <Rocket className="w-6 h-6 group-hover:animate-bounce" />
+            <span>
+              {isCreating ? "Creating Project..." : "Create My Project"}
+            </span>
+            <Rocket
+              className={`w-6 h-6 ${
+                isCreating ? "animate-spin" : "group-hover:animate-bounce"
+              }`}
+            />
           </div>
         </button>
       </div>
