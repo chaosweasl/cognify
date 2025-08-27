@@ -81,10 +81,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden relative">
                           <Image
-                            src={
-                              userProfile?.avatar_url ||
-                              "/avatar-placeholder.png"
-                            }
+                            src={userProfile?.avatar_url || "/assets/nopfp.png"}
                             alt="avatar"
                             fill
                             className="object-cover"
@@ -476,9 +473,7 @@ const ProfileSettingsForm: React.FC<any> = ({
       <div className="col-span-1">
         <div className="relative w-36 h-36 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
           <Image
-            src={
-              previewUrl || userProfile.avatarUrl || "/avatar-placeholder.png"
-            }
+            src={previewUrl || userProfile.avatarUrl || "/assets/nopfp.png"}
             alt="avatar"
             fill
             className="object-cover"

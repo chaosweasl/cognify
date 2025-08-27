@@ -1,8 +1,4 @@
 import { create } from "zustand";
-// import { createClient } from "@/lib/supabase/client";
-import { CacheInvalidation } from "@/hooks/useCache";
-
-// const supabase = createClient();
 
 export interface UserProfile {
   id: string;
