@@ -87,7 +87,7 @@ export default function SettingsPage() {
         if (typeof loadUserSettings === "function") {
           await loadUserSettings();
         }
-      } catch (err: any) {
+      } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
@@ -241,7 +241,7 @@ export default function SettingsPage() {
       setPreviewUrl(userProfile?.avatar_url ?? null);
 
       toast.success("Settings saved successfully!");
-    } catch (err: any) {
+    } catch (err) {
       if (err instanceof Error) {
         toast.error(err.message);
       } else {
@@ -301,13 +301,8 @@ export default function SettingsPage() {
                 setDisplayName={setDisplayName}
                 bio={bio}
                 setBio={setBio}
-                profilePicture={profilePicture}
-                previewUrl={previewUrl}
-                setProfilePicture={setProfilePicture}
-                setPreviewUrl={setPreviewUrl}
                 focusedField={focusedField}
                 setFocusedField={setFocusedField}
-                profileLoading={pending || profileLoading}
                 onFileSelect={handleFileSelect}
               />
 
@@ -510,13 +505,8 @@ function ProfileSection({
   setDisplayName,
   bio,
   setBio,
-  profilePicture,
-  previewUrl,
-  setProfilePicture,
-  setPreviewUrl,
   focusedField,
   setFocusedField,
-  profileLoading,
   onFileSelect,
 }: {
   userProfile: UserProfile | null;
@@ -526,15 +516,21 @@ function ProfileSection({
   setDisplayName: (v: string) => void;
   bio: string;
   setBio: (v: string) => void;
-  profilePicture: File | null;
-  previewUrl: string | null;
-  setProfilePicture: (f: File | null) => void;
-  setPreviewUrl: (u: string | null) => void;
   focusedField: string | null;
   setFocusedField: (f: string | null) => void;
-  profileLoading: boolean;
   onFileSelect: (file: File | null) => void;
 }) {
+  // Use local state for previewUrl and profilePicture
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [localProfilePicture, setLocalProfilePicture] = useState<File | null>(
+    null
+  );
+
+  useEffect(() => {
+    setLocalPreviewUrl(null);
+    setLocalProfilePicture(null);
+  }, [userProfile]);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4 mb-8">
@@ -556,7 +552,9 @@ function ProfileSection({
             <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-subtle shadow-brand relative bg-surface-secondary">
               <Image
                 src={
-                  previewUrl || userProfile?.avatar_url || "/assets/nopfp.png"
+                  localPreviewUrl ||
+                  userProfile?.avatar_url ||
+                  "/assets/nopfp.png"
                 }
                 alt="Profile picture"
                 fill
@@ -570,7 +568,19 @@ function ProfileSection({
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => onFileSelect(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setLocalProfilePicture(file);
+                if (file && file.type.startsWith("image/")) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) =>
+                    setLocalPreviewUrl(ev.target?.result as string);
+                  reader.readAsDataURL(file);
+                } else {
+                  setLocalPreviewUrl(null);
+                }
+                onFileSelect(file);
+              }}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
           </div>
