@@ -137,14 +137,18 @@ export default function SettingsPage() {
           await loadUserSettings();
         }
       } catch (err: any) {
-        setError(err?.message || "Failed to load profile");
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to load profile");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [loadUserSettings]);
 
   useEffect(() => {
     if (userSettings) {
@@ -258,7 +262,7 @@ export default function SettingsPage() {
         updatedAvatarUrl = await uploadAvatar(profilePicture);
       }
 
-      const profilePayload: any = {};
+      const profilePayload: Partial<UserProfile> = {};
       if (changes.isDisplayNameChanged)
         profilePayload.display_name = trimmedDisplayName || null;
       if (changes.isBioChanged) profilePayload.bio = trimmedBio || null;
@@ -287,7 +291,11 @@ export default function SettingsPage() {
 
       toast.success("Settings saved successfully!");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save settings");
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to save settings");
+      }
     } finally {
       setPending(false);
     }
@@ -495,7 +503,7 @@ function TabNavigation({
   activeTab,
   setActiveTab,
 }: {
-  tabs: { id: string; label: string; icon: any }[];
+  tabs: { id: string; label: string; icon: React.ElementType }[];
   activeTab: string;
   setActiveTab: (tabId: string) => void;
 }) {
@@ -748,7 +756,7 @@ function PreferencesSection({
   reminderTime: string;
   setReminderTime: (t: string) => void;
 }) {
-  const themeIcons: Record<string, any> = {
+  const themeIcons: Record<string, React.ElementType> = {
     light: Sun,
     dark: Moon,
     system: Monitor,
