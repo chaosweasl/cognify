@@ -54,13 +54,17 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
     }
   },
   updateUserProfile: async (updates) => {
+    // Accepts: { username, display_name, bio, avatar_url }
     try {
       const res = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error("Error updating profile");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Error updating profile");
+      }
       await get().fetchUserProfile();
     } catch (err) {
       set({ error: "Error updating profile" });
@@ -75,8 +79,12 @@ export const useUserProfileStore = create<UserProfileState>((set, get) => ({
         method: "POST",
         body: formData,
       });
-      if (!res.ok) throw new Error("Error uploading avatar");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Error uploading avatar");
+      }
       const { publicUrl } = await res.json();
+      // Optionally update profile with new avatar_url
       await get().updateUserProfile({ avatar_url: publicUrl });
       return publicUrl;
     } catch (err) {
