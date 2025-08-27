@@ -9,7 +9,7 @@ export default function MainLayout({
   return (
     <>
       <ToasterProvider />
-      <div className="h-screen surface-primary text-primary flex flex-col overflow-hidden relative">
+      <div className="min-h-screen surface-primary text-primary flex flex-col overflow-hidden relative">
         {/* Animated background elements - using semantic colors */}
         <div className="fixed inset-0 pointer-events-none opacity-30">
           <div
