@@ -46,7 +46,6 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -63,12 +62,8 @@ export default function SettingsPage() {
   const [dailyReminder, setDailyReminder] = useState(true);
   const [reminderTime, setReminderTime] = useState("09:00");
 
-  // user profile hooks
-  const {
-    updateUserProfile,
-    uploadAvatar,
-    isLoading: profileLoading,
-  } = useUserProfile();
+  // user profile hooks (only what we need)
+  const { updateUserProfile, uploadAvatar } = useUserProfile();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -81,7 +76,6 @@ export default function SettingsPage() {
         setUsername(data.username || "");
         setDisplayName(data.display_name || "");
         setBio(data.bio || "");
-        setPreviewUrl(data.avatar_url || null);
 
         // attempt to load settings from store hook if available
         if (typeof loadUserSettings === "function") {
@@ -109,14 +103,6 @@ export default function SettingsPage() {
       setReminderTime(userSettings.reminder_time?.slice(0, 5) || "09:00");
     }
   }, [userSettings]);
-
-  useEffect(() => {
-    if (profilePicture) {
-      const url = URL.createObjectURL(profilePicture);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [profilePicture]);
 
   if (loading || settingsLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
@@ -157,14 +143,8 @@ export default function SettingsPage() {
   }
 
   const handleFileSelect = (file: File | null) => {
+    // only lift file to parent; preview is handled locally in ProfileSection
     setProfilePicture(file);
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => setPreviewUrl(e.target?.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl(null);
-    }
   };
 
   const handleSaveAll = async () => {
@@ -236,9 +216,8 @@ export default function SettingsPage() {
       // reflect locally
       setUserProfile((prev) => (prev ? { ...prev, ...profilePayload } : prev));
 
-      // clear file input preview after success
+      // clear lifted file after success
       setProfilePicture(null);
-      setPreviewUrl(userProfile?.avatar_url ?? null);
 
       toast.success("Settings saved successfully!");
     } catch (err) {
@@ -256,7 +235,6 @@ export default function SettingsPage() {
     setUsername(userProfile?.username ?? "");
     setDisplayName(userProfile?.display_name ?? "");
     setBio(userProfile?.bio ?? "");
-    setPreviewUrl(userProfile?.avatar_url ?? null);
     setProfilePicture(null);
 
     if (userSettings) {
@@ -496,7 +474,7 @@ function TabNavigation({
   );
 }
 
-/* ===== PROFILE SECTION & FORM (uses lifted state) ===== */
+/* ===== PROFILE SECTION & FORM (uses local preview inside section) ===== */
 function ProfileSection({
   userProfile,
   username,
@@ -520,15 +498,12 @@ function ProfileSection({
   setFocusedField: (f: string | null) => void;
   onFileSelect: (file: File | null) => void;
 }) {
-  // Use local state for previewUrl and profilePicture
+  // local preview only
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
-  const [localProfilePicture, setLocalProfilePicture] = useState<File | null>(
-    null
-  );
 
   useEffect(() => {
+    // reset local preview when external profile changes
     setLocalPreviewUrl(null);
-    setLocalProfilePicture(null);
   }, [userProfile]);
 
   return (
@@ -570,7 +545,6 @@ function ProfileSection({
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0] || null;
-                setLocalProfilePicture(file);
                 if (file && file.type.startsWith("image/")) {
                   const reader = new FileReader();
                   reader.onload = (ev) =>
