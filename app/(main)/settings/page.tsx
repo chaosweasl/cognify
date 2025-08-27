@@ -2,28 +2,29 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 import {
   Settings,
   User,
   Shield,
-  Sparkles,
   Loader2,
-  Star,
   Camera,
-  Bell,
-  Clock,
-  Palette,
-  Save,
   RefreshCw,
+  Save,
   CheckCircle2,
   AlertCircle,
+  Palette,
+  Clock,
+  Bell,
   Moon,
   Sun,
   Monitor,
 } from "lucide-react";
-import { toast } from "sonner";
 
-interface UserProfile {
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useSettingsStore } from "@/hooks/useSettings";
+
+export interface UserProfile {
   id: string;
   username: string;
   display_name: string | null;
@@ -33,45 +34,291 @@ interface UserProfile {
   is_admin: boolean;
 }
 
+// Rate limiting constants (local-only)
+const TEN_SECONDS = 10 * 1000;
+const ONE_HOUR = 60 * 60 * 1000;
+const MAX_CHANGES_PER_HOUR = 3;
+const STORAGE_KEY = "profileUpdateTimestamps";
+
+function getTimestamps(): number[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setTimestamps(timestamps: number[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(timestamps));
+}
+
+function canProceedWithUpdate(): { allowed: boolean; message?: string } {
+  const now = Date.now();
+  const timestamps = getTimestamps().filter((ts) => now - ts < ONE_HOUR);
+
+  if (timestamps.length >= MAX_CHANGES_PER_HOUR) {
+    return {
+      allowed: false,
+      message: `You can only update your profile ${MAX_CHANGES_PER_HOUR} times per hour.`,
+    };
+  }
+
+  const last = timestamps[timestamps.length - 1];
+  if (last && now - last < TEN_SECONDS) {
+    const secondsLeft = Math.ceil((TEN_SECONDS - (now - last)) / 1000);
+    return {
+      allowed: false,
+      message: `Please wait ${secondsLeft}s before trying again.`,
+    };
+  }
+
+  return { allowed: true };
+}
+
+function recordUpdateTimestamp() {
+  const now = Date.now();
+  const timestamps = getTimestamps()
+    .filter((ts) => now - ts < ONE_HOUR)
+    .concat(now);
+  setTimestamps(timestamps);
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("user");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // form state
+  const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  // preferences
+  const {
+    userSettings,
+    updateUserSettings,
+    loadUserSettings,
+    isLoading: settingsLoading,
+  } = useSettingsStore();
+
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [dailyReminder, setDailyReminder] = useState(true);
+  const [reminderTime, setReminderTime] = useState("09:00");
+
+  // user profile hooks
+  const {
+    userProfile: profileFromHook,
+    updateUserProfile,
+    uploadAvatar,
+    isLoading: profileLoading,
+  } = useUserProfile();
+
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetch = async () => {
       try {
         setLoading(true);
         const res = await fetch("/api/user/profile");
         if (!res.ok) throw new Error("Failed to fetch profile");
-        const data = await res.json();
+        const data: UserProfile = await res.json();
         setUserProfile(data);
+        setUsername(data.username || "");
+        setDisplayName(data.display_name || "");
+        setBio(data.bio || "");
+        setPreviewUrl(data.avatar_url || null);
+
+        // attempt to load settings from store hook if available
+        if (typeof loadUserSettings === "function") {
+          await loadUserSettings();
+        }
       } catch (err: any) {
         setError(err?.message || "Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+
+    fetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (userSettings) {
+      setTheme(userSettings.theme);
+      setNotificationsEnabled(userSettings.notifications_enabled);
+      setDailyReminder(userSettings.daily_reminder);
+      setReminderTime(userSettings.reminder_time?.slice(0, 5) || "09:00");
+    }
+  }, [userSettings]);
+
+  useEffect(() => {
+    if (profilePicture) {
+      const url = URL.createObjectURL(profilePicture);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [profilePicture]);
+
+  if (loading || settingsLoading) return <LoadingScreen />;
+  if (error) return <ErrorScreen error={error} />;
 
   const tabs = [{ id: "user", label: "User Settings", icon: User }];
 
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen error={error} />;
+  function validateProfile(displayNameValue: string, bioValue: string) {
+    const trimmedDisplayName = displayNameValue.trim();
+    const trimmedBio = bioValue.trim();
+
+    if (trimmedDisplayName.length > 21)
+      return {
+        valid: false,
+        message: "Display name must be 21 characters or less.",
+      };
+    if (/\s/.test(trimmedDisplayName))
+      return {
+        valid: false,
+        message: "Display name cannot contain whitespace.",
+      };
+    if (trimmedBio.length > 500)
+      return { valid: false, message: "Bio must be 500 characters or less." };
+
+    return { valid: true, trimmedDisplayName, trimmedBio } as const;
+  }
+
+  function getChangedFields(trimmedDisplayName: string, trimmedBio: string) {
+    const existingDisplay = userProfile?.display_name ?? "";
+    const existingBio = userProfile?.bio ?? "";
+    const existingUsername = userProfile?.username ?? "";
+
+    return {
+      isDisplayNameChanged: trimmedDisplayName !== existingDisplay,
+      isBioChanged: trimmedBio !== existingBio,
+      isAvatarChanged: !!profilePicture,
+      isUsernameChanged: username.trim() !== existingUsername,
+    };
+  }
+
+  const handleFileSelect = (file: File | null) => {
+    setProfilePicture(file);
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewUrl(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleSaveAll = async () => {
+    const validation = validateProfile(displayName, bio);
+    if (!validation.valid) {
+      toast.error(validation.message || "Invalid input");
+      return;
+    }
+
+    const { trimmedDisplayName, trimmedBio } = validation;
+    const changes = getChangedFields(trimmedDisplayName, #trimmedBio);
+
+    // Check if anything changed (profile or preferences)
+    const prefsChanged =
+      !!userSettings &&
+      (theme !== userSettings.theme ||
+        notificationsEnabled !== userSettings.notifications_enabled ||
+        dailyReminder !== userSettings.daily_reminder ||
+        reminderTime + ":00" !== userSettings.reminder_time);
+
+    if (
+      !changes.isDisplayNameChanged &&
+      !changes.isBioChanged &&
+      !changes.isAvatarChanged &&
+      !changes.isUsernameChanged &&
+      !prefsChanged
+    ) {
+      toast.info("No changes to save.");
+      return;
+    }
+
+    const rateLimit = canProceedWithUpdate();
+    if (!rateLimit.allowed) {
+      toast.warning(rateLimit.message || "Rate limited");
+      return;
+    }
+
+    setPending(true);
+
+    try {
+      let updatedAvatarUrl = userProfile?.avatar_url ?? null;
+
+      if (changes.isAvatarChanged && profilePicture) {
+        updatedAvatarUrl = await uploadAvatar(profilePicture);
+      }
+
+      const profilePayload: any = {};
+      if (changes.isDisplayNameChanged)
+        profilePayload.display_name = trimmedDisplayName || null;
+      if (changes.isBioChanged) profilePayload.bio = trimmedBio || null;
+      if (changes.isAvatarChanged) profilePayload.avatar_url = updatedAvatarUrl;
+      if (changes.isUsernameChanged) profilePayload.username = username.trim();
+
+      if (Object.keys(profilePayload).length > 0) {
+        await updateUserProfile(profilePayload);
+        recordUpdateTimestamp();
+      }
+
+      // preferences
+      await updateUserSettings({
+        theme,
+        notifications_enabled: notificationsEnabled,
+        daily_reminder: dailyReminder,
+        reminder_time: reminderTime + ":00",
+      });
+
+      // reflect locally
+      setUserProfile((prev) => (prev ? { ...prev, ...profilePayload } : prev));
+
+      // clear file input preview after success
+      setProfilePicture(null);
+      setPreviewUrl(userProfile?.avatar_url ?? null);
+
+      toast.success("Settings saved successfully!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save settings");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleReset = () => {
+    setUsername(userProfile?.username ?? "");
+    setDisplayName(userProfile?.display_name ?? "");
+    setBio(userProfile?.bio ?? "");
+    setPreviewUrl(userProfile?.avatar_url ?? null);
+    setProfilePicture(null);
+
+    if (userSettings) {
+      setTheme(userSettings.theme);
+      setNotificationsEnabled(userSettings.notifications_enabled);
+      setDailyReminder(userSettings.daily_reminder);
+      setReminderTime(userSettings.reminder_time?.slice(0, 5) || "09:00");
+    }
+  };
 
   return (
     <div className="min-h-screen surface-primary relative w-full">
       <BackgroundDecor />
 
       <div className="relative container mx-auto px-6 py-10 max-w-5xl">
-        {/* Clean Header */}
+        {/* Header */}
         <header className="mb-12 animate-[slideInUp_0.6s_ease-out]">
           <Header userProfile={userProfile} />
         </header>
 
-        {/* Single Card Layout */}
+        {/* Card */}
         <div className="glass-surface rounded-3xl overflow-hidden shadow-brand-lg border border-subtle transition-all transition-normal">
           <TabNavigation
             tabs={tabs}
@@ -84,27 +331,52 @@ export default function SettingsPage() {
               {/* Profile Section */}
               <ProfileSection
                 userProfile={userProfile}
-                setUserProfile={setUserProfile}
+                username={username}
+                setUsername={setUsername}
+                displayName={displayName}
+                setDisplayName={setDisplayName}
+                bio={bio}
+                setBio={setBio}
+                profilePicture={profilePicture}
+                previewUrl={previewUrl}
+                setProfilePicture={setProfilePicture}
+                setPreviewUrl={setPreviewUrl}
+                focusedField={focusedField}
+                setFocusedField={setFocusedField}
+                profileLoading={pending || profileLoading}
+                onFileSelect={handleFileSelect}
               />
 
-              {/* Preferences Section */}
-              <PreferencesSection />
+              {/* Preferences */}
+              <PreferencesSection
+                theme={theme}
+                setTheme={setTheme}
+                notificationsEnabled={notificationsEnabled}
+                setNotificationsEnabled={setNotificationsEnabled}
+                dailyReminder={dailyReminder}
+                setDailyReminder={setDailyReminder}
+                reminderTime={reminderTime}
+                setReminderTime={setReminderTime}
+              />
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle">
                 <button
                   className="px-6 py-3 surface-elevated border border-secondary text-secondary rounded-2xl font-medium interactive-hover transition-all transition-normal hover:scale-105 flex items-center justify-center gap-2"
-                  onClick={() => window.location.reload()}
+                  onClick={handleReset}
+                  disabled={pending}
                 >
                   <RefreshCw className="w-4 h-4" />
                   Reset
                 </button>
                 <button
-                  className="px-8 py-3 bg-gradient-brand text-white rounded-2xl font-semibold shadow-brand hover:shadow-brand-lg transition-all transition-normal hover:scale-105 flex items-center justify-center gap-2"
-                  onClick={() => toast.success("Settings saved successfully!")}
+                  className={`px-8 py-3 bg-gradient-brand text-white rounded-2xl font-semibold shadow-brand hover:shadow-brand-lg transition-all transition-normal hover:scale-105 flex items-center justify-center gap-2 ${
+                    pending ? "opacity-70 pointer-events-none" : ""
+                  }`}
+                  onClick={handleSaveAll}
                 >
                   <Save className="w-4 h-4" />
-                  Save Changes
+                  {pending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -183,7 +455,7 @@ function ErrorScreen({ error }: { error: string }) {
   );
 }
 
-/* ===== HEADER COMPONENT ===== */
+/* ===== HEADER ===== */
 function Header({ userProfile }: { userProfile: UserProfile | null }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -206,14 +478,13 @@ function Header({ userProfile }: { userProfile: UserProfile | null }) {
         <div className="flex items-center gap-2 px-4 py-2 surface-glass rounded-2xl border border-brand shadow-brand">
           <Shield className="w-4 h-4 brand-primary" />
           <span className="text-sm font-semibold text-primary">Admin</span>
-          <Star className="w-4 h-4 text-yellow-400 animate-pulse" />
         </div>
       )}
     </div>
   );
 }
 
-/* ===== TAB NAVIGATION ===== */
+/* ===== TAB NAV ===== */
 function TabNavigation({
   tabs,
   activeTab,
@@ -266,13 +537,39 @@ function TabNavigation({
   );
 }
 
-/* ===== PROFILE SECTION ===== */
+/* ===== PROFILE SECTION & FORM (uses lifted state) ===== */
 function ProfileSection({
   userProfile,
-  setUserProfile,
+  username,
+  setUsername,
+  displayName,
+  setDisplayName,
+  bio,
+  setBio,
+  profilePicture,
+  previewUrl,
+  setProfilePicture,
+  setPreviewUrl,
+  focusedField,
+  setFocusedField,
+  profileLoading,
+  onFileSelect,
 }: {
   userProfile: UserProfile | null;
-  setUserProfile: (profile: UserProfile | null) => void;
+  username: string;
+  setUsername: (v: string) => void;
+  displayName: string;
+  setDisplayName: (v: string) => void;
+  bio: string;
+  setBio: (v: string) => void;
+  profilePicture: File | null;
+  previewUrl: string | null;
+  setProfilePicture: (f: File | null) => void;
+  setPreviewUrl: (u: string | null) => void;
+  focusedField: string | null;
+  setFocusedField: (f: string | null) => void;
+  profileLoading: boolean;
+  onFileSelect: (file: File | null) => void;
 }) {
   return (
     <div className="space-y-8">
@@ -288,152 +585,102 @@ function ProfileSection({
         </div>
       </div>
 
-      <ProfileForm userProfile={userProfile} setUserProfile={setUserProfile} />
-    </div>
-  );
-}
-
-/* ===== PROFILE FORM ===== */
-function ProfileForm({
-  userProfile,
-  setUserProfile,
-}: {
-  userProfile: UserProfile | null;
-  setUserProfile: (profile: UserProfile | null) => void;
-}) {
-  const [username, setUsername] = useState(userProfile?.username || "");
-  const [displayName, setDisplayName] = useState(
-    userProfile?.display_name || ""
-  );
-  const [bio, setBio] = useState(userProfile?.bio || "");
-  const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
-  useEffect(() => {
-    setUsername(userProfile?.username || "");
-    setDisplayName(userProfile?.display_name || "");
-    setBio(userProfile?.bio || "");
-  }, [userProfile]);
-
-  useEffect(() => {
-    if (profilePicture) {
-      const url = URL.createObjectURL(profilePicture);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [profilePicture]);
-
-  const handleSave = async () => {
-    try {
-      const updated = userProfile ? { ...userProfile } : null;
-      if (updated) {
-        updated.username = username;
-        updated.display_name = displayName;
-        updated.bio = bio;
-        if (profilePicture) {
-          updated.avatar_url = URL.createObjectURL(profilePicture);
-        }
-        setUserProfile(updated);
-      }
-      toast.success("Profile updated successfully!");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save profile");
-    }
-  };
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Avatar Section */}
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative group">
-          <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-subtle shadow-brand relative bg-surface-secondary">
-            <Image
-              src={previewUrl || userProfile?.avatar_url || "/assets/nopfp.png"}
-              alt="Profile picture"
-              fill
-              className="object-cover transition-all transition-normal group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all transition-normal flex items-center justify-center">
-              <Camera className="w-8 h-8 text-white drop-shadow-lg" />
-            </div>
-          </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setProfilePicture(e.target.files?.[0] || null)}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-          />
-        </div>
-        <p className="text-sm text-muted text-center">Click to change avatar</p>
-      </div>
-
-      {/* Form Fields */}
-      <div className="lg:col-span-2 space-y-6">
-        <FormField
-          label="Username"
-          value={username}
-          onChange={setUsername}
-          placeholder="Enter your username"
-          focused={focusedField === "username"}
-          onFocus={() => setFocusedField("username")}
-          onBlur={() => setFocusedField(null)}
-        />
-
-        <FormField
-          label="Display Name"
-          value={displayName}
-          onChange={setDisplayName}
-          placeholder="How others see your name"
-          focused={focusedField === "displayName"}
-          onFocus={() => setFocusedField("displayName")}
-          onBlur={() => setFocusedField(null)}
-        />
-
-        <div
-          className={`space-y-2 transition-all transition-normal ${
-            focusedField === "bio" ? "scale-[1.01]" : ""
-          }`}
-        >
-          <label className="block text-sm font-semibold text-primary">
-            Bio
-          </label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            onFocus={() => setFocusedField("bio")}
-            onBlur={() => setFocusedField(null)}
-            rows={4}
-            placeholder="Tell others about yourself..."
-            className={`w-full px-4 py-3 rounded-2xl border-2 transition-all transition-normal resize-none ${
-              focusedField === "bio"
-                ? "border-brand surface-elevated shadow-brand"
-                : "border-secondary surface-secondary"
-            }`}
-          />
-        </div>
-
-        {/* Account Info Display */}
-        {userProfile?.email && (
-          <div className="p-4 surface-elevated rounded-2xl border border-subtle">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium text-primary">
-                  Email Address
-                </div>
-                <div className="text-sm text-muted">{userProfile.email}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Avatar */}
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-subtle shadow-brand relative bg-surface-secondary">
+              <Image
+                src={
+                  previewUrl || userProfile?.avatar_url || "/assets/nopfp.png"
+                }
+                alt="Profile picture"
+                fill
+                className="object-cover transition-all transition-normal group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all transition-normal flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white drop-shadow-lg" />
               </div>
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
             </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => onFileSelect(e.target.files?.[0] || null)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
           </div>
-        )}
+          <p className="text-sm text-muted text-center">
+            Click to change avatar
+          </p>
+        </div>
+
+        {/* Fields */}
+        <div className="lg:col-span-2 space-y-6">
+          <FormField
+            label="Username"
+            value={username}
+            onChange={setUsername}
+            placeholder="Enter your username"
+            focused={focusedField === "username"}
+            onFocus={() => setFocusedField("username")}
+            onBlur={() => setFocusedField(null)}
+          />
+
+          <FormField
+            label="Display Name"
+            value={displayName}
+            onChange={setDisplayName}
+            placeholder="How others see your name"
+            focused={focusedField === "displayName"}
+            onFocus={() => setFocusedField("displayName")}
+            onBlur={() => setFocusedField(null)}
+          />
+
+          <div
+            className={`space-y-2 transition-all transition-normal ${
+              focusedField === "bio" ? "scale-[1.01]" : ""
+            }`}
+          >
+            <label className="block text-sm font-semibold text-primary">
+              Bio
+            </label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              onFocus={() => setFocusedField("bio")}
+              onBlur={() => setFocusedField(null)}
+              rows={4}
+              placeholder="Tell others about yourself..."
+              className={`w-full px-4 py-3 rounded-2xl border-2 transition-all transition-normal resize-none ${
+                focusedField === "bio"
+                  ? "border-brand surface-elevated shadow-brand"
+                  : "border-secondary surface-secondary"
+              }`}
+            />
+          </div>
+
+          {/* Account Info */}
+          {userProfile?.email && (
+            <div className="p-4 surface-elevated rounded-2xl border border-subtle">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-primary">
+                    Email Address
+                  </div>
+                  <div className="text-sm text-muted">{userProfile.email}</div>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
+/* ===== Form Field ===== */
 function FormField({
   label,
   value,
@@ -476,26 +723,30 @@ function FormField({
   );
 }
 
-/* ===== PREFERENCES SECTION ===== */
-function PreferencesSection() {
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [dailyReminder, setDailyReminder] = useState(true);
-  const [reminderTime, setReminderTime] = useState("09:00");
-
-  const themeIcons = {
+/* ===== PREFERENCES ===== */
+function PreferencesSection({
+  theme,
+  setTheme,
+  notificationsEnabled,
+  setNotificationsEnabled,
+  dailyReminder,
+  setDailyReminder,
+  reminderTime,
+  setReminderTime,
+}: {
+  theme: "light" | "dark" | "system";
+  setTheme: (t: "light" | "dark" | "system") => void;
+  notificationsEnabled: boolean;
+  setNotificationsEnabled: (v: boolean) => void;
+  dailyReminder: boolean;
+  setDailyReminder: (v: boolean) => void;
+  reminderTime: string;
+  setReminderTime: (t: string) => void;
+}) {
+  const themeIcons: Record<string, any> = {
     light: Sun,
     dark: Moon,
     system: Monitor,
-  };
-
-  const handleSave = async () => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.success("Preferences updated!");
-    } catch (err: any) {
-      toast.error("Failed to save preferences");
-    }
   };
 
   return (
@@ -511,7 +762,7 @@ function PreferencesSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Theme Selection */}
+        {/* Theme */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-3">
             <Palette className="w-4 h-4 brand-primary" />
@@ -540,7 +791,7 @@ function PreferencesSection() {
           </div>
         </div>
 
-        {/* Study Reminder Time */}
+        {/* Reminder time */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 brand-primary" />
@@ -558,7 +809,6 @@ function PreferencesSection() {
         </div>
       </div>
 
-      {/* Toggle Options */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ToggleCard
           icon={<Bell className="w-5 h-5 brand-primary" />}
@@ -579,7 +829,7 @@ function PreferencesSection() {
   );
 }
 
-/* ===== TOGGLE CARD ===== */
+/* ===== Toggle Card & Switch ===== */
 function ToggleCard({
   icon,
   title,
@@ -613,13 +863,12 @@ function ToggleCard({
   );
 }
 
-/* ===== TOGGLE SWITCH ===== */
 function ToggleSwitch({
   checked,
   onChange,
 }: {
   checked: boolean;
-  onChange: (value: boolean) => void;
+  onChange: (v: boolean) => void;
 }) {
   return (
     <button
@@ -641,11 +890,10 @@ function ToggleSwitch({
   );
 }
 
-/* ===== BACKGROUND DECORATIONS ===== */
+/* ===== Background Decorations ===== */
 function BackgroundDecor() {
   return (
     <>
-      {/* Subtle animated gradients */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
         <div
           className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-brand-primary/30 to-brand-secondary/30 rounded-full animate-pulse blur-3xl"
@@ -657,7 +905,6 @@ function BackgroundDecor() {
         />
       </div>
 
-      {/* Grid pattern */}
       <div className="fixed inset-0 pointer-events-none opacity-8">
         <div
           className="absolute inset-0"
