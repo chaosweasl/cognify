@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { CacheInvalidation } from "@/hooks/useCache";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -574,6 +575,7 @@ export function ProjectCreator() {
   };
   const createProject = async () => {
     if (isCreating) return;
+
     // Validate required fields before submit
     if (!formData.name.trim()) {
       toast.error("Project name is required");
@@ -587,7 +589,9 @@ export function ProjectCreator() {
       toast.error("Please select a study schedule");
       return;
     }
+
     setIsCreating(true);
+
     try {
       // Compose payload for API (only fields supported by backend)
       const payload = {
@@ -597,25 +601,36 @@ export function ProjectCreator() {
         max_reviews_per_day: formData.intensity.maxReviews,
         // Advanced SRS settings could be added here if UI exposes them
       };
+
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       let data: CreateProjectResponse;
       try {
         data = await res.json();
       } catch {
         data = { error: "Invalid server response" };
       }
+
       if (!res.ok || data.error) {
         toast.error(data.error || "Failed to create project");
         setIsCreating(false);
         return;
       }
+
+      // SUCCESS: Invalidate cache on client side after successful creation
+      CacheInvalidation.invalidate("user_projects");
+      CacheInvalidation.invalidatePattern("project_stats_");
+
       toast.success("Project created successfully!");
-      router.push("/dashboard");
-    } catch {
+
+      // Navigate to projects page instead of dashboard to see the new project
+      router.push("/projects");
+    } catch (error) {
+      console.error("Network error creating project:", error);
       toast.error("Network error: Failed to create project");
       setIsCreating(false);
     }

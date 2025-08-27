@@ -187,6 +187,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Invalidate cache for project lists and stats after creation
+    try {
+      // Dynamically import cache invalidation utility (only on server)
+      const { CacheInvalidation } = await import("@/hooks/useCache");
+      // The projects list cache key is 'user_projects' (see hooks/useProjects.ts)
+      CacheInvalidation.invalidate("user_projects");
+      CacheInvalidation.invalidatePattern("project_stats_");
+    } catch (e) {
+      // Log but don't block creation if cache invalidation fails
+      console.warn("[API] Cache invalidation failed after project creation", e);
+    }
     return NextResponse.json({
       id: project.id,
       name: project.name,
