@@ -23,6 +23,7 @@ import {
 
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useSettingsStore } from "@/hooks/useSettings";
+import { canProceedWithUpdate, recordUpdateTimestamp } from "./actions";
 
 export interface UserProfile {
   id: string;
@@ -32,56 +33,6 @@ export interface UserProfile {
   bio: string | null;
   email: string | null;
   is_admin: boolean;
-}
-
-// Rate limiting constants (local-only)
-const TEN_SECONDS = 10 * 1000;
-const ONE_HOUR = 60 * 60 * 1000;
-const MAX_CHANGES_PER_HOUR = 3;
-const STORAGE_KEY = "profileUpdateTimestamps";
-
-function getTimestamps(): number[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function setTimestamps(timestamps: number[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(timestamps));
-}
-
-function canProceedWithUpdate(): { allowed: boolean; message?: string } {
-  const now = Date.now();
-  const timestamps = getTimestamps().filter((ts) => now - ts < ONE_HOUR);
-
-  if (timestamps.length >= MAX_CHANGES_PER_HOUR) {
-    return {
-      allowed: false,
-      message: `You can only update your profile ${MAX_CHANGES_PER_HOUR} times per hour.`,
-    };
-  }
-
-  const last = timestamps[timestamps.length - 1];
-  if (last && now - last < TEN_SECONDS) {
-    const secondsLeft = Math.ceil((TEN_SECONDS - (now - last)) / 1000);
-    return {
-      allowed: false,
-      message: `Please wait ${secondsLeft}s before trying again.`,
-    };
-  }
-
-  return { allowed: true };
-}
-
-function recordUpdateTimestamp() {
-  const now = Date.now();
-  const timestamps = getTimestamps()
-    .filter((ts) => now - ts < ONE_HOUR)
-    .concat(now);
-  setTimestamps(timestamps);
 }
 
 export default function SettingsPage() {
