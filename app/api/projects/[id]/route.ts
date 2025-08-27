@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CacheInvalidation } from "@/hooks/useCache";
 
+// Helper: safely pull id out of the framework's context without using `any`
+function getProjectIdFromContext(ctx: unknown): string | undefined {
+  if (typeof ctx !== "object" || ctx === null) return undefined;
+  const maybe = ctx as { params?: Record<string, unknown> };
+  const id = maybe.params?.id;
+  return typeof id === "string" ? id : undefined;
+}
+
 // PATCH: Update a project by ID
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = async (request: NextRequest, context: unknown) => {
+  const id = getProjectIdFromContext(context);
+  if (!id) {
+    return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
+  }
+
   const supabase = await createClient();
-  const { id } = params;
   const updates = await request.json();
 
   // Validate user
@@ -39,15 +48,16 @@ export async function PATCH(
   CacheInvalidation.invalidatePattern("project_stats_");
 
   return NextResponse.json({ message: "Project updated" });
-}
+};
 
 // DELETE: Delete a project by ID
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = async (request: NextRequest, context: unknown) => {
+  const id = getProjectIdFromContext(context);
+  if (!id) {
+    return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
+  }
+
   const supabase = await createClient();
-  const { id } = params;
 
   // Validate user
   const {
@@ -77,4 +87,4 @@ export async function DELETE(
   CacheInvalidation.invalidatePattern("project_stats_");
 
   return NextResponse.json({ message: "Project deleted" });
-}
+};
