@@ -114,17 +114,16 @@ export default function SettingsPage() {
 
   // user profile hooks
   const {
-    userProfile: profileFromHook,
     updateUserProfile,
     uploadAvatar,
     isLoading: profileLoading,
   } = useUserProfile();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchProfile = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/user/profile");
+        const res = await window.fetch("/api/user/profile");
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data: UserProfile = await res.json();
         setUserProfile(data);
@@ -144,8 +143,7 @@ export default function SettingsPage() {
       }
     };
 
-    fetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchProfile();
   }, []);
 
   useEffect(() => {
@@ -222,7 +220,9 @@ export default function SettingsPage() {
     }
 
     const { trimmedDisplayName, trimmedBio } = validation;
-    const changes = getChangedFields(trimmedDisplayName, #trimmedBio);
+    const safeDisplayName = trimmedDisplayName ?? "";
+    const safeBio = trimmedBio ?? "";
+    const changes = getChangedFields(safeDisplayName, safeBio);
 
     // Check if anything changed (profile or preferences)
     const prefsChanged =
@@ -304,7 +304,12 @@ export default function SettingsPage() {
       setTheme(userSettings.theme);
       setNotificationsEnabled(userSettings.notifications_enabled);
       setDailyReminder(userSettings.daily_reminder);
-      setReminderTime(userSettings.reminder_time?.slice(0, 5) || "09:00");
+      setReminderTime(
+        userSettings.reminder_time &&
+          typeof userSettings.reminder_time === "string"
+          ? userSettings.reminder_time.slice(0, 5)
+          : "09:00"
+      );
     }
   };
 
