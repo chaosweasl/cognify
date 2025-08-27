@@ -21,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateProject } from "@/app/(main)/projects/actions";
+import { CacheInvalidation } from "@/hooks/useCache";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
 import type { Project, Flashcard } from "@/src/types";
 
@@ -73,6 +74,10 @@ export function FlashcardEditor({
         new_cards_per_day: newCardsPerDay,
         max_reviews_per_day: maxReviewsPerDay,
       });
+      // Invalidate client-side cache for projects list and this project
+      CacheInvalidation.invalidate("user_projects");
+      CacheInvalidation.invalidate(`project_${project.id}`);
+
       const cardsToSave = flashcards
         .filter((card) => card.front?.trim() || card.back?.trim())
         .map((card) => ({ front: card.front, back: card.back }));

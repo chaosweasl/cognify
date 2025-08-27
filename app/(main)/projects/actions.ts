@@ -92,142 +92,48 @@ export async function updateProject(projectData: {
   max_interval?: number;
   lapse_ease_penalty?: number;
 }) {
-  console.log("projectsActions: updateProject called", projectData);
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Not authenticated");
-
+  // Call the API route for updating a project
   const { id, ...updateData } = projectData;
-
-  // Remove undefined values to avoid updating fields unnecessarily
-  const cleanUpdateData = Object.fromEntries(
-    Object.entries(updateData).filter(([, value]) => value !== undefined)
-  );
-
-  console.log("updateProject: sending data to database", cleanUpdateData);
-
-  const { error } = await supabase
-    .from("projects")
-    .update(cleanUpdateData)
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) throw error;
-
+  // Use absolute URL for server-side fetch
+  const baseUrl =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_BASE_URL ||
+        (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
+        "http://localhost:3000"
+      : "";
+  const url = `${baseUrl}/api/projects/${id}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updateData),
+  });
+  if (!res.ok) {
+    const result = await res.json();
+    throw new Error(result.error || "Failed to update project");
+  }
   // Invalidate cache to ensure UI updates across the app
-  CacheInvalidation.invalidatePattern("user_projects");
-  CacheInvalidation.invalidatePattern(`project_${id}`);
+  CacheInvalidation.invalidate("user_projects");
+  CacheInvalidation.invalidate(`project_${id}`);
 }
 
 export async function deleteProject(id: string) {
-  console.log("projectsActions: deleteProject called", { id });
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("Not authenticated");
-
-  // Start a transaction-like operation to clean up related data
-  try {
-    console.log(
-      `[Projects] deleteProject - Starting cleanup for project: ${id}`
-    );
-
-    // 1. Delete user notifications that might reference this project
-    // Check title, message, and URL fields for various project reference patterns
-    console.log(
-      `[Projects] deleteProject - Deleting related notifications for user: ${user.id}`
-    );
-    const notificationDeletePromises = [
-      // Delete notifications with project ID in title
-      supabase
-        .from("user_notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .ilike("title", `%${id}%`),
-
-      // Delete notifications with project ID in message
-      supabase
-        .from("user_notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .ilike("message", `%${id}%`),
-
-      // Delete notifications with project ID in URL (like SRS reminders)
-      supabase
-        .from("user_notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .ilike("url", `%/projects/${id}%`),
-
-      // Delete notifications with project ID in URL (alternative patterns)
-      supabase
-        .from("user_notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .ilike("url", `%${id}%`),
-
-      // Delete SRS study reminder notifications that might reference this specific project
-      supabase
-        .from("user_notifications")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("type", "srs_reminder")
-        .ilike("message", `%${id}%`),
-    ];
-
-    const notificationResults = await Promise.all(notificationDeletePromises);
-    console.log(
-      `[Projects] deleteProject - Notification cleanup results:`,
-      notificationResults
-    );
-
-    // 2. Delete per-project daily study stats
-    console.log(
-      `[Projects] deleteProject - Deleting per-project daily study stats`
-    );
-    const { error: statsError } = await supabase
-      .from("daily_study_stats")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("project_id", id);
-
-    if (statsError) {
-      console.warn(
-        `[Projects] deleteProject - Warning: Failed to delete daily stats:`,
-        statsError
-      );
-      // Don't throw error here as this is cleanup - continue with project deletion
-    }
-
-    // 3. Delete the project (this will cascade delete flashcards and srs_states)
-    console.log(
-      `[Projects] deleteProject - Deleting project and cascaded data`
-    );
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.log(`[Projects] deleteProject - Error deleting project:`, error);
-      throw error;
-    }
-
-    console.log(
-      `[Projects] deleteProject - Successfully deleted project: ${id}`
-    );
-
-    // Invalidate cache to ensure UI updates across the app
-    CacheInvalidation.invalidatePattern("user_projects");
-    CacheInvalidation.invalidatePattern(`project_${id}`);
-    CacheInvalidation.invalidatePattern("project_stats_");
-  } catch (error) {
-    console.error("[Projects] deleteProject - Error during deletion:", error);
-    throw error;
+  // Call the API route for deleting a project
+  const baseUrl =
+    typeof window === "undefined"
+      ? process.env.NEXT_PUBLIC_BASE_URL ||
+        (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
+        "http://localhost:3000"
+      : "";
+  const url = `${baseUrl}/api/projects/${id}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const result = await res.json();
+    throw new Error(result.error || "Failed to delete project");
   }
+  // Invalidate cache to ensure UI updates across the app
+  CacheInvalidation.invalidate("user_projects");
+  CacheInvalidation.invalidate(`project_${id}`);
+  CacheInvalidation.invalidatePattern("project_stats_");
 }
