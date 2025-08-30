@@ -335,7 +335,7 @@ export function NotificationBell() {
                         No notifications
                       </div>
                       <div className="text-xs text-muted">
-                        You're all caught up
+                        You&apos;re all caught up
                       </div>
                     </div>
                   )}
