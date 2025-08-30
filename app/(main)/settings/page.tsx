@@ -17,6 +17,8 @@ import {
   Clock,
   Bell,
   Moon,
+  Edit3,
+  Mail,
   Sun,
   Monitor,
 } from "lucide-react";
@@ -251,55 +253,70 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen surface-primary relative w-full">
-      <BackgroundDecor />
-
-      <div className="relative container mx-auto px-6 py-10 max-w-5xl">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <header className="mb-12 animate-[slideInUp_0.6s_ease-out]">
+        <header className="mb-8">
           <Header userProfile={userProfile} />
         </header>
 
-        {/* Card */}
-        <div className="glass-surface rounded-3xl overflow-hidden shadow-brand-lg border border-subtle transition-all transition-normal">
+        {/* Main Card */}
+        <div className="glass-surface rounded-2xl shadow-lg border border-primary/10 overflow-hidden">
           <TabNavigation
             tabs={tabs}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />
 
-          <div className="p-8 md:p-12">
-            <div className="max-w-4xl mx-auto space-y-12">
-              {/* Profile Section */}
-              <ProfileSection
-                userProfile={userProfile}
-                username={username}
-                setUsername={setUsername}
-                displayName={displayName}
-                setDisplayName={setDisplayName}
-                bio={bio}
-                setBio={setBio}
-                focusedField={focusedField}
-                setFocusedField={setFocusedField}
-                onFileSelect={handleFileSelect}
-              />
+          <div className="p-6 lg:p-8">
+            <div className="space-y-8">
+              {/* Two-column layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Profile Section */}
+                <div className="space-y-6">
+                  <SectionHeader
+                    icon={<User className="w-5 h-5 text-white" />}
+                    title="Profile Information"
+                    subtitle="Update your personal details"
+                  />
+                  <ProfileSection
+                    userProfile={userProfile}
+                    username={username}
+                    setUsername={setUsername}
+                    displayName={displayName}
+                    setDisplayName={setDisplayName}
+                    bio={bio}
+                    setBio={setBio}
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                    onFileSelect={handleFileSelect}
+                  />
+                </div>
 
-              {/* Preferences */}
-              <PreferencesSection
-                theme={theme}
-                setTheme={setTheme}
-                notificationsEnabled={notificationsEnabled}
-                setNotificationsEnabled={setNotificationsEnabled}
-                dailyReminder={dailyReminder}
-                setDailyReminder={setDailyReminder}
-                reminderTime={reminderTime}
-                setReminderTime={setReminderTime}
-              />
+                {/* Preferences Section */}
+                <div className="space-y-6">
+                  <SectionHeader
+                    icon={<Settings className="w-5 h-5 text-white" />}
+                    title="Preferences"
+                    subtitle="Customize your experience"
+                  />
+                  <PreferencesSection
+                    theme={theme}
+                    setTheme={setTheme}
+                    notificationsEnabled={notificationsEnabled}
+                    setNotificationsEnabled={setNotificationsEnabled}
+                    dailyReminder={dailyReminder}
+                    setDailyReminder={setDailyReminder}
+                    reminderTime={reminderTime}
+                    setReminderTime={setReminderTime}
+                  />
+                </div>
+              </div>
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle">
                 <button
-                  className="px-6 py-3 surface-elevated border border-secondary text-secondary rounded-2xl font-medium interactive-hover transition-all transition-normal hover:scale-105 flex items-center justify-center gap-2"
+                  className="px-5 py-2.5 surface-elevated border border-secondary text-secondary rounded-xl font-medium interactive-hover transition-all duration-200 flex items-center justify-center gap-2"
                   onClick={handleReset}
                   disabled={pending}
                 >
@@ -307,12 +324,16 @@ export default function SettingsPage() {
                   Reset
                 </button>
                 <button
-                  className={`px-8 py-3 bg-gradient-brand text-white rounded-2xl font-semibold shadow-brand hover:shadow-brand-lg transition-all transition-normal hover:scale-105 flex items-center justify-center gap-2 ${
+                  className={`px-6 py-2.5 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200 flex items-center justify-center gap-2 ${
                     pending ? "opacity-70 pointer-events-none" : ""
                   }`}
                   onClick={handleSaveAll}
                 >
-                  <Save className="w-4 h-4" />
+                  {pending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
                   {pending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
@@ -327,24 +348,22 @@ export default function SettingsPage() {
 /* ===== LOADING & ERROR SCREENS ===== */
 function LoadingScreen() {
   return (
-    <div className="min-h-screen surface-primary flex items-center justify-center relative overflow-hidden w-full">
-      <BackgroundDecor />
-      <div className="glass-surface rounded-3xl p-12 max-w-md w-full mx-4 shadow-brand-lg border border-subtle">
+    <div className="flex-1 flex items-center justify-center">
+      <div className="glass-surface rounded-2xl p-8 max-w-md w-full mx-4 shadow-lg border border-primary/10">
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
-            <div className="w-20 h-20 surface-elevated rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 surface-elevated rounded-xl flex items-center justify-center">
               <Settings
                 className="w-8 h-8 brand-primary animate-spin"
                 style={{ animationDuration: "3s" }}
               />
             </div>
-            <div className="absolute -inset-1 bg-gradient-brand rounded-2xl blur opacity-20 animate-pulse" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-primary mb-2">
+            <h2 className="text-xl font-bold text-primary mb-2">
               Loading Settings
             </h2>
-            <div className="flex items-center justify-center gap-3 text-sm text-muted">
+            <div className="flex items-center justify-center gap-3 text-muted">
               <Loader2 className="w-4 h-4 animate-spin brand-primary" />
               <span>Preparing your workspace...</span>
             </div>
@@ -357,31 +376,30 @@ function LoadingScreen() {
 
 function ErrorScreen({ error }: { error: string }) {
   return (
-    <div className="min-h-screen surface-primary flex items-center justify-center relative overflow-hidden w-full">
-      <BackgroundDecor />
-      <div className="glass-surface rounded-3xl p-12 max-w-md w-full mx-4 shadow-brand-lg border border-subtle">
+    <div className="flex-1 flex items-center justify-center">
+      <div className="glass-surface rounded-2xl p-8 max-w-md w-full mx-4 shadow-lg border border-primary/10">
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="relative">
-            <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20">
+            <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
               <AlertCircle className="w-8 h-8 text-red-400" />
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-primary mb-2">
+            <h2 className="text-xl font-bold text-primary mb-2">
               Unable to Load Settings
             </h2>
             <p className="text-muted mb-6">{error}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-gradient-brand text-white rounded-2xl font-semibold shadow-brand hover:shadow-brand-lg transition-all transition-normal"
+              className="px-5 py-2.5 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200"
             >
               Try Again
             </button>
             <button
               onClick={() => history.back()}
-              className="px-6 py-3 surface-elevated border border-secondary text-secondary rounded-2xl font-semibold interactive-hover transition-all transition-normal"
+              className="px-5 py-2.5 surface-elevated border border-secondary text-secondary rounded-xl font-medium interactive-hover transition-all duration-200"
             >
               Go Back
             </button>
@@ -395,16 +413,15 @@ function ErrorScreen({ error }: { error: string }) {
 /* ===== HEADER ===== */
 function Header({ userProfile }: { userProfile: UserProfile | null }) {
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-      <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
         <div className="relative group">
-          <div className="w-16 h-16 bg-gradient-brand rounded-3xl flex items-center justify-center shadow-brand transform group-hover:scale-110 transition-all transition-normal">
-            <Settings className="w-8 h-8 text-white" />
+          <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
+            <Settings className="w-6 h-6 text-white" />
           </div>
-          <div className="absolute -inset-1 bg-gradient-brand rounded-3xl blur opacity-0 group-hover:opacity-50 transition-all transition-normal" />
         </div>
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">
             Settings
           </h1>
           <p className="text-muted mt-1">Customize your Cognify experience</p>
@@ -412,11 +429,34 @@ function Header({ userProfile }: { userProfile: UserProfile | null }) {
       </div>
 
       {userProfile?.is_admin && (
-        <div className="flex items-center gap-2 px-4 py-2 surface-glass rounded-2xl border border-brand shadow-brand">
+        <div className="flex items-center gap-2 px-3 py-1.5 surface-glass rounded-lg border-brand shadow-brand">
           <Shield className="w-4 h-4 brand-primary" />
           <span className="text-sm font-semibold text-primary">Admin</span>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ===== SECTION HEADER ===== */
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-gradient-brand rounded-lg flex items-center justify-center shadow-brand">
+        {icon}
+      </div>
+      <div>
+        <h2 className="text-lg font-bold text-primary">{title}</h2>
+        <p className="text-muted text-sm">{subtitle}</p>
+      </div>
     </div>
   );
 }
@@ -433,7 +473,7 @@ function TabNavigation({
 }) {
   return (
     <div className="border-b border-subtle surface-glass">
-      <div className="flex">
+      <div className="flex overflow-x-auto">
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           const active = activeTab === tab.id;
@@ -441,28 +481,28 @@ function TabNavigation({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-3 px-8 py-6 font-semibold transition-all transition-normal group ${
+              className={`relative flex items-center gap-2 px-6 py-4 font-semibold transition-all duration-200 whitespace-nowrap ${
                 active
                   ? "text-primary surface-elevated"
                   : "text-secondary hover:text-primary interactive-hover"
               }`}
             >
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all transition-normal ${
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${
                   active
                     ? "bg-gradient-brand shadow-brand"
                     : "surface-secondary group-hover:surface-elevated"
                 }`}
               >
                 <TabIcon
-                  className={`w-5 h-5 transition-all transition-normal ${
+                  className={`w-4 h-4 transition-all duration-200 ${
                     active
                       ? "text-white"
                       : "text-muted group-hover:brand-primary"
                   }`}
                 />
               </div>
-              <span className="text-lg">{tab.label}</span>
+              <span className="text-sm">{tab.label}</span>
               {active && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-brand rounded-t-full" />
               )}
@@ -474,7 +514,7 @@ function TabNavigation({
   );
 }
 
-/* ===== PROFILE SECTION & FORM (uses local preview inside section) ===== */
+/* ===== PROFILE SECTION ===== */
 function ProfileSection({
   userProfile,
   username,
@@ -498,101 +538,87 @@ function ProfileSection({
   setFocusedField: (f: string | null) => void;
   onFileSelect: (file: File | null) => void;
 }) {
-  // local preview only
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // reset local preview when external profile changes
     setLocalPreviewUrl(null);
   }, [userProfile]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand">
-          <User className="w-6 h-6 text-white" />
+    <div className="space-y-6">
+      {/* Avatar Section */}
+      <div className="flex flex-col items-center space-y-4 p-5 surface-elevated rounded-xl border-subtle">
+        <div className="relative group">
+          <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-subtle shadow-sm relative surface-secondary">
+            <Image
+              src={
+                localPreviewUrl ||
+                userProfile?.avatar_url ||
+                "/assets/nopfp.png"
+              }
+              alt="Profile picture"
+              fill
+              className="object-cover transition-all duration-300 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+              <Camera className="w-6 h-6 text-white" />
+            </div>
+          </div>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              if (file && file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = (ev) =>
+                  setLocalPreviewUrl(ev.target?.result as string);
+                reader.readAsDataURL(file);
+              } else {
+                setLocalPreviewUrl(null);
+              }
+              onFileSelect(file);
+            }}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-primary">
-            Profile Information
-          </h2>
-          <p className="text-muted">Update your personal details</p>
-        </div>
+        <p className="text-xs text-muted text-center">Click to change avatar</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Avatar */}
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative group">
-            <div className="w-32 h-32 rounded-3xl overflow-hidden border-2 border-subtle shadow-brand relative bg-surface-secondary">
-              <Image
-                src={
-                  localPreviewUrl ||
-                  userProfile?.avatar_url ||
-                  "/assets/nopfp.png"
-                }
-                alt="Profile picture"
-                fill
-                className="object-cover transition-all transition-normal group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all transition-normal flex items-center justify-center">
-                <Camera className="w-8 h-8 text-white drop-shadow-lg" />
-              </div>
-            </div>
+      {/* Form Fields */}
+      <div className="space-y-4">
+        <FormField
+          label="Username"
+          value={username}
+          onChange={setUsername}
+          placeholder="Enter your username"
+          focused={focusedField === "username"}
+          onFocus={() => setFocusedField("username")}
+          onBlur={() => setFocusedField(null)}
+          icon={<Edit3 className="w-4 h-4 text-muted" />}
+        />
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                if (file && file.type.startsWith("image/")) {
-                  const reader = new FileReader();
-                  reader.onload = (ev) =>
-                    setLocalPreviewUrl(ev.target?.result as string);
-                  reader.readAsDataURL(file);
-                } else {
-                  setLocalPreviewUrl(null);
-                }
-                onFileSelect(file);
-              }}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </div>
-          <p className="text-sm text-muted text-center">
-            Click to change avatar
-          </p>
-        </div>
+        <FormField
+          label="Display Name"
+          value={displayName}
+          onChange={setDisplayName}
+          placeholder="How others see your name"
+          focused={focusedField === "displayName"}
+          onFocus={() => setFocusedField("displayName")}
+          onBlur={() => setFocusedField(null)}
+          icon={<User className="w-4 h-4 text-muted" />}
+        />
 
-        {/* Fields */}
-        <div className="lg:col-span-2 space-y-6">
-          <FormField
-            label="Username"
-            value={username}
-            onChange={setUsername}
-            placeholder="Enter your username"
-            focused={focusedField === "username"}
-            onFocus={() => setFocusedField("username")}
-            onBlur={() => setFocusedField(null)}
-          />
-
-          <FormField
-            label="Display Name"
-            value={displayName}
-            onChange={setDisplayName}
-            placeholder="How others see your name"
-            focused={focusedField === "displayName"}
-            onFocus={() => setFocusedField("displayName")}
-            onBlur={() => setFocusedField(null)}
-          />
-
-          <div
-            className={`space-y-2 transition-all transition-normal ${
-              focusedField === "bio" ? "scale-[1.01]" : ""
-            }`}
-          >
-            <label className="block text-sm font-semibold text-primary">
-              Bio
-            </label>
+        <div
+          className={`space-y-2 transition-all duration-200 ${
+            focusedField === "bio" ? "scale-[1.01]" : ""
+          }`}
+        >
+          <label className="block text-sm font-semibold text-primary">
+            Bio
+          </label>
+          <div className="relative">
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -600,29 +626,35 @@ function ProfileSection({
               onBlur={() => setFocusedField(null)}
               rows={4}
               placeholder="Tell others about yourself..."
-              className={`w-full px-4 py-3 rounded-2xl border-2 transition-all transition-normal resize-none ${
+              className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-all duration-200 resize-none text-sm surface-secondary text-primary ${
                 focusedField === "bio"
                   ? "border-brand surface-elevated shadow-brand"
-                  : "border-secondary surface-secondary"
+                  : "border-secondary hover:border-subtle"
               }`}
             />
+            <Edit3 className="absolute left-3 top-3.5 w-4 h-4 text-muted" />
           </div>
+        </div>
 
-          {/* Account Info */}
-          {userProfile?.email && (
-            <div className="p-4 surface-elevated rounded-2xl border border-subtle">
-              <div className="flex items-center justify-between">
+        {/* Account Info */}
+        {userProfile?.email && (
+          <div className="p-4 surface-elevated rounded-lg border-subtle">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
                 <div>
-                  <div className="text-sm font-medium text-primary">
+                  <div className="text-xs font-medium text-primary">
                     Email Address
                   </div>
-                  <div className="text-sm text-muted">{userProfile.email}</div>
+                  <div className="text-xs text-muted">{userProfile.email}</div>
                 </div>
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
               </div>
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -637,6 +669,7 @@ function FormField({
   focused,
   onFocus,
   onBlur,
+  icon,
 }: {
   label: string;
   value: string;
@@ -645,28 +678,38 @@ function FormField({
   focused: boolean;
   onFocus: () => void;
   onBlur: () => void;
+  icon?: React.ReactNode;
 }) {
   return (
     <div
-      className={`space-y-2 transition-all transition-normal ${
+      className={`space-y-2 transition-all duration-200 ${
         focused ? "scale-[1.01]" : ""
       }`}
     >
       <label className="block text-sm font-semibold text-primary">
         {label}
       </label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        className={`w-full px-4 py-3 rounded-2xl border-2 transition-all transition-normal ${
-          focused
-            ? "border-brand surface-elevated shadow-brand"
-            : "border-secondary surface-secondary"
-        }`}
-      />
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+            {icon}
+          </div>
+        )}
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          className={`w-full ${
+            icon ? "pl-10" : "pl-4"
+          } pr-4 py-3 rounded-lg border-2 transition-all duration-200 text-sm surface-secondary text-primary ${
+            focused
+              ? "border-brand surface-elevated shadow-brand"
+              : "border-secondary hover:border-subtle"
+          }`}
+        />
+      </div>
     </div>
   );
 }
@@ -698,75 +741,67 @@ function PreferencesSection({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 bg-gradient-to-br from-brand-tertiary to-brand-secondary rounded-2xl flex items-center justify-center shadow-brand">
-          <Settings className="w-6 h-6 text-white" />
+    <div className="space-y-6">
+      {/* Theme Selection */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Palette className="w-4 h-4 brand-primary" />
+          <label className="text-sm font-semibold text-primary">Theme</label>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-primary">Preferences</h2>
-          <p className="text-muted">Customize your experience</p>
+        <div className="grid grid-cols-3 gap-2">
+          {(["light", "dark", "system"] as const).map((themeOption) => {
+            const Icon = themeIcons[themeOption];
+            return (
+              <button
+                key={themeOption}
+                onClick={() => setTheme(themeOption)}
+                className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center gap-1 ${
+                  theme === themeOption
+                    ? "border-brand bg-gradient-brand text-white shadow-brand"
+                    : "border-secondary surface-secondary text-secondary hover:border-brand interactive-hover"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-xs font-medium capitalize">
+                  {themeOption}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Theme */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 mb-3">
-            <Palette className="w-4 h-4 brand-primary" />
-            <label className="text-sm font-semibold text-primary">Theme</label>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {(["light", "dark", "system"] as const).map((themeOption) => {
-              const Icon = themeIcons[themeOption];
-              return (
-                <button
-                  key={themeOption}
-                  onClick={() => setTheme(themeOption)}
-                  className={`p-3 rounded-xl border-2 transition-all transition-normal flex flex-col items-center gap-2 ${
-                    theme === themeOption
-                      ? "border-brand bg-gradient-brand text-white shadow-brand"
-                      : "border-secondary surface-secondary text-secondary hover:border-brand interactive-hover"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-xs font-medium capitalize">
-                    {themeOption}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+      {/* Reminder time */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 brand-primary" />
+          <label className="text-sm font-semibold text-primary">
+            Study Reminder
+          </label>
         </div>
-
-        {/* Reminder time */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 brand-primary" />
-            <label className="text-sm font-semibold text-primary">
-              Study Reminder
-            </label>
-          </div>
+        <div className="relative">
+          <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
           <input
             type="time"
             value={reminderTime}
             onChange={(e) => setReminderTime(e.target.value)}
             disabled={!dailyReminder}
-            className="w-full px-4 py-3 rounded-2xl border-2 border-secondary surface-secondary text-primary transition-all transition-normal focus:border-brand focus:surface-elevated focus:shadow-brand disabled:opacity-50"
+            className="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-secondary surface-secondary text-primary transition-all duration-200 focus:border-brand focus:surface-elevated focus:shadow-brand disabled:opacity-50 text-sm"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Toggle Cards */}
+      <div className="space-y-4">
         <ToggleCard
-          icon={<Bell className="w-5 h-5 brand-primary" />}
+          icon={<Bell className="w-4 h-4 brand-primary" />}
           title="Email Notifications"
           description="Get updates about your progress"
           checked={notificationsEnabled}
           onChange={setNotificationsEnabled}
         />
         <ToggleCard
-          icon={<Clock className="w-5 h-5 brand-primary" />}
+          icon={<Clock className="w-4 h-4 brand-primary" />}
           title="Daily Reminders"
           description="Never miss a study session"
           checked={dailyReminder}
@@ -792,10 +827,10 @@ function ToggleCard({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="p-6 surface-elevated rounded-2xl border border-subtle transition-all transition-normal hover:border-brand group">
+    <div className="p-4 surface-elevated rounded-xl border-subtle transition-all duration-200 hover:border-brand group">
       <div className="flex items-center justify-between">
-        <div className="flex items-start gap-4 flex-1">
-          <div className="mt-1">{icon}</div>
+        <div className="flex items-start gap-3 flex-1">
+          <div className="mt-0.5">{icon}</div>
           <div className="flex-1">
             <div className="text-sm font-semibold text-primary mb-1">
               {title}
@@ -821,47 +856,19 @@ function ToggleSwitch({
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`w-12 h-7 rounded-full transition-all transition-normal flex items-center relative ${
+      className={`w-10 h-5 rounded-full transition-all duration-200 flex items-center relative ${
         checked
-          ? "bg-gradient-brand shadow-brand"
+          ? "bg-gradient-brand"
           : "surface-primary border-2 border-secondary"
       }`}
     >
       <div
-        className={`w-5 h-5 rounded-full transition-all transition-normal absolute ${
+        className={`w-3 h-3 rounded-full transition-all duration-200 absolute ${
           checked
             ? "translate-x-6 bg-white shadow-brand"
             : "translate-x-1 surface-elevated border border-subtle"
         }`}
       />
     </button>
-  );
-}
-
-/* ===== Background Decorations ===== */
-function BackgroundDecor() {
-  return (
-    <>
-      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
-        <div
-          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-brand-primary/30 to-brand-secondary/30 rounded-full animate-pulse blur-3xl"
-          style={{ animationDuration: "8s" }}
-        />
-        <div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-brand-tertiary/25 to-brand-accent/25 rounded-full animate-pulse blur-3xl"
-          style={{ animationDuration: "12s", animationDelay: "4s" }}
-        />
-      </div>
-
-      <div className="fixed inset-0 pointer-events-none opacity-8">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, var(--color-border-subtle) 1px, transparent 0)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
-      </div>
-    </>
   );
 }

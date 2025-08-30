@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export function HeaderMain() {
   const { theme, toggleTheme, isHydrated, hydrate } = useThemeStore();
@@ -45,7 +46,7 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 h-20 flex items-center">
+    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-6 h-20 flex items-center">
       {/* Mobile menu button */}
       <div className="md:hidden">
         <Sheet>
@@ -62,7 +63,7 @@ export function HeaderMain() {
             side="left"
             className="w-64 surface-overlay glass-surface border-subtle"
           >
-            <nav className="flex flex-col space-y-2">
+            <nav className="flex flex-col space-y-2 mt-8">
               {navItems.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
@@ -138,10 +139,10 @@ export function HeaderMain() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="rounded-full border-2 border-brand-primary/40 hover:border-brand-primary/60 hover:scale-105 transition-all transition-normal shadow-brand"
+              size="sm"
+              className="h-12 px-3 gap-3 rounded-xl surface-secondary border border-subtle hover:surface-elevated hover:border-brand interactive-hover transition-all transition-normal group"
             >
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-8 w-8 border-2 border-brand-primary/40 group-hover:border-brand-primary/60 transition-colors transition-normal">
                 <AvatarImage
                   src={userProfile?.avatar_url || "/assets/nopfp.png"}
                   alt="Avatar"
@@ -150,45 +151,98 @@ export function HeaderMain() {
                   {userProfile?.display_name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
+              <div className="hidden sm:flex flex-col items-start">
+                <span className="text-sm font-medium text-primary group-hover:brand-primary transition-colors transition-normal">
+                  {userProfile?.display_name?.split(" ")[0] || "User"}
+                </span>
+                <span className="text-xs text-muted">
+                  {userProfile?.email?.split("@")[0] || "user"}
+                </span>
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-64 surface-overlay glass-surface border-subtle"
+            className="w-72 surface-overlay glass-surface border-subtle shadow-brand-lg"
+            sideOffset={8}
           >
-            <div className="px-3 py-2 text-sm font-medium border-b border-subtle text-primary">
-              {userProfile?.display_name || "User"}
+            {/* User profile header */}
+            <div className="p-4 border-b border-subtle">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border-2 border-brand-primary/30">
+                  <AvatarImage
+                    src={userProfile?.avatar_url || "/assets/nopfp.png"}
+                    alt="Avatar"
+                  />
+                  <AvatarFallback className="bg-gradient-brand text-white font-semibold">
+                    {userProfile?.display_name?.charAt(0)?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-primary truncate">
+                    {userProfile?.display_name || "User"}
+                  </div>
+                  <div className="text-xs text-muted truncate">
+                    {userProfile?.email || "user@example.com"}
+                  </div>
+                </div>
+              </div>
             </div>
-            <DropdownMenuItem asChild>
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
-              >
-                <Home className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
-                Dashboard
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link
-                href="/settings"
-                className="flex items-center gap-2 text-secondary hover:text-primary interactive-hover interactive-focus group"
-              >
-                <Settings className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-border-subtle" />
-            <DropdownMenuItem asChild>
-              <form action={signOut} className="w-full">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 w-full text-left text-secondary hover:text-primary interactive-hover px-2 py-1.5 text-sm rounded-sm transition-colors transition-normal group"
+
+            {/* Menu items */}
+            <div className="p-2">
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-secondary hover:text-primary hover:surface-elevated interactive-hover transition-all transition-normal group"
                 >
-                  <LogOut className="h-4 w-4 group-hover:text-red-400 transition-colors transition-normal" />
-                  Sign Out
-                </button>
-              </form>
-            </DropdownMenuItem>
+                  <div className="w-8 h-8 rounded-lg surface-secondary flex items-center justify-center group-hover:bg-gradient-brand group-hover:text-white transition-all transition-normal">
+                    <Home className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Dashboard</div>
+                    <div className="text-xs text-muted">Overview and stats</div>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-secondary hover:text-primary hover:surface-elevated interactive-hover transition-all transition-normal group"
+                >
+                  <div className="w-8 h-8 rounded-lg surface-secondary flex items-center justify-center group-hover:bg-gradient-brand group-hover:text-white transition-all transition-normal">
+                    <Settings className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Settings</div>
+                    <div className="text-xs text-muted">
+                      Preferences and account
+                    </div>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </div>
+
+            {/* Sign out with subtle separator */}
+            <div className="mt-2 pt-2 border-t border-subtle">
+              <DropdownMenuItem className="p-0" asChild>
+                <form action={signOut} className="w-full">
+                  <button
+                    type="submit"
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-sm rounded-lg text-secondary hover:text-red-400 hover:bg-red-500/10 interactive-hover transition-all transition-normal group text-left"
+                  >
+                    <div className="w-8 h-8 rounded-lg surface-secondary flex items-center justify-center group-hover:bg-red-500/20 group-hover:text-red-400 transition-all transition-normal">
+                      <LogOut className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-medium">Sign Out</div>
+                      <div className="text-xs text-muted">End your session</div>
+                    </div>
+                  </button>
+                </form>
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
