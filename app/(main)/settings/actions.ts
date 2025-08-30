@@ -39,7 +39,7 @@ function setTimestamps(timestamps: number[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(timestamps));
 }
 
-function canProceedWithUpdate(): { allowed: boolean; message?: string } {
+export function canProceedWithUpdate(): { allowed: boolean; message?: string } {
   const now = Date.now();
   const timestamps = getTimestamps().filter((ts) => now - ts < ONE_HOUR);
 
@@ -62,7 +62,7 @@ function canProceedWithUpdate(): { allowed: boolean; message?: string } {
   return { allowed: true };
 }
 
-function recordUpdateTimestamp() {
+export function recordUpdateTimestamp() {
   const now = Date.now();
   const timestamps = getTimestamps()
     .filter((ts) => now - ts < ONE_HOUR)

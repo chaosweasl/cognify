@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { createClient } from "@/lib/supabase/client";
 
 // SRS Settings interface - keep the same for compatibility
 export interface SRSSettings {
@@ -71,65 +70,20 @@ const defaultUserSettings: UserSettings = {
 };
 
 // Simplified settings API
+
 const settingsApi = {
   async loadUserSettings(): Promise<UserSettings> {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) throw new Error("No authenticated user");
-
-    const { data, error } = await supabase
-      .from("user_settings")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") {
-        // No settings found, create defaults
-        const newSettings = {
-          user_id: user.id,
-          theme: defaultUserSettings.theme,
-          notifications_enabled: defaultUserSettings.notifications_enabled,
-          daily_reminder: defaultUserSettings.daily_reminder,
-          reminder_time: defaultUserSettings.reminder_time,
-        };
-        await supabase.from("user_settings").insert(newSettings);
-        return { ...newSettings, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-      }
-      throw error;
-    }
-
-    return data;
+    const res = await fetch("/api/user/settings");
+    if (!res.ok) throw new Error("Failed to load user settings");
+    return await res.json();
   },
-
   async updateUserSettings(updates: Partial<UserSettings>): Promise<void> {
-    const supabase = createClient();
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-
-    if (!authUser) throw new Error("No authenticated user");
-
-    const dbUpdates: Record<string, unknown> = {};
-
-    // Map user settings to database columns
-    if (updates.theme !== undefined) dbUpdates.theme = updates.theme;
-    if (updates.notifications_enabled !== undefined)
-      dbUpdates.notifications_enabled = updates.notifications_enabled;
-    if (updates.daily_reminder !== undefined)
-      dbUpdates.daily_reminder = updates.daily_reminder;
-    if (updates.reminder_time !== undefined)
-      dbUpdates.reminder_time = updates.reminder_time;
-
-    const { error } = await supabase
-      .from("user_settings")
-      .update(dbUpdates)
-      .eq("user_id", authUser.id);
-
-    if (error) throw error;
+    const res = await fetch("/api/user/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) throw new Error("Failed to update user settings");
   },
 };
 
@@ -158,7 +112,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     } catch (error) {
       set({
         error:
-          error instanceof Error ? error.message : "Failed to load user settings",
+          error instanceof Error
+            ? error.message
+            : "Failed to load user settings",
         isLoading: false,
       });
     }
@@ -167,7 +123,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   updateUserSettings: async (updates) => {
     const current = get().userSettings;
     if (!current) return;
-    
+
     const newSettings = { ...current, ...updates };
 
     try {
@@ -184,16 +140,30 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   reset: () => {
-    set({ 
-      userSettings: null, 
-      isLoading: false, 
-      error: null 
+    set({
+      userSettings: null,
+      isLoading: false,
+      error: null,
     });
   },
 }));
 
 // Convenience hook
 export const useSettings = () => {
-  const { userSettings, isLoading, error, loadUserSettings, updateUserSettings, reset } = useSettingsStore();
-  return { userSettings, isLoading, error, loadUserSettings, updateUserSettings, reset };
+  const {
+    userSettings,
+    isLoading,
+    error,
+    loadUserSettings,
+    updateUserSettings,
+    reset,
+  } = useSettingsStore();
+  return {
+    userSettings,
+    isLoading,
+    error,
+    loadUserSettings,
+    updateUserSettings,
+    reset,
+  };
 };

@@ -4,7 +4,6 @@ import { SRSSettings } from "@/hooks/useSettings";
 import { SRSCardState, SRSRating } from "./SRSScheduler";
 import {
   getDailyStudyStats,
-  getProjectDailyStudyStats,
   updateDailyStudyStats,
   updateProjectDailyStudyStats,
   // incrementDailyStudyCounters, // removed unused import
@@ -197,8 +196,20 @@ async function getDailyStudyCountsFromDB(
     );
 
     if (projectId) {
-      // Get per-project daily stats
-      const stats = await getProjectDailyStudyStats(userId, projectId);
+      // Get per-project daily stats from API
+      const dailyStatsRes = await fetch(
+        `/api/projects/${projectId}/daily-stats`,
+        {
+          headers: {
+            "x-user-id": userId,
+          },
+          cache: "no-store",
+        }
+      );
+      let stats = { newCardsStudied: 0, reviewsCompleted: 0 };
+      if (dailyStatsRes.ok) {
+        stats = await dailyStatsRes.json();
+      }
       console.log(`[getDailyStudyCountsFromDB] Project stats loaded:`, stats);
       return stats;
     } else {

@@ -4,7 +4,6 @@ import StudyFlashcards from "@/src/components/study/StudyFlashcards";
 import { createClient } from "@/lib/supabase/server";
 import { loadSRSStates } from "@/lib/srs/SRSDBUtils";
 import { getFlashcardsByProjectId } from "../actions/flashcard-actions";
-import { getProjectDailyStudyStats } from "@/lib/supabase/dailyStudyStats";
 
 export default async function ProjectStudyPage(props: {
   params: Promise<{ id: string }>;
@@ -46,7 +45,17 @@ export default async function ProjectStudyPage(props: {
     // Check if user has reached daily limits and no cards are available
     if (user) {
       console.log(`[StudyPage] Checking daily limits and card availability`);
-      const dailyStats = await getProjectDailyStudyStats(user.id, id);
+      // Fetch daily stats from API
+      const dailyStatsRes = await fetch(`/api/projects/${id}/daily-stats`, {
+        headers: {
+          "x-user-id": user.id,
+        },
+        cache: "no-store",
+      });
+      let dailyStats = { newCardsStudied: 0, reviewsCompleted: 0 };
+      if (dailyStatsRes.ok) {
+        dailyStats = await dailyStatsRes.json();
+      }
       const NEW_CARDS_PER_DAY = project.new_cards_per_day ?? 20; // TODO: Get from user settings
       const MAX_REVIEWS_PER_DAY = project.max_reviews_per_day ?? 200; // TODO: Get from user settings
 
