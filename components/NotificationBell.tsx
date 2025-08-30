@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { cn } from "@/lib/utils";
 
 import { useUserId } from "@/hooks/useUserId";
 import { getAppNotifications } from "@/lib/supabase/appNotifications";
@@ -191,175 +193,206 @@ export function NotificationBell() {
     unreadAppCount;
 
   return (
-    <div className="relative m-0 p-0">
+    <div className="relative">
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Toggle theme"
-        className="text-slate-200 hover:text-white hover:bg-slate-700/50"
+        onClick={() => setOpen(!open)}
+        aria-label="Notifications"
+        className="relative h-11 w-11 rounded-xl surface-secondary border border-subtle hover:surface-elevated hover:border-brand interactive-hover transition-all transition-normal group"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="h-5 w-5 text-secondary group-hover:brand-primary transition-colors transition-normal" />
         {notificationCount > 0 && (
-          <span className="badge badge-warning badge-xs absolute top-0 right-0">
-            {notificationCount}
-          </span>
+          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-brand-secondary text-white border-2 border-surface-primary flex items-center justify-center rounded-full">
+            {notificationCount > 9 ? "9+" : notificationCount}
+          </Badge>
         )}
       </Button>
+
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-base-100 shadow-lg rounded-lg z-50 border border-base-200">
-          {/* Simple header tabs */}
-          <div className="flex border-b border-base-200">
-            <button
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "user"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-base-content/60 hover:text-base-content"
-              }`}
-              onClick={() => setActiveTab("user")}
-            >
-              User
-              {filteredUserNotifications.filter((n) => !n.read).length > 0 && (
-                <span className="ml-2 badge badge-xs badge-primary align-middle">
-                  {filteredUserNotifications.filter((n) => !n.read).length}
-                </span>
-              )}
-            </button>
-            <button
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "app"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-base-content/60 hover:text-base-content"
-              }`}
-              onClick={() => setActiveTab("app")}
-            >
-              App
-              {unreadAppCount > 0 && (
-                <span className="ml-2 badge badge-xs badge-primary align-middle">
-                  {unreadAppCount}
-                </span>
-              )}
-            </button>
-          </div>
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-          {/* Content */}
-          <div className="max-h-72 overflow-y-auto">
-            {activeTab === "user" && (
-              <>
-                {filteredUserNotifications.length > 0 ? (
-                  <div className="divide-y divide-base-200">
-                    {filteredUserNotifications.map((n: UserNotification) => (
-                      <div
-                        key={n.id}
-                        className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
-                          !n.read ? "bg-primary/5" : ""
-                        }`}
-                      >
-                        <a
-                          href={n.url || "#"}
-                          className="block"
-                          target={n.url ? "_blank" : undefined}
-                          rel="noopener noreferrer"
-                        >
-                          <div
-                            className={`text-sm font-medium mb-1 ${
-                              !n.read ? "text-primary" : ""
-                            }`}
-                          >
-                            {n.title}
-                          </div>
-                          <div className="text-xs text-base-content/70">
-                            {n.message}
-                          </div>
-                          {n.trigger_at && (
-                            <div className="text-xs text-base-content/40 mt-1">
-                              {new Date(n.trigger_at).toLocaleString()}
-                            </div>
+          {/* Notification panel */}
+          <div className="absolute right-0 top-full mt-2 w-80 surface-elevated glass-surface border border-subtle rounded-xl shadow-brand-lg z-50">
+            {/* Header with tabs */}
+            <div className="flex border-b border-subtle p-1">
+              <button
+                className={cn(
+                  "flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-all transition-normal",
+                  activeTab === "user"
+                    ? "surface-elevated text-primary shadow-sm"
+                    : "text-secondary hover:text-primary hover:surface-secondary"
+                )}
+                onClick={() => setActiveTab("user")}
+              >
+                Personal
+                {filteredUserNotifications.filter((n) => !n.read).length >
+                  0 && (
+                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-brand-primary text-white">
+                    {filteredUserNotifications.filter((n) => !n.read).length}
+                  </Badge>
+                )}
+              </button>
+              <button
+                className={cn(
+                  "flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-all transition-normal",
+                  activeTab === "app"
+                    ? "surface-elevated text-primary shadow-sm"
+                    : "text-secondary hover:text-primary hover:surface-secondary"
+                )}
+                onClick={() => setActiveTab("app")}
+              >
+                Updates
+                {unreadAppCount > 0 && (
+                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-brand-primary text-white">
+                    {unreadAppCount}
+                  </Badge>
+                )}
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="max-h-80 overflow-y-auto custom-scrollbar">
+              {activeTab === "user" && (
+                <>
+                  {filteredUserNotifications.length > 0 ? (
+                    <div className="divide-y divide-border-subtle">
+                      {filteredUserNotifications.map((n: UserNotification) => (
+                        <div
+                          key={n.id}
+                          className={cn(
+                            "relative group p-4 hover:surface-secondary transition-colors transition-normal",
+                            !n.read &&
+                              "surface-secondary border-l-2 border-brand-primary"
                           )}
-                        </a>
-                        <button
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 btn btn-xs btn-ghost text-error"
-                          title="Delete notification"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log(
-                              "[Supabase] deleteUserNotification",
-                              n.id
-                            );
-                            await deleteUserNotification(n.id);
-                            if (userId) {
-                              console.log(
-                                "[Supabase] getUserNotifications (after delete)",
-                                userId
-                              );
-                              getUserNotifications(userId).then(
-                                ({ data, error }) => {
-                                  if (error)
-                                    console.error(
-                                      "[Supabase] getUserNotifications error",
-                                      error
-                                    );
-                                  if (data) setUserNotifications(data);
-                                }
-                              );
-                            }
-                          }}
                         >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-sm text-base-content/60">
-                    No notifications
-                  </div>
-                )}
-              </>
-            )}
-
-            {activeTab === "app" && (
-              <>
-                {filteredAppNotifications.length > 0 ? (
-                  <div className="divide-y divide-base-200">
-                    {filteredAppNotifications.map((n: AppNotification) => (
-                      <div
-                        key={n.id}
-                        className={`relative group p-3 hover:bg-base-200/50 transition-colors ${
-                          !readAppIds.includes(n.id) ? "bg-primary/5" : ""
-                        }`}
-                      >
-                        <a
-                          href={n.url || "#"}
-                          className="block"
-                          target={n.url ? "_blank" : undefined}
-                          rel="noopener noreferrer"
-                          onClick={() => setOpen(false)}
-                        >
-                          <div
-                            className={`text-sm font-medium mb-1 ${
-                              !readAppIds.includes(n.id) ? "text-primary" : ""
-                            }`}
+                          <a
+                            href={n.url || "#"}
+                            className="block pr-8"
+                            target={n.url ? "_blank" : undefined}
+                            rel="noopener noreferrer"
+                            onClick={() => n.url && setOpen(false)}
                           >
-                            {n.title}
-                          </div>
-                          <div className="text-xs text-base-content/70">
-                            {n.message}
-                          </div>
-                        </a>
+                            <div
+                              className={cn(
+                                "text-sm font-medium mb-1",
+                                !n.read ? "text-primary" : "text-secondary"
+                              )}
+                            >
+                              {n.title}
+                            </div>
+                            <div className="text-xs text-muted leading-relaxed">
+                              {n.message}
+                            </div>
+                            {n.trigger_at && (
+                              <div className="text-xs text-subtle mt-2">
+                                {new Date(n.trigger_at).toLocaleString()}
+                              </div>
+                            )}
+                          </a>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-3 right-3 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-muted hover:text-red-400 transition-all transition-normal"
+                            title="Delete notification"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log(
+                                "[Supabase] deleteUserNotification",
+                                n.id
+                              );
+                              await deleteUserNotification(n.id);
+                              if (userId) {
+                                console.log(
+                                  "[Supabase] getUserNotifications (after delete)",
+                                  userId
+                                );
+                                getUserNotifications(userId).then(
+                                  ({ data, error }) => {
+                                    if (error)
+                                      console.error(
+                                        "[Supabase] getUserNotifications error",
+                                        error
+                                      );
+                                    if (data) setUserNotifications(data);
+                                  }
+                                );
+                              }
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <Bell className="h-12 w-12 mx-auto text-muted mb-3" />
+                      <div className="text-sm text-secondary mb-1">
+                        No notifications
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-sm text-base-content/60">
-                    No updates
-                  </div>
-                )}
-              </>
-            )}
+                      <div className="text-xs text-muted">
+                        You're all caught up
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab === "app" && (
+                <>
+                  {filteredAppNotifications.length > 0 ? (
+                    <div className="divide-y divide-border-subtle">
+                      {filteredAppNotifications.map((n: AppNotification) => (
+                        <div
+                          key={n.id}
+                          className={cn(
+                            "relative group p-4 hover:surface-secondary transition-colors transition-normal",
+                            !readAppIds.includes(n.id) &&
+                              "surface-secondary border-l-2 border-brand-secondary"
+                          )}
+                        >
+                          <a
+                            href={n.url || "#"}
+                            className="block"
+                            target={n.url ? "_blank" : undefined}
+                            rel="noopener noreferrer"
+                            onClick={() => setOpen(false)}
+                          >
+                            <div
+                              className={cn(
+                                "text-sm font-medium mb-1",
+                                !readAppIds.includes(n.id)
+                                  ? "text-primary"
+                                  : "text-secondary"
+                              )}
+                            >
+                              {n.title}
+                            </div>
+                            <div className="text-xs text-muted leading-relaxed">
+                              {n.message}
+                            </div>
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <Bell className="h-12 w-12 mx-auto text-muted mb-3" />
+                      <div className="text-sm text-secondary mb-1">
+                        No updates
+                      </div>
+                      <div className="text-xs text-muted">Check back later</div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
