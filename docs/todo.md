@@ -9,6 +9,7 @@
 - [ ] **Authentication**
   - [x] Only allow authenticated users to access any feature
   - [ ] Secure, clean auth flow (Supabase)
+  - [ ] Onboarding process for freshly authenticated users (creating a profile, configuring AI settings, etc..)
 - [ ] **Flashcard Creation**
   - [ ] Import PDFs for flashcard generation
   - [ ] ~~Import YouTube videos for flashcard generation~~
@@ -19,7 +20,7 @@
   - [ ] Study sessions persist across reloads (localStorage)
   - [ ] Batch SRS state updates (see `lib/srs/SRSDBUtils.ts`)
 - [ ] **Projects**
-  - [ ] Create, edit, delete projects
+  - [ ] Create, edit, delete projects with all the necessary steps
   - [ ] Organize flashcards by project
 - [ ] **Settings**
   - [ ] Per-user and per-project SRS config (sync with DB and localStorage)
