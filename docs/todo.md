@@ -1,63 +1,92 @@
-# Cognify App TODO
-
-This document lists the remaining features and improvements needed to complete the Cognify app, based on current project state and your requirements.
-
-## Core Features To Implement
-
-### 1. AI Features
-
-- [ ] Integrate AI-powered flashcard generation (user provides API key, configurable in settings).
-- [ ] Add UI for AI setup and API key entry (initial setup page).
-- [ ] Allow users to select AI model and options for flashcard generation.
-- [ ] Add documentation page explaining AI features and setup.
-
-### 2. Flashcard Study & Review System
-
-- [ ] Track user performance and show reminders for overdue flashcards.
-- [ ] UI for upcoming/review due flashcards (dashboard or notifications).
-
-### 3. User Reminders & Notifications
-
-- [ ] Remind users to restudy flashcards based on performance and schedule.
-- [ ] Option to enable/disable notifications/reminders.
-
-### 4. Cookies & Terms of Service
-
-- [ ] Implement cookie consent banner and logic (store consent in cookies).
-- [ ] Add Terms of Service (TOS) page and link in footer/sidebar.
-- [ ] Store user preferences (theme, consent, etc.) in cookies/localStorage.
-
-### 5. Documentation & Help
-
-- [ ] Add in-app documentation page (/docs) explaining:
-  - How to use the app
-  - How to set up AI features
-  - How spaced repetition works
-  - Privacy, cookies, and TOS
-- [ ] Link to docs from sidebar or main menu.
-
-### 6. Initial Setup Page
-
-- [ ] Create onboarding/setup page for new users:
-  - Prompt for AI API key
-  - Select AI model/options
-  - Explain privacy and TOS
-  - Set initial preferences
-
-### 7. Cache Invalidation Consistency
-
-- [ ] Audit the codebase and ensure that `CacheInvalidation.invalidate('user_projects')` or the appropriate cache key is called after any project mutation (create, update, delete, flashcard changes, SRS settings, etc.), not just in `/projects`. This includes all places where project data is changed to prevent stale UI across the app.
-
-## Additional Improvements
-
-- [ ] Polish UI/UX for DaisyUI components and mobile responsiveness.
-- [ ] Add more test coverage for new features.
-- [ ] Update README and CONTRIBUTING docs as features are added.
-
-## Refactor user state hooks
-
-- [ ] Refactor codebase to use `useUserProfile` everywhere instead of `useUserId` for unified user state management
+# Cognify Project TODO List
 
 ---
 
-For details on current conventions and architecture, see `/CONTRIBUTING.md` and `/README.md`.
+## MVP (Minimum Viable Product)
+
+### Core Features
+
+- [ ] **Authentication**
+  - [x] Only allow authenticated users to access any feature
+  - [ ] Secure, clean auth flow (Supabase)
+- [ ] **Flashcard Creation**
+  - [ ] Import PDFs for flashcard generation
+  - [ ] ~~Import YouTube videos for flashcard generation~~
+  - [ ] AI-powered flashcard creation (user brings own API key, stored in localStorage only)
+  - [x] Manual flashcard creation/editing
+- [ ] **SRS (Spaced Repetition System)**
+  - [x] Bug-free SRS algorithm (project-specific settings from DB)
+  - [ ] Study sessions persist across reloads (localStorage)
+  - [ ] Batch SRS state updates (see `lib/srs/SRSDBUtils.ts`)
+- [ ] **Projects**
+  - [ ] Create, edit, delete projects
+  - [ ] Organize flashcards by project
+- [ ] **Settings**
+  - [ ] Per-user and per-project SRS config (sync with DB and localStorage)
+  - [ ] Theme selection (sync with DB and localStorage)
+- [ ] **Notifications**
+  - [ ] Personal and app notifications (with RLS)
+  - [ ] Clean up reminders when projects/cards are deleted
+  - [ ] UI to view and manage notifications (`NotificationBell`)
+- [ ] **UI/UX**
+  - [ ] Clean, modern design (Tailwind CSS + DaisyUI)
+  - [ ] Responsive layouts
+  - [ ] Accessible components
+- [ ] **Security**
+  - [ ] Enforce RLS on all data
+  - [ ] Never store API keys or LLM endpoints in DB (localStorage only)
+  - [ ] Avoid leaking data between users
+
+### Developer Experience
+
+- [ ] Monorepo structure (`app/`, `lib/`, `src/components/`, `hooks/`)
+- [ ] Linting, typechecking, and build scripts (`pnpm lint`, `pnpm typecheck`, `pnpm build`)
+- [ ] Manual testing of full user flows
+
+---
+
+## Non-MVP / Future Features
+
+### AI & Study Tools
+
+- [ ] AI-powered essay writing assistance
+- [ ] Worksheet/cheatsheet generation from PDF/YouTube
+- [ ] Support for user-connected LLM endpoints (beyond OpenAI)
+- [ ] Advanced flashcard import/export (e.g., Anki, CSV)
+
+### Admin & Monitoring
+
+- [ ] Admin dashboard (manage users, projects, content)
+- [ ] Monitoring/statistics dashboard (usage, study stats, etc.)
+
+### Collaboration & Sharing
+
+- [ ] Share projects/flashcards with other users
+- [ ] Public project templates
+
+### Integrations
+
+- [ ] Browser extension for quick flashcard creation
+- [ ] Mobile app
+
+### Other Enhancements
+
+- [ ] In-app onboarding/tutorial
+- [ ] Gamification (badges, streaks)
+- [ ] Advanced notification/reminder scheduling
+
+---
+
+## Current State (from codebase)
+
+- [x] Notification system (personal/app notifications, UI, RLS)
+- [x] Supabase integration for data and auth
+- [x] SRS logic (project-specific, batch updates)
+- [x] Modern UI with Tailwind CSS + DaisyUI
+- [x] Monorepo structure and conventions
+- [x] Settings (theme, SRS config) framework in place
+
+---
+
+**Next Steps:**  
+Focus on completing and polishing the MVP features above. Once stable, prioritize admin/monitoring and advanced AI tools
