@@ -1,52 +1,234 @@
-# Cognify Project TODO List
+# Cognify MVP Todo List
+
+**Vision:** Create a production-ready AI-powered flashcard learning platform that's free, secure, and scalable. Users bring their own API keys, data never leaves their control, and the platform serves as an impressive portfolio/college application project.
 
 ---
 
-## MVP (Minimum Viable Product)
+## 🎯 MVP CRITICAL FEATURES
 
-### Core Features
+### 🔐 1. Authentication & Security (HIGH PRIORITY)
 
-- [ ] **Authentication**
-  - [x] Only allow authenticated users to access any feature
-  - [ ] Secure, clean auth flow (Supabase)
-  - [ ] Onboarding process for freshly authenticated users (creating a profile, configuring AI settings, etc..)
-- [ ] **Flashcard Creation**
-  - [ ] Import PDFs for flashcard generation
-  - [ ] ~~Import YouTube videos for flashcard generation~~
-  - [ ] AI-powered flashcard creation (user brings own API key, stored in localStorage only)
-  - [x] Manual flashcard creation/editing
-- [ ] **SRS (Spaced Repetition System)**
-  - [x] Bug-free SRS algorithm (project-specific settings from DB)
-  - [ ] Study sessions persist across reloads (localStorage)
-  - [ ] Batch SRS state updates (see `lib/srs/SRSDBUtils.ts`)
-- [ ] **Projects**
-  - [ ] Create, edit, delete projects with all the necessary steps
-  - [ ] Organize flashcards by project
-- [ ] **Settings**
-  - [ ] Per-user and per-project SRS config (sync with DB and localStorage)
-  - [ ] Theme selection (sync with DB and localStorage)
-- [ ] **Notifications**
-  - [ ] Personal and app notifications (with RLS)
-  - [ ] Clean up reminders when projects/cards are deleted
-  - [ ] UI to view and manage notifications (`NotificationBell`)
-- [ ] **UI/UX**
-  - [ ] Clean, modern design (Tailwind CSS + DaisyUI)
-  - [ ] Responsive layouts
-  - [ ] Accessible components
-- [ ] **Security**
-  - [ ] Enforce RLS on all data
-  - [ ] Never store API keys or LLM endpoints in DB (localStorage only)
-  - [ ] Avoid leaking data between users
+- [x] ✅ Authentication middleware with Supabase
+- [x] ✅ Protected routes and user session management
+- [ ] 🚨 **Complete onboarding flow** with AI configuration setup
+  - [ ] Profile creation wizard
+  - [ ] AI provider selection and API key setup (localStorage only)
+  - [ ] Initial project creation tutorial
+- [ ] 🚨 **Security hardening**
+  - [ ] Audit and strengthen RLS policies across all tables
+  - [ ] Input validation and sanitization for all user inputs
+  - [ ] Rate limiting on API endpoints
+  - [ ] NEVER store API keys in database - localStorage only
+  - [ ] Secure error handling (don't leak sensitive info)
 
-### Developer Experience
+### 🤖 2. AI-Powered Flashcard Generation (HIGH PRIORITY)
 
-- [ ] Monorepo structure (`app/`, `lib/`, `src/components/`, `hooks/`)
-- [ ] Linting, typechecking, and build scripts (`pnpm lint`, `pnpm typecheck`, `pnpm build`)
-- [ ] Manual testing of full user flows
+- [ ] 🚨 **PDF Import & Processing**
+  - [ ] File upload component with validation (PDF only, size limits)
+  - [ ] PDF text extraction using pdf-parse or similar
+  - [ ] Content chunking and preprocessing for AI
+  - [ ] Progress indicators and error handling
+- [ ] 🚨 **AI Integration System**
+  - [ ] Multi-provider AI service (OpenAI, Anthropic, Ollama, LM Studio, DeepSeek)
+  - [ ] AI configuration management (localStorage only)
+  - [ ] Prompt engineering system with templates
+  - [ ] Structured flashcard generation with validation
+  - [ ] Token usage tracking and limits
+- [ ] 🚨 **AI Configuration UI**
+  - [ ] Provider selection interface
+  - [ ] API key input (secure, localStorage only)
+  - [ ] Model selection per provider
+  - [ ] Custom endpoint configuration for local models
+  - [ ] Test connection functionality
+
+### 📚 3. Complete Flashcard System (MEDIUM PRIORITY)
+
+- [x] ✅ Manual flashcard creation and editing
+- [x] ✅ Basic CRUD operations with proper validation
+- [ ] 🚨 **Enhanced Import/Export**
+  - [ ] JSON import/export for backups
+  - [ ] Bulk flashcard operations
+  - [ ] Duplicate detection and merging
+  - [ ] Content validation and sanitization
+
+### 📊 4. SRS & Study System (MEDIUM PRIORITY)
+
+- [x] ✅ Sophisticated SRS algorithm implementation
+- [x] ✅ Study session interface with ratings
+- [ ] 🚨 **Study System Enhancements**
+  - [ ] Session persistence across browser reloads
+  - [ ] Study statistics and progress tracking
+  - [ ] Daily study limits and goal setting
+  - [ ] Review scheduling and reminders
+
+### 🏗️ 5. Project Management (LOW PRIORITY)
+
+- [x] ✅ Basic project CRUD operations
+- [x] ✅ Project-specific SRS settings
+- [ ] 🚨 **Project Enhancement**
+  - [ ] Project templates and categories
+  - [ ] Bulk project operations
+  - [ ] Project sharing and collaboration (future)
+
+### ⚙️ 6. Settings & Configuration (HIGH PRIORITY)
+
+- [ ] 🚨 **Complete Settings Implementation**
+  - [ ] User preferences (theme, notifications, study goals)
+  - [ ] Per-project SRS configuration
+  - [ ] AI provider management interface
+  - [ ] Backup and restore functionality
+- [ ] 🚨 **Theme System**
+  - [ ] Complete dark/light/system theme implementation
+  - [ ] Theme persistence across sessions
+  - [ ] Accessible color schemes
+
+### 🔔 7. Notifications & Reminders (LOW PRIORITY)
+
+- [x] ✅ Database structure for notifications
+- [ ] 🚨 **Notification System**
+  - [ ] Study reminder system
+  - [ ] Due card notifications
+  - [ ] System announcements
+  - [ ] Notification bell UI component
+
+### 🐛 8. Critical Bug Fixes (HIGH PRIORITY)
+
+- [ ] 🚨 **Fix Known Issues**
+  - [ ] App notification errors on landing page (unauthenticated users)
+  - [ ] State management reliability (Zustand store reset functionality)
+  - [ ] Cache invalidation after data mutations
+  - [ ] Study session state persistence issues
 
 ---
 
-## Non-MVP / Future Features
+## 🏢 PRODUCTION READINESS
+
+### 🛡️ 9. Security & Performance (HIGH PRIORITY)
+
+- [ ] 🚨 **Security Audit**
+  - [ ] Complete RLS policy review and testing
+  - [ ] API endpoint security testing
+  - [ ] Input validation and XSS prevention
+  - [ ] API key storage security (localStorage only)
+- [ ] 🚨 **Performance Optimization**
+  - [ ] Database query optimization
+  - [ ] Image and asset optimization
+  - [ ] Code splitting and lazy loading
+  - [ ] Proper error boundaries and fallbacks
+
+### 📈 10. Monitoring & Analytics (MEDIUM PRIORITY)
+
+- [ ] 🚨 **Basic Analytics**
+  - [ ] User study statistics dashboard
+  - [ ] System health monitoring
+  - [ ] Error tracking and reporting
+  - [ ] Performance metrics
+
+### 👨‍💼 11. Admin Dashboard (MEDIUM PRIORITY)
+
+- [ ] 🚨 **Basic Admin Interface**
+  - [ ] User management (view, not modify)
+  - [ ] System statistics and health
+  - [ ] Content moderation tools
+  - [ ] Announcement system
+
+### 🚀 12. Deployment & DevOps (HIGH PRIORITY)
+
+- [ ] 🚨 **Production Deployment**
+  - [ ] Vercel deployment configuration
+  - [ ] Environment variable management
+  - [ ] Database migration system
+  - [ ] Backup and recovery procedures
+- [ ] 🚨 **Development Workflow**
+  - [ ] CI/CD pipeline setup
+  - [ ] Automated testing framework
+  - [ ] Code quality checks
+  - [ ] Documentation completion
+
+---
+
+## 🎨 POLISH & UX (LOW PRIORITY)
+
+### 13. User Experience Enhancement
+
+- [ ] **UI/UX Polish**
+  - [ ] Loading states and skeleton screens
+  - [ ] Smooth animations and transitions
+  - [ ] Responsive design testing
+  - [ ] Accessibility compliance (WCAG)
+- [ ] **User Onboarding**
+  - [ ] Interactive tutorial system
+  - [ ] Help documentation
+  - [ ] Video tutorials or demos
+  - [ ] Feature discovery tooltips
+
+---
+
+## 🔮 POST-MVP FEATURES
+
+### Future Enhancements (Not MVP)
+
+- [ ] **Advanced AI Features**
+  - [ ] YouTube video transcription and flashcard generation
+  - [ ] AI essay writing assistance
+  - [ ] Worksheet and cheatsheet generation
+  - [ ] Multi-language support
+- [ ] **Collaboration & Sharing**
+  - [ ] Public flashcard libraries
+  - [ ] Team study groups
+  - [ ] Flashcard marketplace
+- [ ] **Mobile & Extensions**
+  - [ ] React Native mobile app
+  - [ ] Browser extension
+  - [ ] Desktop application
+- [ ] **Advanced Analytics**
+  - [ ] ML-powered study insights
+  - [ ] Personalized learning recommendations
+  - [ ] Progress prediction models
+
+---
+
+## 📋 DEVELOPMENT PRIORITIES
+
+### Week 1-2: Core AI Features
+
+1. PDF import and text extraction
+2. AI provider integration system
+3. AI configuration UI (localStorage)
+4. Flashcard generation pipeline
+
+### Week 3-4: Security & Polish
+
+1. Security audit and hardening
+2. Settings system completion
+3. Bug fixes and stability
+4. Onboarding flow completion
+
+### Week 5-6: Production Readiness
+
+1. Performance optimization
+2. Admin dashboard basics
+3. Monitoring and analytics
+4. Deployment preparation
+
+### Week 7-8: Testing & Launch
+
+1. Comprehensive testing
+2. Documentation completion
+3. Production deployment
+4. Launch preparation
+
+---
+
+**🎯 SUCCESS METRICS:**
+
+- ✅ Users can upload PDFs and generate flashcards using their own AI API keys
+- ✅ Secure, fast, and reliable study experience
+- ✅ Zero API keys or personal data stored in database
+- ✅ Production-ready deployment with monitoring
+- ✅ Impressive portfolio piece demonstrating full-stack skills
+
+**🚀 MVP Completion Target: 8 weeks**
 
 ### AI & Study Tools
 
