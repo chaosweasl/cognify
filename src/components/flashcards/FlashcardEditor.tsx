@@ -17,12 +17,16 @@ import {
   ChevronRight,
   Trash2,
   Eye,
+  Zap,
+  FileText,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { CacheInvalidation } from "@/hooks/useCache";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
+import { PDFUploadModal } from "./PDFUploadModal";
+import { useAISettings } from "@/hooks/useAISettings";
 import type { Project, Flashcard } from "@/src/types";
 
 interface FlashcardEditorProps {
@@ -37,6 +41,7 @@ export function FlashcardEditor({
   onSaved,
 }: FlashcardEditorProps) {
   const router = useRouter();
+  const { isConfigValid, aiEnabled } = useAISettings();
   const [flashcards, setFlashcards] = useState<
     Pick<Flashcard, "id" | "front" | "back">[]
   >(initialFlashcards.map(({ id, front, back }) => ({ id, front, back })));
@@ -51,6 +56,7 @@ export function FlashcardEditor({
   );
   const [saving, setSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [showPDFUpload, setShowPDFUpload] = useState(false);
   const isAddingCard = useRef(false);
 
   const handleChange = (field: string, value: string) => {
@@ -120,6 +126,25 @@ export function FlashcardEditor({
     setCurrent((prev) => Math.max(0, prev - 1));
   };
 
+  const handleFlashcardsGenerated = (generatedFlashcards: any[]) => {
+    // Add the generated flashcards to the existing ones
+    const newFlashcards = generatedFlashcards.map((card) => ({
+      id: card.id,
+      front: card.front,
+      back: card.back,
+    }));
+
+    setFlashcards((prev) => [...prev, ...newFlashcards]);
+
+    // Navigate to the first newly added card
+    const newCardIndex = flashcards.length;
+    setCurrent(newCardIndex);
+
+    toast.success(
+      `Added ${generatedFlashcards.length} AI-generated flashcards!`
+    );
+  };
+
   const card = flashcards[current] || { front: "", back: "" };
   const currentCardValid = card.front?.trim() || card.back?.trim();
   // Removed unused completedCards
@@ -175,7 +200,7 @@ export function FlashcardEditor({
                   </div>
                   <div className="absolute -inset-2 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
                     Edit Project
                   </h1>
@@ -183,6 +208,23 @@ export function FlashcardEditor({
                     Fine-tune your flashcards and study settings
                   </p>
                 </div>
+
+                {/* AI Upload Button */}
+                {aiEnabled && (
+                  <button
+                    onClick={() => setShowPDFUpload(true)}
+                    disabled={!isConfigValid()}
+                    className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
+                      isConfigValid()
+                        ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg hover:shadow-xl"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span className="hidden sm:inline">Generate from PDF</span>
+                    <span className="sm:hidden">AI</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -544,6 +586,14 @@ export function FlashcardEditor({
           </button>
         </div>
       </div>
+
+      {/* PDF Upload Modal */}
+      <PDFUploadModal
+        isOpen={showPDFUpload}
+        onClose={() => setShowPDFUpload(false)}
+        projectId={project.id}
+        onFlashcardsGenerated={handleFlashcardsGenerated}
+      />
 
       <style jsx>{`
         @keyframes slideUp {

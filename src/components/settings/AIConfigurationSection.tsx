@@ -19,6 +19,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAIConfig } from "@/hooks/useAISettings";
 import { AI_PROVIDERS, AIProvider, validateAIConfig } from "@/lib/ai/types";
+import {
+  getAvailableAIProviders,
+  isDeveloperOnlyProvider,
+} from "@/lib/ai/developer";
 import { aiKeyStorage } from "@/hooks/useAISettings";
 
 interface AIConfigurationSectionProps {
@@ -60,13 +64,15 @@ export function AIConfigurationSection({
     }
   }, [localConfig, onConfigurationComplete]);
 
-  const selectedProvider = AI_PROVIDERS.find(
-    (p) => p.id === localConfig.provider
+  const selectedProvider = getAvailableAIProviders().find(
+    (p: any) => p.id === localConfig.provider
   );
   const availableModels = selectedProvider?.models || [];
 
   const handleProviderChange = (providerId: string) => {
-    const provider = AI_PROVIDERS.find((p) => p.id === providerId);
+    const provider = getAvailableAIProviders().find(
+      (p: any) => p.id === providerId
+    );
     if (!provider) return;
 
     setLocalConfig({
@@ -76,8 +82,8 @@ export function AIConfigurationSection({
       // Reset provider-specific config
       apiKey: "",
       baseUrl:
-        provider.configFields.find((f) => f.key === "baseUrl")?.placeholder ||
-        "",
+        provider.configFields.find((f: any) => f.key === "baseUrl")
+          ?.placeholder || "",
     });
   };
 
@@ -144,7 +150,7 @@ export function AIConfigurationSection({
       (selectedProvider?.requiresApiKey ? localConfig.apiKey?.trim() : true) &&
       // Base URL validation for providers that require it
       (!selectedProvider?.configFields.some(
-        (f) => f.key === "baseUrl" && f.required
+        (f: any) => f.key === "baseUrl" && f.required
       ) ||
         localConfig.baseUrl?.trim())
   );
@@ -221,14 +227,14 @@ export function AIConfigurationSection({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3">
-                {AI_PROVIDERS.map((provider) => (
+                {getAvailableAIProviders().map((provider: any) => (
                   <div
                     key={provider.id}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-violet-400 ${
                       localConfig.provider === provider.id
                         ? "border-violet-500 bg-violet-500/10"
                         : "border-slate-600 bg-slate-700/30"
-                    }`}
+                    } ${provider.isDeveloperOnly ? "border-amber-500/50" : ""}`}
                     onClick={() => handleProviderChange(provider.id)}
                   >
                     <div className="flex items-start justify-between">
@@ -237,6 +243,14 @@ export function AIConfigurationSection({
                           <h4 className="font-medium text-white">
                             {provider.name}
                           </h4>
+                          {provider.isDeveloperOnly && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-amber-500/20 text-amber-400"
+                            >
+                              DEV
+                            </Badge>
+                          )}
                           <a
                             href={provider.website}
                             target="_blank"
@@ -300,7 +314,7 @@ export function AIConfigurationSection({
                     }
                     className="w-full px-4 py-3 rounded-lg border border-slate-600 bg-slate-700 text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                   >
-                    {availableModels.map((model) => (
+                    {availableModels.map((model: any) => (
                       <option key={model.id} value={model.id}>
                         {model.name}
                       </option>
@@ -309,8 +323,9 @@ export function AIConfigurationSection({
                   {localConfig.model && (
                     <p className="text-xs text-slate-400 mt-1">
                       {
-                        availableModels.find((m) => m.id === localConfig.model)
-                          ?.description
+                        availableModels.find(
+                          (m: any) => m.id === localConfig.model
+                        )?.description
                       }
                     </p>
                   )}
@@ -337,7 +352,7 @@ export function AIConfigurationSection({
                 )}
 
                 {/* Provider-specific Configuration Fields */}
-                {selectedProvider.configFields.map((field) => (
+                {selectedProvider.configFields.map((field: any) => (
                   <div key={field.key}>
                     <label className="block text-sm font-medium text-slate-200 mb-2">
                       {field.label}
