@@ -228,38 +228,6 @@
 
 ---
 
-## 📋 DEVELOPMENT PRIORITIES
-
-### Week 1-2: Core AI Features
-
-1. PDF import and text extraction
-2. AI provider integration system
-3. AI configuration UI (localStorage)
-4. Flashcard generation pipeline
-
-### Week 3-4: Security & Polish
-
-1. Security audit and hardening
-2. Settings system completion
-3. Bug fixes and stability
-4. Onboarding flow completion
-
-### Week 5-6: Production Readiness
-
-1. Performance optimization
-2. Admin dashboard basics
-3. Monitoring and analytics
-4. Deployment preparation
-
-### Week 7-8: Testing & Launch
-
-1. Comprehensive testing
-2. Documentation completion
-3. Production deployment
-4. Launch preparation
-
----
-
 **🎯 SUCCESS METRICS:**
 
 - ✅ Users can upload PDFs and generate flashcards using their own AI API keys
@@ -267,8 +235,6 @@
 - ✅ Zero API keys or personal data stored in database
 - ✅ Production-ready deployment with monitoring
 - ✅ Impressive portfolio piece demonstrating full-stack skills
-
-**🚀 MVP Completion Target: 8 weeks**
 
 ### AI & Study Tools
 
@@ -297,19 +263,3 @@
 - [ ] In-app onboarding/tutorial
 - [ ] Gamification (badges, streaks)
 - [ ] Advanced notification/reminder scheduling
-
----
-
-## Current State (from codebase)
-
-- [x] Notification system (personal/app notifications, UI, RLS)
-- [x] Supabase integration for data and auth
-- [x] SRS logic (project-specific, batch updates)
-- [x] Modern UI with Tailwind CSS + DaisyUI
-- [x] Monorepo structure and conventions
-- [x] Settings (theme, SRS config) framework in place
-
----
-
-**Next Steps:**  
-Focus on completing and polishing the MVP features above. Once stable, prioritize admin/monitoring and advanced AI tools
