@@ -1,4 +1,5 @@
 import { isDevelopment } from "@/lib/utils/env-config";
+import type { AIConfiguration } from "@/lib/ai/types";
 
 // Developer-only AI providers for testing with localhost
 export const DEVELOPER_AI_PROVIDERS = [
@@ -120,7 +121,9 @@ export const DEVELOPER_AI_PROVIDERS = [
 
 // Function to get all available providers based on environment
 export function getAvailableAIProviders() {
-  // Import the main providers
+  // Import the main providers - this needs to be done dynamically to avoid circular imports
+  // Using require here is intentional for dynamic loading
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { AI_PROVIDERS } = require("@/lib/ai/types");
 
   if (isDevelopment) {
@@ -136,9 +139,11 @@ export function isDeveloperOnlyProvider(providerId: string): boolean {
 }
 
 // Enhanced validation that includes developer providers
-export function validateDeveloperAIConfig(config: any): boolean {
+export function validateDeveloperAIConfig(config: AIConfiguration): boolean {
   const allProviders = getAvailableAIProviders();
-  const provider = allProviders.find((p: any) => p.id === config.provider);
+  const provider = allProviders.find(
+    (p: unknown) => (p as { id: string }).id === config.provider
+  );
 
   if (!provider) {
     return false;
@@ -147,9 +152,9 @@ export function validateDeveloperAIConfig(config: any): boolean {
   // For developer-only providers, we're more lenient with validation
   if (isDeveloperOnlyProvider(config.provider)) {
     // Only require baseUrl for localhost providers
-    const baseUrlField = provider.configFields.find(
-      (f: any) => f.key === "baseUrl" && f.required
-    );
+    const baseUrlField = (
+      provider as { configFields: { key: string; required: boolean }[] }
+    )?.configFields.find((f) => f.key === "baseUrl" && f.required);
     if (baseUrlField && !config.baseUrl?.trim()) {
       return false;
     }
@@ -158,17 +163,21 @@ export function validateDeveloperAIConfig(config: any): boolean {
   }
 
   // Use regular validation for production providers
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { validateAIConfig } = require("@/lib/ai/types");
   return validateAIConfig(config);
 }
 
 // Test connection for developer providers
-export async function testDeveloperConnection(config: any) {
+export async function testDeveloperConnection(config: AIConfiguration) {
   if (!isDeveloperOnlyProvider(config.provider)) {
     throw new Error("Not a developer provider");
   }
 
   const baseUrl = config.baseUrl?.replace(/\/$/, "");
+  if (!baseUrl) {
+    throw new Error("Base URL is required for developer providers");
+  }
 
   switch (config.provider) {
     case "localhost-ollama":
@@ -182,7 +191,7 @@ export async function testDeveloperConnection(config: any) {
   }
 }
 
-async function testLocalOllama(config: any, baseUrl: string) {
+async function testLocalOllama(config: AIConfiguration, baseUrl: string) {
   try {
     // First, try to list available models
     const modelsResponse = await fetch(
@@ -211,14 +220,14 @@ async function testLocalOllama(config: any, baseUrl: string) {
     // Test with the first available model or the configured one
     let testModel = config.model;
     if (testModel === "custom") {
-      testModel = config.customModelName;
+      testModel = config.customModelName || "";
     }
 
     if (
       !testModel ||
-      !availableModels.some((m: any) => m.name.includes(testModel))
+      !availableModels.some((m: { name: string }) => m.name.includes(testModel))
     ) {
-      testModel = availableModels[0].name;
+      testModel = availableModels[0]?.name || "default";
     }
 
     const testResponse = await fetch(
@@ -239,7 +248,7 @@ async function testLocalOllama(config: any, baseUrl: string) {
       return {
         success: true,
         message: `Successfully connected to Ollama with model: ${testModel}`,
-        models: availableModels.map((m: any) => m.name),
+        models: availableModels.map((m: { name: string }) => m.name),
       };
     } else {
       throw new Error("Failed to generate response from Ollama");
@@ -255,7 +264,7 @@ async function testLocalOllama(config: any, baseUrl: string) {
   }
 }
 
-async function testLocalLMStudio(config: any, baseUrl: string) {
+async function testLocalLMStudio(config: AIConfiguration, baseUrl: string) {
   try {
     const testResponse = await fetch(
       `${baseUrl || "http://localhost:1234/v1"}/chat/completions`,
@@ -281,7 +290,7 @@ async function testLocalLMStudio(config: any, baseUrl: string) {
     } else {
       throw new Error("Failed to connect to LM Studio server");
     }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error:
@@ -290,7 +299,10 @@ async function testLocalLMStudio(config: any, baseUrl: string) {
   }
 }
 
-async function testLocalOpenAICompatible(config: any, baseUrl: string) {
+async function testLocalOpenAICompatible(
+  config: AIConfiguration,
+  baseUrl: string
+) {
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -323,7 +335,7 @@ async function testLocalOpenAICompatible(config: any, baseUrl: string) {
     } else {
       throw new Error("Failed to connect to local server");
     }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error:

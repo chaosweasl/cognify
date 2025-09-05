@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
-import { isDeveloperOnlyProvider } from "@/lib/ai/developer";
 import { v4 as uuidv4 } from "uuid";
 
 interface FlashcardGenerationRequest {
@@ -14,6 +13,12 @@ interface FlashcardGenerationRequest {
     difficulty?: "beginner" | "intermediate" | "advanced";
     focusAreas?: string[];
   };
+}
+
+interface GeneratedFlashcard {
+  front: string;
+  back: string;
+  tags?: string[];
 }
 
 const DEFAULT_MAX_CARDS = 20;
@@ -72,7 +77,7 @@ export async function POST(request: NextRequest) {
     const maxCards = options.maxCards || DEFAULT_MAX_CARDS;
     const cardsPerChunk = Math.ceil(maxCards / textChunks.length);
 
-    let allGeneratedCards: any[] = [];
+    let allGeneratedCards: GeneratedFlashcard[] = [];
     let totalTokensUsed = 0;
 
     for (const chunk of textChunks) {
@@ -114,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Format flashcards for database insertion
-    const flashcards = allGeneratedCards.map((card, index) => ({
+    const flashcards = allGeneratedCards.map((card) => ({
       id: uuidv4(),
       project_id: projectId,
       front: card.front?.trim() || "",
@@ -218,7 +223,10 @@ async function generateFlashcardsForChunk({
   difficulty,
   focusAreas,
   fileName,
-}: ChunkGenerationParams): Promise<{ flashcards: any[]; tokensUsed?: number }> {
+}: ChunkGenerationParams): Promise<{
+  flashcards: GeneratedFlashcard[];
+  tokensUsed?: number;
+}> {
   const prompt = createFlashcardPrompt({
     text,
     maxCards,
@@ -524,7 +532,7 @@ async function generateWithLocalOpenAICompatible(
   };
 }
 
-function parseFlashcardJSON(content: string): any[] {
+function parseFlashcardJSON(content: string): GeneratedFlashcard[] {
   try {
     // Try to extract JSON from the response
     let jsonStr = content;

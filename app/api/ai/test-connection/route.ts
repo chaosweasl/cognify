@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { validateAIConfig } from "@/lib/ai/types";
+import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
 import {
   isDeveloperOnlyProvider,
   testDeveloperConnection,
 } from "@/lib/ai/developer";
+
+interface TestResult {
+  success: boolean;
+  error?: string;
+  model?: string;
+  provider?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,7 +76,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       return NextResponse.json(
-        { error: (testResult as any).error || "Connection failed" },
+        { error: (testResult as TestResult).error || "Connection failed" },
         { status: 400 }
       );
     }
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function testOpenAI(config: any) {
+async function testOpenAI(config: AIConfiguration): Promise<TestResult> {
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -113,12 +120,12 @@ async function testOpenAI(config: any) {
   }
 }
 
-async function testAnthropic(config: any) {
+async function testAnthropic(config: AIConfiguration): Promise<TestResult> {
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "x-api-key": config.apiKey,
+        "x-api-key": config.apiKey || "",
         "Content-Type": "application/json",
         "anthropic-version": "2023-06-01",
       },
@@ -144,7 +151,7 @@ async function testAnthropic(config: any) {
   }
 }
 
-async function testOllama(config: any) {
+async function testOllama(config: AIConfiguration): Promise<TestResult> {
   try {
     const baseUrl =
       config.baseUrl?.replace(/\/$/, "") || "http://localhost:11434";
@@ -170,7 +177,7 @@ async function testOllama(config: any) {
       const error = await response.text();
       return { success: false, error: error || "Ollama connection failed" };
     }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: "Failed to connect to Ollama. Make sure Ollama is running.",
@@ -178,7 +185,7 @@ async function testOllama(config: any) {
   }
 }
 
-async function testLMStudio(config: any) {
+async function testLMStudio(config: AIConfiguration): Promise<TestResult> {
   try {
     const baseUrl =
       config.baseUrl?.replace(/\/$/, "") || "http://localhost:1234/v1";
@@ -204,7 +211,7 @@ async function testLMStudio(config: any) {
         error: error.error?.message || "LM Studio connection failed",
       };
     }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error:
@@ -213,7 +220,7 @@ async function testLMStudio(config: any) {
   }
 }
 
-async function testDeepSeek(config: any) {
+async function testDeepSeek(config: AIConfiguration): Promise<TestResult> {
   try {
     const response = await fetch(
       "https://api.deepseek.com/v1/chat/completions",
@@ -242,7 +249,7 @@ async function testDeepSeek(config: any) {
         error: error.error?.message || "DeepSeek connection failed",
       };
     }
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to connect to DeepSeek" };
   }
 }

@@ -164,7 +164,7 @@ export function checkEnhancedRateLimit(
 /**
  * Middleware function to apply rate limiting to API routes
  */
-export async function withRateLimit<T extends any[]>(
+export async function withRateLimit<T extends unknown[]>(
   request: Request,
   endpoint: keyof typeof RATE_LIMITS,
   handler: (...args: T) => Promise<Response>,
@@ -227,7 +227,7 @@ function getClientIP(request: Request): string {
 /**
  * Extract user ID from request (implement based on your auth system)
  */
-async function getUserIdFromRequest(request: Request): Promise<string | null> {
+async function getUserIdFromRequest(_request: Request): Promise<string | null> {
   try {
     // This would typically involve checking a JWT token or session
     // Implementation depends on your authentication system

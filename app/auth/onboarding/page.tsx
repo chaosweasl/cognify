@@ -23,7 +23,6 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiConfigValid, setAIConfigValid] = useState(false);
   const { setOnboardingCompleted } = useAISettings();
 
   // Step 1: Profile Data
@@ -368,7 +367,7 @@ export default function OnboardingPage() {
             <AIConfigurationSection
               showTitle={false}
               showDescription={false}
-              onConfigurationComplete={setAIConfigValid}
+              onConfigurationComplete={() => {}}
               variant="onboarding"
             />
           </div>
@@ -410,7 +409,11 @@ export default function OnboardingPage() {
                       onClick={() =>
                         setProjectData({
                           ...projectData,
-                          template: template.id as any,
+                          template: template.id as
+                            | "general"
+                            | "language"
+                            | "science"
+                            | "history",
                         })
                       }
                     >

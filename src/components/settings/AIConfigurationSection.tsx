@@ -1,51 +1,76 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
 import {
-  Settings,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertTriangle,
+  Check,
+  Eye,
+  EyeOff,
   Loader2,
+  TestTube,
+  Zap,
+  Settings,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
-  Eye,
-  EyeOff,
-  Zap,
 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { useAIConfig } from "@/hooks/useAISettings";
-import { AI_PROVIDERS, AIProvider, validateAIConfig } from "@/lib/ai/types";
-import {
-  getAvailableAIProviders,
-  isDeveloperOnlyProvider,
-} from "@/lib/ai/developer";
-import { aiKeyStorage } from "@/hooks/useAISettings";
+import { validateAIConfig } from "@/lib/ai/types";
+import { getAvailableAIProviders } from "@/lib/ai/developer";
+
+interface AIProviderField {
+  key: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  description?: string;
+  required?: boolean;
+}
+
+interface AIProviderInfo {
+  id: string;
+  name: string;
+  description?: string;
+  website?: string;
+  requiresApiKey?: boolean;
+  isDeveloperOnly?: boolean;
+  models: Array<{ id: string; name: string; description?: string }>;
+  configFields: AIProviderField[];
+}
 
 interface AIConfigurationSectionProps {
   showTitle?: boolean;
   showDescription?: boolean;
   onConfigurationComplete?: (isValid: boolean) => void;
-  variant?: "default" | "onboarding";
+  variant?: "settings" | "onboarding";
 }
 
 export function AIConfigurationSection({
   showTitle = true,
   showDescription = true,
   onConfigurationComplete,
-  variant = "default",
+  variant = "settings",
 }: AIConfigurationSectionProps) {
-  const {
-    currentConfig,
-    setConfig,
-    aiEnabled,
-    setAIEnabled,
-    preferredComplexity,
-    setComplexity,
-  } = useAIConfig();
+  const { currentConfig, setConfig, aiEnabled, setAIEnabled } = useAIConfig();
   const [localConfig, setLocalConfig] = useState(currentConfig);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -65,14 +90,14 @@ export function AIConfigurationSection({
   }, [localConfig, onConfigurationComplete]);
 
   const selectedProvider = getAvailableAIProviders().find(
-    (p: any) => p.id === localConfig.provider
-  );
+    (p: AIProviderInfo) => p.id === localConfig.provider
+  ) as AIProviderInfo | undefined;
   const availableModels = selectedProvider?.models || [];
 
   const handleProviderChange = (providerId: string) => {
     const provider = getAvailableAIProviders().find(
-      (p: any) => p.id === providerId
-    );
+      (p: AIProviderInfo) => p.id === providerId
+    ) as AIProviderInfo | undefined;
     if (!provider) return;
 
     setLocalConfig({
@@ -82,12 +107,12 @@ export function AIConfigurationSection({
       // Reset provider-specific config
       apiKey: "",
       baseUrl:
-        provider.configFields.find((f: any) => f.key === "baseUrl")
+        provider.configFields.find((f: AIProviderField) => f.key === "baseUrl")
           ?.placeholder || "",
     });
   };
 
-  const handleConfigChange = (key: string, value: any) => {
+  const handleConfigChange = (key: string, value: unknown) => {
     setLocalConfig({
       ...localConfig,
       [key]: value,
@@ -150,7 +175,7 @@ export function AIConfigurationSection({
       (selectedProvider?.requiresApiKey ? localConfig.apiKey?.trim() : true) &&
       // Base URL validation for providers that require it
       (!selectedProvider?.configFields.some(
-        (f: any) => f.key === "baseUrl" && f.required
+        (f: AIProviderField) => f.key === "baseUrl" && f.required
       ) ||
         localConfig.baseUrl?.trim())
   );
@@ -227,7 +252,7 @@ export function AIConfigurationSection({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3">
-                {getAvailableAIProviders().map((provider: any) => (
+                {getAvailableAIProviders().map((provider: AIProviderInfo) => (
                   <div
                     key={provider.id}
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-violet-400 ${
@@ -314,17 +339,27 @@ export function AIConfigurationSection({
                     }
                     className="w-full px-4 py-3 rounded-lg border border-slate-600 bg-slate-700 text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                   >
-                    {availableModels.map((model: any) => (
-                      <option key={model.id} value={model.id}>
-                        {model.name}
-                      </option>
-                    ))}
+                    {availableModels.map(
+                      (model: {
+                        id: string;
+                        name: string;
+                        description?: string;
+                      }) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name}
+                        </option>
+                      )
+                    )}
                   </select>
                   {localConfig.model && (
                     <p className="text-xs text-slate-400 mt-1">
                       {
                         availableModels.find(
-                          (m: any) => m.id === localConfig.model
+                          (m: {
+                            id: string;
+                            name: string;
+                            description?: string;
+                          }) => m.id === localConfig.model
                         )?.description
                       }
                     </p>
@@ -352,7 +387,7 @@ export function AIConfigurationSection({
                 )}
 
                 {/* Provider-specific Configuration Fields */}
-                {selectedProvider.configFields.map((field: any) => (
+                {selectedProvider.configFields.map((field: AIProviderField) => (
                   <div key={field.key}>
                     <label className="block text-sm font-medium text-slate-200 mb-2">
                       {field.label}

@@ -329,23 +329,23 @@ export function validateNumber(
 /**
  * Comprehensive request body validation
  */
-export function validateRequestBody<T = any>(
+export function validateRequestBody<T = Record<string, unknown>>(
   body: unknown,
   validationRules: Record<
     string,
-    (value: unknown) => { valid: boolean; value?: any; error?: string }
+    (value: unknown) => { valid: boolean; value?: unknown; error?: string }
   >
 ): { valid: boolean; data?: T; errors?: Record<string, string> } {
   if (!body || typeof body !== "object") {
     return { valid: false, errors: { _root: "Invalid request body" } };
   }
 
-  const data: any = {};
+  const data: Record<string, unknown> = {};
   const errors: Record<string, string> = {};
   let hasErrors = false;
 
   for (const [field, validator] of Object.entries(validationRules)) {
-    const result = validator((body as any)[field]);
+    const result = validator((body as Record<string, unknown>)[field]);
 
     if (!result.valid && result.error) {
       errors[field] = result.error;
@@ -381,13 +381,13 @@ export function createValidationErrorResponse(errors: Record<string, string>) {
 export function shouldRateLimit(
   identifier: string,
   action: string,
-  windowMs: number = 60000, // 1 minute
-  maxAttempts: number = 5
+  _windowMs: number = 60000, // 1 minute
+  _maxAttempts: number = 5
 ): boolean {
   // In a real implementation, this would use Redis or a database
   // For now, we'll use in-memory storage (not suitable for production)
-  const key = `${identifier}:${action}`;
-  const now = Date.now();
+  const _key = `${identifier}:${action}`;
+  const _now = Date.now();
 
   // This would need to be replaced with a proper rate limiting solution
   // like Redis or a database-backed solution in production

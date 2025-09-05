@@ -30,7 +30,13 @@ interface PDFUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
-  onFlashcardsGenerated: (flashcards: any[]) => void;
+  onFlashcardsGenerated: (flashcards: GeneratedFlashcard[]) => void;
+}
+
+interface GeneratedFlashcard {
+  id: string;
+  front: string;
+  back: string;
 }
 
 interface UploadedFile {
@@ -183,7 +189,7 @@ export function PDFUploadModal({
     setIsProcessing(true);
 
     try {
-      let allGeneratedFlashcards: any[] = [];
+      let allGeneratedFlashcards: GeneratedFlashcard[] = [];
       let totalTokensUsed = 0;
 
       for (const fileData of uploadedFiles) {
@@ -395,7 +401,7 @@ export function PDFUploadModal({
                   </span>
                 </div>
                 <p className="text-sm text-slate-400 mt-1">
-                  You've reached your daily token limit. Please try again
+                  You&apos;ve reached your daily token limit. Please try again
                   tomorrow or increase your limits in settings.
                 </p>
               </CardContent>

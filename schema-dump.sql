@@ -1,9 +1,9 @@
 
 
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -67,6 +67,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
     INSERT INTO public.srs_states (
@@ -74,7 +75,7 @@ BEGIN
         project_id,
         card_id,
         state,
-        card_interval,  -- Fixed: was 'interval'
+        card_interval,
         ease,
         due,
         last_reviewed,
@@ -108,6 +109,7 @@ ALTER FUNCTION "public"."create_srs_state_for_flashcard"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."end_study_session"("p_session_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
     -- End the session
@@ -129,6 +131,7 @@ ALTER FUNCTION "public"."end_study_session"("p_session_id" "uuid") OWNER TO "pos
 
 CREATE OR REPLACE FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid", "p_limit" integer DEFAULT 100) RETURNS TABLE("card_id" "uuid", "project_id" "uuid", "due" timestamp with time zone, "state" "text", "front" "text", "back" "text", "card_interval" integer, "ease" real, "learning_step" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
     SELECT 
         ss.card_id,
@@ -164,6 +167,7 @@ ALTER FUNCTION "public"."get_due_cards"("p_user_id" "uuid", "p_project_id" "uuid
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
     -- Create profile
@@ -198,6 +202,7 @@ ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_project_id" "uuid") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
     session_id uuid;
@@ -231,8 +236,35 @@ $$;
 ALTER FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_project_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_study_goals_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_study_goals_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_study_reminders_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_study_reminders_updated_at"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
     NEW.updated_at = now();
@@ -410,6 +442,99 @@ CREATE TABLE IF NOT EXISTS "public"."srs_states" (
 ALTER TABLE "public"."srs_states" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."study_goals" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "goal_type" "text" NOT NULL,
+    "target_value" integer NOT NULL,
+    "current_value" integer DEFAULT 0,
+    "period_start" "date" NOT NULL,
+    "period_end" "date" NOT NULL,
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "study_goals_current_value_check" CHECK (("current_value" >= 0)),
+    CONSTRAINT "study_goals_goal_type_check" CHECK (("goal_type" = ANY (ARRAY['daily_new_cards'::"text", 'daily_reviews'::"text", 'daily_time'::"text", 'weekly_streak'::"text", 'monthly_cards'::"text"]))),
+    CONSTRAINT "study_goals_target_value_check" CHECK (("target_value" > 0)),
+    CONSTRAINT "valid_period" CHECK (("period_start" <= "period_end"))
+);
+
+
+ALTER TABLE "public"."study_goals" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."study_goals" IS 'User study goals and progress tracking';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."goal_type" IS 'Type of study goal (daily_new_cards, daily_reviews, daily_time, weekly_streak, monthly_cards)';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."target_value" IS 'Target value for the goal (cards, minutes, days, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."current_value" IS 'Current progress towards the goal';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."period_start" IS 'Start date of the goal period';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."period_end" IS 'End date of the goal period';
+
+
+
+COMMENT ON COLUMN "public"."study_goals"."is_active" IS 'Whether the goal is currently active';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."study_reminders" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "project_id" "uuid",
+    "reminder_type" "text" NOT NULL,
+    "scheduled_time" time without time zone NOT NULL,
+    "is_active" boolean DEFAULT true,
+    "last_sent" timestamp with time zone,
+    "notification_method" "text" DEFAULT 'browser'::"text" NOT NULL,
+    "message" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "study_reminders_notification_method_check" CHECK (("notification_method" = ANY (ARRAY['browser'::"text", 'email'::"text", 'both'::"text"]))),
+    CONSTRAINT "study_reminders_reminder_type_check" CHECK (("reminder_type" = ANY (ARRAY['daily_study'::"text", 'due_reviews'::"text", 'learning_cards'::"text", 'goal_check'::"text"])))
+);
+
+
+ALTER TABLE "public"."study_reminders" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."study_reminders" IS 'User study reminders and notification scheduling';
+
+
+
+COMMENT ON COLUMN "public"."study_reminders"."reminder_type" IS 'Type of study reminder (daily_study, due_reviews, learning_cards, goal_check)';
+
+
+
+COMMENT ON COLUMN "public"."study_reminders"."scheduled_time" IS 'Time of day when reminder should be sent';
+
+
+
+COMMENT ON COLUMN "public"."study_reminders"."is_active" IS 'Whether the reminder is currently active';
+
+
+
+COMMENT ON COLUMN "public"."study_reminders"."last_sent" IS 'Timestamp when this reminder was last sent';
+
+
+
+COMMENT ON COLUMN "public"."study_reminders"."notification_method" IS 'How the reminder should be delivered (browser, email, both)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."study_sessions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -423,6 +548,23 @@ CREATE TABLE IF NOT EXISTS "public"."study_sessions" (
 
 
 ALTER TABLE "public"."study_sessions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_ai_prompts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "system_prompt" "text",
+    "user_template" "text",
+    "complexity" "text" DEFAULT 'medium'::"text",
+    "is_default" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_ai_prompts" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_notifications" (
@@ -508,8 +650,28 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 
+ALTER TABLE ONLY "public"."study_goals"
+    ADD CONSTRAINT "study_goals_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."study_reminders"
+    ADD CONSTRAINT "study_reminders_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."study_sessions"
     ADD CONSTRAINT "study_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."study_goals"
+    ADD CONSTRAINT "unique_active_goal" UNIQUE ("user_id", "goal_type", "period_start", "period_end") DEFERRABLE INITIALLY DEFERRED;
+
+
+
+ALTER TABLE ONLY "public"."user_ai_prompts"
+    ADD CONSTRAINT "user_ai_prompts_pkey" PRIMARY KEY ("id");
 
 
 
@@ -563,7 +725,39 @@ CREATE INDEX "idx_srs_states_user_project_state_due" ON "public"."srs_states" US
 
 
 
+CREATE INDEX "idx_study_goals_active" ON "public"."study_goals" USING "btree" ("user_id", "is_active");
+
+
+
+CREATE INDEX "idx_study_goals_period" ON "public"."study_goals" USING "btree" ("user_id", "period_start", "period_end");
+
+
+
+CREATE INDEX "idx_study_goals_user_id" ON "public"."study_goals" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_study_reminders_active" ON "public"."study_reminders" USING "btree" ("user_id", "is_active");
+
+
+
+CREATE INDEX "idx_study_reminders_project" ON "public"."study_reminders" USING "btree" ("user_id", "project_id");
+
+
+
+CREATE INDEX "idx_study_reminders_schedule" ON "public"."study_reminders" USING "btree" ("user_id", "scheduled_time", "is_active");
+
+
+
+CREATE INDEX "idx_study_reminders_user_id" ON "public"."study_reminders" USING "btree" ("user_id");
+
+
+
 CREATE INDEX "idx_study_sessions_user_active" ON "public"."study_sessions" USING "btree" ("user_id", "is_active") WHERE ("is_active" = true);
+
+
+
+CREATE INDEX "idx_user_ai_prompts_user_id" ON "public"."user_ai_prompts" USING "btree" ("user_id");
 
 
 
@@ -576,6 +770,14 @@ CREATE INDEX "idx_user_notifications_user_scheduled" ON "public"."user_notificat
 
 
 CREATE OR REPLACE TRIGGER "create_srs_state_trigger" AFTER INSERT ON "public"."flashcards" FOR EACH ROW EXECUTE FUNCTION "public"."create_srs_state_for_flashcard"();
+
+
+
+CREATE OR REPLACE TRIGGER "study_goals_updated_at" BEFORE UPDATE ON "public"."study_goals" FOR EACH ROW EXECUTE FUNCTION "public"."update_study_goals_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "study_reminders_updated_at" BEFORE UPDATE ON "public"."study_reminders" FOR EACH ROW EXECUTE FUNCTION "public"."update_study_reminders_updated_at"();
 
 
 
@@ -653,6 +855,21 @@ ALTER TABLE ONLY "public"."srs_states"
 
 
 
+ALTER TABLE ONLY "public"."study_goals"
+    ADD CONSTRAINT "study_goals_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."study_reminders"
+    ADD CONSTRAINT "study_reminders_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."study_reminders"
+    ADD CONSTRAINT "study_reminders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."study_sessions"
     ADD CONSTRAINT "study_sessions_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
@@ -678,10 +895,42 @@ ALTER TABLE ONLY "public"."user_settings"
 
 
 
+CREATE POLICY "Users can delete their own study goals" ON "public"."study_goals" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can delete their own study reminders" ON "public"."study_reminders" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own study goals" ON "public"."study_goals" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert their own study reminders" ON "public"."study_reminders" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their own study goals" ON "public"."study_goals" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can update their own study reminders" ON "public"."study_reminders" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own study goals" ON "public"."study_goals" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view their own study reminders" ON "public"."study_reminders" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
 ALTER TABLE "public"."app_notification_reads" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "app_notification_reads_policy" ON "public"."app_notification_reads" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "app_notification_reads_policy" ON "public"."app_notification_reads" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -695,7 +944,7 @@ CREATE POLICY "app_notifications_select" ON "public"."app_notifications" FOR SEL
 ALTER TABLE "public"."daily_study_stats" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "daily_study_stats_policy" ON "public"."daily_study_stats" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "daily_study_stats_policy" ON "public"."daily_study_stats" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -704,51 +953,64 @@ ALTER TABLE "public"."flashcards" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "flashcards_policy" ON "public"."flashcards" USING (("project_id" IN ( SELECT "projects"."id"
    FROM "public"."projects"
-  WHERE ("projects"."user_id" = "auth"."uid"())))) WITH CHECK (("project_id" IN ( SELECT "projects"."id"
+  WHERE ("projects"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))) WITH CHECK (("project_id" IN ( SELECT "projects"."id"
    FROM "public"."projects"
-  WHERE ("projects"."user_id" = "auth"."uid"()))));
+  WHERE ("projects"."user_id" = ( SELECT "auth"."uid"() AS "uid")))));
 
 
 
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "profiles_policy" ON "public"."profiles" USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+CREATE POLICY "profiles_policy" ON "public"."profiles" USING (("id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
 ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "projects_policy" ON "public"."projects" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "projects_policy" ON "public"."projects" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
 ALTER TABLE "public"."srs_states" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "srs_states_policy" ON "public"."srs_states" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "srs_states_policy" ON "public"."srs_states" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
+
+
+ALTER TABLE "public"."study_goals" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."study_reminders" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."study_sessions" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "study_sessions_policy" ON "public"."study_sessions" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "study_sessions_policy" ON "public"."study_sessions" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+ALTER TABLE "public"."user_ai_prompts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_ai_prompts_policy" ON "public"."user_ai_prompts" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
 ALTER TABLE "public"."user_notifications" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "user_notifications_policy" ON "public"."user_notifications" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "user_notifications_policy" ON "public"."user_notifications" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
 ALTER TABLE "public"."user_settings" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "user_settings_policy" ON "public"."user_settings" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+CREATE POLICY "user_settings_policy" ON "public"."user_settings" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
 
 
@@ -942,6 +1204,16 @@ GRANT ALL ON FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_proj
 
 
 
+GRANT ALL ON FUNCTION "public"."update_study_goals_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_study_goals_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_study_reminders_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_study_reminders_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
 
@@ -997,8 +1269,23 @@ GRANT ALL ON TABLE "public"."srs_states" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."study_goals" TO "authenticated";
+GRANT ALL ON TABLE "public"."study_goals" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."study_reminders" TO "authenticated";
+GRANT ALL ON TABLE "public"."study_reminders" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."study_sessions" TO "authenticated";
 GRANT ALL ON TABLE "public"."study_sessions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_ai_prompts" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_ai_prompts" TO "service_role";
 
 
 

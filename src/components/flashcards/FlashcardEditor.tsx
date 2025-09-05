@@ -18,7 +18,6 @@ import {
   Trash2,
   Eye,
   Zap,
-  FileText,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -33,6 +32,12 @@ interface FlashcardEditorProps {
   project: Project;
   initialFlashcards: Flashcard[];
   onSaved?: () => void;
+}
+
+interface GeneratedFlashcard {
+  id: string;
+  front: string;
+  back: string;
 }
 
 export function FlashcardEditor({
@@ -126,7 +131,9 @@ export function FlashcardEditor({
     setCurrent((prev) => Math.max(0, prev - 1));
   };
 
-  const handleFlashcardsGenerated = (generatedFlashcards: any[]) => {
+  const handleFlashcardsGenerated = (
+    generatedFlashcards: GeneratedFlashcard[]
+  ) => {
     // Add the generated flashcards to the existing ones
     const newFlashcards = generatedFlashcards.map((card) => ({
       id: card.id,
