@@ -26,6 +26,9 @@ import {
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useSettingsStore } from "@/hooks/useSettings";
 import { canProceedWithUpdate, recordUpdateTimestamp } from "./actions";
+import { ThemeSelector } from "@/src/components/settings/ThemeSelector";
+import { NotificationSettings } from "@/src/components/settings/NotificationSettings";
+import { BackupRestoreSettings } from "@/src/components/settings/BackupRestoreSettings";
 
 export interface UserProfile {
   id: string;
@@ -109,7 +112,12 @@ export default function SettingsPage() {
   if (loading || settingsLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
 
-  const tabs = [{ id: "user", label: "User Settings", icon: User }];
+  const tabs = [
+    { id: "user", label: "Profile", icon: User },
+    { id: "preferences", label: "Preferences", icon: Settings },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "backup", label: "Data", icon: Shield },
+  ];
 
   function validateProfile(displayNameValue: string, bioValue: string) {
     const trimmedDisplayName = displayNameValue.trim();
@@ -269,36 +277,83 @@ export default function SettingsPage() {
           />
 
           <div className="p-6 lg:p-8">
-            <div className="space-y-8">
-              {/* Two-column layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Profile Section */}
-                <div className="space-y-6">
-                  <SectionHeader
-                    icon={<User className="w-5 h-5 text-white" />}
-                    title="Profile Information"
-                    subtitle="Update your personal details"
-                  />
-                  <ProfileSection
-                    userProfile={userProfile}
-                    username={username}
-                    setUsername={setUsername}
-                    displayName={displayName}
-                    setDisplayName={setDisplayName}
-                    bio={bio}
-                    setBio={setBio}
-                    focusedField={focusedField}
-                    setFocusedField={setFocusedField}
-                    onFileSelect={handleFileSelect}
-                  />
+            {activeTab === "user" && (
+              <div className="space-y-8">
+                {/* Two-column layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Profile Section */}
+                  <div className="space-y-6">
+                    <SectionHeader
+                      icon={<User className="w-5 h-5 text-white" />}
+                      title="Profile Information"
+                      subtitle="Update your personal details"
+                    />
+                    <ProfileSection
+                      userProfile={userProfile}
+                      username={username}
+                      setUsername={setUsername}
+                      displayName={displayName}
+                      setDisplayName={setDisplayName}
+                      bio={bio}
+                      setBio={setBio}
+                      focusedField={focusedField}
+                      setFocusedField={setFocusedField}
+                      onFileSelect={handleFileSelect}
+                    />
+                  </div>
+
+                  {/* Basic Preferences Section */}
+                  <div className="space-y-6">
+                    <SectionHeader
+                      icon={<Settings className="w-5 h-5 text-white" />}
+                      title="Basic Preferences"
+                      subtitle="Quick theme settings"
+                    />
+                    <ThemeSelector />
+                  </div>
                 </div>
 
-                {/* Preferences Section */}
-                <div className="space-y-6">
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle">
+                  <button
+                    className="px-5 py-2.5 surface-elevated border border-secondary text-secondary rounded-xl font-medium interactive-hover transition-all duration-200 flex items-center justify-center gap-2"
+                    onClick={handleReset}
+                    disabled={pending}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Reset
+                  </button>
+                  <button
+                    className={`px-6 py-2.5 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                      pending ? "opacity-70 pointer-events-none" : ""
+                    }`}
+                    onClick={handleSaveAll}
+                  >
+                    {pending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {pending ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "preferences" && (
+              <div className="space-y-8">
+                <SectionHeader
+                  icon={<Palette className="w-5 h-5 text-white" />}
+                  title="Appearance & Theme"
+                  subtitle="Customize how Cognify looks and feels"
+                />
+                <ThemeSelector />
+
+                <div className="pt-8 border-t border-subtle">
                   <SectionHeader
                     icon={<Settings className="w-5 h-5 text-white" />}
-                    title="Preferences"
-                    subtitle="Customize your experience"
+                    title="Study Preferences"
+                    subtitle="Configure your learning experience"
                   />
                   <PreferencesSection
                     theme={theme}
@@ -312,32 +367,29 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            )}
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle">
-                <button
-                  className="px-5 py-2.5 surface-elevated border border-secondary text-secondary rounded-xl font-medium interactive-hover transition-all duration-200 flex items-center justify-center gap-2"
-                  onClick={handleReset}
-                  disabled={pending}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Reset
-                </button>
-                <button
-                  className={`px-6 py-2.5 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200 flex items-center justify-center gap-2 ${
-                    pending ? "opacity-70 pointer-events-none" : ""
-                  }`}
-                  onClick={handleSaveAll}
-                >
-                  {pending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {pending ? "Saving..." : "Save Changes"}
-                </button>
+            {activeTab === "notifications" && (
+              <div className="space-y-8">
+                <SectionHeader
+                  icon={<Bell className="w-5 h-5 text-white" />}
+                  title="Notifications & Reminders"
+                  subtitle="Manage how and when you receive notifications"
+                />
+                <NotificationSettings />
               </div>
-            </div>
+            )}
+
+            {activeTab === "backup" && (
+              <div className="space-y-8">
+                <SectionHeader
+                  icon={<Shield className="w-5 h-5 text-white" />}
+                  title="Data Management"
+                  subtitle="Backup and restore your learning data"
+                />
+                <BackupRestoreSettings />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -129,6 +129,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       await settingsApi.updateUserSettings(updates);
       set({ userSettings: newSettings });
+
+      // Invalidate cache to ensure fresh data on next load
+      if (typeof window !== "undefined") {
+        const cacheKey = `user-settings-${current.user_id}`;
+        // Clear the cache entry if it exists
+        sessionStorage.removeItem(cacheKey);
+      }
     } catch (error) {
       set({
         error:
