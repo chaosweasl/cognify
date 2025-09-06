@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ProfileProvider } from "@/components/profile-provider";
 import { ToasterProvider } from "@/components/ui/toaster-provider";
+import { AppErrorBoundary } from "@/lib/utils/errorBoundaries";
+import { AnalyticsInit } from "@/components/AnalyticsInit";
 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -70,12 +72,16 @@ export default function RootLayout({
         <Analytics />
         <ToasterProvider />
         <ProfileProvider>
-          {/* Responsive flex container for sidebar and main content */}
-          <div className="flex min-h-screen w-full">
-            {/* Sidebar slot: expects sidebar to be rendered as a flex child in page layouts */}
-            {/* Main content area fills remaining space */}
-            <div className="flex-1 flex flex-col min-w-0">{children}</div>
-          </div>
+          <AppErrorBoundary>
+            {/* Initialize analytics */}
+            <AnalyticsInit />
+            {/* Responsive flex container for sidebar and main content */}
+            <div className="flex min-h-screen w-full">
+              {/* Sidebar slot: expects sidebar to be rendered as a flex child in page layouts */}
+              {/* Main content area fills remaining space */}
+              <div className="flex-1 flex flex-col min-w-0">{children}</div>
+            </div>
+          </AppErrorBoundary>
         </ProfileProvider>
       </body>
     </html>

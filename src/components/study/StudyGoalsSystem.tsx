@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,78 @@ export function StudyGoalsSystem({
     weeklyStreakDays: 5,
     monthlyCards: 500,
   });
+
+  const createDefaultGoals = useCallback(async () => {
+    if (!userId) return;
+
+    const today = new Date();
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week
+    const thisWeekEnd = new Date(thisWeekStart);
+    thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+
+    const defaultGoals: Partial<StudyGoal>[] = [
+      {
+        user_id: userId,
+        goal_type: "daily_new_cards",
+        target_value: goalInputs.dailyNewCards,
+        current_value: dailyStats.newCardsStudied,
+        period_start: today.toISOString().split("T")[0],
+        period_end: today.toISOString().split("T")[0],
+        is_active: true,
+      },
+      {
+        user_id: userId,
+        goal_type: "daily_reviews",
+        target_value: goalInputs.dailyReviews,
+        current_value: dailyStats.reviewsCompleted,
+        period_start: today.toISOString().split("T")[0],
+        period_end: today.toISOString().split("T")[0],
+        is_active: true,
+      },
+      {
+        user_id: userId,
+        goal_type: "daily_time",
+        target_value: goalInputs.dailyTimeMinutes,
+        current_value: Math.floor(dailyStats.timeSpentSeconds / 60),
+        period_start: today.toISOString().split("T")[0],
+        period_end: today.toISOString().split("T")[0],
+        is_active: true,
+      },
+      {
+        user_id: userId,
+        goal_type: "weekly_streak",
+        target_value: goalInputs.weeklyStreakDays,
+        current_value: 0, // Streak calculation would need separate logic
+        period_start: thisWeekStart.toISOString().split("T")[0],
+        period_end: thisWeekEnd.toISOString().split("T")[0],
+        is_active: true,
+      },
+      {
+        user_id: userId,
+        goal_type: "monthly_cards",
+        target_value: goalInputs.monthlyCards,
+        current_value: dailyStats.newCardsStudied + dailyStats.reviewsCompleted,
+        period_start: new Date(today.getFullYear(), today.getMonth(), 1)
+          .toISOString()
+          .split("T")[0],
+        period_end: new Date(today.getFullYear(), today.getMonth() + 1, 0)
+          .toISOString()
+          .split("T")[0],
+        is_active: true,
+      },
+    ];
+
+    const { error } = await supabase.from("study_goals").insert(defaultGoals);
+
+    if (error) {
+      console.error("Error creating default goals:", error);
+      throw error;
+    }
+
+    // Reload the page to show new goals
+    window.location.reload();
+  }, [userId, goalInputs, dailyStats, supabase]);
 
   // Load goals and current progress
   useEffect(() => {
@@ -154,8 +226,9 @@ export function StudyGoalsSystem({
     };
 
     loadGoalsAndProgress();
-  }, [userId, supabase, projectId]);
+  }, [userId, supabase, projectId, createDefaultGoals]);
 
+  /*
   const createDefaultGoals = async () => {
     if (!userId) return;
 
@@ -219,6 +292,7 @@ export function StudyGoalsSystem({
       toast.error("Failed to create study goals");
     }
   };
+  */
 
   const updateGoals = async () => {
     if (!userId) return;

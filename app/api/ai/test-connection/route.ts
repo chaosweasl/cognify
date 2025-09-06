@@ -109,13 +109,13 @@ async function testOpenAI(config: AIConfiguration): Promise<TestResult> {
       const data = await response.json();
       return { success: true, model: data.model };
     } else {
-      const error = await response.json();
+      const errorData = await response.json();
       return {
         success: false,
-        error: error.error?.message || "OpenAI connection failed",
+        error: errorData.error?.message || "OpenAI connection failed",
       };
     }
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to connect to OpenAI" };
   }
 }
@@ -140,13 +140,13 @@ async function testAnthropic(config: AIConfiguration): Promise<TestResult> {
     if (response.ok) {
       return { success: true, model: config.model };
     } else {
-      const error = await response.json();
+      const errorData = await response.json();
       return {
         success: false,
-        error: error.error?.message || "Anthropic connection failed",
+        error: errorData.error?.message || "Anthropic connection failed",
       };
     }
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to connect to Anthropic" };
   }
 }

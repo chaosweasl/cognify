@@ -174,7 +174,7 @@ export async function withRateLimit<T extends unknown[]>(
   const ip = getClientIP(request);
 
   // Extract user ID from request (if available)
-  const userId = await getUserIdFromRequest(request);
+  const userId = await getUserIdFromRequest();
 
   // Check rate limit
   const result = checkEnhancedRateLimit(ip, userId, endpoint);
@@ -227,7 +227,7 @@ function getClientIP(request: Request): string {
 /**
  * Extract user ID from request (implement based on your auth system)
  */
-async function getUserIdFromRequest(_request: Request): Promise<string | null> {
+async function getUserIdFromRequest(): Promise<string | null> {
   try {
     // This would typically involve checking a JWT token or session
     // Implementation depends on your authentication system

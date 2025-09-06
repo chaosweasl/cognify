@@ -252,7 +252,6 @@ export function NotificationBell() {
                             handleMarkUserNotificationRead(n.id)
                           }
                           onDelete={() => handleDeleteUserNotification(n.id)}
-                          onClose={() => setOpen(false)}
                         />
                       ))}
                     </div>
@@ -317,12 +316,10 @@ function NotificationItem({
   notification,
   onMarkRead,
   onDelete,
-  onClose,
 }: {
   notification: UserNotification;
   onMarkRead: () => void;
   onDelete: () => void;
-  onClose: () => void;
 }) {
   const getNotificationIcon = () => {
     switch (notification.type) {

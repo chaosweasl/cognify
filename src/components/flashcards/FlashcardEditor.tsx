@@ -25,6 +25,9 @@ import { updateProject } from "@/app/(main)/projects/actions";
 import { CacheInvalidation } from "@/hooks/useCache";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
 import { PDFUploadModal } from "./PDFUploadModal";
+import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
+import { FlashcardExporter } from "./FlashcardExporter";
+import { FlashcardDuplicateDetector } from "./FlashcardDuplicateDetector";
 import { useAISettings } from "@/hooks/useAISettings";
 import type { Project, Flashcard } from "@/src/types";
 
@@ -152,6 +155,48 @@ export function FlashcardEditor({
     );
   };
 
+  // Handle JSON import
+  const handleImportFlashcards = (
+    importedFlashcards: { front: string; back: string }[]
+  ) => {
+    const newFlashcards = importedFlashcards.map((card, index) => ({
+      id: `imported_${Date.now()}_${index}`,
+      front: card.front,
+      back: card.back,
+    }));
+
+    setFlashcards((prev) => [...prev, ...newFlashcards]);
+
+    // Navigate to the first newly imported card
+    const newCardIndex = flashcards.length;
+    setCurrent(newCardIndex);
+
+    toast.success(
+      `Imported ${importedFlashcards.length} flashcard${
+        importedFlashcards.length !== 1 ? "s" : ""
+      }!`
+    );
+  };
+
+  // Handle duplicate detection and merging
+  const handleMergeDuplicates = async (flashcardIdsToDelete: string[]) => {
+    // For local state management, just remove the cards by ID
+    setFlashcards((prev) =>
+      prev.filter((card) => !flashcardIdsToDelete.includes(card.id))
+    );
+
+    // Adjust current index if needed
+    setCurrent((prev) => {
+      const newFlashcards = flashcards.filter(
+        (card) => !flashcardIdsToDelete.includes(card.id)
+      );
+      return Math.min(prev, Math.max(0, newFlashcards.length - 1));
+    });
+
+    // Note: The actual deletion from the database will happen when the user saves
+    // This is consistent with how the editor works - changes are local until save
+  };
+
   const card = flashcards[current] || { front: "", back: "" };
   const currentCardValid = card.front?.trim() || card.back?.trim();
   // Removed unused completedCards
@@ -216,22 +261,55 @@ export function FlashcardEditor({
                   </p>
                 </div>
 
-                {/* AI Upload Button */}
-                {aiEnabled && (
-                  <button
-                    onClick={() => setShowPDFUpload(true)}
-                    disabled={!isConfigValid()}
-                    className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
-                      isConfigValid()
-                        ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg hover:shadow-xl"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    <Zap className="w-5 h-5" />
-                    <span className="hidden sm:inline">Generate from PDF</span>
-                    <span className="sm:hidden">AI</span>
-                  </button>
-                )}
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  {/* AI Upload Button */}
+                  {aiEnabled && (
+                    <button
+                      onClick={() => setShowPDFUpload(true)}
+                      disabled={!isConfigValid()}
+                      className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
+                        isConfigValid()
+                          ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg hover:shadow-xl"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      <Zap className="w-5 h-5" />
+                      <span className="hidden sm:inline">
+                        Generate from PDF
+                      </span>
+                      <span className="sm:hidden">AI</span>
+                    </button>
+                  )}
+
+                  {/* JSON Import Button */}
+                  <FlashcardJsonImporter
+                    onImport={handleImportFlashcards}
+                    existingFlashcards={flashcards.map((card) => ({
+                      front: card.front,
+                      back: card.back,
+                    }))}
+                    disabled={saving}
+                  />
+
+                  {/* JSON Export Button */}
+                  <FlashcardExporter
+                    flashcards={flashcards.map(
+                      (card) => ({ ...card, extra: {} } as Flashcard)
+                    )}
+                    projectName={name}
+                    disabled={saving}
+                  />
+
+                  {/* Duplicate Detection Button */}
+                  <FlashcardDuplicateDetector
+                    flashcards={flashcards.map(
+                      (card) => ({ ...card, extra: {} } as Flashcard)
+                    )}
+                    onMergeDuplicates={handleMergeDuplicates}
+                    disabled={saving}
+                  />
+                </div>
               </div>
             </div>
           </div>

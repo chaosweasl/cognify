@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import pdf from "pdf-parse";
+// pdf-parse can execute code at module import time (it or its bundled deps may try
+// to read sample/test files). Import it dynamically inside the request handler
+// to avoid that side-effect running during Next.js build/collect-step.
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_TEXT_LENGTH = 500000; // 500k characters to prevent extremely large extractions
@@ -71,7 +73,10 @@ export async function POST(request: NextRequest) {
 
     let extractedData;
     try {
-      extractedData = await pdf(uint8Array, {
+      const pdfModule = await import("pdf-parse");
+      const pdf = pdfModule && (pdfModule.default ?? pdfModule);
+
+      extractedData = await pdf(Buffer.from(uint8Array), {
         // PDF parsing options
         max: 0, // No page limit
         version: "v1.10.100",
