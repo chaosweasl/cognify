@@ -43,11 +43,14 @@ export const LAZY_LOADING_CONFIG = {
     retry: () => void;
   }) => (
     <div className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-red-50 border border-red-200 rounded-lg">
-      <div className="text-red-600 mb-2">Failed to load component</div>
-      <div className="text-sm text-red-500 mb-4">{error.message}</div>
+      <div className="text-red-600 mb-2">⚠️ Failed to load component</div>
+      <div className="text-sm text-red-500 mb-4 max-w-md text-center">
+        {error.message || "Component failed to load"}
+      </div>
       <button
         onClick={retry}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+        type="button"
       >
         Retry
       </button>

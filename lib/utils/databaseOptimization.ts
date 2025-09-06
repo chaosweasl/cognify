@@ -1,11 +1,11 @@
 /**
  * Database Performance Optimization Utilities
- * Query optimization, caching, and performance monitoring for Supabase
+ * Clean implementation focusing on query optimization and caching
  */
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, PostgrestSingleResponse } from "@supabase/supabase-js";
 
 // Performance monitoring types
 export interface QueryPerformanceMetrics {
@@ -14,480 +14,334 @@ export interface QueryPerformanceMetrics {
   timestamp: Date;
   rowsAffected?: number;
   cacheHit?: boolean;
+  queryType?: "select" | "insert" | "update" | "delete";
 }
-
-// In-memory query performance store (replace with proper monitoring in production)
-const queryMetrics: QueryPerformanceMetrics[] = [];
-const MAX_METRICS = 1000; // Keep last 1000 queries
 
 // Query result cache (in-memory, replace with Redis in production)
 const queryCache = new Map<string, { data: unknown; expiry: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes default
+const MAX_CACHE_SIZE = 1000;
 
 /**
- * Optimized Database Client with Performance Monitoring
+ * Clean up expired cache entries and enforce size limits
  */
-export class OptimizedSupabaseClient {
-  private isServer: boolean;
+function cleanupCache(): void {
+  const now = Date.now();
 
-  constructor(isServer = true) {
-    this.isServer = isServer;
+  // Remove expired entries
+  for (const [key, value] of queryCache.entries()) {
+    if (value.expiry <= now) {
+      queryCache.delete(key);
+    }
   }
 
-  /**
-   * Execute query with performance monitoring
-   */
-  async executeQuery<T>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    queryFn: (client: SupabaseClient) => Promise<any>,
-    cacheKey?: string,
-    cacheTTL = CACHE_TTL
-  ): Promise<{
-    data: T | null;
-    error: unknown;
-    count?: number;
-    performance: QueryPerformanceMetrics;
-  }> {
-    const startTime = Date.now();
+  // Enforce size limit by removing oldest entries
+  if (queryCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(queryCache.entries());
+    entries.sort((a, b) => a[1].expiry - b[1].expiry);
+    const toRemove = entries.slice(0, queryCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => queryCache.delete(key));
+  }
+}
 
-    // Check cache first if cache key provided
-    if (cacheKey) {
-      const cached = queryCache.get(cacheKey);
-      if (cached && cached.expiry > Date.now()) {
-        const performance: QueryPerformanceMetrics = {
-          query: cacheKey,
-          duration: 0,
-          timestamp: new Date(),
-          cacheHit: true,
-        };
-        return {
-          data: cached.data as T,
-          error: null,
-          count: undefined,
-          performance,
-        };
-      }
-    }
+/**
+ * Execute query with caching and performance monitoring
+ */
+export async function executeOptimizedQuery<T>(
+  queryFn: (client: SupabaseClient) => Promise<PostgrestSingleResponse<T>>,
+  options: {
+    cacheKey?: string;
+    cacheTTL?: number;
+    isServer?: boolean;
+  } = {}
+): Promise<{
+  data: T | null;
+  error: unknown;
+  count?: number;
+  performance: QueryPerformanceMetrics;
+}> {
+  const { cacheKey, cacheTTL = CACHE_TTL, isServer = true } = options;
+  const startTime = Date.now();
 
-    try {
-      const supabaseClient = this.isServer
-        ? await createClient()
-        : createBrowserClient();
-      const result = await queryFn(supabaseClient);
-      const duration = Date.now() - startTime;
+  // Periodically clean up cache
+  if (Math.random() < 0.1) {
+    cleanupCache();
+  }
 
-      // Record performance metrics
+  // Check cache first if cache key provided
+  if (cacheKey) {
+    const cached = queryCache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
       const performance: QueryPerformanceMetrics = {
-        query: cacheKey || "unnamed_query",
-        duration,
+        query: cacheKey,
+        duration: 0,
         timestamp: new Date(),
-        rowsAffected: result.count || (result.data ? 1 : 0),
-        cacheHit: false,
+        cacheHit: true,
+        queryType: "select",
       };
-
-      this.recordMetrics(performance);
-
-      // Cache successful results if cache key provided
-      if (cacheKey && result.data && !result.error) {
-        queryCache.set(cacheKey, {
-          data: result,
-          expiry: Date.now() + cacheTTL,
-        });
-      }
-
-      return { ...result, performance };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      const performance: QueryPerformanceMetrics = {
-        query: cacheKey || "failed_query",
-        duration,
-        timestamp: new Date(),
-        cacheHit: false,
-      };
-
-      this.recordMetrics(performance);
-
       return {
-        data: null,
-        error: error instanceof Error ? error : new Error("Unknown error"),
+        data: cached.data as T,
+        error: null,
+        count: undefined,
         performance,
       };
     }
   }
 
-  /**
-   * Record query performance metrics
-   */
-  private recordMetrics(metrics: QueryPerformanceMetrics) {
-    queryMetrics.push(metrics);
+  try {
+    const supabaseClient = isServer
+      ? await createClient()
+      : createBrowserClient();
 
-    // Keep only recent metrics
-    if (queryMetrics.length > MAX_METRICS) {
-      queryMetrics.splice(0, queryMetrics.length - MAX_METRICS);
+    const result = await queryFn(supabaseClient);
+    const duration = Date.now() - startTime;
+
+    // Record performance metrics
+    const performance: QueryPerformanceMetrics = {
+      query: cacheKey || "unnamed_query",
+      duration,
+      timestamp: new Date(),
+      rowsAffected: result.count || (result.data ? 1 : 0),
+      cacheHit: false,
+      queryType: "select", // Default, could be enhanced
+    };
+
+    // Cache successful results if cache key provided
+    if (cacheKey && result.data && !result.error) {
+      queryCache.set(cacheKey, {
+        data: result,
+        expiry: Date.now() + cacheTTL,
+      });
     }
 
-    // Log slow queries
-    if (metrics.duration > 1000) {
-      console.warn(
-        `Slow query detected: ${metrics.query} took ${metrics.duration}ms`
-      );
-    }
-  }
-
-  /**
-   * Get query performance statistics
-   */
-  getPerformanceStats(): {
-    totalQueries: number;
-    averageQueryTime: number;
-    slowQueries: QueryPerformanceMetrics[];
-    cacheHitRate: number;
-    recentQueries: QueryPerformanceMetrics[];
-  } {
-    const totalQueries = queryMetrics.length;
-    const averageQueryTime =
-      totalQueries > 0
-        ? queryMetrics.reduce((sum, m) => sum + m.duration, 0) / totalQueries
-        : 0;
-
-    const slowQueries = queryMetrics.filter((m) => m.duration > 1000);
-    const cachedQueries = queryMetrics.filter((m) => m.cacheHit).length;
-    const cacheHitRate =
-      totalQueries > 0 ? (cachedQueries / totalQueries) * 100 : 0;
+    return { 
+      data: result.data, 
+      error: result.error, 
+      count: result.count || undefined, 
+      performance 
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const performance: QueryPerformanceMetrics = {
+      query: cacheKey || "unnamed_query",
+      duration,
+      timestamp: new Date(),
+      cacheHit: false,
+      queryType: "select",
+    };
 
     return {
-      totalQueries,
-      averageQueryTime,
-      slowQueries,
-      cacheHitRate,
-      recentQueries: queryMetrics.slice(-10), // Last 10 queries
+      data: null,
+      error,
+      performance,
     };
+  }
+}
+
+/**
+ * Clear cache entries matching pattern
+ */
+export function clearCachePattern(pattern: string): void {
+  const regex = new RegExp(pattern);
+  for (const key of queryCache.keys()) {
+    if (regex.test(key)) {
+      queryCache.delete(key);
+    }
+  }
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats() {
+  const now = Date.now();
+  let expired = 0;
+
+  for (const [, value] of queryCache.entries()) {
+    if (value.expiry <= now) {
+      expired++;
+    }
+  }
+
+  return {
+    totalEntries: queryCache.size,
+    expiredEntries: expired,
+    activeEntries: queryCache.size - expired,
+    memoryUsage: queryCache.size * 1024, // Rough estimate
+  };
+}
+
+/**
+ * Optimized query helpers for common operations
+ */
+export class OptimizedQueries {
+  /**
+   * Get user projects with basic caching
+   */
+  static async getUserProjects(userId: string) {
+    return executeOptimizedQuery(
+      async (client) => {
+        return await client
+          .from("projects")
+          .select(
+            `
+            id, name, description, created_at, updated_at,
+            new_cards_per_day, max_reviews_per_day
+          `
+          )
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false });
+      },
+      {
+        cacheKey: `user_projects_${userId}`,
+        cacheTTL: 2 * 60 * 1000, // 2 minutes
+      }
+    );
   }
 
   /**
-   * Clear query cache
+   * Get flashcards for project with caching
    */
-  clearCache() {
-    queryCache.clear();
+  static async getFlashcardsByProject(projectId: string) {
+    return executeOptimizedQuery(
+      async (client) => {
+        return await client
+          .from("flashcards")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false });
+      },
+      {
+        cacheKey: `project_flashcards_${projectId}`,
+        cacheTTL: 5 * 60 * 1000, // 5 minutes
+      }
+    );
   }
+
+  /**
+   * Get due cards with short cache
+   */
+  static async getDueCards(userId: string, projectId: string, limit = 50) {
+    return executeOptimizedQuery(
+      async (client) => {
+        return await client.rpc("get_due_cards", {
+          p_user_id: userId,
+          p_project_id: projectId,
+          p_limit: limit,
+        });
+      },
+      {
+        cacheKey: `due_cards_${userId}_${projectId}`,
+        cacheTTL: 30 * 1000, // 30 seconds
+      }
+    );
+  }
+
+  /**
+   * Batch operations should not be cached
+   */
+  static async batchUpsertSRSStates(
+    srsUpdates: Array<{
+      card_id: string;
+      user_id: string;
+      project_id: string;
+      state: string;
+      due: string;
+      card_interval: number;
+      ease: number;
+      repetitions: number;
+      lapses: number;
+      last_reviewed: string;
+    }>
+  ) {
+    return executeOptimizedQuery(
+      async (client) => {
+        // Use upsert for better performance than individual updates
+        return await client.from("srs_states").upsert(srsUpdates, {
+          onConflict: "card_id,user_id",
+          ignoreDuplicates: false,
+        });
+      },
+      {
+        // No caching for mutations
+      }
+    );
+  }
+}
+
+/**
+ * Recommended database indexes for optimal performance
+ * These should be applied manually in Supabase SQL editor
+ */
+export const RECOMMENDED_INDEXES = {
+  profiles: [
+    "CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON profiles(created_at);",
+  ],
+
+  projects: [
+    "CREATE INDEX IF NOT EXISTS idx_projects_user_id_created_at ON projects(user_id, created_at DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_projects_updated_at ON projects(updated_at);",
+  ],
+
+  flashcards: [
+    "CREATE INDEX IF NOT EXISTS idx_flashcards_project_id ON flashcards(project_id);",
+    "CREATE INDEX IF NOT EXISTS idx_flashcards_created_at ON flashcards(created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_flashcards_updated_at ON flashcards(updated_at);",
+    "CREATE INDEX IF NOT EXISTS idx_flashcards_is_ai_generated ON flashcards(is_ai_generated);",
+  ],
+
+  srs_states: [
+    "CREATE INDEX IF NOT EXISTS idx_srs_states_user_id_project_id ON srs_states(user_id, project_id);",
+    "CREATE INDEX IF NOT EXISTS idx_srs_states_due_state ON srs_states(due, state);",
+    "CREATE INDEX IF NOT EXISTS idx_srs_states_card_id ON srs_states(card_id);",
+    "CREATE INDEX IF NOT EXISTS idx_srs_states_last_reviewed ON srs_states(last_reviewed);",
+    "CREATE INDEX IF NOT EXISTS idx_srs_states_suspended ON srs_states(is_suspended);",
+  ],
+
+  study_sessions: [
+    "CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id_created_at ON study_sessions(user_id, created_at DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_study_sessions_project_id ON study_sessions(project_id);",
+    "CREATE INDEX IF NOT EXISTS idx_study_sessions_active ON study_sessions(is_active);",
+  ],
+
+  daily_study_stats: [
+    "CREATE INDEX IF NOT EXISTS idx_daily_stats_user_id_date ON daily_study_stats(user_id, study_date DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_daily_stats_project_id_date ON daily_study_stats(project_id, study_date DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_daily_stats_created_at ON daily_study_stats(created_at);",
+  ],
+
+  user_notifications: [
+    "CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id_created ON user_notifications(user_id, created_at DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_user_notifications_read ON user_notifications(is_read);",
+  ],
+};
+
+/**
+ * Performance monitoring utilities
+ */
+export const PerformanceMonitor = {
+  /**
+   * Clear all cached data
+   */
+  clearAllCache(): void {
+    queryCache.clear();
+  },
 
   /**
    * Get cache statistics
    */
-  getCacheStats() {
-    return {
-      size: queryCache.size,
-      entries: Array.from(queryCache.keys()),
-    };
-  }
-}
-
-/**
- * Optimized query patterns for common operations
- */
-export class OptimizedQueries {
-  private db: OptimizedSupabaseClient;
-
-  constructor(isServer = true) {
-    this.db = new OptimizedSupabaseClient(isServer);
-  }
+  getCacheStats,
 
   /**
-   * Get user projects with optimized query
+   * Clear specific cache pattern
    */
-  async getUserProjects(userId: string, includeStats = false) {
-    const cacheKey = `user_projects_${userId}_${includeStats}`;
-
-    return this.db.executeQuery(
-      async (client) => {
-        const query = client
-          .from("projects")
-          .select(
-            includeStats
-              ? `
-              *,
-              flashcards:flashcards(count),
-              due_cards:srs_states(count).gte.next_review, ${new Date().toISOString()}
-            `
-              : "*"
-          )
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
-
-        return await query;
-      },
-      cacheKey,
-      2 * 60 * 1000 // 2 minute cache for projects
-    );
-  }
+  clearCachePattern,
 
   /**
-   * Get project flashcards with pagination and filtering
+   * Check if caching is working
    */
-  async getProjectFlashcards(
-    projectId: string,
-    options: {
-      page?: number;
-      pageSize?: number;
-      search?: string;
-      tags?: string[];
-      sortBy?: "created_at" | "updated_at" | "difficulty";
-      sortOrder?: "asc" | "desc";
-    } = {}
-  ) {
-    const {
-      page = 0,
-      pageSize = 50,
-      search,
-      tags,
-      sortBy = "created_at",
-      sortOrder = "desc",
-    } = options;
-
-    const cacheKey =
-      search || tags?.length
-        ? undefined // Don't cache filtered results
-        : `project_flashcards_${projectId}_${page}_${pageSize}_${sortBy}_${sortOrder}`;
-
-    return this.db.executeQuery(
-      async (client) => {
-        let query = client
-          .from("flashcards")
-          .select("*, srs_states(*)")
-          .eq("project_id", projectId);
-
-        // Apply search filter
-        if (search) {
-          query = query.or(
-            `question.ilike.%${search}%,answer.ilike.%${search}%`
-          );
-        }
-
-        // Apply tag filter
-        if (tags && tags.length > 0) {
-          query = query.overlaps("tags", tags);
-        }
-
-        // Apply sorting
-        query = query.order(sortBy, { ascending: sortOrder === "asc" });
-
-        // Apply pagination
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
-
-        return await query;
-      },
-      cacheKey,
-      30 * 1000 // 30 second cache for flashcards
-    );
-  }
-
-  /**
-   * Get due flashcards for study session (optimized)
-   */
-  async getDueFlashcards(userId: string, projectId?: string, limit = 20) {
-    // Don't cache due cards as they change frequently
-    return this.db.executeQuery(async (client) => {
-      let query = client
-        .from("srs_states")
-        .select(
-          `
-            *,
-            flashcard:flashcards(*),
-            project:flashcards(project:projects(*))
-          `
-        )
-        .eq("user_id", userId)
-        .lte("next_review", new Date().toISOString());
-
-      if (projectId) {
-        query = query.eq("flashcards.project_id", projectId);
-      }
-
-      return await query.order("next_review", { ascending: true }).limit(limit);
-    });
-  }
-
-  /**
-   * Get user study statistics (cached)
-   */
-  async getUserStudyStats(userId: string, days = 30) {
-    const cacheKey = `user_stats_${userId}_${days}`;
-
-    return this.db.executeQuery(
-      async (client) => {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - days);
-
-        return await client
-          .from("daily_study_stats")
-          .select("*")
-          .eq("user_id", userId)
-          .gte("date", startDate.toISOString().split("T")[0])
-          .lte("date", endDate.toISOString().split("T")[0])
-          .order("date", { ascending: true });
-      },
-      cacheKey,
-      5 * 60 * 1000 // 5 minute cache for stats
-    );
-  }
-
-  /**
-   * Batch update SRS states (optimized for bulk operations)
-   */
-  async batchUpdateSRSStates(
-    updates: Array<{
-      id: string;
-      next_review: string;
-      interval: number;
-      ease_factor: number;
-      repetitions: number;
-    }>
-  ) {
-    return this.db.executeQuery(async (client) => {
-      // Use upsert for better performance with bulk operations
-      return await client.from("srs_states").upsert(updates).select();
-    });
-  }
-}
-
-/**
- * Database Health Monitor
- */
-export class DatabaseHealthMonitor {
-  private optimizedDb: OptimizedSupabaseClient;
-
-  constructor() {
-    this.optimizedDb = new OptimizedSupabaseClient();
-  }
-
-  /**
-   * Check database connection health
-   */
-  async checkHealth(): Promise<{
-    healthy: boolean;
-    responseTime: number;
-    error?: string;
-  }> {
-    const startTime = Date.now();
-
-    try {
-      const result = await this.optimizedDb.executeQuery(
-        async (client) => await client.from("profiles").select("id").limit(1)
-      );
-
-      const responseTime = Date.now() - startTime;
-
-      return {
-        healthy: !result.error,
-        responseTime,
-        error: result.error ? String(result.error) : undefined,
-      };
-    } catch (error) {
-      return {
-        healthy: false,
-        responseTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
-
-  /**
-   * Get comprehensive database performance report
-   */
-  async getPerformanceReport() {
-    const healthCheck = await this.checkHealth();
-    const queryStats = this.optimizedDb.getPerformanceStats();
-    const cacheStats = this.optimizedDb.getCacheStats();
-
-    return {
-      health: healthCheck,
-      queryPerformance: queryStats,
-      cache: cacheStats,
-      recommendations: this.generateRecommendations(queryStats),
-    };
-  }
-
-  /**
-   * Generate performance recommendations
-   */
-  private generateRecommendations(
-    stats: ReturnType<OptimizedSupabaseClient["getPerformanceStats"]>
-  ): string[] {
-    const recommendations: string[] = [];
-
-    if (stats.averageQueryTime > 500) {
-      recommendations.push(
-        "Average query time is high. Consider adding database indexes."
-      );
-    }
-
-    if (stats.slowQueries.length > stats.totalQueries * 0.1) {
-      recommendations.push(
-        "High number of slow queries detected. Review and optimize query patterns."
-      );
-    }
-
-    if (stats.cacheHitRate < 50) {
-      recommendations.push(
-        "Low cache hit rate. Consider increasing cache TTL for frequently accessed data."
-      );
-    }
-
-    if (stats.totalQueries > 1000) {
-      recommendations.push(
-        "High query volume. Consider implementing connection pooling."
-      );
-    }
-
-    return recommendations.length > 0
-      ? recommendations
-      : ["Database performance looks good!"];
-  }
-}
-
-/**
- * Suggested database indexes for optimal performance
- */
-export const RECOMMENDED_INDEXES = {
-  // Core user data indexes
-  profiles: [
-    "CREATE INDEX IF NOT EXISTS idx_profiles_created_at ON profiles(created_at)",
-  ],
-
-  projects: [
-    "CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)",
-    "CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at)",
-    "CREATE INDEX IF NOT EXISTS idx_projects_category ON projects(category)",
-  ],
-
-  flashcards: [
-    "CREATE INDEX IF NOT EXISTS idx_flashcards_project_id ON flashcards(project_id)",
-    "CREATE INDEX IF NOT EXISTS idx_flashcards_created_at ON flashcards(created_at)",
-    "CREATE INDEX IF NOT EXISTS idx_flashcards_tags ON flashcards USING GIN (tags)",
-  ],
-
-  srs_states: [
-    "CREATE INDEX IF NOT EXISTS idx_srs_states_user_id ON srs_states(user_id)",
-    "CREATE INDEX IF NOT EXISTS idx_srs_states_next_review ON srs_states(next_review)",
-    "CREATE INDEX IF NOT EXISTS idx_srs_states_flashcard_id ON srs_states(flashcard_id)",
-    "CREATE INDEX IF NOT EXISTS idx_srs_states_due ON srs_states(user_id, next_review) WHERE next_review <= NOW()",
-  ],
-
-  daily_study_stats: [
-    "CREATE INDEX IF NOT EXISTS idx_daily_study_stats_user_date ON daily_study_stats(user_id, date)",
-    "CREATE INDEX IF NOT EXISTS idx_daily_study_stats_date ON daily_study_stats(date)",
-  ],
-
-  study_sessions: [
-    "CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id)",
-    "CREATE INDEX IF NOT EXISTS idx_study_sessions_created_at ON study_sessions(created_at)",
-  ],
+  isCacheHealthy(): boolean {
+    const stats = getCacheStats();
+    return stats.expiredEntries / stats.totalEntries < 0.5; // Less than 50% expired
+  },
 };
-
-// Export singleton instances
-export const optimizedDb = new OptimizedSupabaseClient();
-export const optimizedQueries = new OptimizedQueries();
-export const dbHealthMonitor = new DatabaseHealthMonitor();

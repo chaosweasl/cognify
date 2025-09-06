@@ -10,7 +10,6 @@ import React, {
   ErrorInfo,
   ReactNode,
   useState,
-  useEffect,
   ComponentType,
 } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
@@ -53,197 +52,266 @@ export class ErrorLogger {
   private static errors: CustomErrorInfo[] = [];
   private static maxErrors = 100;
 
-  static log(errorInfo: Partial<CustomErrorInfo> & { error: Error }) {
-    const fullErrorInfo: CustomErrorInfo = {
-      type: ErrorType.RENDERING_ERROR,
-      severity: ErrorSeverity.MEDIUM,
-      timestamp: new Date(),
-      userAgent:
-        typeof navigator !== "undefined" ? navigator.userAgent : "server",
-      url: typeof window !== "undefined" ? window.location.href : "server",
-      ...errorInfo,
-    };
-
+  static logError(errorInfo: CustomErrorInfo): void {
     // Add to local storage
-    this.errors.unshift(fullErrorInfo);
+    this.errors.unshift(errorInfo);
+
+    // Keep only recent errors
     if (this.errors.length > this.maxErrors) {
       this.errors = this.errors.slice(0, this.maxErrors);
     }
 
     // Log to console in development
     if (process.env.NODE_ENV === "development") {
-      console.group(
-        `🚨 ${fullErrorInfo.severity.toUpperCase()} ERROR: ${
-          fullErrorInfo.type
-        }`
-      );
-      console.error("Error:", fullErrorInfo.error);
-      console.log("Context:", fullErrorInfo.context);
-      console.log("Timestamp:", fullErrorInfo.timestamp.toISOString());
-      if (fullErrorInfo.errorInfo) {
-        console.log("Error Info:", fullErrorInfo.errorInfo);
-      }
-      console.groupEnd();
+      console.error("Error logged:", errorInfo);
     }
 
-    // In production, send to error reporting service
+    // Send to external service in production
     if (process.env.NODE_ENV === "production") {
-      this.sendToErrorService(fullErrorInfo);
+      this.sendToErrorService(errorInfo).catch(console.error);
     }
   }
 
-  private static sendToErrorService(errorInfo: CustomErrorInfo) {
-    // Example: Send to external error reporting service
-    // fetch('/api/errors', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(errorInfo)
-    // }).catch(() => {
-    //   // Silently fail if error reporting fails
-    // })
-
-    console.warn("[ERROR SERVICE]", errorInfo);
+  private static async sendToErrorService(
+    errorInfo: CustomErrorInfo
+  ): Promise<void> {
+    try {
+      // In a real app, send to service like Sentry, LogRocket, etc.
+      await fetch("/api/system/errors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...errorInfo,
+          error: {
+            message: errorInfo.error.message,
+            stack: errorInfo.error.stack,
+            name: errorInfo.error.name,
+          },
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to send error to service:", error);
+    }
   }
 
-  static getErrors() {
+  static getErrors(): CustomErrorInfo[] {
     return [...this.errors];
   }
 
-  static clearErrors() {
+  static clearErrors(): void {
     this.errors = [];
   }
 
   static getErrorStats() {
+    const byType = this.errors.reduce((acc, error) => {
+      acc[error.type] = (acc[error.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const bySeverity = this.errors.reduce((acc, error) => {
+      acc[error.severity] = (acc[error.severity] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
     return {
       total: this.errors.length,
-      bySeverity: this.errors.reduce((acc, err) => {
-        acc[err.severity] = (acc[err.severity] || 0) + 1;
-        return acc;
-      }, {} as Record<ErrorSeverity, number>),
-      byType: this.errors.reduce((acc, err) => {
-        acc[err.type] = (acc[err.type] || 0) + 1;
-        return acc;
-      }, {} as Record<ErrorType, number>),
+      byType,
+      bySeverity,
+      recent: this.errors.slice(0, 10),
     };
+  }
+
+  // Compatibility alias for other modules that call `ErrorLogger.log`
+  // Accepts either a CustomErrorInfo or a flexible object and normalizes it
+  static log(payload: CustomErrorInfo | Partial<CustomErrorInfo> | Error) {
+    if (payload instanceof Error) {
+      const info: CustomErrorInfo = {
+        type: ErrorType.RENDERING_ERROR,
+        severity: ErrorSeverity.MEDIUM,
+        error: payload,
+        timestamp: new Date(),
+        userAgent:
+          typeof window !== "undefined" ? window.navigator.userAgent : "Server",
+        url: typeof window !== "undefined" ? window.location.href : "Server",
+      };
+      return this.logError(info);
+    }
+
+    const p = payload as Partial<CustomErrorInfo>;
+    const raw = payload as unknown as Record<string, unknown>;
+
+    const type = p.type ?? ErrorType.RENDERING_ERROR;
+    const severity = p.severity ?? ErrorSeverity.MEDIUM;
+
+    const messageFromRaw =
+      typeof raw?.message === "string" ? String(raw.message) : undefined;
+
+    const errorObj: Error =
+      p.error instanceof Error
+        ? p.error
+        : messageFromRaw
+        ? new Error(messageFromRaw)
+        : new Error("Unknown error");
+
+    const timestamp = p.timestamp
+      ? p.timestamp instanceof Date
+        ? p.timestamp
+        : new Date(String(p.timestamp))
+      : new Date();
+
+    const normalized: CustomErrorInfo = {
+      type,
+      severity,
+      error: errorObj,
+      errorInfo: p.errorInfo,
+      context: p.context,
+      userId: typeof p.userId === "string" ? p.userId : undefined,
+      timestamp,
+      userAgent:
+        p.userAgent ??
+        (typeof window !== "undefined" ? window.navigator.userAgent : "Server"),
+      url:
+        p.url ??
+        (typeof window !== "undefined" ? window.location.href : "Server"),
+    };
+
+    return this.logError(normalized);
   }
 }
 
 /**
- * Main Application Error Boundary
+ * Main Error Boundary Component
  */
-export class AppErrorBoundary extends Component<
-  {
-    children: ReactNode;
-    fallback?: ComponentType<ErrorBoundaryProps>;
-    onError?: (error: Error, errorInfo: CustomErrorInfo) => void;
-  },
-  { hasError: boolean; error: Error | null; errorId: string }
-> {
-  private retryTimeoutId: NodeJS.Timeout | null = null;
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  retryCount: number;
+}
 
-  constructor(props: { children: ReactNode }) {
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ComponentType<{
+    error: Error;
+    retry: () => void;
+    errorInfo?: ErrorInfo;
+  }>;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  maxRetries?: number;
+  context?: string;
+}
+
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  private retryTimeoutId: number | null = null;
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
       hasError: false,
       error: null,
-      errorId: "",
+      errorInfo: null,
+      retryCount: 0,
     };
   }
 
-  static getDerivedStateFromError(error: Error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return {
       hasError: true,
       error,
-      errorId: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    const errorDetails: Partial<CustomErrorInfo> = {
-      error,
-      errorInfo,
+    // Log error details
+    const customErrorInfo: CustomErrorInfo = {
       type: this.categorizeError(error),
       severity: this.determineSeverity(error),
-      context: "AppErrorBoundary",
+      error,
+      errorInfo,
+      context: this.props.context,
+      timestamp: new Date(),
+      userAgent:
+        typeof window !== "undefined" ? window.navigator.userAgent : "Server",
+      url: typeof window !== "undefined" ? window.location.href : "Server",
     };
 
-    ErrorLogger.log(
-      errorDetails as Partial<CustomErrorInfo> & { error: Error }
-    );
+    ErrorLogger.logError(customErrorInfo);
 
-    if (this.props.onError) {
-      this.props.onError(error, errorDetails as CustomErrorInfo);
-    }
+    this.setState({ errorInfo });
+
+    // Call onError callback if provided
+    this.props.onError?.(error, errorInfo);
   }
 
-  categorizeError(error: Error): ErrorType {
-    const message = error.message.toLowerCase();
-
-    if (
-      message.includes("loading chunk") ||
-      message.includes("failed to fetch")
-    ) {
+  private categorizeError(error: Error): ErrorType {
+    if (error.message.includes("Loading chunk")) {
       return ErrorType.CHUNK_LOAD_ERROR;
     }
-    if (message.includes("network") || message.includes("fetch")) {
+    if (error.message.includes("fetch")) {
       return ErrorType.NETWORK_ERROR;
     }
-    if (message.includes("permission") || message.includes("unauthorized")) {
+    if (
+      error.message.includes("permission") ||
+      error.message.includes("unauthorized")
+    ) {
       return ErrorType.PERMISSION_ERROR;
     }
-    if (message.includes("not found") || message.includes("404")) {
-      return ErrorType.NOT_FOUND_ERROR;
-    }
-
     return ErrorType.RENDERING_ERROR;
   }
 
-  determineSeverity(error: Error): ErrorSeverity {
-    const message = error.message.toLowerCase();
-
-    if (message.includes("chunk") || message.includes("network")) {
+  private determineSeverity(error: Error): ErrorSeverity {
+    if (error.message.includes("Loading chunk")) {
       return ErrorSeverity.MEDIUM;
     }
-    if (message.includes("permission") || message.includes("unauthorized")) {
+    if (error.message.includes("Network") || error.message.includes("fetch")) {
       return ErrorSeverity.HIGH;
     }
-    if (message.includes("critical") || message.includes("security")) {
-      return ErrorSeverity.CRITICAL;
-    }
-
-    return ErrorSeverity.LOW;
+    return ErrorSeverity.MEDIUM;
   }
 
-  retry = () => {
-    // Clear error state after a brief delay to prevent immediate re-render
-    if (this.retryTimeoutId) {
-      clearTimeout(this.retryTimeoutId);
+  private handleRetry = () => {
+    const maxRetries = this.props.maxRetries || 3;
+
+    if (this.state.retryCount >= maxRetries) {
+      return;
     }
 
-    this.retryTimeoutId = setTimeout(() => {
-      this.setState({
-        hasError: false,
-        error: null,
-        errorId: "",
-      });
-    }, 100);
+    this.setState((prevState) => ({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      retryCount: prevState.retryCount + 1,
+    }));
+
+    // Clear any existing timeout
+    if (this.retryTimeoutId) {
+      window.clearTimeout(this.retryTimeoutId);
+    }
+
+    // Reset retry count after successful recovery
+    this.retryTimeoutId = window.setTimeout(() => {
+      this.setState({ retryCount: 0 });
+    }, 10000);
   };
 
   componentWillUnmount() {
     if (this.retryTimeoutId) {
-      clearTimeout(this.retryTimeoutId);
+      window.clearTimeout(this.retryTimeoutId);
     }
   }
 
   render() {
     if (this.state.hasError && this.state.error) {
-      const FallbackComponent = this.props.fallback || ApplicationErrorFallback;
+      const FallbackComponent = this.props.fallback || DefaultErrorFallback;
 
       return (
         <FallbackComponent
           error={this.state.error}
-          retry={this.retry}
-          errorId={this.state.errorId}
+          errorInfo={this.state.errorInfo || undefined}
+          retry={this.handleRetry}
         />
       );
     }
@@ -253,118 +321,45 @@ export class AppErrorBoundary extends Component<
 }
 
 /**
- * Feature-Specific Error Boundary
+ * App-level Error Boundary component used by layouts.
+ * Exported as `AppErrorBoundary` for backward compatibility with imports.
  */
-export class FeatureErrorBoundary extends Component<
-  {
-    children: ReactNode;
-    feature: string;
-    fallback?: ComponentType<ErrorBoundaryProps>;
-    level?: "feature" | "component";
-  },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: {
-    children: ReactNode;
-    feature: string;
-    fallback?: ComponentType<ErrorBoundaryProps>;
-    level?: "feature" | "component";
-  }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+export const AppErrorBoundary: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+};
 
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    ErrorLogger.log({
-      error,
-      errorInfo,
-      type: ErrorType.RENDERING_ERROR,
-      severity: ErrorSeverity.MEDIUM,
-      context: `FeatureErrorBoundary:${this.props.feature}`,
-    });
-  }
-
-  retry = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
-  render() {
-    if (this.state.hasError && this.state.error) {
-      const FallbackComponent =
-        this.props.fallback ||
-        (this.props.level === "component"
-          ? ComponentErrorFallback
-          : FeatureErrorFallback);
-
-      return (
-        <FallbackComponent
-          error={this.state.error}
-          retry={this.retry}
-          feature={this.props.feature}
-        />
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-// Error boundary props interface
-interface ErrorBoundaryProps {
+/**
+ * Default Error Fallback Component
+ */
+const DefaultErrorFallback: ComponentType<{
   error: Error;
+  errorInfo?: ErrorInfo | null;
   retry: () => void;
-  errorId?: string;
-  feature?: string;
-}
-
-/**
- * Application-Level Error Fallback
- */
-export const ApplicationErrorFallback: React.FC<ErrorBoundaryProps> = ({
-  error,
-  retry,
-  errorId,
-}) => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-      <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-        <AlertTriangle className="w-8 h-8 text-red-600" />
-      </div>
-
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+}> = ({ error, retry }) => (
+  <div className="min-h-[400px] flex items-center justify-center p-6">
+    <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+      <AlertTriangle className="mx-auto h-12 w-12 text-red-600 mb-4" />
+      <h2 className="text-lg font-semibold text-red-800 mb-2">
         Something went wrong
-      </h1>
-
-      <p className="text-gray-600 mb-6">
-        We&apos;re sorry, but something unexpected happened. Our team has been
-        notified.
+      </h2>
+      <p className="text-red-600 mb-4 text-sm">
+        {error.message || "An unexpected error occurred"}
       </p>
-
-      {process.env.NODE_ENV === "development" && (
-        <div className="mb-6 p-4 bg-gray-100 rounded text-left text-sm">
-          <p className="font-mono text-red-600 break-all">{error.message}</p>
-          {errorId && <p className="text-gray-500 mt-2">Error ID: {errorId}</p>}
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <div className="space-y-2">
         <button
           onClick={retry}
-          className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
         >
-          <RefreshCw className="w-4 h-4 mr-2" />
+          <RefreshCw className="h-4 w-4" />
           Try Again
         </button>
-
         <button
           onClick={() => (window.location.href = "/")}
-          className="flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded hover:bg-red-100 transition-colors"
         >
-          <Home className="w-4 h-4 mr-2" />
+          <Home className="h-4 w-4" />
           Go Home
         </button>
       </div>
@@ -373,183 +368,65 @@ export const ApplicationErrorFallback: React.FC<ErrorBoundaryProps> = ({
 );
 
 /**
- * Feature-Level Error Fallback
+ * Chunk Loading Error Boundary
+ * Specialized error boundary for code splitting failures
  */
-export const FeatureErrorFallback: React.FC<ErrorBoundaryProps> = ({
-  error,
-  retry,
-  feature,
+export const ChunkErrorBoundary: React.FC<{ children: ReactNode }> = ({
+  children,
 }) => (
-  <div className="bg-red-50 border border-red-200 rounded-lg p-6 m-4">
-    <div className="flex items-start">
-      <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
-      <div className="flex-1">
-        <h3 className="text-lg font-medium text-red-800 mb-2">
-          {feature} Unavailable
-        </h3>
-        <p className="text-red-700 mb-4">
-          This feature is temporarily unavailable. You can continue using other
-          parts of the application.
-        </p>
-
-        {process.env.NODE_ENV === "development" && (
-          <div className="mb-4 p-3 bg-red-100 rounded text-sm">
-            <p className="font-mono text-red-800 break-all">{error.message}</p>
-          </div>
-        )}
-
-        <button
-          onClick={retry}
-          className="flex items-center px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Retry {feature}
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-/**
- * Component-Level Error Fallback
- */
-export const ComponentErrorFallback: React.FC<ErrorBoundaryProps> = ({
-  error,
-  retry,
-  feature,
-}) => (
-  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 my-2">
-    <div className="flex items-center">
-      <AlertTriangle className="w-4 h-4 text-yellow-600 mr-2" />
-      <div className="flex-1">
-        <p className="text-sm text-yellow-800">
-          {feature || "Component"} failed to load
-        </p>
-        {process.env.NODE_ENV === "development" && (
-          <p className="text-xs text-yellow-700 mt-1 font-mono">
-            {error.message}
+  <ErrorBoundary
+    context="ChunkLoading"
+    fallback={({ retry }) => (
+      <div className="min-h-[300px] flex items-center justify-center p-6">
+        <div className="max-w-sm w-full bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="mx-auto h-10 w-10 text-orange-600 mb-3" />
+          <h3 className="font-medium text-orange-800 mb-2">Loading Error</h3>
+          <p className="text-orange-600 text-sm mb-4">
+            Failed to load part of the application. Please try refreshing.
           </p>
-        )}
+          <button
+            onClick={retry}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </button>
+        </div>
       </div>
-      <button
-        onClick={retry}
-        className="text-xs px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-      >
-        Retry
-      </button>
-    </div>
-  </div>
+    )}
+  >
+    {children}
+  </ErrorBoundary>
 );
 
 /**
- * Async Error Hook
- * Handle errors in async operations
+ * Hook for async error handling
  */
 export function useAsyncError() {
-  const [error, setError] = useState<Error | null>(null);
-
-  const throwError = (error: Error) => {
-    ErrorLogger.log({
-      error,
-      type: ErrorType.ASYNC_ERROR,
-      severity: ErrorSeverity.MEDIUM,
-      context: "useAsyncError",
+  const [, setError] = useState();
+  return (error: Error) => {
+    setError(() => {
+      throw error;
     });
-    setError(error);
   };
-
-  const clearError = () => setError(null);
-
-  useEffect(() => {
-    if (error) {
-      throw error; // This will be caught by error boundary
-    }
-  }, [error]);
-
-  return { throwError, clearError, error };
 }
 
 /**
- * Global Error Handler
- * Handle uncaught errors and promise rejections
+ * Higher-order component for wrapping components with error boundaries
  */
-export function setupGlobalErrorHandlers() {
-  if (typeof window === "undefined") return;
+export function withErrorBoundary<P extends object>(
+  Component: ComponentType<P>,
+  errorBoundaryProps?: Omit<ErrorBoundaryProps, "children">
+) {
+  const WrappedComponent = (props: P) => (
+    <ErrorBoundary {...errorBoundaryProps}>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
 
-  // Handle uncaught JavaScript errors
-  window.addEventListener("error", (event) => {
-    ErrorLogger.log({
-      error: event.error || new Error(event.message),
-      type: ErrorType.RENDERING_ERROR,
-      severity: ErrorSeverity.HIGH,
-      context: "Global Error Handler",
-    });
-  });
+  WrappedComponent.displayName = `withErrorBoundary(${
+    Component.displayName || Component.name
+  })`;
 
-  // Handle unhandled promise rejections
-  window.addEventListener("unhandledrejection", (event) => {
-    const error =
-      event.reason instanceof Error
-        ? event.reason
-        : new Error(String(event.reason));
-
-    ErrorLogger.log({
-      error,
-      type: ErrorType.ASYNC_ERROR,
-      severity: ErrorSeverity.HIGH,
-      context: "Unhandled Promise Rejection",
-    });
-
-    // Prevent the default console error
-    event.preventDefault();
-  });
-}
-
-/**
- * Error Recovery Utilities
- */
-export const ErrorRecovery = {
-  // Retry with exponential backoff
-  retryWithBackoff: async function <T>(
-    fn: () => Promise<T>,
-    maxRetries = 3,
-    initialDelay = 1000
-  ): Promise<T> {
-    let lastError: Error;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-
-        if (attempt === maxRetries) break;
-
-        const delay = initialDelay * Math.pow(2, attempt);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-
-    throw lastError!;
-  },
-
-  // Graceful degradation
-  withFallback: function <T>(primary: () => T, fallback: () => T): T {
-    try {
-      return primary();
-    } catch (err) {
-      ErrorLogger.log({
-        error: err instanceof Error ? err : new Error(String(err)),
-        type: ErrorType.RENDERING_ERROR,
-        severity: ErrorSeverity.LOW,
-        context: "Graceful Degradation",
-      });
-      return fallback();
-    }
-  },
-};
-
-// Setup global error handlers on module load
-if (typeof window !== "undefined") {
-  setupGlobalErrorHandlers();
+  return WrappedComponent;
 }

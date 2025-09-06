@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ProjectStats } from "@/src/types";
+import { withApiSecurity } from "@/lib/utils/apiSecurity";
 
-export async function GET() {
+async function handleGetProjects() {
   const supabase = await createClient();
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
-  if (userError || !user) return NextResponse.json([]);
+  if (userError || !user) return NextResponse.json([], { status: 401 });
 
   // Get all projects with their settings
   const { data: projects, error: projectsError } = await supabase
@@ -120,7 +121,7 @@ export async function GET() {
   return NextResponse.json(projectsWithStats);
 }
 
-export async function POST(request: NextRequest) {
+async function handleCreateProject(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
@@ -211,3 +212,27 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply security middleware to all endpoints
+export const GET = withApiSecurity(
+  async () => {
+    return handleGetProjects();
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 60, window: 60 },
+    allowedMethods: ["GET"],
+  }
+);
+
+export const POST = withApiSecurity(
+  async (request: NextRequest) => {
+    return handleCreateProject(request);
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 30, window: 60 },
+    allowedMethods: ["POST"],
+    validateInput: "project",
+  }
+);

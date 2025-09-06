@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
+import { withApiSecurity } from "@/lib/utils/apiSecurity";
+import { validateAndSanitizeText } from "@/lib/utils/security";
 import { v4 as uuidv4 } from "uuid";
 
 interface FlashcardGenerationRequest {
@@ -23,8 +25,10 @@ interface GeneratedFlashcard {
 
 const DEFAULT_MAX_CARDS = 20;
 const MAX_TEXT_CHUNK_SIZE = 4000; // Characters per chunk for AI processing
+const MAX_TEXT_LENGTH = 50000; // Maximum total text length for security
+const MAX_FILE_NAME_LENGTH = 255; // Maximum file name length
 
-export async function POST(request: NextRequest) {
+async function handleGenerateFlashcards(request: NextRequest) {
   try {
     // Verify authentication
     const supabase = await createClient();
@@ -42,12 +46,42 @@ export async function POST(request: NextRequest) {
     const body: FlashcardGenerationRequest = await request.json();
     const { text, projectId, fileName, config, options = {} } = body;
 
+    // Input validation and sanitization
     if (!text || !projectId || !config) {
       return NextResponse.json(
         { error: "Missing required fields: text, projectId, config" },
         { status: 400 }
       );
     }
+
+    // Sanitize and validate text input
+    const textValidation = validateAndSanitizeText(
+      text,
+      MAX_TEXT_LENGTH,
+      "PDF text content"
+    );
+    if (!textValidation.isValid) {
+      return NextResponse.json(
+        { error: textValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize file name
+    const fileNameValidation = validateAndSanitizeText(
+      fileName || "Unknown",
+      MAX_FILE_NAME_LENGTH,
+      "File name"
+    );
+    if (!fileNameValidation.isValid) {
+      return NextResponse.json(
+        { error: fileNameValidation.error },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedText = textValidation.sanitized;
+    const sanitizedFileName = fileNameValidation.sanitized;
 
     // Validate AI configuration
     if (!validateAIConfig(config)) {
@@ -73,8 +107,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Chunk text if it's too large
-    const textChunks = chunkText(text, MAX_TEXT_CHUNK_SIZE);
-    const maxCards = options.maxCards || DEFAULT_MAX_CARDS;
+    const textChunks = chunkText(sanitizedText, MAX_TEXT_CHUNK_SIZE);
+    const maxCards = Math.min(options.maxCards || DEFAULT_MAX_CARDS, 50); // Cap at 50 cards for security
     const cardsPerChunk = Math.ceil(maxCards / textChunks.length);
 
     let allGeneratedCards: GeneratedFlashcard[] = [];
@@ -88,7 +122,7 @@ export async function POST(request: NextRequest) {
           maxCards: cardsPerChunk,
           difficulty: options.difficulty || "intermediate",
           focusAreas: options.focusAreas,
-          fileName,
+          fileName: sanitizedFileName,
         });
 
         allGeneratedCards = [...allGeneratedCards, ...result.flashcards];
@@ -576,3 +610,16 @@ function parseFlashcardJSON(content: string): GeneratedFlashcard[] {
     return [];
   }
 }
+
+// Apply security middleware with AI-specific configuration
+export const POST = withApiSecurity(
+  async (request: NextRequest) => {
+    return handleGenerateFlashcards(request);
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 20, window: 60 }, // 20 AI requests per minute
+    allowedMethods: ["POST"],
+    // Note: Not using validateInput here as AI config validation is custom
+  }
+);

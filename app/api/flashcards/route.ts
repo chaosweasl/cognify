@@ -1,19 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { 
+import {
   getFlashcardsByProjectId,
   createFlashcards,
-  replaceAllFlashcardsForProject 
+  replaceAllFlashcardsForProject,
 } from "@/app/(main)/projects/actions/flashcard-actions";
 import { CreateFlashcardData } from "@/src/types";
+import { withApiSecurity } from "@/lib/utils/apiSecurity";
+import { validateAndSanitizeText, validateUUID } from "@/lib/utils/security";
 
 // GET /api/flashcards?project_id=<id>
-export async function GET(request: NextRequest) {
+async function handleGetFlashcards(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get("project_id");
 
   if (!projectId) {
     return NextResponse.json(
       { error: "project_id parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  // Validate UUID format
+  const uuidValidation = validateUUID(projectId);
+  if (!uuidValidation.isValid) {
+    return NextResponse.json(
+      { error: "Invalid project_id format" },
       { status: 400 }
     );
   }
@@ -31,14 +42,16 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/flashcards
-export async function POST(request: NextRequest) {
+async function handleCreateFlashcards(request: NextRequest) {
   try {
     const body = await request.json();
     const { project_id, flashcards, replace = false } = body;
 
-    if (!project_id) {
+    // Validate project_id
+    const uuidValidation = validateUUID(project_id);
+    if (!uuidValidation.isValid) {
       return NextResponse.json(
-        { error: "project_id is required" },
+        { error: "Invalid project_id format" },
         { status: 400 }
       );
     }
@@ -50,19 +63,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate flashcard data
-    const validFlashcards: CreateFlashcardData[] = flashcards.filter(card => 
-      card && 
-      typeof card.front === 'string' && 
-      typeof card.back === 'string' &&
-      (card.front.trim() || card.back.trim()) // At least one field must have content
-    );
+    // Validate and sanitize flashcard data
+    const validFlashcards: CreateFlashcardData[] = [];
+
+    for (const card of flashcards) {
+      if (
+        !card ||
+        typeof card.front !== "string" ||
+        typeof card.back !== "string"
+      ) {
+        continue; // Skip invalid cards
+      }
+
+      // Sanitize front and back content
+      const frontValidation = validateAndSanitizeText(
+        card.front,
+        2000,
+        "Flashcard front"
+      );
+      const backValidation = validateAndSanitizeText(
+        card.back,
+        2000,
+        "Flashcard back"
+      );
+
+      if (frontValidation.isValid && backValidation.isValid) {
+        validFlashcards.push({
+          front: frontValidation.sanitized,
+          back: backValidation.sanitized,
+          extra: card.extra || {},
+        });
+      }
+    }
+
+    if (validFlashcards.length === 0) {
+      return NextResponse.json(
+        { error: "No valid flashcards provided" },
+        { status: 400 }
+      );
+    }
+
+    // Limit number of flashcards for performance
+    const limitedFlashcards = validFlashcards.slice(0, 500); // Max 500 cards per request
 
     let result;
     if (replace) {
-      result = await replaceAllFlashcardsForProject(project_id, validFlashcards);
+      result = await replaceAllFlashcardsForProject(
+        project_id,
+        limitedFlashcards
+      );
     } else {
-      result = await createFlashcards(project_id, validFlashcards);
+      result = await createFlashcards(project_id, limitedFlashcards);
     }
 
     return NextResponse.json(result);
@@ -74,3 +125,26 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply security middleware
+export const GET = withApiSecurity(
+  async (request: NextRequest) => {
+    return handleGetFlashcards(request);
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 60, window: 60 },
+    allowedMethods: ["GET"],
+  }
+);
+
+export const POST = withApiSecurity(
+  async (request: NextRequest) => {
+    return handleCreateFlashcards(request);
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 30, window: 60 },
+    allowedMethods: ["POST"],
+  }
+);

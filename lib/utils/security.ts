@@ -5,6 +5,7 @@
 
 /**
  * Basic HTML sanitization - escapes dangerous characters
+ * Enhanced to prevent more XSS vectors
  */
 function sanitizeHtml(input: string): string {
   return input
@@ -13,7 +14,24 @@ function sanitizeHtml(input: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
+    .replace(/\//g, "&#x2F;")
+    .replace(/\\/g, "&#x5C;") // Backslash
+    .replace(/`/g, "&#x60;") // Backtick
+    .replace(/=/g, "&#x3D;") // Equals sign
+    .replace(/\{/g, "&#x7B;") // Opening brace
+    .replace(/\}/g, "&#x7D;"); // Closing brace
+}
+
+/**
+ * Remove potentially dangerous script content and event handlers
+ */
+function removeScriptContent(input: string): string {
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, "") // Remove script tags
+    .replace(/javascript:/gi, "") // Remove javascript: protocol
+    .replace(/vbscript:/gi, "") // Remove vbscript: protocol
+    .replace(/data:/gi, "") // Remove data: protocol (can be dangerous)
+    .replace(/on\w+\s*=/gi, ""); // Remove event handlers like onclick, onload, etc.
 }
 
 /**
@@ -48,8 +66,9 @@ export function validateAndSanitizeText(
     };
   }
 
-  // Basic sanitization to prevent XSS
-  const sanitized = sanitizeHtml(input.trim());
+  // Enhanced sanitization to prevent XSS
+  let sanitized = removeScriptContent(input.trim());
+  sanitized = sanitizeHtml(sanitized);
 
   return {
     isValid: true,
@@ -194,6 +213,88 @@ export function validateFlashcardContent(
     sanitizedFront: frontValidation.sanitized,
     sanitizedBack: backValidation.sanitized,
   };
+}
+
+/**
+ * Validate JSON input
+ */
+export function validateJsonInput(
+  input: string,
+  maxSizeKB: number = 100
+): {
+  isValid: boolean;
+  parsed?: unknown;
+  error?: string;
+} {
+  if (typeof input !== "string") {
+    return { isValid: false, error: "Input must be a string" };
+  }
+
+  // Check size limits (in KB)
+  const sizeKB = new Blob([input]).size / 1024;
+  if (sizeKB > maxSizeKB) {
+    return {
+      isValid: false,
+      error: `JSON input too large (${sizeKB.toFixed(
+        1
+      )}KB). Maximum: ${maxSizeKB}KB`,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(input);
+    return { isValid: true, parsed };
+  } catch {
+    return { isValid: false, error: "Invalid JSON format" };
+  }
+}
+
+/**
+ * Validate URL with security checks
+ */
+export function validateUrl(url: string): {
+  isValid: boolean;
+  error?: string;
+} {
+  if (typeof url !== "string") {
+    return { isValid: false, error: "URL must be a string" };
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+
+    // Check for allowed protocols
+    const allowedProtocols = ["http:", "https:"];
+    if (!allowedProtocols.includes(parsedUrl.protocol)) {
+      return {
+        isValid: false,
+        error: "Only HTTP and HTTPS protocols are allowed",
+      };
+    }
+
+    // Prevent localhost/private IP access in production
+    if (process.env.NODE_ENV === "production") {
+      const hostname = parsedUrl.hostname.toLowerCase();
+
+      // Block localhost and private IPs
+      if (
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.startsWith("192.168.") ||
+        hostname.startsWith("10.") ||
+        hostname.startsWith("172.")
+      ) {
+        return {
+          isValid: false,
+          error: "Local and private network URLs are not allowed",
+        };
+      }
+    }
+
+    return { isValid: true };
+  } catch {
+    return { isValid: false, error: "Invalid URL format" };
+  }
 }
 
 /**

@@ -33,7 +33,56 @@ export const IMAGE_OPTIMIZATION_CONFIG = {
     rootMargin: "50px",
     threshold: 0.1,
   },
+
+  // Cache control settings
+  cache: {
+    maxAge: 31536000, // 1 year
+    staleWhileRevalidate: 86400, // 1 day
+  },
 };
+
+/**
+ * Generate optimized image URL
+ */
+export function getOptimizedImageUrl(
+  src: string,
+  options: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: string;
+  } = {}
+): string {
+  // For Next.js Image optimization
+  if (src.startsWith("/") || src.startsWith("./")) {
+    const params = new URLSearchParams();
+
+    if (options.width) params.set("w", options.width.toString());
+    if (options.height) params.set("h", options.height.toString());
+    if (options.quality) params.set("q", options.quality.toString());
+    if (options.format) params.set("f", options.format);
+
+    return `/_next/image?url=${encodeURIComponent(src)}&${params.toString()}`;
+  }
+
+  // Return original URL for external images
+  return src;
+}
+
+/**
+ * Preload critical images
+ */
+export function preloadCriticalImages(imageUrls: string[]): void {
+  if (typeof window === "undefined") return;
+
+  imageUrls.forEach((url) => {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = url;
+    document.head.appendChild(link);
+  });
+}
 
 /**
  * Image Optimization Hook
