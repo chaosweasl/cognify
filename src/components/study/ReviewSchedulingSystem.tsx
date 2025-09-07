@@ -470,7 +470,7 @@ export function ReviewSchedulingSystem({
             <div className="flex gap-2">
               <Button
                 onClick={createReminder}
-                className="bg-brand-primary text-white"
+                className="bg-brand-primary text-primary-foreground"
               >
                 Create Reminder
               </Button>
@@ -513,8 +513,8 @@ export function ReviewSchedulingSystem({
                   <div
                     className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       reminder.is_active
-                        ? "bg-brand-primary text-white"
-                        : "bg-text-muted/20 text-text-muted"
+                        ? "bg-brand-primary text-primary-foreground"
+                        : "surface-secondary text-muted"
                     }`}
                   >
                     {getReminderIcon(reminder.reminder_type)}

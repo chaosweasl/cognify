@@ -100,22 +100,20 @@ export function SessionComplete({
         </div>
 
         {/* Study Progress Overview */}
-        <div className="bg-base-200/50 rounded-lg p-4 space-y-3">
-          <div className="text-sm font-medium text-base-content">
-            Study Progress
-          </div>
+        <div className="surface-elevated rounded-lg p-4 space-y-3">
+          <div className="text-sm font-medium text-primary">Study Progress</div>
           <div className="grid grid-cols-3 gap-4 text-xs">
             <div>
-              <div className="font-bold text-blue-600">
+              <div className="font-bold brand-primary">
                 {studyStats.newCards}
               </div>
-              <div className="text-base-content/70">New</div>
+              <div className="text-muted">New</div>
             </div>
             <div>
-              <div className="font-bold text-orange-600">
+              <div className="font-bold text-status-warning">
                 {studyStats.learningCards}
               </div>
-              <div className="text-base-content/70">Learning</div>
+              <div className="text-muted">Learning</div>
             </div>
             <div>
               <div className="font-bold text-green-600">

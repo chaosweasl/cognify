@@ -76,7 +76,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     srsStats.dueCards + srsStats.newCards + srsStats.learningCards;
   const hasActiveCards = totalActiveCards > 0;
 
-  // Calculate project status with more nuanced states
+  // Calculate project status with semantic design system colors
   const getProjectStatus = () => {
     const completionRate =
       flashcardCount > 0
@@ -86,55 +86,65 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     if (srsStats.dueCards > 0)
       return {
         label: "Ready to Study",
-        color: "emerald",
+        color: "success",
         icon: Play,
-        gradient: "from-emerald-400 to-green-500",
-        bgGradient: "from-emerald-500/10 to-green-500/10",
-        borderColor: "border-emerald-500/30",
+        gradient: "bg-gradient-to-r from-status-success to-brand-tertiary",
+        bgGradient:
+          "bg-gradient-to-br from-status-success/10 to-brand-tertiary/10",
+        borderColor: "border-status-success/30",
+        textColor: "text-status-success",
       };
     if (srsStats.learningCards > 0)
       return {
         label: "In Progress",
-        color: "blue",
+        color: "primary",
         icon: TrendingUp,
-        gradient: "from-blue-400 to-cyan-500",
-        bgGradient: "from-blue-500/10 to-cyan-500/10",
-        borderColor: "border-blue-500/30",
+        gradient: "bg-gradient-brand",
+        bgGradient:
+          "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/10",
+        borderColor: "border-brand-primary/30",
+        textColor: "brand-primary",
       };
     if (srsStats.newCards > 0)
       return {
         label: "New Cards",
-        color: "purple",
+        color: "secondary",
         icon: Sparkles,
-        gradient: "from-purple-400 to-violet-500",
-        bgGradient: "from-purple-500/10 to-violet-500/10",
-        borderColor: "border-purple-500/30",
+        gradient: "bg-gradient-to-r from-brand-secondary to-brand-accent",
+        bgGradient:
+          "bg-gradient-to-br from-brand-secondary/10 to-brand-accent/10",
+        borderColor: "border-brand-secondary/30",
+        textColor: "brand-secondary",
       };
     if (flashcardCount > 0 && completionRate >= 80)
       return {
         label: "Mastered",
-        color: "amber",
+        color: "warning",
         icon: Award,
-        gradient: "from-amber-400 to-orange-500",
-        bgGradient: "from-amber-500/10 to-orange-500/10",
-        borderColor: "border-amber-500/30",
+        gradient: "bg-gradient-to-r from-status-warning to-status-success",
+        bgGradient:
+          "bg-gradient-to-br from-status-warning/10 to-status-success/10",
+        borderColor: "border-status-warning/30",
+        textColor: "text-status-warning",
       };
     if (flashcardCount > 0)
       return {
         label: "Complete",
-        color: "slate",
+        color: "neutral",
         icon: Target,
-        gradient: "from-slate-400 to-slate-500",
-        bgGradient: "from-slate-500/10 to-slate-500/10",
-        borderColor: "border-slate-500/30",
+        gradient: "bg-gradient-to-r from-text-muted to-text-secondary",
+        bgGradient: "surface-elevated",
+        borderColor: "border-subtle",
+        textColor: "text-secondary",
       };
     return {
       label: "Getting Started",
-      color: "slate",
+      color: "neutral",
       icon: BookOpen,
-      gradient: "from-slate-400 to-slate-500",
-      bgGradient: "from-slate-500/10 to-slate-500/10",
-      borderColor: "border-slate-500/30",
+      gradient: "bg-gradient-to-r from-text-muted to-text-secondary",
+      bgGradient: "surface-secondary",
+      borderColor: "border-subtle",
+      textColor: "text-muted",
     };
   };
 
@@ -216,12 +226,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {priority !== "none" && (
           <div
             className={cn(
-              "absolute top-0 left-0 w-2 h-full transition-all duration-slower",
-              priority === "high" && "bg-gradient-to-b from-red-400 to-red-500",
+              "absolute top-0 left-0 w-2 h-full transition-all duration-slower rounded-l-xl",
+              priority === "high" &&
+                "bg-gradient-to-b from-status-error to-status-warning",
               priority === "medium" &&
-                "bg-gradient-to-b from-yellow-400 to-orange-500",
+                "bg-gradient-to-b from-status-warning to-brand-primary",
               priority === "low" &&
-                "bg-gradient-to-b from-green-400 to-emerald-500"
+                "bg-gradient-to-b from-status-success to-brand-tertiary"
             )}
           />
         )}
@@ -235,7 +246,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 <div
                   className={cn(
                     "w-14 h-14 rounded-2xl flex items-center justify-center shadow-brand transform transition-all duration-slower",
-                    `bg-gradient-to-br ${status.gradient}`,
+                    status.gradient,
                     "group-hover:scale-110 group-hover:rotate-6"
                   )}
                 >
@@ -244,7 +255,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                 {/* Activity pulse indicator */}
                 {hasActiveCards && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center animate-pulse shadow-lg">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-status-success rounded-full flex items-center justify-center animate-pulse shadow-brand">
                     <Flame className="w-3 h-3 text-white" />
                   </div>
                 )}
@@ -253,7 +264,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 <div
                   className={cn(
                     "absolute -inset-2 rounded-2xl opacity-0 transition-all duration-slower",
-                    `bg-gradient-to-br ${status.gradient}`,
+                    status.gradient,
                     "group-hover:opacity-30 blur-xl animate-pulse"
                   )}
                 />
@@ -263,7 +274,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-3">
                   <h3
-                    className="text-xl font-bold text-primary group-hover:brand-primary transition-colors cursor-pointer truncate"
+                    className="text-xl font-bold text-primary group-hover:brand-primary transition-colors transition-normal cursor-pointer truncate"
                     onClick={() => router.push(`/projects/${project.id}`)}
                     title={project.name}
                   >
@@ -272,10 +283,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-xs font-semibold px-3 py-1 transition-all duration-slower",
-                      `${status.bgGradient} ${status.borderColor}`,
-                      `bg-gradient-to-r ${status.gradient} bg-clip-text text-transparent border-2`,
-                      "group-hover:scale-105"
+                      "text-xs font-semibold px-3 py-1 transition-all transition-normal",
+                      status.bgGradient,
+                      status.borderColor,
+                      status.textColor,
+                      "border-2 group-hover:scale-105"
                     )}
                   >
                     {status.label}
@@ -292,7 +304,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                 {/* Enhanced stats grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted group-hover:text-secondary transition-colors">
+                  <div className="flex items-center gap-2 text-muted group-hover:text-secondary transition-colors transition-normal">
                     <BookOpen className="w-4 h-4" />
                     <span className="font-medium">{flashcardCount}</span>
                     <span>cards</span>

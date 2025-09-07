@@ -50,14 +50,14 @@ export default function DashboardPage() {
   }, [projects]);
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen surface-primary relative">
       <div className="container mx-auto p-4 sm:p-8 relative z-10">
         {/* Welcome Section */}
-        <div className="bg-slate-800/40 border border-slate-600 backdrop-blur-sm hover:bg-slate-800/50 transition-all duration-500 shadow-2xl rounded-lg overflow-hidden mb-8">
-          <div className="bg-slate-700/30 border-b border-slate-600 px-4 py-4 sm:px-6">
+        <div className="glass-surface shadow-brand-lg rounded-xl overflow-hidden mb-8 border border-subtle">
+          <div className="surface-elevated border-b border-subtle px-4 py-4 sm:px-6">
             <div className="flex items-center justify-center gap-3">
-              <div className="text-slate-100 flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-violet-400 animate-pulse" />
+              <div className="text-primary flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 brand-secondary animate-pulse" />
                 <span className="text-lg sm:text-xl font-semibold">
                   Welcome to Cognify
                 </span>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
           </div>
           <div className="p-4 sm:p-6 text-center">
             <div className="max-w-md mx-auto">
-              <h1 className="text-2xl sm:text-4xl font-bold text-white mb-5">
+              <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-5">
                 Dashboard
               </h1>
               <UserProfileInline />
@@ -76,63 +76,63 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">
+              <CardTitle className="text-sm font-medium text-secondary">
                 Projects
               </CardTitle>
-              <FolderOpen className="h-4 w-4 text-violet-400" />
+              <FolderOpen className="h-4 w-4 brand-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-primary">
                 {stats.totalProjects}
               </div>
-              <p className="text-xs text-slate-400">Total projects created</p>
+              <p className="text-xs text-muted">Total projects created</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">
+              <CardTitle className="text-sm font-medium text-secondary">
                 Flashcards
               </CardTitle>
-              <BookOpen className="h-4 w-4 text-blue-400" />
+              <BookOpen className="h-4 w-4 brand-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-primary">
                 {stats.totalCards}
               </div>
-              <p className="text-xs text-slate-400">Total flashcards</p>
+              <p className="text-xs text-muted">Total flashcards</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">
+              <CardTitle className="text-sm font-medium text-secondary">
                 Studied Today
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-400" />
+              <TrendingUp className="h-4 w-4 text-status-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-primary">
                 {stats.todayStudied}
               </div>
-              <p className="text-xs text-slate-400">Cards reviewed today</p>
+              <p className="text-xs text-muted">Cards reviewed today</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">
+              <CardTitle className="text-sm font-medium text-secondary">
                 Due Cards
               </CardTitle>
-              <Clock className="h-4 w-4 text-orange-400" />
+              <Clock className="h-4 w-4 text-status-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">
+              <div className="text-2xl font-bold text-primary">
                 {stats.dueCards}
               </div>
-              <p className="text-xs text-slate-400">Cards due for review</p>
+              <p className="text-xs text-muted">Cards due for review</p>
             </CardContent>
           </Card>
         </div>
@@ -140,16 +140,16 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Quick Actions Card */}
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Brain className="h-5 w-5 text-violet-400" />
+              <CardTitle className="text-primary flex items-center gap-2">
+                <Brain className="h-5 w-5 brand-secondary" />
                 Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Link href="/projects" className="block">
-                <Button className="w-full bg-violet-600 hover:bg-violet-700 text-white justify-start">
+                <Button className="w-full bg-gradient-brand hover:bg-gradient-brand-hover text-white justify-start shadow-brand transition-all transition-normal">
                   <FolderOpen className="mr-2 h-4 w-4" />
                   Manage Projects
                 </Button>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   href={`/projects/${projects[0].id}/study`}
                   className="block"
                 >
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start">
+                  <Button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white justify-start shadow-brand transition-all transition-normal">
                     <BookOpen className="mr-2 h-4 w-4" />
                     Start Studying
                   </Button>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
               <Link href="/settings" className="block">
                 <Button
                   variant="outline"
-                  className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 justify-start"
+                  className="w-full border-subtle text-secondary hover:surface-elevated hover:text-primary hover:border-brand justify-start transition-all transition-normal"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings & AI Config
@@ -180,18 +180,18 @@ export default function DashboardPage() {
           </Card>
 
           {/* Recent Projects */}
-          <Card className="bg-slate-800/40 border-slate-600">
+          <Card className="glass-surface shadow-brand border border-subtle">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 justify-between">
+              <CardTitle className="text-primary flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  <BarChart3 className="h-5 w-5 brand-primary" />
                   Recent Projects
                 </div>
                 <Link href="/projects">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-slate-400 hover:text-white"
+                    className="text-muted hover:text-primary transition-colors transition-normal"
                   >
                     View All
                   </Button>
@@ -200,11 +200,11 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {!projects || projects.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-muted">
                   <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="mb-4">No projects yet</p>
                   <Link href="/projects">
-                    <Button className="bg-violet-600 hover:bg-violet-700 text-white">
+                    <Button className="bg-gradient-brand hover:bg-gradient-brand-hover text-white shadow-brand transition-all transition-normal">
                       <Plus className="mr-2 h-4 w-4" />
                       Create Your First Project
                     </Button>
@@ -215,20 +215,23 @@ export default function DashboardPage() {
                   {projects.slice(0, 5).map((project) => (
                     <div
                       key={project.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 border border-slate-600"
+                      className="flex items-center justify-between p-3 rounded-lg surface-elevated border border-subtle hover:border-brand transition-all transition-normal"
                     >
                       <div>
                         <Link
                           href={`/projects/${project.id}`}
-                          className="font-medium text-white hover:text-violet-300 transition-colors"
+                          className="font-medium text-primary hover:brand-primary transition-colors transition-normal"
                         >
                           {project.name}
                         </Link>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs surface-secondary text-secondary"
+                          >
                             {project.flashcardCount || 0} cards
                           </Badge>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-muted">
                             {new Date(project.created_at).toLocaleDateString()}
                           </span>
                         </div>
@@ -237,7 +240,7 @@ export default function DashboardPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-blue-400 hover:text-blue-300"
+                          className="text-brand-primary hover:brand-primary hover:surface-elevated transition-all transition-normal"
                         >
                           Study
                         </Button>
@@ -266,23 +269,23 @@ function UserProfileInline() {
           alt="Avatar"
           width={64}
           height={64}
-          className="w-16 h-16 rounded-full mb-4 object-cover border-2 border-blue-400/40"
+          className="w-16 h-16 rounded-full mb-4 object-cover border-2 border-brand-primary/40 shadow-brand transition-all transition-normal hover:border-brand-primary/60"
           priority
         />
       ) : (
-        <div className="w-16 h-16 rounded-full mb-4 bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center border-2 border-blue-400/40">
+        <div className="w-16 h-16 rounded-full mb-4 bg-gradient-brand flex items-center justify-center border-2 border-brand-primary/40 shadow-brand transition-all transition-normal hover:border-brand-primary/60">
           <User className="w-8 h-8 text-white" />
         </div>
       )}
-      <div className="font-bold text-lg text-blue-300">
+      <div className="font-bold text-lg text-primary">
         {userProfile.display_name || "No name"}
       </div>
-      <div className="text-slate-300 text-sm mb-4">
+      <div className="text-secondary text-sm mb-4">
         {userProfile.bio || "No bio"}
       </div>
-      <p className="py-4 text-slate-200">
+      <p className="py-4 text-primary">
         Hello{" "}
-        <span className="font-semibold text-violet-300">
+        <span className="font-semibold brand-primary">
           {userProfile.email || "No email"}
         </span>
         !

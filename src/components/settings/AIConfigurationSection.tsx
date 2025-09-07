@@ -14,11 +14,15 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Sparkles,
+  Shield,
+  Brain,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAIConfig } from "@/hooks/useAISettings";
 import { validateAIConfig } from "@/lib/ai/types";
 import { getAvailableAIProviders } from "@/lib/ai/developer";
+import { cn } from "@/lib/utils";
 
 interface AIProviderField {
   key: string;
@@ -168,132 +172,230 @@ export function AIConfigurationSection({
   return (
     <div className="space-y-6">
       {showTitle && (
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-500 rounded-lg flex items-center justify-center">
-            <Settings className="w-4 h-4 text-white" />
+        <div className="relative">
+          <div className="absolute inset-0 opacity-30 pointer-events-none">
+            <div
+              className="absolute top-0 left-0 w-full h-1/2 bg-gradient-glass animate-pulse"
+              style={{ animationDuration: "4s" }}
+            />
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">
-              AI Configuration
-            </h3>
-            {showDescription && (
-              <p className="text-sm text-slate-400">
-                Configure your AI provider and model settings
-              </p>
-            )}
+          <div className="relative glass-surface border border-subtle rounded-xl p-6 shadow-brand">
+            <div className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-normal shadow-brand">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-primary group-hover:brand-primary transition-colors transition-normal">
+                  AI Configuration
+                </h3>
+                {showDescription && (
+                  <p className="text-muted mt-1">
+                    Configure your AI provider and model settings
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* AI Enable Toggle */}
-      <Card
-        className={
-          isOnboarding
-            ? "bg-slate-800/60 border-slate-600"
-            : "bg-slate-800/40 border-slate-700"
-        }
-      >
-        <CardContent className="pt-6">
+      {/* Enhanced AI Enable Toggle */}
+      <div className="glass-surface border border-subtle rounded-xl shadow-brand-lg overflow-hidden">
+        <div className="surface-secondary border-b border-subtle p-6">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 brand-primary animate-pulse" />
+            <h4 className="text-lg font-semibold text-primary">AI Features</h4>
+          </div>
+        </div>
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Zap className="w-5 h-5 text-violet-400" />
+            <div className="flex items-center gap-4 group">
+              <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-all transition-normal shadow-brand">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h4 className="font-medium text-white">Enable AI Features</h4>
-                <p className="text-sm text-slate-400">
+                <h4 className="font-semibold text-primary group-hover:brand-primary transition-colors transition-normal">
+                  Enable AI Features
+                </h4>
+                <p className="text-muted text-sm">
                   Use AI to generate flashcards from your content
                 </p>
               </div>
             </div>
             <button
               onClick={() => setAIEnabled(!aiEnabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-800 ${
-                aiEnabled ? "bg-violet-500" : "bg-slate-600"
-              }`}
+              className={cn(
+                "relative inline-flex h-7 w-12 items-center rounded-full transition-all transition-normal",
+                "focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-surface-primary",
+                "transform hover:scale-105",
+                aiEnabled
+                  ? "bg-gradient-brand shadow-brand"
+                  : "surface-elevated border border-secondary"
+              )}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={cn(
+                  "inline-block h-5 w-5 transform rounded-full bg-white transition-transform transition-normal shadow-sm",
                   aiEnabled ? "translate-x-6" : "translate-x-1"
-                }`}
+                )}
               />
             </button>
           </div>
         </CardContent>
-      </Card>
+      </div>
 
       {aiEnabled && (
         <>
-          {/* Provider Selection */}
-          <Card
-            className={
-              isOnboarding
-                ? "bg-slate-800/60 border-slate-600"
-                : "bg-slate-800/40 border-slate-700"
-            }
-          >
-            <CardHeader>
-              <CardTitle className="text-white">AI Provider</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3">
-                {getAvailableAIProviders().map((provider: AIProviderInfo) => (
-                  <div
-                    key={provider.id}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-violet-400 ${
-                      localConfig.provider === provider.id
-                        ? "border-violet-500 bg-violet-500/10"
-                        : "border-slate-600 bg-slate-700/30"
-                    } ${provider.isDeveloperOnly ? "border-amber-500/50" : ""}`}
-                    onClick={() => handleProviderChange(provider.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-white">
-                            {provider.name}
-                          </h4>
-                          {provider.isDeveloperOnly && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs bg-amber-500/20 text-amber-400"
+          {/* Enhanced Provider Selection */}
+          <div className="glass-surface border border-subtle rounded-xl shadow-brand-lg overflow-hidden">
+            <div className="surface-secondary border-b border-subtle p-6">
+              <div className="flex items-center gap-2">
+                <Settings className="w-5 h-5 brand-primary" />
+                <h4 className="text-lg font-semibold text-primary">
+                  AI Provider
+                </h4>
+                <Badge
+                  variant="outline"
+                  className="ml-auto surface-elevated text-secondary border-secondary"
+                >
+                  {getAvailableAIProviders().length} available
+                </Badge>
+              </div>
+            </div>
+            <CardContent className="p-6">
+              <div className="grid gap-4">
+                {getAvailableAIProviders().map(
+                  (provider: AIProviderInfo, index: number) => (
+                    <div
+                      key={provider.id}
+                      className={cn(
+                        "group relative overflow-hidden rounded-xl p-6 cursor-pointer transition-all transition-normal transform",
+                        "glass-surface border-2 hover:scale-[1.02] hover:shadow-brand",
+                        localConfig.provider === provider.id
+                          ? "border-brand bg-gradient-glass shadow-brand"
+                          : "border-secondary hover:border-brand",
+                        provider.isDeveloperOnly && "border-amber-500/30"
+                      )}
+                      onClick={() => handleProviderChange(provider.id)}
+                      style={{
+                        animation: `slideInLeft 0.5s ease-out ${
+                          index * 0.1
+                        }s both`,
+                      }}
+                    >
+                      {/* Selection indicator glow */}
+                      {localConfig.provider === provider.id && (
+                        <div className="absolute -inset-0.5 bg-gradient-brand rounded-xl blur opacity-30" />
+                      )}
+
+                      <div className="relative z-10 flex items-start justify-between">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all transition-normal",
+                                "group-hover:scale-110 transform",
+                                localConfig.provider === provider.id
+                                  ? "bg-gradient-brand text-white shadow-brand"
+                                  : "surface-elevated border border-secondary text-muted group-hover:border-brand group-hover:text-brand-primary"
+                              )}
                             >
-                              DEV
-                            </Badge>
-                          )}
-                          <a
-                            href={provider.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-slate-400 hover:text-violet-400 transition-colors"
+                              <Brain className="w-5 h-5" />
+                            </div>
+                            <h5
+                              className={cn(
+                                "font-bold text-lg transition-colors transition-normal",
+                                localConfig.provider === provider.id
+                                  ? "text-white"
+                                  : "text-primary group-hover:brand-primary"
+                              )}
+                            >
+                              {provider.name}
+                            </h5>
+                            {provider.isDeveloperOnly && (
+                              <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs font-medium">
+                                <Shield className="w-3 h-3 mr-1" />
+                                DEV
+                              </Badge>
+                            )}
+                            {provider.website && (
+                              <a
+                                href={provider.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                  "transition-colors transition-normal transform hover:scale-110",
+                                  localConfig.provider === provider.id
+                                    ? "text-white/70 hover:text-white"
+                                    : "text-muted hover:brand-primary"
+                                )}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </a>
+                            )}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm leading-relaxed transition-colors transition-normal",
+                              localConfig.provider === provider.id
+                                ? "text-white/80"
+                                : "text-secondary group-hover:text-primary"
+                            )}
                           >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
+                            {provider.description}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse" />
+                              <span
+                                className={cn(
+                                  "font-medium transition-colors transition-normal",
+                                  localConfig.provider === provider.id
+                                    ? "text-white/70"
+                                    : "text-muted group-hover:text-secondary"
+                                )}
+                              >
+                                {provider.models.length} model
+                                {provider.models.length === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-brand-secondary rounded-full animate-pulse" />
+                              <span
+                                className={cn(
+                                  "font-medium transition-colors transition-normal",
+                                  localConfig.provider === provider.id
+                                    ? "text-white/70"
+                                    : "text-muted group-hover:text-secondary"
+                                )}
+                              >
+                                {provider.requiresApiKey
+                                  ? "API key required"
+                                  : "No API key needed"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-400">
-                          {provider.description}
-                        </p>
-                        <div className="flex items-center space-x-2 text-xs text-slate-500">
-                          <span>
-                            {provider.models.length} model
-                            {provider.models.length === 1 ? "" : "s"}
-                          </span>
-                          <span>•</span>
-                          <span>
-                            {provider.requiresApiKey
-                              ? "API key required"
-                              : "No API key needed"}
-                          </span>
+                        <div className="flex items-center justify-center">
+                          {localConfig.provider === provider.id ? (
+                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center animate-pulse">
+                              <CheckCircle2 className="w-4 h-4 text-brand-primary" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 border-2 border-secondary rounded-full group-hover:border-brand transition-colors transition-normal" />
+                          )}
                         </div>
                       </div>
-                      {localConfig.provider === provider.id && (
-                        <CheckCircle2 className="w-5 h-5 text-violet-400 flex-shrink-0" />
-                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </CardContent>
-          </Card>
+          </div>
 
           {/* Provider Configuration */}
           {selectedProvider && (

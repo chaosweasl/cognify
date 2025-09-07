@@ -1,6 +1,7 @@
 /**
  * Announcement Management Component for Admin Dashboard
  * Create and manage system-wide announcements and notifications
+ * Fully refactored with semantic variables and design patterns
  */
 
 "use client";
@@ -17,6 +18,10 @@ import {
   Info,
   CheckCircle,
   XCircle,
+  Sparkles,
+  Filter,
+  Users,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,6 +44,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Announcement {
   id: string;
@@ -241,23 +247,73 @@ export function AnnouncementManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary">
-            Announcement Management
-          </h2>
-          <p className="text-text-muted">
-            Create and manage system-wide announcements
-          </p>
+      {/* Enhanced Header Section with Glass Morphism */}
+      <div className="relative">
+        <div className="absolute inset-0 opacity-30 pointer-events-none">
+          <div
+            className="absolute top-0 left-0 w-full h-1/2 bg-gradient-glass animate-pulse"
+            style={{ animationDuration: "4s" }}
+          />
+          <div
+            className="absolute bottom-0 right-0 w-full h-1/3 bg-gradient-glass animate-pulse"
+            style={{ animationDuration: "6s", animationDelay: "2s" }}
+          />
         </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Announcement
-        </Button>
+        <div className="relative glass-surface border border-subtle rounded-xl p-6 shadow-brand">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-normal shadow-brand">
+                  <Megaphone className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-primary group-hover:brand-primary transition-colors transition-normal">
+                  Announcement Management
+                </h1>
+                <p className="text-muted mt-1">
+                  Create and manage system-wide announcements
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Badge
+                variant="outline"
+                className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30 animate-pulse"
+              >
+                <Settings className="w-3 h-3 mr-1" />
+                Admin Only
+              </Badge>
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className={cn(
+                  "relative overflow-hidden group",
+                  "bg-gradient-brand hover:bg-gradient-brand-hover",
+                  "transform hover:scale-105 transition-all transition-normal",
+                  "shadow-brand hover:shadow-brand-lg"
+                )}
+              >
+                <div className="absolute inset-0 bg-white/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+                <div className="relative z-10 flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  New Announcement
+                </div>
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="p-6 glass-surface border border-subtle">
+      {/* Enhanced Filters Section */}
+      <div className="glass-surface border border-subtle rounded-xl p-6 shadow-brand-lg">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-5 h-5 brand-primary" />
+          <h2 className="text-lg font-semibold text-primary">
+            Filter Announcements
+          </h2>
+        </div>
         <div className="flex gap-4">
           <Select
             value={activeFilter}
@@ -265,34 +321,62 @@ export function AnnouncementManagement() {
               setActiveFilter(value)
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] surface-secondary border-secondary interactive-hover">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="surface-elevated border-secondary">
               <SelectItem value="all">All Announcements</SelectItem>
               <SelectItem value="active">Active Only</SelectItem>
               <SelectItem value="inactive">Inactive Only</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2 px-4 py-2 surface-elevated border border-secondary rounded-md">
+            <Users className="w-4 h-4 text-muted" />
+            <span className="text-sm font-medium text-secondary">
+              {pagination.total} total announcements
+            </span>
+          </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Announcements List */}
-      <Card className="glass-surface border border-subtle">
+      {/* Enhanced Announcements List */}
+      <div className="glass-surface border border-subtle rounded-xl shadow-brand-lg overflow-hidden">
+        <div className="surface-secondary border-b border-subtle px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 brand-secondary animate-pulse" />
+            <h2 className="text-lg font-semibold text-primary">
+              Announcements
+            </h2>
+            {pagination.total > 0 && (
+              <Badge
+                variant="outline"
+                className="ml-auto surface-elevated text-secondary border-secondary"
+              >
+                {pagination.total}{" "}
+                {pagination.total === 1 ? "announcement" : "announcements"}
+              </Badge>
+            )}
+          </div>
+        </div>
+
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">
-            Announcements ({pagination.total})
-          </h3>
-
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="p-4 border border-subtle rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <Skeleton className="w-48 h-5" />
+                <div
+                  key={i}
+                  className="p-4 surface-elevated border border-secondary rounded-xl"
+                  style={{
+                    animation: `slideInLeft 0.5s ease-out ${i * 0.1}s both`,
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <Skeleton className="w-48 h-5 mb-2" />
+                      <Skeleton className="w-full h-4 mb-2" />
+                    </div>
                     <Skeleton className="w-16 h-6 rounded-full" />
                   </div>
-                  <Skeleton className="w-full h-4 mb-2" />
                   <div className="flex items-center gap-4">
                     <Skeleton className="w-20 h-4" />
                     <Skeleton className="w-24 h-4" />
@@ -302,20 +386,28 @@ export function AnnouncementManagement() {
               ))}
             </div>
           ) : announcements.length === 0 ? (
-            <div className="text-center py-8">
-              <Megaphone className="w-12 h-12 text-text-muted mx-auto mb-4" />
-              <p className="text-text-muted">No announcements found</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 surface-elevated rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                <Megaphone className="w-8 h-8 text-muted" />
+              </div>
+              <p className="text-primary font-medium text-lg mb-2">
+                No announcements found
+              </p>
+              <p className="text-muted text-sm mb-6">
+                Create your first announcement to communicate with users
+              </p>
               <Button
                 variant="outline"
-                className="mt-2"
                 onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-glass border-brand text-brand-primary hover:bg-gradient-brand hover:border-brand hover:text-white"
               >
+                <Plus className="w-4 h-4 mr-2" />
                 Create First Announcement
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {announcements.map((announcement) => (
+              {announcements.map((announcement, index) => (
                 <AnnouncementCard
                   key={announcement.id}
                   announcement={announcement}
@@ -329,18 +421,22 @@ export function AnnouncementManagement() {
                   formatDate={formatDate}
                   getTypeIcon={getTypeIcon}
                   getTypeColor={getTypeColor}
+                  index={index}
                 />
               ))}
             </div>
           )}
         </div>
-      </Card>
+      </div>
 
-      {/* Create Announcement Dialog */}
+      {/* Enhanced Create Announcement Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl surface-elevated border-secondary">
           <DialogHeader>
-            <DialogTitle>Create New Announcement</DialogTitle>
+            <DialogTitle className="text-primary text-xl font-bold flex items-center gap-2">
+              <Plus className="w-5 h-5 brand-primary" />
+              Create New Announcement
+            </DialogTitle>
           </DialogHeader>
           <AnnouncementForm
             onSubmit={handleCreateAnnouncement}
@@ -349,14 +445,17 @@ export function AnnouncementManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Announcement Dialog */}
+      {/* Enhanced Edit Announcement Dialog */}
       <Dialog
         open={!!editingAnnouncement}
         onOpenChange={() => setEditingAnnouncement(null)}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl surface-elevated border-secondary">
           <DialogHeader>
-            <DialogTitle>Edit Announcement</DialogTitle>
+            <DialogTitle className="text-primary text-xl font-bold flex items-center gap-2">
+              <Edit className="w-5 h-5 brand-primary" />
+              Edit Announcement
+            </DialogTitle>
           </DialogHeader>
           {editingAnnouncement && (
             <AnnouncementForm
@@ -389,6 +488,7 @@ interface AnnouncementCardProps {
   formatDate: (dateString: string) => string;
   getTypeIcon: (type: string) => React.ReactNode;
   getTypeColor: (type: string) => string;
+  index?: number;
 }
 
 function AnnouncementCard({
@@ -399,83 +499,172 @@ function AnnouncementCard({
   formatDate,
   getTypeIcon,
   getTypeColor,
+  index = 0,
 }: AnnouncementCardProps) {
   const isExpired =
     announcement.expires_at && new Date(announcement.expires_at) < new Date();
 
+  const getSemanticTypeColor = (type: string) => {
+    switch (type) {
+      case "info":
+        return "bg-blue-500/10 text-blue-400";
+      case "warning":
+        return "bg-yellow-500/10 text-yellow-400";
+      case "success":
+        return "bg-green-500/10 text-green-400";
+      case "error":
+        return "bg-red-500/10 text-red-400";
+      default:
+        return "bg-blue-500/10 text-blue-400";
+    }
+  };
+
   return (
-    <div className="p-4 border border-subtle rounded-lg hover:bg-surface-muted/50 transition-colors">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-medium text-text-primary">
-              {announcement.title}
-            </h4>
-            <div
-              className={`p-1 rounded-full ${getTypeColor(announcement.type)}`}
+    <div
+      className={cn(
+        "glass-surface border border-subtle rounded-xl p-6 group relative overflow-hidden",
+        "hover:surface-elevated hover:shadow-brand hover:scale-[1.01]",
+        "transition-all transition-normal transform"
+      )}
+      style={{
+        animation: `slideInLeft 0.5s ease-out ${index * 0.1}s both`,
+      }}
+    >
+      {/* Hover glow effect */}
+      <div className="absolute -inset-0.5 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity transition-normal" />
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-all transition-normal",
+                  "group-hover:scale-110 transform",
+                  getSemanticTypeColor(announcement.type)
+                )}
+              >
+                {getTypeIcon(announcement.type)}
+              </div>
+              <h4 className="font-bold text-lg text-primary group-hover:brand-primary transition-colors transition-normal">
+                {announcement.title}
+              </h4>
+            </div>
+            <p className="text-secondary group-hover:text-primary transition-colors transition-normal line-clamp-2 leading-relaxed">
+              {announcement.content}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 ml-6">
+            <Badge
+              className={cn(
+                "font-medium transition-all transition-normal",
+                announcement.is_active && !isExpired
+                  ? "bg-green-500/10 text-green-400 border-green-500/30 group-hover:bg-green-500/20"
+                  : isExpired
+                  ? "bg-red-500/10 text-red-400 border-red-500/30 group-hover:bg-red-500/20"
+                  : "surface-elevated text-secondary border-secondary group-hover:surface-glass"
+              )}
             >
-              {getTypeIcon(announcement.type)}
+              {isExpired
+                ? "Expired"
+                : announcement.is_active
+                ? "Active"
+                : "Inactive"}
+            </Badge>
+
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transition-normal transform scale-95 group-hover:scale-100">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="surface-secondary border-secondary text-secondary interactive-hover hover:surface-elevated hover:border-brand hover:text-brand-primary h-8 w-8 p-0"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleActive}
+                className={cn(
+                  "interactive-hover h-8 w-8 p-0",
+                  announcement.is_active
+                    ? "surface-secondary border-secondary text-yellow-500 hover:surface-elevated hover:border-yellow-500 hover:text-yellow-400"
+                    : "surface-secondary border-secondary text-green-500 hover:surface-elevated hover:border-green-500 hover:text-green-400"
+                )}
+              >
+                {announcement.is_active ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="surface-secondary border-secondary text-red-500 interactive-hover hover:surface-elevated hover:border-red-500 hover:text-red-400 h-8 w-8 p-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-          <p className="text-text-muted text-sm line-clamp-2">
-            {announcement.content}
-          </p>
         </div>
 
-        <div className="flex items-center gap-2 ml-4">
-          <Badge
-            variant={
-              announcement.is_active && !isExpired ? "default" : "secondary"
-            }
-            className="text-xs"
-          >
-            {isExpired
-              ? "Expired"
-              : announcement.is_active
-              ? "Active"
-              : "Inactive"}
-          </Badge>
-
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleActive}
-              className={
-                announcement.is_active ? "text-yellow-600" : "text-green-600"
-              }
-            >
-              {announcement.is_active ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+        {/* Enhanced metadata section */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse" />
+              <span className="text-muted font-medium">
+                Target:{" "}
+                <span className="text-secondary">
+                  {announcement.target_audience}
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-brand-secondary rounded-full animate-pulse" />
+              <span className="text-muted font-medium">
+                Created:{" "}
+                <span className="text-secondary">
+                  {formatDate(announcement.created_at)}
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-brand-tertiary rounded-full animate-pulse" />
+              <span className="text-muted font-medium">
+                By:{" "}
+                <span className="text-secondary">
+                  {announcement.profiles.display_name ||
+                    announcement.profiles.username}
+                </span>
+              </span>
+            </div>
+            {announcement.expires_at && (
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "w-2 h-2 rounded-full animate-pulse",
+                    isExpired ? "bg-red-500" : "bg-orange-500"
+                  )}
+                />
+                <span className="text-muted font-medium">
+                  Expires:{" "}
+                  <span
+                    className={cn(
+                      "font-medium",
+                      isExpired ? "text-red-400" : "text-secondary"
+                    )}
+                  >
+                    {formatDate(announcement.expires_at)}
+                  </span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className="flex items-center gap-4 text-xs text-text-muted">
-        <span>Target: {announcement.target_audience}</span>
-        <span>Created: {formatDate(announcement.created_at)}</span>
-        <span>
-          By:{" "}
-          {announcement.profiles.display_name || announcement.profiles.username}
-        </span>
-        {announcement.expires_at && (
-          <span>Expires: {formatDate(announcement.expires_at)}</span>
-        )}
       </div>
     </div>
   );

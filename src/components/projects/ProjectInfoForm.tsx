@@ -56,9 +56,9 @@ export function ProjectInfoForm({
   );
 
   return (
-    <div className="space-y-8 relative">
-      {/* Background floating elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="space-y-10 relative p-6">
+      {/* Enhanced background floating elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
         <FloatingIcon
           icon={BookOpen}
           className="top-8 right-8 text-brand-primary"
@@ -76,26 +76,26 @@ export function ProjectInfoForm({
         />
       </div>
 
-      {/* Project Name - Enhanced */}
-      <div className="form-control relative group">
-        <label className="label mb-2">
-          <div className="flex items-center gap-3">
+      {/* Enhanced Project Name */}
+      <div className="relative group">
+        <label className="block mb-4">
+          <div className="flex items-center gap-4">
             <div
-              className={`p-2 rounded-xl transition-all duration-300 ${
+              className={`p-3 rounded-2xl transition-all duration-500 ${
                 focusedField === "name"
-                  ? "bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 shadow-brand"
-                  : "bg-surface-glass"
+                  ? "bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 shadow-brand-lg scale-110"
+                  : "glass-surface border border-brand-primary/20"
               }`}
             >
               <BookOpen
-                className={`w-5 h-5 transition-all duration-300 ${
+                className={`w-6 h-6 transition-all duration-500 ${
                   focusedField === "name"
-                    ? "text-brand-primary scale-110"
-                    : "text-muted"
+                    ? "text-brand-primary scale-110 rotate-12"
+                    : "text-text-muted"
                 }`}
               />
             </div>
-            <span className="label-text font-bold text-lg text-secondary">
+            <span className="text-2xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
               Project Name *
             </span>
           </div>
@@ -109,33 +109,33 @@ export function ProjectInfoForm({
             onChange={(e) => setName(e.target.value)}
             onFocus={() => setFocusedField("name")}
             onBlur={() => setFocusedField(null)}
-            className={`input input-bordered h-14 text-lg font-medium text-primary placeholder:text-muted surface-secondary border-2 transition-all duration-300 ${
+            className={`w-full h-16 px-6 text-xl font-semibold glass-surface rounded-2xl border-2 transition-all duration-500 ${
               focusedField === "name"
-                ? "border-brand shadow-brand-lg transform scale-[1.02]"
+                ? "border-brand-primary text-text-primary shadow-brand-lg scale-[1.02] ring-2 ring-brand-primary/20"
                 : isValid
-                ? "border-secondary hover:border-brand/50"
+                ? "border-brand-primary/30 text-text-primary hover:border-brand-primary/50"
                 : name.trim().length > 0
-                ? "border-red-500/50 focus:border-red-500"
-                : "border-secondary hover:border-brand/50"
-            } ${focusedField === "name" ? "shadow-brand-lg" : "shadow-brand"}`}
+                ? "border-red-400/50 text-text-primary focus:border-red-500"
+                : "border-brand-primary/30 text-text-primary hover:border-brand-primary/50"
+            } placeholder:text-text-muted disabled:opacity-50`}
             disabled={saving}
             maxLength={100}
           />
 
-          {/* Input glow effect */}
+          {/* Enhanced input glow effect */}
           {focusedField === "name" && (
-            <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 rounded-xl blur opacity-50 -z-10" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary/30 to-brand-secondary/30 rounded-2xl blur opacity-70 -z-10" />
           )}
 
-          {/* Character count indicator */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          {/* Enhanced character count indicator */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2">
             <div
-              className={`text-xs px-2 py-1 rounded-full transition-all duration-200 ${
+              className={`text-sm px-3 py-2 rounded-xl font-medium transition-all duration-300 ${
                 name.length > 80
-                  ? "bg-orange-500/10 text-orange-400"
+                  ? "bg-orange-100 text-orange-700 border border-orange-300"
                   : name.length > 60
-                  ? "bg-yellow-500/10 text-yellow-400"
-                  : "bg-surface-glass text-subtle"
+                  ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  : "glass-surface text-text-muted border border-brand-primary/20"
               }`}
             >
               {name.length}/100
@@ -143,40 +143,42 @@ export function ProjectInfoForm({
           </div>
         </div>
 
-        <label className="label mt-2">
-          <span className="label-text-alt text-muted flex items-center gap-2">
-            <Sparkles className="w-3 h-3" />
+        <div className="mt-4">
+          <span className="text-text-muted flex items-center gap-3 text-base">
+            <Sparkles className="w-4 h-4" />
             Choose a clear, memorable name for your study project
           </span>
-        </label>
+        </div>
       </div>
 
-      {/* Project Description - Enhanced */}
-      <div className="form-control relative group">
-        <label className="label mb-2">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                focusedField === "description"
-                  ? "bg-gradient-to-br from-brand-secondary/20 to-brand-tertiary/20 shadow-brand"
-                  : "bg-surface-glass"
-              }`}
-            >
-              <Users
-                className={`w-5 h-5 transition-all duration-300 ${
+      {/* Enhanced Project Description */}
+      <div className="relative group">
+        <label className="block mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className={`p-3 rounded-2xl transition-all duration-500 ${
                   focusedField === "description"
-                    ? "text-brand-secondary scale-110"
-                    : "text-muted"
+                    ? "bg-gradient-to-br from-brand-secondary/20 to-brand-tertiary/20 shadow-brand-lg scale-110"
+                    : "glass-surface border border-brand-secondary/20"
                 }`}
-              />
+              >
+                <Users
+                  className={`w-6 h-6 transition-all duration-500 ${
+                    focusedField === "description"
+                      ? "text-brand-secondary scale-110 rotate-12"
+                      : "text-text-muted"
+                  }`}
+                />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-brand-secondary to-brand-tertiary bg-clip-text text-transparent">
+                Description
+              </span>
             </div>
-            <span className="label-text font-bold text-lg text-secondary">
-              Description
+            <span className="text-sm text-text-muted bg-surface-muted px-3 py-1 rounded-full border border-brand-secondary/20">
+              Optional
             </span>
           </div>
-          <span className="label-text-alt text-subtle bg-surface-glass px-2 py-1 rounded-full text-xs">
-            Optional
-          </span>
         </label>
 
         <div className="relative">
@@ -186,30 +188,30 @@ export function ProjectInfoForm({
             onChange={(e) => setDescription(e.target.value)}
             onFocus={() => setFocusedField("description")}
             onBlur={() => setFocusedField(null)}
-            rows={4}
-            className={`textarea textarea-bordered resize-none text-base text-primary placeholder:text-muted surface-secondary border-2 transition-all duration-300 ${
+            rows={5}
+            className={`w-full px-6 py-4 text-lg glass-surface rounded-2xl border-2 transition-all duration-500 resize-none ${
               focusedField === "description"
-                ? "border-brand shadow-brand-lg transform scale-[1.01]"
-                : "border-secondary hover:border-brand/50"
-            }`}
+                ? "border-brand-secondary text-text-primary shadow-brand-lg scale-[1.01] ring-2 ring-brand-secondary/20"
+                : "border-brand-secondary/30 text-text-primary hover:border-brand-secondary/50"
+            } placeholder:text-text-muted disabled:opacity-50`}
             disabled={saving}
             maxLength={500}
           />
 
-          {/* Textarea glow effect */}
+          {/* Enhanced textarea glow effect */}
           {focusedField === "description" && (
-            <div className="absolute -inset-1 bg-gradient-to-r from-brand-secondary/20 to-brand-tertiary/20 rounded-xl blur opacity-50 -z-10" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-brand-secondary/30 to-brand-tertiary/30 rounded-2xl blur opacity-70 -z-10" />
           )}
 
-          {/* Character count for textarea */}
-          <div className="absolute bottom-3 right-3">
+          {/* Enhanced character count for textarea */}
+          <div className="absolute bottom-4 right-4">
             <div
-              className={`text-xs px-2 py-1 rounded-full transition-all duration-200 ${
+              className={`text-sm px-3 py-2 rounded-xl font-medium transition-all duration-300 ${
                 description.length > 400
-                  ? "bg-orange-500/10 text-orange-400"
+                  ? "bg-orange-100 text-orange-700 border border-orange-300"
                   : description.length > 300
-                  ? "bg-yellow-500/10 text-yellow-400"
-                  : "bg-surface-glass text-subtle"
+                  ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  : "glass-surface text-text-muted border border-brand-secondary/20"
               }`}
             >
               {description.length}/500
@@ -217,50 +219,52 @@ export function ProjectInfoForm({
           </div>
         </div>
 
-        <label className="label mt-2">
-          <span className="label-text-alt text-muted flex items-center gap-2">
-            <TrendingUp className="w-3 h-3" />
+        <div className="mt-4">
+          <span className="text-text-muted flex items-center gap-3 text-base">
+            <TrendingUp className="w-4 h-4" />
             Help others understand what this project is about
           </span>
-        </label>
+        </div>
       </div>
 
       {/* Enhanced Animated Divider */}
-      <div className="divider text-base text-secondary my-8 relative">
-        <div className="flex items-center gap-3 px-4 py-2 surface-glass rounded-full border border-subtle shadow-brand">
-          <div className="p-2 bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 rounded-lg">
-            <Calendar className="w-5 h-5 text-brand-primary" />
+      <div className="relative my-12 flex items-center justify-center">
+        <div className="flex items-center gap-4 px-8 py-4 glass-surface rounded-3xl border-2 border-brand-primary/20 shadow-brand-md bg-gradient-to-r from-brand-primary/5 to-brand-secondary/5">
+          <div className="p-3 bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 rounded-2xl shadow-brand">
+            <Calendar className="w-6 h-6 text-brand-primary" />
           </div>
-          <span className="font-semibold">Daily Study Limits</span>
+          <span className="text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
+            Daily Study Limits
+          </span>
         </div>
 
-        {/* Animated line */}
-        <div className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
-        <div className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent animate-pulse" />
+        {/* Enhanced animated line */}
+        <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-brand-primary/30 to-transparent" />
+        <div className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-brand-primary/60 to-transparent animate-pulse" />
       </div>
 
       {/* Enhanced Daily Limits Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-        {/* New Cards Per Day - Enhanced */}
-        <div className="form-control relative group">
-          <label className="label mb-2">
-            <div className="flex items-center gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Enhanced New Cards Per Day */}
+        <div className="relative group">
+          <label className="block mb-4">
+            <div className="flex items-center gap-4">
               <div
-                className={`p-2 rounded-xl transition-all duration-300 ${
+                className={`p-3 rounded-2xl transition-all duration-500 ${
                   focusedField === "newCards"
-                    ? "bg-gradient-to-br from-brand-tertiary/20 to-green-500/20 shadow-brand"
-                    : "bg-surface-glass"
+                    ? "bg-gradient-to-br from-brand-tertiary/20 to-green-500/20 shadow-brand-lg scale-110"
+                    : "glass-surface border border-brand-tertiary/20"
                 }`}
               >
                 <Target
-                  className={`w-5 h-5 transition-all duration-300 ${
+                  className={`w-6 h-6 transition-all duration-500 ${
                     focusedField === "newCards"
-                      ? "text-brand-tertiary scale-110"
-                      : "text-muted"
+                      ? "text-brand-tertiary scale-110 rotate-12"
+                      : "text-text-muted"
                   }`}
                 />
               </div>
-              <span className="label-text font-bold text-lg text-secondary">
+              <span className="text-xl font-bold bg-gradient-to-r from-brand-tertiary to-green-500 bg-clip-text text-transparent">
                 New Cards/Day
               </span>
             </div>
@@ -281,28 +285,28 @@ export function ProjectInfoForm({
               }}
               onFocus={() => setFocusedField("newCards")}
               onBlur={() => setFocusedField(null)}
-              className={`input input-bordered h-14 text-lg font-bold text-primary surface-secondary border-2 transition-all duration-300 ${
+              className={`w-full h-16 px-6 text-xl font-bold glass-surface rounded-2xl border-2 transition-all duration-500 ${
                 focusedField === "newCards"
-                  ? "border-brand-tertiary shadow-brand-lg transform scale-[1.02]"
-                  : "border-secondary hover:border-brand/50"
-              }`}
+                  ? "border-brand-tertiary text-text-primary shadow-brand-lg scale-[1.02] ring-2 ring-brand-tertiary/20"
+                  : "border-brand-tertiary/30 text-text-primary hover:border-brand-tertiary/50"
+              } disabled:opacity-50`}
               disabled={saving}
             />
 
-            {/* Number input glow */}
+            {/* Enhanced number input glow */}
             {focusedField === "newCards" && (
-              <div className="absolute -inset-1 bg-gradient-to-r from-brand-tertiary/20 to-green-500/20 rounded-xl blur opacity-50 -z-10" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-brand-tertiary/30 to-green-500/30 rounded-2xl blur opacity-70 -z-10" />
             )}
 
-            {/* Value indicator */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {/* Enhanced value indicator */}
+            <div className="absolute right-5 top-1/2 -translate-y-1/2">
               <div
-                className={`px-3 py-1 rounded-full text-sm font-semibold transition-all duration-200 ${
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
                   newCardsPerDay > 30
-                    ? "bg-red-500/10 text-red-400"
+                    ? "bg-red-100 text-red-700 border border-red-300"
                     : newCardsPerDay > 15
-                    ? "bg-yellow-500/10 text-yellow-400"
-                    : "bg-green-500/10 text-green-400"
+                    ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                    : "bg-green-100 text-green-700 border border-green-300"
                 }`}
               >
                 {newCardsPerDay === 0
@@ -316,34 +320,34 @@ export function ProjectInfoForm({
             </div>
           </div>
 
-          <label className="label mt-2">
-            <span className="label-text-alt text-muted flex items-center gap-2">
-              <Zap className="w-3 h-3" />
+          <div className="mt-4">
+            <span className="text-text-muted flex items-center gap-3 text-base">
+              <Zap className="w-4 h-4" />
               How many new cards to learn each day
             </span>
-          </label>
+          </div>
         </div>
 
-        {/* Max Reviews Per Day - Enhanced */}
-        <div className="form-control relative group">
-          <label className="label mb-2">
-            <div className="flex items-center gap-3">
+        {/* Enhanced Max Reviews Per Day */}
+        <div className="relative group">
+          <label className="block mb-4">
+            <div className="flex items-center gap-4">
               <div
-                className={`p-2 rounded-xl transition-all duration-300 ${
+                className={`p-3 rounded-2xl transition-all duration-500 ${
                   focusedField === "maxReviews"
-                    ? "bg-gradient-to-br from-brand-accent/20 to-purple-500/20 shadow-brand"
-                    : "bg-surface-glass"
+                    ? "bg-gradient-to-br from-purple-500/20 to-pink-500/20 shadow-brand-lg scale-110"
+                    : "glass-surface border border-purple-400/20"
                 }`}
               >
                 <Target
-                  className={`w-5 h-5 transition-all duration-300 ${
+                  className={`w-6 h-6 transition-all duration-500 ${
                     focusedField === "maxReviews"
-                      ? "text-brand-accent scale-110"
-                      : "text-muted"
+                      ? "text-purple-600 scale-110 rotate-12"
+                      : "text-text-muted"
                   }`}
                 />
               </div>
-              <span className="label-text font-bold text-lg text-secondary">
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
                 Max Reviews/Day
               </span>
             </div>
@@ -364,28 +368,28 @@ export function ProjectInfoForm({
               }}
               onFocus={() => setFocusedField("maxReviews")}
               onBlur={() => setFocusedField(null)}
-              className={`input input-bordered h-14 text-lg font-bold text-primary surface-secondary border-2 transition-all duration-300 ${
+              className={`w-full h-16 px-6 text-xl font-bold glass-surface rounded-2xl border-2 transition-all duration-500 ${
                 focusedField === "maxReviews"
-                  ? "border-brand-accent shadow-brand-lg transform scale-[1.02]"
-                  : "border-secondary hover:border-brand/50"
-              }`}
+                  ? "border-purple-500 text-text-primary shadow-brand-lg scale-[1.02] ring-2 ring-purple-500/20"
+                  : "border-purple-400/30 text-text-primary hover:border-purple-400/50"
+              } disabled:opacity-50`}
               disabled={saving}
             />
 
-            {/* Number input glow */}
+            {/* Enhanced number input glow */}
             {focusedField === "maxReviews" && (
-              <div className="absolute -inset-1 bg-gradient-to-r from-brand-accent/20 to-purple-500/20 rounded-xl blur opacity-50 -z-10" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-2xl blur opacity-70 -z-10" />
             )}
 
-            {/* Value indicator */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {/* Enhanced value indicator */}
+            <div className="absolute right-5 top-1/2 -translate-y-1/2">
               <div
-                className={`px-3 py-1 rounded-full text-sm font-semibold transition-all duration-200 ${
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
                   maxReviewsPerDay === 0
-                    ? "bg-green-500/10 text-green-400"
+                    ? "bg-green-100 text-green-700 border border-green-300"
                     : maxReviewsPerDay > 200
-                    ? "bg-yellow-500/10 text-yellow-400"
-                    : "bg-blue-500/10 text-blue-400"
+                    ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                    : "bg-blue-100 text-blue-700 border border-blue-300"
                 }`}
               >
                 {maxReviewsPerDay === 0
@@ -397,12 +401,12 @@ export function ProjectInfoForm({
             </div>
           </div>
 
-          <label className="label mt-2">
-            <span className="label-text-alt text-muted flex items-center gap-2">
-              <Brain className="w-3 h-3" />
+          <div className="mt-4">
+            <span className="text-text-muted flex items-center gap-3 text-base">
+              <Brain className="w-4 h-4" />
               Maximum review cards per day (0 = unlimited)
             </span>
-          </label>
+          </div>
         </div>
       </div>
 

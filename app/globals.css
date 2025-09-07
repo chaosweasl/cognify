@@ -405,6 +405,15 @@ button {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .wizard-enter {
   animation: slideInFromRight 0.5s ease-out;
 }

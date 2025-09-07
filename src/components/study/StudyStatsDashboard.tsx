@@ -427,8 +427,8 @@ export function StudyStatsDashboard({
                 </p>
                 <p className="text-xs text-text-muted">days</p>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-brand rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
             </div>
           </Card>
@@ -442,8 +442,8 @@ export function StudyStatsDashboard({
                 </p>
                 <p className="text-xs text-text-muted">reviews</p>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-400 rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-brand rounded-lg flex items-center justify-center">
+                <Brain className="w-5 h-5 text-primary-foreground" />
               </div>
             </div>
           </Card>
@@ -457,8 +457,8 @@ export function StudyStatsDashboard({
                 </p>
                 <p className="text-xs text-text-muted">minutes</p>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-teal-400 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-status-success rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-primary-foreground" />
               </div>
             </div>
           </Card>
@@ -472,8 +472,8 @@ export function StudyStatsDashboard({
                 </p>
                 <p className="text-xs text-text-muted">accuracy</p>
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
-                <Target className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-brand-secondary rounded-lg flex items-center justify-center">
+                <Target className="w-5 h-5 text-primary-foreground" />
               </div>
             </div>
           </Card>
@@ -663,13 +663,13 @@ function DailyProgressChart({ data }: { data: DailyStats[] }) {
                 </span>
                 <div className="flex gap-4">
                   <span className="text-primary">
-                    <span className="text-green-500">
+                    <span className="text-status-success">
                       {day.new_cards_studied}
                     </span>{" "}
                     new
                   </span>
                   <span className="text-primary">
-                    <span className="text-blue-500">
+                    <span className="brand-primary">
                       {day.reviews_completed}
                     </span>{" "}
                     reviews
@@ -752,13 +752,13 @@ function MonthlyProgressChart({ data }: { data: DailyStats[] }) {
                 </span>
                 <div className="flex gap-4">
                   <span className="text-primary">
-                    <span className="text-green-500">
+                    <span className="text-status-success">
                       {month.new_cards_studied}
                     </span>{" "}
                     new
                   </span>
                   <span className="text-primary">
-                    <span className="text-blue-500">
+                    <span className="brand-primary">
                       {month.reviews_completed}
                     </span>{" "}
                     reviews

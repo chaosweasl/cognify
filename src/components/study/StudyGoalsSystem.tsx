@@ -479,7 +479,7 @@ export function StudyGoalsSystem({
             <>
               <Button
                 onClick={updateGoals}
-                className="bg-brand-primary text-white"
+                className="bg-brand-primary text-primary-foreground"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save Goals
@@ -614,10 +614,10 @@ export function StudyGoalsSystem({
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                         isCompleted
-                          ? "bg-green-500 text-white"
+                          ? "bg-status-success text-primary-foreground"
                           : isOverdue
-                          ? "bg-red-500 text-white"
-                          : "bg-brand-primary text-white"
+                          ? "bg-status-error text-primary-foreground"
+                          : "bg-brand-primary text-primary-foreground"
                       }`}
                     >
                       {isCompleted ? (
@@ -705,19 +705,19 @@ export function StudyGoalsSystem({
             <div className="text-sm text-text-muted">New Cards</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-500">
+            <div className="text-2xl font-bold brand-primary">
               {dailyStats.reviewsCompleted}
             </div>
             <div className="text-sm text-text-muted">Reviews</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-500">
+            <div className="text-2xl font-bold text-status-success">
               {Math.round(dailyStats.timeSpentSeconds / 60)}
             </div>
             <div className="text-sm text-text-muted">Minutes</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-500">
+            <div className="text-2xl font-bold brand-secondary">
               {dailyStats.studyDays}
             </div>
             <div className="text-sm text-text-muted">Study Days (Week)</div>

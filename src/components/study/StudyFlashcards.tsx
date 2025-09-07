@@ -125,35 +125,35 @@ function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
 
   return (
     <div className="grid grid-cols-3 gap-4 mb-4">
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            newCards > 0 ? "text-blue-600" : "text-gray-400"
+            newCards > 0 ? "brand-primary" : "text-muted"
           }`}
         >
           {newCards}
         </div>
-        <div className="text-xs text-base-content/70">New</div>
+        <div className="text-xs text-muted">New</div>
       </div>
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            learningCards > 0 ? "text-orange-600" : "text-gray-400"
+            learningCards > 0 ? "text-status-warning" : "text-muted"
           }`}
         >
           {learningCards}
         </div>
-        <div className="text-xs text-base-content/70">Learning</div>
+        <div className="text-xs text-muted">Learning</div>
       </div>
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            totalDueCards > 0 ? "text-green-600" : "text-gray-400"
+            totalDueCards > 0 ? "text-status-success" : "text-muted"
           }`}
         >
           {totalDueCards}
         </div>
-        <div className="text-xs text-base-content/70">Due</div>
+        <div className="text-xs text-muted">Due</div>
       </div>
     </div>
   );
@@ -215,28 +215,31 @@ export default function StudyFlashcards({
   const supabase = createClient();
 
   // Convert project settings to SRSSettings format
-  const srsSettings = React.useMemo(() => ({
-    NEW_CARDS_PER_DAY: project.new_cards_per_day,
-    MAX_REVIEWS_PER_DAY: project.max_reviews_per_day,
-    LEARNING_STEPS: project.learning_steps,
-    RELEARNING_STEPS: project.relearning_steps,
-    GRADUATING_INTERVAL: project.graduating_interval,
-    EASY_INTERVAL: project.easy_interval,
-    STARTING_EASE: project.starting_ease,
-    MINIMUM_EASE: project.minimum_ease,
-    EASY_BONUS: project.easy_bonus,
-    HARD_INTERVAL_FACTOR: project.hard_interval_factor,
-    EASY_INTERVAL_FACTOR: project.easy_interval_factor,
-    LAPSE_RECOVERY_FACTOR: project.lapse_recovery_factor,
-    LAPSE_EASE_PENALTY: project.lapse_ease_penalty,
-    INTERVAL_MODIFIER: 1.0, // Not stored in project, use default
-    LEECH_THRESHOLD: project.leech_threshold,
-    LEECH_ACTION: project.leech_action,
-    NEW_CARD_ORDER: project.new_card_order,
-    REVIEW_AHEAD: project.review_ahead,
-    BURY_SIBLINGS: project.bury_siblings,
-    MAX_INTERVAL: project.max_interval,
-  }), [project]);
+  const srsSettings = React.useMemo(
+    () => ({
+      NEW_CARDS_PER_DAY: project.new_cards_per_day,
+      MAX_REVIEWS_PER_DAY: project.max_reviews_per_day,
+      LEARNING_STEPS: project.learning_steps,
+      RELEARNING_STEPS: project.relearning_steps,
+      GRADUATING_INTERVAL: project.graduating_interval,
+      EASY_INTERVAL: project.easy_interval,
+      STARTING_EASE: project.starting_ease,
+      MINIMUM_EASE: project.minimum_ease,
+      EASY_BONUS: project.easy_bonus,
+      HARD_INTERVAL_FACTOR: project.hard_interval_factor,
+      EASY_INTERVAL_FACTOR: project.easy_interval_factor,
+      LAPSE_RECOVERY_FACTOR: project.lapse_recovery_factor,
+      LAPSE_EASE_PENALTY: project.lapse_ease_penalty,
+      INTERVAL_MODIFIER: 1.0, // Not stored in project, use default
+      LEECH_THRESHOLD: project.leech_threshold,
+      LEECH_ACTION: project.leech_action,
+      NEW_CARD_ORDER: project.new_card_order,
+      REVIEW_AHEAD: project.review_ahead,
+      BURY_SIBLINGS: project.bury_siblings,
+      MAX_INTERVAL: project.max_interval,
+    }),
+    [project]
+  );
 
   // Create project-specific settings from project data
   const projectSettings: ProjectSRSSettings = React.useMemo(
@@ -260,7 +263,10 @@ export default function StudyFlashcards({
         }
 
         // Initialize session with database or fallback to localStorage
-        const session = await initStudySessionWithFallback(userId || undefined, project.id);
+        const session = await initStudySessionWithFallback(
+          userId || undefined,
+          project.id
+        );
         setStudySession(session);
       } catch (error) {
         console.error("Failed to initialize study session:", error);
@@ -323,11 +329,11 @@ export default function StudyFlashcards({
         try {
           await saveSRSStates(supabase, userId, project.id, states);
           console.log("SRS states saved to database");
-          
+
           // Invalidate cache to ensure project stats update across the app
-          CacheInvalidation.invalidatePattern('user_projects');
+          CacheInvalidation.invalidatePattern("user_projects");
           CacheInvalidation.invalidatePattern(`project_${project.id}`);
-          CacheInvalidation.invalidatePattern('project_stats_');
+          CacheInvalidation.invalidatePattern("project_stats_");
         } catch (error) {
           console.error("Failed to save SRS states:", error);
         }
@@ -699,13 +705,20 @@ export default function StudyFlashcards({
         />
 
         <DailyLimitsProgress
-          newCardsStudied={studySession.projectStats[project.id]?.newCardsStudied || 0}
-          reviewsCompleted={studySession.projectStats[project.id]?.reviewsCompleted || 0}
+          newCardsStudied={
+            studySession.projectStats[project.id]?.newCardsStudied || 0
+          }
+          reviewsCompleted={
+            studySession.projectStats[project.id]?.reviewsCompleted || 0
+          }
           newCardsPerDay={project.new_cards_per_day}
           maxReviewsPerDay={project.max_reviews_per_day}
         />
 
-        <CardTypeIndicator cardState={currentCardState} srsSettings={srsSettings} />
+        <CardTypeIndicator
+          cardState={currentCardState}
+          srsSettings={srsSettings}
+        />
       </div>
 
       <FlashcardDisplay

@@ -32,17 +32,17 @@ export function DailyLimitsProgress({
           <span className="text-base-content/70">New cards today</span>
           <span
             className={`font-medium ${
-              newCardsLimitReached ? "text-orange-600" : ""
+              newCardsLimitReached ? "text-status-warning" : ""
             }`}
           >
             {newCardsStudied} / {newCardsPerDay}
             {newCardsLimitReached && " (Limit reached)"}
           </span>
         </div>
-        <div className="w-full bg-base-200 rounded-full h-2">
+        <div className="w-full surface-secondary rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all duration-300 ${
-              newCardsLimitReached ? "bg-orange-500" : "bg-blue-500"
+              newCardsLimitReached ? "bg-status-warning" : "bg-brand-primary"
             }`}
             style={{
               width: `${Math.min(100, newCardsProgress)}%`,
