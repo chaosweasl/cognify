@@ -123,11 +123,11 @@ async function handleGetErrors() {
     // Only admins can view error logs
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!profile?.is_admin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
@@ -173,11 +173,11 @@ async function handleClearErrors() {
     // Only admins can clear error logs
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!profile?.is_admin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 

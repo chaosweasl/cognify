@@ -27,11 +27,11 @@ async function handleGetSystemHealth() {
     // Check if user has admin access
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (!profile?.is_admin) {
       return NextResponse.json(
         { error: "Access denied - Admin access required" },
         { status: 403 }
@@ -98,11 +98,11 @@ async function handleGetUserAnalytics(request: NextRequest) {
     if (targetUserId && targetUserId !== user.id) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("is_admin")
         .eq("id", user.id)
         .single();
 
-      if (profile?.role !== "admin") {
+      if (!profile?.is_admin) {
         return NextResponse.json(
           { error: "Access denied - Can only view your own analytics" },
           { status: 403 }

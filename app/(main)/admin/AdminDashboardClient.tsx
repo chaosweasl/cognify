@@ -14,6 +14,8 @@ import {
   Users,
   Settings,
   Database,
+  Megaphone,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,7 +23,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsDashboard } from "@/src/components/analytics/AnalyticsDashboard";
 import { SystemMonitoringDashboard } from "@/src/components/analytics/SystemMonitoringDashboard";
 import { ErrorTrackingDashboard } from "@/src/components/analytics/ErrorTrackingDashboard";
-import { SystemHealthDashboard } from "@/src/components/admin/SystemHealthDashboard";
+import { UserManagement } from "@/src/components/admin/UserManagement";
+import { ContentModeration } from "@/src/components/admin/ContentModeration";
+import { AnnouncementManagement } from "@/src/components/admin/AnnouncementManagement";
 
 export function AdminDashboardClient() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -48,10 +52,25 @@ export function AdminDashboardClient() {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-7 mb-8">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              Content
+            </TabsTrigger>
+            <TabsTrigger
+              value="announcements"
+              className="flex items-center gap-2"
+            >
+              <Megaphone className="w-4 h-4" />
+              Announcements
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -65,15 +84,26 @@ export function AdminDashboardClient() {
               <AlertTriangle className="w-4 h-4" />
               Errors
             </TabsTrigger>
-            <TabsTrigger value="health" className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              Health
-            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
             <AdminOverview />
+          </TabsContent>
+
+          {/* User Management Tab */}
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+
+          {/* Content Moderation Tab */}
+          <TabsContent value="content">
+            <ContentModeration />
+          </TabsContent>
+
+          {/* Announcement Management Tab */}
+          <TabsContent value="announcements">
+            <AnnouncementManagement />
           </TabsContent>
 
           {/* Analytics Tab */}
@@ -89,11 +119,6 @@ export function AdminDashboardClient() {
           {/* Error Tracking Tab */}
           <TabsContent value="errors">
             <ErrorTrackingDashboard />
-          </TabsContent>
-
-          {/* System Health Tab */}
-          <TabsContent value="health">
-            <SystemHealthDashboard />
           </TabsContent>
         </Tabs>
       </div>

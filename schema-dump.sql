@@ -65,6 +65,45 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 
 
 
+CREATE OR REPLACE FUNCTION "public"."clean_old_analytics_events"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  DELETE FROM public.analytics_events
+  WHERE created_at < NOW() - INTERVAL '90 days';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."clean_old_analytics_events"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."clean_old_error_logs"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  DELETE FROM public.error_logs
+  WHERE created_at < NOW() - INTERVAL '30 days';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."clean_old_error_logs"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."clean_old_system_metrics"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  DELETE FROM public.system_health_metrics
+  WHERE created_at < NOW() - INTERVAL '7 days';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."clean_old_system_metrics"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -236,6 +275,19 @@ $$;
 ALTER FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_project_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."trigger_set_timestamp"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_set_timestamp"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_study_goals_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -278,6 +330,24 @@ ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."analytics_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "event_type" character varying(255) NOT NULL,
+    "user_id" "uuid",
+    "session_id" character varying(255) NOT NULL,
+    "data" "jsonb",
+    "timestamp" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."analytics_events" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."analytics_events" IS 'User activity and application analytics events';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."app_notification_reads" (
@@ -324,6 +394,32 @@ CREATE TABLE IF NOT EXISTS "public"."daily_study_stats" (
 
 
 ALTER TABLE "public"."daily_study_stats" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."error_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "error_type" character varying(255) NOT NULL,
+    "severity" character varying(20) NOT NULL,
+    "message" "text" NOT NULL,
+    "stack_trace" "text",
+    "timestamp" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "user_id" "uuid",
+    "session_id" character varying(255),
+    "url" "text",
+    "user_agent" "text",
+    "context" "jsonb",
+    "resolved" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "error_logs_severity_check" CHECK ((("severity")::"text" = ANY ((ARRAY['low'::character varying, 'medium'::character varying, 'high'::character varying, 'critical'::character varying])::"text"[])))
+);
+
+
+ALTER TABLE "public"."error_logs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."error_logs" IS 'Application error tracking and logging';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."flashcards" (
@@ -550,6 +646,26 @@ CREATE TABLE IF NOT EXISTS "public"."study_sessions" (
 ALTER TABLE "public"."study_sessions" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."system_health_metrics" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "timestamp" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "database_response_time" integer,
+    "memory_usage" numeric,
+    "active_users" integer DEFAULT 0,
+    "requests_per_minute" integer DEFAULT 0,
+    "error_count" integer DEFAULT 0,
+    "metrics" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."system_health_metrics" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."system_health_metrics" IS 'System performance and health monitoring metrics';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."user_ai_prompts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -600,6 +716,11 @@ CREATE TABLE IF NOT EXISTS "public"."user_settings" (
 ALTER TABLE "public"."user_settings" OWNER TO "postgres";
 
 
+ALTER TABLE ONLY "public"."analytics_events"
+    ADD CONSTRAINT "analytics_events_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_pkey" PRIMARY KEY ("user_id", "notification_id");
 
@@ -617,6 +738,11 @@ ALTER TABLE ONLY "public"."daily_study_stats"
 
 ALTER TABLE ONLY "public"."daily_study_stats"
     ADD CONSTRAINT "daily_study_stats_user_id_project_id_study_date_key" UNIQUE ("user_id", "project_id", "study_date");
+
+
+
+ALTER TABLE ONLY "public"."error_logs"
+    ADD CONSTRAINT "error_logs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -665,6 +791,11 @@ ALTER TABLE ONLY "public"."study_sessions"
 
 
 
+ALTER TABLE ONLY "public"."system_health_metrics"
+    ADD CONSTRAINT "system_health_metrics_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."study_goals"
     ADD CONSTRAINT "unique_active_goal" UNIQUE ("user_id", "goal_type", "period_start", "period_end") DEFERRABLE INITIALLY DEFERRED;
 
@@ -685,6 +816,18 @@ ALTER TABLE ONLY "public"."user_settings"
 
 
 
+CREATE INDEX "idx_analytics_events_timestamp" ON "public"."analytics_events" USING "btree" ("timestamp" DESC);
+
+
+
+CREATE INDEX "idx_analytics_events_type" ON "public"."analytics_events" USING "btree" ("event_type");
+
+
+
+CREATE INDEX "idx_analytics_events_user_id" ON "public"."analytics_events" USING "btree" ("user_id");
+
+
+
 CREATE INDEX "idx_app_notification_reads_notification_id" ON "public"."app_notification_reads" USING "btree" ("notification_id");
 
 
@@ -694,6 +837,26 @@ CREATE INDEX "idx_daily_study_stats_project_id" ON "public"."daily_study_stats" 
 
 
 CREATE INDEX "idx_daily_study_stats_user_date_desc" ON "public"."daily_study_stats" USING "btree" ("user_id", "study_date" DESC);
+
+
+
+CREATE INDEX "idx_error_logs_resolved" ON "public"."error_logs" USING "btree" ("resolved");
+
+
+
+CREATE INDEX "idx_error_logs_severity" ON "public"."error_logs" USING "btree" ("severity");
+
+
+
+CREATE INDEX "idx_error_logs_timestamp" ON "public"."error_logs" USING "btree" ("timestamp" DESC);
+
+
+
+CREATE INDEX "idx_error_logs_type" ON "public"."error_logs" USING "btree" ("error_type");
+
+
+
+CREATE INDEX "idx_error_logs_user_id" ON "public"."error_logs" USING "btree" ("user_id");
 
 
 
@@ -757,6 +920,10 @@ CREATE INDEX "idx_study_sessions_user_active" ON "public"."study_sessions" USING
 
 
 
+CREATE INDEX "idx_system_health_timestamp" ON "public"."system_health_metrics" USING "btree" ("timestamp" DESC);
+
+
+
 CREATE INDEX "idx_user_ai_prompts_user_id" ON "public"."user_ai_prompts" USING "btree" ("user_id");
 
 
@@ -770,6 +937,10 @@ CREATE INDEX "idx_user_notifications_user_scheduled" ON "public"."user_notificat
 
 
 CREATE OR REPLACE TRIGGER "create_srs_state_trigger" AFTER INSERT ON "public"."flashcards" FOR EACH ROW EXECUTE FUNCTION "public"."create_srs_state_for_flashcard"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_timestamp_error_logs" BEFORE UPDATE ON "public"."error_logs" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_set_timestamp"();
 
 
 
@@ -805,6 +976,11 @@ CREATE OR REPLACE TRIGGER "update_user_settings_updated_at" BEFORE UPDATE ON "pu
 
 
 
+ALTER TABLE ONLY "public"."analytics_events"
+    ADD CONSTRAINT "analytics_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_notification_id_fkey" FOREIGN KEY ("notification_id") REFERENCES "public"."app_notifications"("id") ON DELETE CASCADE;
 
@@ -822,6 +998,11 @@ ALTER TABLE ONLY "public"."daily_study_stats"
 
 ALTER TABLE ONLY "public"."daily_study_stats"
     ADD CONSTRAINT "daily_study_stats_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."error_logs"
+    ADD CONSTRAINT "error_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -895,6 +1076,44 @@ ALTER TABLE ONLY "public"."user_settings"
 
 
 
+CREATE POLICY "Admin delete error logs" ON "public"."error_logs" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
+
+
+
+CREATE POLICY "Admin read all analytics" ON "public"."analytics_events" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "user_id") OR (EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true))))));
+
+
+
+CREATE POLICY "Admin read error logs" ON "public"."error_logs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
+
+
+
+CREATE POLICY "Admin system health access" ON "public"."system_health_metrics" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
+
+
+
+CREATE POLICY "Admin update error logs" ON "public"."error_logs" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
+
+
+
+CREATE POLICY "Allow error reporting" ON "public"."error_logs" FOR INSERT TO "authenticated", "anon" WITH CHECK (true);
+
+
+
 CREATE POLICY "Users can delete their own study goals" ON "public"."study_goals" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
@@ -908,6 +1127,10 @@ CREATE POLICY "Users can insert their own study goals" ON "public"."study_goals"
 
 
 CREATE POLICY "Users can insert their own study reminders" ON "public"."study_reminders" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can track own events" ON "public"."analytics_events" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "user_id") OR ("user_id" IS NULL)));
 
 
 
@@ -925,6 +1148,9 @@ CREATE POLICY "Users can view their own study goals" ON "public"."study_goals" F
 
 CREATE POLICY "Users can view their own study reminders" ON "public"."study_reminders" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
+
+
+ALTER TABLE "public"."analytics_events" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."app_notification_reads" ENABLE ROW LEVEL SECURITY;
@@ -946,6 +1172,9 @@ ALTER TABLE "public"."daily_study_stats" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "daily_study_stats_policy" ON "public"."daily_study_stats" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
+
+
+ALTER TABLE "public"."error_logs" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."flashcards" ENABLE ROW LEVEL SECURITY;
@@ -991,6 +1220,9 @@ ALTER TABLE "public"."study_sessions" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "study_sessions_policy" ON "public"."study_sessions" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
 
+
+
+ALTER TABLE "public"."system_health_metrics" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."user_ai_prompts" ENABLE ROW LEVEL SECURITY;
@@ -1179,6 +1411,21 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."clean_old_analytics_events"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."clean_old_analytics_events"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."clean_old_error_logs"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."clean_old_error_logs"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."clean_old_system_metrics"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."clean_old_system_metrics"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "service_role";
 
@@ -1201,6 +1448,11 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_project_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."start_study_session"("p_user_id" "uuid", "p_project_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "service_role";
 
 
 
@@ -1234,6 +1486,12 @@ GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."analytics_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."analytics_events" TO "service_role";
+GRANT SELECT,INSERT ON TABLE "public"."analytics_events" TO "anon";
+
+
+
 GRANT ALL ON TABLE "public"."app_notification_reads" TO "authenticated";
 GRANT ALL ON TABLE "public"."app_notification_reads" TO "service_role";
 
@@ -1246,6 +1504,12 @@ GRANT ALL ON TABLE "public"."app_notifications" TO "service_role";
 
 GRANT ALL ON TABLE "public"."daily_study_stats" TO "authenticated";
 GRANT ALL ON TABLE "public"."daily_study_stats" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."error_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."error_logs" TO "service_role";
+GRANT SELECT,INSERT ON TABLE "public"."error_logs" TO "anon";
 
 
 
@@ -1281,6 +1545,11 @@ GRANT ALL ON TABLE "public"."study_reminders" TO "service_role";
 
 GRANT ALL ON TABLE "public"."study_sessions" TO "authenticated";
 GRANT ALL ON TABLE "public"."study_sessions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."system_health_metrics" TO "authenticated";
+GRANT ALL ON TABLE "public"."system_health_metrics" TO "service_role";
 
 
 
