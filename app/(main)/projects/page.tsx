@@ -2,7 +2,6 @@
 
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectList } from "@/src/components/projects/ProjectList";
-import { LoadingState } from "@/components/ui/loading-states";
 import {
   Sparkles,
   Brain,
@@ -437,7 +436,7 @@ function ProjectsPageContent() {
 
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={<LoadingState />}>
+    <Suspense>
       <ProjectsPageContent />
     </Suspense>
   );

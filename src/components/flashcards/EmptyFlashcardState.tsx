@@ -1,14 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  BookOpen,
-  Clock,
-  CheckCircle,
-  TrendingUp,
-  Coffee,
-  Target,
-  Brain,
-} from "lucide-react";
+import { BookOpen, Clock, CheckCircle, Target, Brain } from "lucide-react";
 
 interface EmptyStateProps {
   type:
@@ -207,7 +199,9 @@ export function EmptyFlashcardState({
               {/* Simple completion indicator */}
               <div className="flex items-center justify-center gap-6 mt-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-status-success mb-1">✓</div>
+                  <div className="text-lg font-bold text-status-success mb-1">
+                    ✓
+                  </div>
                   <div className="text-xs text-muted uppercase tracking-wider">
                     Complete
                   </div>
@@ -219,7 +213,9 @@ export function EmptyFlashcardState({
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-brand-primary mb-1">📚</div>
+                  <div className="text-lg font-bold text-brand-primary mb-1">
+                    📚
+                  </div>
                   <div className="text-xs text-muted uppercase tracking-wider">
                     Learned
                   </div>
