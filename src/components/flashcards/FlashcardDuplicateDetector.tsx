@@ -238,7 +238,7 @@ export function FlashcardDuplicateDetector({
       </div>
 
       {duplicateGroups.length === 0 ? (
-        <div className="alert bg-green-500/10 border-green-500/30 text-green-400 rounded-xl">
+        <div className="alert surface-elevated border-status-success text-status-success rounded-xl">
           <CheckSquare className="w-5 h-5" />
           <div>
             <div className="font-bold">No duplicates found!</div>
@@ -249,7 +249,7 @@ export function FlashcardDuplicateDetector({
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="alert bg-yellow-500/10 border-yellow-500/30 text-yellow-400 rounded-xl">
+          <div className="alert surface-elevated border-status-warning text-status-warning rounded-xl">
             <AlertTriangle className="w-5 h-5" />
             <div>
               <div className="font-bold">Duplicates detected</div>

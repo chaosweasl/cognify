@@ -1,0 +1,418 @@
+/* Enhanced Micro-Interactions for Production-Ready Polish */
+
+/* =========================== 
+   BUTTON PRESS ANIMATIONS 
+   =========================== */
+
+/* Enhanced button feedback - all buttons get press animation */
+button,
+.btn,
+[role="button"] {
+  transform: translateZ(0); /* Force GPU acceleration */
+  transition: all var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+button:active,
+.btn:active,
+[role="button"]:active {
+  transform: scale(0.95) translateZ(0);
+  transition-duration: 0.1s;
+}
+
+button:hover,
+.btn:hover,
+[role="button"]:hover {
+  transform: scale(1.02) translateZ(0);
+  box-shadow: 0 8px 25px -8px rgba(var(--color-brand-primary), 0.3);
+}
+
+/* Special ripple effect for primary actions */
+.btn-primary,
+.button-primary,
+[data-variant="default"] {
+  overflow: hidden;
+  position: relative;
+}
+
+.btn-primary::before,
+.button-primary::before,
+[data-variant="default"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:active::before,
+.button-primary:active::before,
+[data-variant="default"]:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* =========================== 
+   CARD HOVER EFFECTS WITH DEPTH 
+   =========================== */
+
+.card,
+[data-slot="card"],
+.glass-surface {
+  transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card:hover,
+[data-slot="card"]:hover,
+.glass-surface:hover {
+  transform: translateY(-4px) scale(1.01) translateZ(0);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    0 0 0 1px rgba(var(--color-brand-primary), 0.05);
+}
+
+/* Enhanced project cards with subtle glow */
+.project-card:hover {
+  background: linear-gradient(
+    135deg,
+    var(--color-surface-elevated) 0%,
+    color-mix(
+        in oklch,
+        var(--color-surface-elevated) 95%,
+        var(--color-brand-primary) 5%
+      )
+      100%
+  );
+}
+
+/* Staggered card entrance animations */
+.card-grid .card,
+.projects-grid .project-card {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideInUp 0.6s ease-out forwards;
+}
+
+.card-grid .card:nth-child(1),
+.projects-grid .project-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.card-grid .card:nth-child(2),
+.projects-grid .project-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.card-grid .card:nth-child(3),
+.projects-grid .project-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.card-grid .card:nth-child(4),
+.projects-grid .project-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+/* =========================== 
+   INPUT FOCUS STATES WITH SMOOTH TRANSITIONS 
+   =========================== */
+
+input,
+textarea,
+select,
+[contenteditable] {
+  transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+[contenteditable]:focus {
+  transform: scale(1.01);
+  box-shadow: 0 0 0 2px var(--color-brand-primary),
+    0 4px 12px rgba(var(--color-brand-primary), 0.15);
+  border-color: var(--color-brand-primary);
+}
+
+/* Floating label animation enhancement */
+.input-group {
+  position: relative;
+}
+
+.input-group label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+  top: 8px;
+  left: 8px;
+  font-size: 0.75rem;
+  color: var(--color-brand-primary);
+  background: var(--color-surface-primary);
+  padding: 0 4px;
+  transform: translateY(0);
+}
+
+/* =========================== 
+   PROGRESS BAR ANIMATIONS WITH EASING 
+   =========================== */
+
+.progress-bar {
+  overflow: hidden;
+  position: relative;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-full);
+  height: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gradient-brand-primary);
+  border-radius: var(--radius-full);
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated shine effect on progress bars */
+.progress-bar-fill::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Study progress with pulsing effect */
+.study-progress .progress-bar-fill {
+  background: linear-gradient(
+    45deg,
+    var(--color-brand-primary),
+    var(--color-brand-secondary),
+    var(--color-brand-primary)
+  );
+  background-size: 200% 200%;
+  animation: progressGradient 3s ease infinite;
+}
+
+@keyframes progressGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* =========================== 
+   ENHANCED LOADING STATES 
+   =========================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-elevated) 0%,
+    color-mix(in oklch, var(--color-surface-elevated) 90%, white 10%) 50%,
+    var(--color-surface-elevated) 100%
+  );
+  background-size: 200% 200%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeletonPulse {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Loading spinner with brand colors */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-surface-elevated);
+  border-top: 2px solid var(--color-brand-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================== 
+   TOAST NOTIFICATIONS ENHANCEMENT 
+   =========================== */
+
+.toast-notification {
+  transform: translateX(100%);
+  opacity: 0;
+  animation: toastSlideIn 0.3s ease-out forwards;
+}
+
+.toast-notification.exit {
+  animation: toastSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* =========================== 
+   SIDEBAR NAVIGATION ENHANCEMENTS 
+   =========================== */
+
+.sidebar-nav-item {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 0;
+  background: var(--color-brand-primary);
+  transition: height var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-nav-item.active::before,
+.sidebar-nav-item:hover::before {
+  height: 100%;
+}
+
+.sidebar-nav-item:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--color-brand-primary), 0.1) 0%,
+    transparent 100%
+  );
+  padding-left: 16px;
+}
+
+/* =========================== 
+   MODAL AND DIALOG ENHANCEMENTS 
+   =========================== */
+
+.modal-overlay {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn var(--duration-normal) ease-out;
+}
+
+.modal-content {
+  animation: modalSlideIn var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* =========================== 
+   ACCESSIBILITY RESPECT FOR REDUCED MOTION 
+   =========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .progress-bar-fill::before {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--color-surface-elevated);
+  }
+}
+
+/* =========================== 
+   FOCUS VISIBLE FOR ACCESSIBILITY 
+   =========================== */
+
+.focus-visible:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.focus-visible:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

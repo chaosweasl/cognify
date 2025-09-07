@@ -230,10 +230,10 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-xl font-semibold text-primary mb-2">
                 Create Your Profile
               </h3>
-              <p className="text-slate-300">
+              <p className="text-secondary">
                 Tell us about yourself to personalize your experience
               </p>
             </div>
@@ -248,9 +248,9 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="username"
-                  className="text-sm font-medium text-slate-200"
+                  className="text-sm font-medium text-secondary"
                 >
-                  Username <span className="text-red-400">*</span>
+                  Username <span className="text-status-error">*</span>
                 </label>
                 <Input
                   id="username"
@@ -259,14 +259,14 @@ export default function OnboardingPage() {
                   minLength={3}
                   maxLength={30}
                   pattern="^[a-zA-Z0-9_\-]+$"
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                  className="surface-glass border-subtle text-primary placeholder:text-muted focus:border-brand transition-all transition-normal"
                   placeholder="your_username"
                   value={formData.username}
                   onChange={(e) =>
                     setFormData({ ...formData, username: e.target.value })
                   }
                 />
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   3-30 characters, letters, numbers, underscore, dash only
                 </p>
               </div>
@@ -275,49 +275,49 @@ export default function OnboardingPage() {
                 <div className="flex justify-between items-center">
                   <label
                     htmlFor="displayName"
-                    className="text-sm font-medium text-slate-200"
+                    className="text-sm font-medium text-secondary"
                   >
                     Display Name
                   </label>
-                  <span className="text-xs text-slate-400">Optional</span>
+                  <span className="text-xs text-muted">Optional</span>
                 </div>
                 <Input
                   id="displayName"
                   type="text"
                   maxLength={50}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                  className="surface-glass border-subtle text-primary placeholder:text-muted focus:border-brand transition-all transition-normal"
                   placeholder="Your Display Name"
                   value={formData.displayName}
                   onChange={(e) =>
                     setFormData({ ...formData, displayName: e.target.value })
                   }
                 />
-                <p className="text-xs text-slate-400">Max 50 characters</p>
+                <p className="text-xs text-muted">Max 50 characters</p>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label
                     htmlFor="avatar"
-                    className="text-sm font-medium text-slate-200"
+                    className="text-sm font-medium text-secondary"
                   >
                     Avatar
                   </label>
-                  <span className="text-xs text-slate-400">Optional</span>
+                  <span className="text-xs text-muted">Optional</span>
                 </div>
                 <div className="relative">
                   <Input
                     id="avatar"
                     type="file"
                     accept="image/*"
-                    className="bg-slate-700/50 border-slate-600 text-white file:bg-blue-500/20 file:text-blue-200 file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded"
+                    className="surface-glass border-subtle text-primary file:bg-brand-primary/20 file:text-brand-primary file:border-0 file:mr-4 file:px-4 file:py-2 file:rounded transition-all transition-normal"
                     onChange={(e) => {
                       const file = e.target.files && e.target.files[0];
                       setFormData({ ...formData, avatarFile: file });
                     }}
                   />
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   Upload a profile picture (JPG, PNG, etc.)
                 </p>
               </div>
@@ -326,15 +326,15 @@ export default function OnboardingPage() {
                 <div className="flex justify-between items-center">
                   <label
                     htmlFor="bio"
-                    className="text-sm font-medium text-slate-200"
+                    className="text-sm font-medium text-secondary"
                   >
                     Bio
                   </label>
-                  <span className="text-xs text-slate-400">Optional</span>
+                  <span className="text-xs text-muted">Optional</span>
                 </div>
                 <Textarea
                   id="bio"
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                  className="surface-glass border-subtle text-primary placeholder:text-muted resize-none focus:border-brand transition-all transition-normal"
                   placeholder="Tell us a bit about yourself..."
                   rows={3}
                   maxLength={500}
@@ -343,7 +343,7 @@ export default function OnboardingPage() {
                     setFormData({ ...formData, bio: e.target.value })
                   }
                 />
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   {formData.bio.length}/500 characters
                 </p>
               </div>
@@ -358,7 +358,7 @@ export default function OnboardingPage() {
               <h3 className="text-xl font-semibold text-white mb-2">
                 AI Configuration
               </h3>
-              <p className="text-slate-300">
+              <p className="text-secondary">
                 Configure AI to automatically generate flashcards from your
                 content (optional)
               </p>
@@ -380,7 +380,7 @@ export default function OnboardingPage() {
               <h3 className="text-xl font-semibold text-white mb-2">
                 Create Your First Project
               </h3>
-              <p className="text-slate-300">
+              <p className="text-secondary">
                 Projects help you organize your flashcards by subject or topic
               </p>
             </div>
@@ -394,17 +394,17 @@ export default function OnboardingPage() {
             >
               {/* Project Templates */}
               <div>
-                <label className="text-sm font-medium text-slate-200 mb-3 block">
+                <label className="text-sm font-medium text-secondary mb-3 block">
                   Choose a Template
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {projectTemplates.map((template) => (
                     <div
                       key={template.id}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-violet-400 ${
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all transition-normal transform hover:scale-[1.02] ${
                         projectData.template === template.id
-                          ? "border-violet-500 bg-violet-500/10"
-                          : "border-slate-600 bg-slate-700/30"
+                          ? "border-brand surface-glass shadow-brand"
+                          : "border-subtle surface-elevated hover:border-brand"
                       }`}
                       onClick={() =>
                         setProjectData({
@@ -418,10 +418,10 @@ export default function OnboardingPage() {
                       }
                     >
                       <div className="text-2xl mb-2">{template.icon}</div>
-                      <h4 className="font-medium text-white text-sm">
+                      <h4 className="font-medium text-primary text-sm">
                         {template.name}
                       </h4>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-muted mt-1">
                         {template.description}
                       </p>
                     </div>
@@ -432,9 +432,9 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="projectName"
-                  className="text-sm font-medium text-slate-200"
+                  className="text-sm font-medium text-secondary"
                 >
-                  Project Name <span className="text-red-400">*</span>
+                  Project Name <span className="text-status-error">*</span>
                 </label>
                 <Input
                   id="projectName"
@@ -442,7 +442,7 @@ export default function OnboardingPage() {
                   required
                   minLength={3}
                   maxLength={100}
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400"
+                  className="surface-glass border-subtle text-primary placeholder:text-muted focus:border-brand transition-all transition-normal"
                   placeholder="e.g., Spanish Vocabulary, Biology Chapter 1"
                   value={projectData.name}
                   onChange={(e) =>
@@ -455,15 +455,15 @@ export default function OnboardingPage() {
                 <div className="flex justify-between items-center">
                   <label
                     htmlFor="projectDescription"
-                    className="text-sm font-medium text-slate-200"
+                    className="text-sm font-medium text-secondary"
                   >
                     Description
                   </label>
-                  <span className="text-xs text-slate-400">Optional</span>
+                  <span className="text-xs text-muted">Optional</span>
                 </div>
                 <Textarea
                   id="projectDescription"
-                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+                  className="surface-glass border-subtle text-primary placeholder:text-muted resize-none focus:border-brand transition-all transition-normal"
                   placeholder="Describe what you'll be studying in this project..."
                   rows={3}
                   maxLength={500}
@@ -486,54 +486,75 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden">
-      {/* Animated background elements */}
+    <div className="min-h-screen surface-primary overflow-hidden relative">
+      {/* Enhanced animated background elements with semantic variables */}
       <div className="fixed inset-0 pointer-events-none">
         <div
-          className="absolute w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse"
-          style={{ left: "10%", top: "20%" }}
+          className="absolute w-96 h-96 opacity-20 rounded-full blur-3xl animate-pulse"
+          style={{
+            left: "10%",
+            top: "20%",
+            background: "var(--gradient-glass)",
+          }}
         />
         <div
-          className="absolute w-96 h-96 bg-violet-500/5 rounded-full blur-3xl animate-pulse"
-          style={{ right: "10%", bottom: "20%", animationDelay: "2s" }}
+          className="absolute w-96 h-96 opacity-20 rounded-full blur-3xl animate-pulse"
+          style={{
+            right: "10%",
+            bottom: "20%",
+            animationDelay: "2s",
+            background: "var(--gradient-glass)",
+          }}
+        />
+        <div
+          className="absolute w-64 h-64 opacity-10 rounded-full blur-2xl animate-pulse"
+          style={{
+            left: "60%",
+            top: "10%",
+            animationDelay: "4s",
+            background: "var(--gradient-brand-primary)",
+          }}
         />
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl bg-slate-800/40 border border-slate-600 backdrop-blur-sm shadow-2xl">
+        <Card className="w-full max-w-2xl glass-surface shadow-brand-lg border border-subtle transform hover:scale-[1.01] transition-all transition-slow">
           <CardHeader className="text-center pb-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-violet-500 rounded-xl flex items-center justify-center">
-                <Brain className="w-6 h-6 text-white" />
+              <div className="relative group">
+                <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all transition-normal shadow-brand">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -inset-1 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
               </div>
             </div>
-            <CardTitle className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <CardTitle className="text-2xl sm:text-3xl font-bold text-primary mb-3">
               Welcome to{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-brand bg-clip-text text-transparent">
                 Cognify
               </span>
             </CardTitle>
 
-            {/* Progress Steps */}
+            {/* Enhanced Progress Steps */}
             <div className="flex items-center justify-center space-x-4 mt-6">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div
-                    className={`flex items-center space-x-2 ${
+                    className={`flex items-center space-x-2 transition-all transition-normal ${
                       step.id === currentStep
-                        ? "text-violet-400"
+                        ? "text-brand-primary"
                         : step.id < currentStep
-                        ? "text-green-400"
-                        : "text-slate-500"
+                        ? "text-status-success"
+                        : "text-muted"
                     }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all transition-normal ${
                         step.id === currentStep
-                          ? "border-violet-400 bg-violet-500/20"
+                          ? "border-brand shadow-brand surface-glass"
                           : step.id < currentStep
-                          ? "border-green-400 bg-green-500/20"
-                          : "border-slate-500 bg-slate-700/20"
+                          ? "border-status-success bg-status-success/10"
+                          : "border-subtle surface-elevated"
                       }`}
                     >
                       {step.id < currentStep ? (
@@ -544,11 +565,11 @@ export default function OnboardingPage() {
                     </div>
                     <div className="hidden sm:block">
                       <p className="text-sm font-medium">{step.title}</p>
-                      <p className="text-xs opacity-70">{step.description}</p>
+                      <p className="text-xs text-muted">{step.description}</p>
                     </div>
                   </div>
                   {index < steps.length - 1 && (
-                    <ChevronRight className="w-4 h-4 text-slate-500 mx-2" />
+                    <ChevronRight className="w-4 h-4 text-muted mx-2" />
                   )}
                 </div>
               ))}
@@ -563,9 +584,11 @@ export default function OnboardingPage() {
             {error && (
               <Alert
                 variant="destructive"
-                className="bg-red-500/10 border-red-500/20 text-red-400 mt-6"
+                className="surface-glass border-destructive mt-6"
               >
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="text-destructive-foreground">
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -575,7 +598,7 @@ export default function OnboardingPage() {
                 variant="outline"
                 onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                 disabled={currentStep === 1 || loading}
-                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover transition-all transition-normal"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
@@ -592,7 +615,7 @@ export default function OnboardingPage() {
                       }
                     }}
                     disabled={!canProceedFromStep(currentStep) || loading}
-                    className="bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white border-none"
+                    className="bg-gradient-brand hover:bg-gradient-brand-hover text-white border-none transform hover:scale-[1.02] transition-all transition-normal shadow-brand"
                   >
                     {loading ? (
                       <>
@@ -614,7 +637,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={handleProjectSubmit}
                     disabled={!canProceedFromStep(currentStep) || loading}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-none"
+                    className="bg-status-success hover:bg-status-success/80 text-white border-none transform hover:scale-[1.02] transition-all transition-normal shadow-brand"
                   >
                     {loading ? (
                       <>
@@ -637,7 +660,7 @@ export default function OnboardingPage() {
               <div className="text-center mt-4">
                 <button
                   onClick={() => setCurrentStep(3)}
-                  className="text-sm text-slate-400 hover:text-slate-300 transition-colors underline"
+                  className="text-sm text-muted hover:text-secondary transition-colors transition-normal underline"
                 >
                   Skip AI setup for now
                 </button>
@@ -646,10 +669,10 @@ export default function OnboardingPage() {
 
             {/* Help Text */}
             <div className="text-center mt-4">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted">
                 {currentStep === 1 && (
                   <>
-                    <span className="text-red-400">*</span> Required field
+                    <span className="text-status-error">*</span> Required field
                   </>
                 )}
                 {currentStep === 2 && (

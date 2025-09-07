@@ -641,7 +641,7 @@ export function StudyGoalsSystem({
 
                   <div className="flex items-center gap-2">
                     {isCompleted && (
-                      <Badge variant="default" className="bg-green-500">
+                      <Badge variant="default" className="bg-status-success">
                         <Trophy className="w-3 h-3 mr-1" />
                         Complete
                       </Badge>

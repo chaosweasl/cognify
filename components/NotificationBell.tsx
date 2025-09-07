@@ -189,7 +189,7 @@ export function NotificationBell() {
       >
         <Bell className="h-5 w-5" />
         {notificationCount > 0 && (
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-red-500 text-white border-2 border-background flex items-center justify-center rounded-full">
+          <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs bg-status-error text-white border-2 border-background flex items-center justify-center rounded-full">
             {notificationCount > 9 ? "9+" : notificationCount}
           </Badge>
         )}
@@ -215,7 +215,7 @@ export function NotificationBell() {
               >
                 Personal
                 {unreadUserCount > 0 && (
-                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-red-500 text-white">
+                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-status-error text-white">
                     {unreadUserCount}
                   </Badge>
                 )}
@@ -231,7 +231,7 @@ export function NotificationBell() {
               >
                 Updates
                 {unreadAppCount > 0 && (
-                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-red-500 text-white">
+                  <Badge className="ml-2 h-4 w-4 p-0 text-xs bg-status-error text-white">
                     {unreadAppCount}
                   </Badge>
                 )}
@@ -324,11 +324,11 @@ function NotificationItem({
   const getNotificationIcon = () => {
     switch (notification.type) {
       case "study_reminder":
-        return <BookOpen className="h-4 w-4 text-blue-500" />;
+        return <BookOpen className="h-4 w-4 text-status-info" />;
       case "achievement":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-status-success" />;
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+        return <Bell className="h-4 w-4 text-muted" />;
     }
   };
 
@@ -376,7 +376,7 @@ function NotificationItem({
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                className="h-6 w-6 p-0 text-status-error hover:text-status-error"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -430,7 +430,7 @@ function AppNotificationItem({
       }}
     >
       <div className="flex items-start gap-3">
-        <Info className="h-4 w-4 text-blue-500 mt-0.5" />
+        <Info className="h-4 w-4 text-status-info mt-0.5" />
         <div className="flex-1">
           <div
             className={cn(

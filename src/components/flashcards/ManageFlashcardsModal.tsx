@@ -108,7 +108,7 @@ export function ManageFlashcardsModal({
               {selectedCards.size > 0 && (
                 <>
                   <button
-                    className="btn btn-sm bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 interactive-hover rounded-xl transition-all transition-normal"
+                    className="btn btn-sm surface-elevated border-status-error/30 text-status-error hover:surface-elevated hover:border-status-error/50 interactive-hover rounded-xl transition-all transition-normal"
                     onClick={deleteSelectedCards}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -119,7 +119,7 @@ export function ManageFlashcardsModal({
               )}
 
               <button
-                className="btn btn-sm bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 interactive-hover rounded-xl transition-all transition-normal"
+                className="btn btn-sm surface-elevated border-status-error text-status-error hover:surface-elevated hover:border-status-error interactive-hover rounded-xl transition-all transition-normal"
                 onClick={() => setConfirmDeleteAll(true)}
                 disabled={flashcards.length === 0}
               >
@@ -157,12 +157,12 @@ export function ManageFlashcardsModal({
               <div className="stat-title text-xs text-muted uppercase tracking-wider">
                 Valid Cards
               </div>
-              <div className="stat-value text-2xl text-green-500 group-hover:scale-110 transition-transform transition-normal">
+              <div className="stat-value text-2xl text-status-success group-hover:scale-110 transition-transform transition-normal">
                 {validCards.length}
               </div>
               <div className="w-full h-1 bg-border-subtle rounded-full mt-2">
                 <div
-                  className="h-full bg-green-500 rounded-full transition-all transition-normal"
+                  className="h-full bg-status-success rounded-full transition-all transition-normal"
                   style={{
                     width: `${
                       flashcards.length > 0
@@ -255,13 +255,13 @@ export function ManageFlashcardsModal({
                       <td>
                         {isValid ? (
                           <div className="relative">
-                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            <div className="absolute inset-0 w-4 h-4 text-green-500 animate-ping opacity-25">
+                            <CheckCircle2 className="w-4 h-4 text-status-success" />
+                            <div className="absolute inset-0 w-4 h-4 text-status-success animate-ping opacity-25">
                               <CheckCircle2 className="w-4 h-4" />
                             </div>
                           </div>
                         ) : (
-                          <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                          <AlertTriangle className="w-4 h-4 text-status-warning" />
                         )}
                       </td>
                       <td className="max-w-48">
@@ -302,7 +302,7 @@ export function ManageFlashcardsModal({
                             Edit
                           </button>
                           <button
-                            className="btn btn-xs bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 interactive-hover transition-all transition-normal rounded-lg"
+                            className="btn btn-xs surface-elevated border-status-error text-status-error hover:surface-elevated hover:border-status-error interactive-hover transition-all transition-normal rounded-lg"
                             onClick={() => onDelete(idx)}
                             title="Delete this card"
                           >
@@ -351,8 +351,8 @@ export function ManageFlashcardsModal({
 
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-red-500/10 rounded-xl">
-                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                  <div className="p-3 surface-elevated rounded-xl">
+                    <AlertTriangle className="w-6 h-6 text-status-error" />
                   </div>
                   <div>
                     <h4 className="text-lg font-bold text-primary">
@@ -378,7 +378,7 @@ export function ManageFlashcardsModal({
                     Cancel
                   </button>
                   <button
-                    className="btn bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 interactive-hover transition-all transition-normal rounded-xl"
+                    className="btn surface-elevated border-status-error text-status-error hover:surface-elevated hover:border-status-error interactive-hover transition-all transition-normal rounded-xl"
                     onClick={() => {
                       onDeleteAll();
                       setSelectedCards(new Set());

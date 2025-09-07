@@ -63,7 +63,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "Optimized for vocabulary, phrases, and grammar rules with frequent reviews",
     category: "Language",
     icon: Globe,
-    color: "from-blue-400 to-cyan-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 20,
       max_reviews_per_day: 150,
@@ -95,7 +95,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "High-retention settings for medical terminology, anatomy, and procedures",
     category: "Academic",
     icon: Heart,
-    color: "from-red-400 to-pink-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 15,
       max_reviews_per_day: 200,
@@ -127,7 +127,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "Perfect for learning syntax, algorithms, and programming principles",
     category: "Technology",
     icon: Code,
-    color: "from-green-400 to-emerald-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 25,
       max_reviews_per_day: 120,
@@ -159,7 +159,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "Intensive review schedule for test preparation with spaced repetition",
     category: "Academic",
     icon: GraduationCap,
-    color: "from-purple-400 to-indigo-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 30,
       max_reviews_per_day: 250,
@@ -191,7 +191,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "Balanced settings for learning facts, trivia, and general information",
     category: "General",
     icon: Brain,
-    color: "from-orange-400 to-yellow-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 20,
       max_reviews_per_day: 100,
@@ -223,7 +223,7 @@ const PROJECT_TEMPLATES: ProjectTemplate[] = [
       "Designed for formulas, theorems, and mathematical problem-solving",
     category: "Academic",
     icon: Calculator,
-    color: "from-teal-400 to-cyan-400",
+    color: "bg-gradient-brand",
     settings: {
       new_cards_per_day: 15,
       max_reviews_per_day: 100,
@@ -426,10 +426,10 @@ export function ProjectTemplates({
                         text-xs px-3 py-1 rounded-full
                         ${
                           template.difficulty === "Beginner"
-                            ? "bg-green-100 text-green-700 border-green-200"
+                            ? "surface-elevated text-status-success border-status-success"
                             : template.difficulty === "Intermediate"
-                            ? "bg-blue-100 text-blue-700 border-blue-200"
-                            : "bg-red-100 text-red-700 border-red-200"
+                            ? "surface-elevated text-status-info border-status-info"
+                            : "surface-elevated text-status-error border-status-error"
                         }
                       `}
                     >
@@ -444,39 +444,39 @@ export function ProjectTemplates({
                 {/* Enhanced Stats Grid */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="glass-surface p-3 rounded-xl border border-green-200/50 hover:border-green-300/70 transition-colors">
+                    <div className="glass-surface p-3 rounded-xl border border-status-success/30 hover:border-status-success/50 transition-colors">
                       <div className="flex items-center gap-2 text-sm">
-                        <Star className="w-4 h-4 text-green-500" />
-                        <span className="text-text-muted">New cards</span>
+                        <Star className="w-4 h-4 text-status-success" />
+                        <span className="text-muted">New cards</span>
                       </div>
-                      <div className="text-lg font-bold text-text-primary mt-1">
+                      <div className="text-lg font-bold text-primary mt-1">
                         {template.settings.new_cards_per_day}/day
                       </div>
                     </div>
-                    <div className="glass-surface p-3 rounded-xl border border-blue-200/50 hover:border-blue-300/70 transition-colors">
+                    <div className="glass-surface p-3 rounded-xl border border-brand-primary/30 hover:border-brand-primary/50 transition-colors">
                       <div className="flex items-center gap-2 text-sm">
-                        <Target className="w-4 h-4 text-blue-500" />
-                        <span className="text-text-muted">Max reviews</span>
+                        <Target className="w-4 h-4 text-brand-primary" />
+                        <span className="text-muted">Max reviews</span>
                       </div>
-                      <div className="text-lg font-bold text-text-primary mt-1">
+                      <div className="text-lg font-bold text-primary mt-1">
                         {template.settings.max_reviews_per_day}
                       </div>
                     </div>
-                    <div className="glass-surface p-3 rounded-xl border border-purple-200/50 hover:border-purple-300/70 transition-colors">
+                    <div className="glass-surface p-3 rounded-xl border border-brand-secondary/30 hover:border-brand-secondary/50 transition-colors">
                       <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-purple-500" />
-                        <span className="text-text-muted">Graduation</span>
+                        <Clock className="w-4 h-4 text-brand-secondary" />
+                        <span className="text-muted">Graduation</span>
                       </div>
-                      <div className="text-lg font-bold text-text-primary mt-1">
+                      <div className="text-lg font-bold text-primary mt-1">
                         {template.settings.graduating_interval}d
                       </div>
                     </div>
-                    <div className="glass-surface p-3 rounded-xl border border-orange-200/50 hover:border-orange-300/70 transition-colors">
+                    <div className="glass-surface p-3 rounded-xl border border-status-warning/30 hover:border-status-warning/50 transition-colors">
                       <div className="flex items-center gap-2 text-sm">
-                        <Zap className="w-4 h-4 text-orange-500" />
-                        <span className="text-text-muted">Start ease</span>
+                        <Zap className="w-4 h-4 text-status-warning" />
+                        <span className="text-muted">Start ease</span>
                       </div>
-                      <div className="text-lg font-bold text-text-primary mt-1">
+                      <div className="text-lg font-bold text-primary mt-1">
                         {template.settings.starting_ease.toFixed(1)}
                       </div>
                     </div>
@@ -536,7 +536,7 @@ export function ProjectTemplates({
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-text-secondary flex items-center gap-2">
                   <span>Project Name</span>
-                  <span className="text-red-500">*</span>
+                  <span className="text-status-error">*</span>
                 </label>
                 <Input
                   value={customName}
@@ -578,42 +578,42 @@ export function ProjectTemplates({
                 Template Settings Preview
               </h4>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-surface p-4 rounded-xl border border-green-200/50 bg-gradient-to-br from-green-50/50 to-transparent">
-                  <div className="flex items-center gap-2 text-sm text-green-600 mb-2">
+                <div className="glass-surface p-4 rounded-xl border border-status-success/30 bg-gradient-to-br from-status-success/5 to-transparent">
+                  <div className="flex items-center gap-2 text-sm text-status-success mb-2">
                     <Star className="w-4 h-4" />
                     <span className="font-medium">New Cards/Day</span>
                   </div>
-                  <div className="text-2xl font-bold text-text-primary">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedTemplate.settings.new_cards_per_day}
                   </div>
                 </div>
-                <div className="glass-surface p-4 rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50/50 to-transparent">
-                  <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
+                <div className="glass-surface p-4 rounded-xl border border-brand-primary/30 bg-gradient-to-br from-brand-primary/5 to-transparent">
+                  <div className="flex items-center gap-2 text-sm text-brand-primary mb-2">
                     <Target className="w-4 h-4" />
                     <span className="font-medium">Max Reviews/Day</span>
                   </div>
-                  <div className="text-2xl font-bold text-text-primary">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedTemplate.settings.max_reviews_per_day}
                   </div>
                 </div>
-                <div className="glass-surface p-4 rounded-xl border border-purple-200/50 bg-gradient-to-br from-purple-50/50 to-transparent">
-                  <div className="flex items-center gap-2 text-sm text-purple-600 mb-2">
+                <div className="glass-surface p-4 rounded-xl border border-brand-secondary/30 bg-gradient-to-br from-brand-secondary/5 to-transparent">
+                  <div className="flex items-center gap-2 text-sm text-brand-secondary mb-2">
                     <Clock className="w-4 h-4" />
                     <span className="font-medium">Graduation</span>
                   </div>
-                  <div className="text-2xl font-bold text-text-primary">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedTemplate.settings.graduating_interval} day
                     {selectedTemplate.settings.graduating_interval !== 1
                       ? "s"
                       : ""}
                   </div>
                 </div>
-                <div className="glass-surface p-4 rounded-xl border border-orange-200/50 bg-gradient-to-br from-orange-50/50 to-transparent">
-                  <div className="flex items-center gap-2 text-sm text-orange-600 mb-2">
+                <div className="glass-surface p-4 rounded-xl border border-status-warning/30 bg-gradient-to-br from-status-warning/5 to-transparent">
+                  <div className="flex items-center gap-2 text-sm text-status-warning mb-2">
                     <Zap className="w-4 h-4" />
                     <span className="font-medium">Starting Ease</span>
                   </div>
-                  <div className="text-2xl font-bold text-text-primary">
+                  <div className="text-2xl font-bold text-primary">
                     {selectedTemplate.settings.starting_ease.toFixed(1)}
                   </div>
                 </div>
@@ -668,7 +668,7 @@ export function ProjectTemplates({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex items-start gap-4 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+            <div className="w-12 h-12 bg-gradient-to-br from-status-success to-status-success rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
               <Check className="w-6 h-6 text-white" />
             </div>
             <div className="space-y-2">
@@ -683,7 +683,7 @@ export function ProjectTemplates({
           </div>
 
           <div className="flex items-start gap-4 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+            <div className="w-12 h-12 bg-gradient-to-br from-brand-primary to-brand-primary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
               <Clock className="w-6 h-6 text-white" />
             </div>
             <div className="space-y-2">
@@ -698,7 +698,7 @@ export function ProjectTemplates({
           </div>
 
           <div className="flex items-start gap-4 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+            <div className="w-12 h-12 bg-gradient-to-br from-brand-accent to-brand-accent rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
               <Brain className="w-6 h-6 text-white" />
             </div>
             <div className="space-y-2">

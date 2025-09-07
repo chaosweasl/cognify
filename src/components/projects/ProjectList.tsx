@@ -221,21 +221,19 @@ export function ProjectList() {
 
             {/* Enhanced Quick Stats */}
             <div className="flex gap-6">
-              <div className="text-center px-6 py-4 glass-surface border border-green-200/50 rounded-2xl hover:border-green-300/70 transition-all duration-300 group">
-                <div className="text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform">
+              <div className="text-center px-6 py-4 glass-surface border border-status-success/30 rounded-2xl hover:border-status-success/50 transition-all duration-300 group">
+                <div className="text-3xl font-bold text-status-success group-hover:scale-110 transition-transform">
                   {filterCounts.active}
                 </div>
-                <div className="text-sm text-text-muted font-medium">
+                <div className="text-sm text-muted font-medium">
                   Ready to Study
                 </div>
               </div>
-              <div className="text-center px-6 py-4 glass-surface border border-blue-200/50 rounded-2xl hover:border-blue-300/70 transition-all duration-300 group">
-                <div className="text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform">
+              <div className="text-center px-6 py-4 glass-surface border border-brand-primary/30 rounded-2xl hover:border-brand-primary/50 transition-all duration-300 group">
+                <div className="text-3xl font-bold text-brand-primary group-hover:scale-110 transition-transform">
                   {filterCounts.completed}
                 </div>
-                <div className="text-sm text-text-muted font-medium">
-                  Completed
-                </div>
+                <div className="text-sm text-muted font-medium">Completed</div>
               </div>
             </div>
           </div>
@@ -320,17 +318,17 @@ export function ProjectList() {
                   <DropdownMenuItem
                     className={cn(
                       "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
-                      "text-text-primary hover:bg-green-50 focus:bg-green-50",
+                      "text-text-primary interactive-hover",
                       filterBy === "active" &&
-                        "bg-green-100 text-green-700 border border-green-200"
+                        "surface-elevated text-status-success border border-status-success"
                     )}
                     onSelect={() => setFilterBy("active")}
                   >
-                    <Brain className="w-5 h-5 text-green-600" />
+                    <Brain className="w-5 h-5 text-status-success" />
                     <span className="flex-1 font-semibold">Ready to Study</span>
                     <Badge
                       variant="outline"
-                      className="text-sm text-green-600 border-green-300"
+                      className="text-sm text-status-success border-status-success/30"
                     >
                       {filterCounts.active}
                     </Badge>
@@ -338,17 +336,17 @@ export function ProjectList() {
                   <DropdownMenuItem
                     className={cn(
                       "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
-                      "text-text-primary hover:bg-blue-50 focus:bg-blue-50",
+                      "text-text-primary interactive-hover",
                       filterBy === "completed" &&
-                        "bg-blue-100 text-blue-700 border border-blue-200"
+                        "surface-elevated text-status-info border border-status-info"
                     )}
                     onSelect={() => setFilterBy("completed")}
                   >
-                    <BookOpen className="w-5 h-5 text-blue-600" />
+                    <BookOpen className="w-5 h-5 text-status-info" />
                     <span className="flex-1 font-semibold">Completed</span>
                     <Badge
                       variant="outline"
-                      className="text-sm text-blue-600 border-blue-300"
+                      className="text-sm text-brand-primary border-brand-primary/30"
                     >
                       {filterCounts.completed}
                     </Badge>
@@ -356,17 +354,17 @@ export function ProjectList() {
                   <DropdownMenuItem
                     className={cn(
                       "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
-                      "text-text-primary hover:bg-gray-50 focus:bg-gray-50",
+                      "text-primary hover:surface-elevated focus:surface-elevated",
                       filterBy === "empty" &&
-                        "bg-gray-100 text-gray-700 border border-gray-200"
+                        "surface-elevated text-primary border border-subtle"
                     )}
                     onSelect={() => setFilterBy("empty")}
                   >
-                    <Plus className="w-5 h-5 text-gray-600" />
+                    <Plus className="w-5 h-5 text-secondary" />
                     <span className="flex-1 font-semibold">Empty</span>
                     <Badge
                       variant="outline"
-                      className="text-sm text-gray-600 border-gray-300"
+                      className="text-sm text-secondary border-subtle"
                     >
                       {filterCounts.empty}
                     </Badge>
@@ -506,15 +504,15 @@ export function ProjectList() {
               {searchQuery && (
                 <Badge
                   variant="outline"
-                  className="text-sm px-3 py-1 bg-blue-50 text-blue-700 border-blue-300"
+                  className="text-sm px-3 py-1 bg-brand-primary/10 text-brand-primary border-brand-primary/30"
                 >
-                  Search: "{searchQuery}"
+                  Search: &ldquo;{searchQuery}&rdquo;
                 </Badge>
               )}
               {filterBy !== "all" && (
                 <Badge
                   variant="outline"
-                  className="text-sm px-3 py-1 bg-green-50 text-green-700 border-green-300"
+                  className="text-sm px-3 py-1 bg-status-success/10 text-status-success border-status-success/30"
                 >
                   Filter: {getFilterLabel()}
                 </Badge>

@@ -124,7 +124,7 @@ export function AnnouncementManagement() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, activeFilter]);
+  }, [pagination.page, pagination.limit, activeFilter]);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -223,21 +223,6 @@ export function AnnouncementManagement() {
         return <XCircle className="w-4 h-4" />;
       default:
         return <Info className="w-4 h-4" />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "info":
-        return "text-blue-600 bg-blue-50";
-      case "warning":
-        return "text-yellow-600 bg-yellow-50";
-      case "success":
-        return "text-green-600 bg-green-50";
-      case "error":
-        return "text-red-600 bg-red-50";
-      default:
-        return "text-blue-600 bg-blue-50";
     }
   };
 
@@ -420,7 +405,6 @@ export function AnnouncementManagement() {
                   }}
                   formatDate={formatDate}
                   getTypeIcon={getTypeIcon}
-                  getTypeColor={getTypeColor}
                   index={index}
                 />
               ))}
@@ -487,7 +471,6 @@ interface AnnouncementCardProps {
   onToggleActive: () => void;
   formatDate: (dateString: string) => string;
   getTypeIcon: (type: string) => React.ReactNode;
-  getTypeColor: (type: string) => string;
   index?: number;
 }
 
@@ -498,7 +481,6 @@ function AnnouncementCard({
   onToggleActive,
   formatDate,
   getTypeIcon,
-  getTypeColor,
   index = 0,
 }: AnnouncementCardProps) {
   const isExpired =
@@ -647,7 +629,7 @@ function AnnouncementCard({
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full animate-pulse",
-                    isExpired ? "bg-red-500" : "bg-orange-500"
+                    isExpired ? "bg-red-500" : "bg-status-warning"
                   )}
                 />
                 <span className="text-muted font-medium">

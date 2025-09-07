@@ -30,6 +30,7 @@ import { CardTypeIndicator } from "./CardTypeIndicator";
 import { FlashcardDisplay } from "../flashcards/FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "../flashcards/EmptyFlashcardState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Flashcard, Project } from "../../types";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Pencil } from "lucide-react";
@@ -93,7 +94,7 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => router.push(`/projects/${projectId}/edit`)}
-            className="btn btn-outline btn-sm gap-2"
+            className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
             title="Edit flashcards"
           >
             <Pencil className="w-4 h-4" />
@@ -101,7 +102,7 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
           </button>
           <button
             onClick={onReset}
-            className="btn btn-ghost btn-sm gap-2"
+            className="surface-elevated border-subtle text-secondary hover:surface-glass hover:text-primary hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
             title="Reset session"
           >
             <RotateCcw className="w-4 h-4" />
@@ -172,24 +173,24 @@ function SessionProgress({
   return (
     <>
       <div className="mt-6 text-center">
-        <div className="text-sm text-base-content/70">
+        <div className="text-sm text-secondary">
           Session: {reviewed} cards reviewed
         </div>
         {learningQueueCount > 0 && (
-          <div className="text-xs text-orange-600 mt-1">
+          <div className="text-xs text-status-warning mt-1">
             {learningQueueCount} card{learningQueueCount === 1 ? "" : "s"} in
             learning queue
           </div>
         )}
         {reviewed > 0 && learningQueueCount === 0 && (
-          <div className="text-xs text-green-600 mt-1">
+          <div className="text-xs text-status-success mt-1">
             ✓ Learning queue empty
           </div>
         )}
       </div>
 
       {/* Shortcuts */}
-      <div className="mt-4 text-xs text-base-content/50 text-center">
+      <div className="mt-4 text-xs text-muted text-center">
         <div className="hidden lg:flex flex-wrap justify-center gap-4">
           <span>Space / F: Flip</span>
           <span>1: Again</span>
@@ -309,6 +310,7 @@ export default function StudyFlashcards({
 
   // Prevent rating spam
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   // Session statistics
   const [sessionStats, setSessionStats] = useState({
@@ -506,6 +508,17 @@ export default function StudyFlashcards({
     ]
   );
 
+  // Initialize study session
+  useEffect(() => {
+    if (initializing) {
+      // Add a small delay to show loading state
+      const timer = setTimeout(() => {
+        setInitializing(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [initializing]);
+
   // Effects
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -630,6 +643,24 @@ export default function StudyFlashcards({
   }, [userId, project.id, srsState, saveSRSStatesToDB]);
 
   // Render conditions
+  if (initializing) {
+    return (
+      <div className="surface-elevated rounded-lg border border-subtle p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <div className="flex justify-center space-x-4">
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+        </div>
+      </div>
+    );
+  }
+
   if (!cards || cards.length === 0) {
     return <EmptyFlashcardState type="no-cards" />;
   }

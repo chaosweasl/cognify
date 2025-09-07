@@ -31,70 +31,70 @@ export function SessionComplete({
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
       <div className="w-full max-w-lg text-center space-y-6">
-        {/* Success Icon */}
+        {/* Enhanced Success Icon with Animation */}
         <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-success" />
+          <div className="w-16 h-16 rounded-full bg-status-success/10 border-2 border-status-success/20 flex items-center justify-center animate-pulse shadow-lg">
+            <BookOpen className="w-8 h-8 text-status-success" />
           </div>
         </div>
 
         {/* Title */}
         <div>
-          <h2 className="text-2xl font-bold text-base-content mb-2">
+          <h2 className="text-2xl font-bold text-primary mb-2">
             Study Session Complete!
           </h2>
-          <p className="text-base-content/70">
+          <p className="text-secondary">
             Great work! You&apos;ve completed all due cards.
           </p>
         </div>
 
-        {/* Session Stats */}
-        <div className="bg-base-100 rounded-xl border border-base-300 p-6">
-          <h3 className="text-lg font-semibold text-base-content mb-4">
+        {/* Enhanced Session Stats */}
+        <div className="glass-surface rounded-xl border border-subtle p-6 shadow-brand">
+          <h3 className="text-lg font-semibold text-primary mb-4">
             Session Summary
           </h3>
 
           {/* Total Reviewed and Time */}
-          <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b border-base-300">
+          <div className="grid grid-cols-2 gap-4 mb-6 pb-4 border-b border-subtle">
             <div className="text-center">
-              <div className="text-2xl font-bold text-primary mb-1">
+              <div className="text-2xl font-bold brand-primary mb-1">
                 {sessionStats.reviewed}
               </div>
-              <div className="text-sm text-base-content/70">Cards Reviewed</div>
+              <div className="text-sm text-secondary">Cards Reviewed</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-info mb-1">
+              <div className="text-2xl font-bold text-status-info mb-1">
                 {sessionStats.timeSpent}m
               </div>
-              <div className="text-sm text-base-content/70">Time Spent</div>
+              <div className="text-sm text-secondary">Time Spent</div>
             </div>
           </div>
 
-          {/* Rating Breakdown */}
+          {/* Rating Breakdown with Enhanced Styling */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-xl font-bold text-success">
+            <div className="text-center p-3 surface-elevated rounded-lg border border-subtle hover:border-status-success transition-all transition-normal">
+              <div className="text-xl font-bold text-status-success">
                 {sessionStats.easy}
               </div>
-              <div className="text-sm text-base-content/70">Easy</div>
+              <div className="text-sm text-secondary">Easy</div>
             </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-info">
+            <div className="text-center p-3 surface-elevated rounded-lg border border-subtle hover:border-brand-primary transition-all transition-normal">
+              <div className="text-xl font-bold brand-primary">
                 {sessionStats.good}
               </div>
-              <div className="text-sm text-base-content/70">Good</div>
+              <div className="text-sm text-secondary">Good</div>
             </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-warning">
+            <div className="text-center p-3 surface-elevated rounded-lg border border-subtle hover:border-status-warning transition-all transition-normal">
+              <div className="text-xl font-bold text-status-warning">
                 {sessionStats.hard}
               </div>
-              <div className="text-sm text-base-content/70">Hard</div>
+              <div className="text-sm text-secondary">Hard</div>
             </div>
-            <div className="text-center">
-              <div className="text-xl font-bold text-error">
+            <div className="text-center p-3 surface-elevated rounded-lg border border-subtle hover:border-status-error transition-all transition-normal">
+              <div className="text-xl font-bold text-status-error">
                 {sessionStats.again}
               </div>
-              <div className="text-sm text-base-content/70">Again</div>
+              <div className="text-sm text-secondary">Again</div>
             </div>
           </div>
         </div>
@@ -116,21 +116,21 @@ export function SessionComplete({
               <div className="text-muted">Learning</div>
             </div>
             <div>
-              <div className="font-bold text-green-600">
+              <div className="font-bold text-status-success">
                 {studyStats.dueCards}
               </div>
-              <div className="text-base-content/70">Due</div>
+              <div className="text-muted">Due</div>
             </div>
           </div>
         </div>
 
-        {/* Next Review Info */}
+        {/* Enhanced Next Review Info */}
         {nextReview ? (
-          <div className="bg-base-200/50 rounded-lg p-4">
-            <div className="text-sm text-base-content/70 mb-1">
+          <div className="surface-glass rounded-lg p-4 border border-subtle">
+            <div className="text-sm text-secondary mb-1">
               Next review scheduled
             </div>
-            <div className="font-medium text-base-content">
+            <div className="font-medium text-primary">
               {new Date(nextReview).toLocaleDateString(undefined, {
                 weekday: "short",
                 month: "short",
@@ -141,29 +141,29 @@ export function SessionComplete({
             </div>
           </div>
         ) : (
-          <div className="bg-base-200/50 rounded-lg p-4">
-            <div className="text-sm text-base-content/70">
+          <div className="surface-glass rounded-lg p-4 border border-subtle">
+            <div className="text-sm text-secondary">
               No future reviews scheduled
             </div>
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Enhanced Action Buttons */}
         <div className="pt-2 space-y-3">
           <div className="text-center space-y-2">
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-secondary">
               Daily study session complete! Come back tomorrow or adjust your
               limits in Settings.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <button
-                className="btn btn-outline btn-sm"
+                className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover px-4 py-2 rounded-md text-sm font-medium transition-all transition-normal"
                 onClick={() => (window.location.href = "/projects")}
               >
                 Back to Projects
               </button>
               <button
-                className="btn btn-outline btn-sm"
+                className="bg-gradient-brand hover:bg-gradient-brand-hover text-white px-4 py-2 rounded-md text-sm font-medium transition-all transition-normal shadow-brand transform hover:scale-[1.02]"
                 onClick={() =>
                   (window.location.href = window.location.pathname.replace(
                     "/study",

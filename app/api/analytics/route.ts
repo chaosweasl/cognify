@@ -75,15 +75,12 @@ async function handleGetUsageStats(request: NextRequest) {
         ? (totalCardsLearned / (totalCardsLearned + totalCardsLapsed)) * 100
         : 100;
 
-    const studyStreak = calculateStudyStreak(dailyStats || []);
-
     return NextResponse.json({
       summary: {
         totalTimeStudied: Math.round(totalTimeStudied / 60), // Convert to minutes
         totalCardsStudied,
         totalCardsLearned,
         retentionRate: Math.round(retentionRate * 100) / 100,
-        studyStreak,
         activeProjects: projects?.length || 0,
       },
       dailyStats: dailyStats || [],
@@ -177,43 +174,6 @@ async function handleGetPerformanceMetrics() {
       { status: 500 }
     );
   }
-}
-
-function calculateStudyStreak(
-  dailyStats: Array<{
-    study_date: string;
-    new_cards_studied: number;
-    reviews_completed: number;
-  }>
-): number {
-  if (!dailyStats || dailyStats.length === 0) return 0;
-
-  const sortedStats = dailyStats
-    .sort(
-      (a, b) =>
-        new Date(b.study_date).getTime() - new Date(a.study_date).getTime()
-    )
-    .filter((stat) => stat.new_cards_studied > 0 || stat.reviews_completed > 0);
-
-  let streak = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (const stat of sortedStats) {
-    const statDate = new Date(stat.study_date);
-    statDate.setHours(0, 0, 0, 0);
-
-    const expectedDate = new Date(today);
-    expectedDate.setDate(expectedDate.getDate() - streak);
-
-    if (statDate.getTime() === expectedDate.getTime()) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
 }
 
 // Route handlers with security

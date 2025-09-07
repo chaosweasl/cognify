@@ -157,7 +157,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 "fixed top-0 left-0 h-screen z-40 transition-all duration-slow",
                 isOpen ? "translate-x-0" : "-translate-x-full"
               )
-            : "hidden md:flex"
+            : "hidden md:flex",
+          // Enhanced responsive touch targets and spacing
+          "touch-pan-y overscroll-contain"
         )}
       >
         {/* Animated Background Gradients */}
@@ -192,9 +194,10 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="h-8 w-8 p-0 text-muted hover:text-primary interactive-hover rounded-lg"
+                className="h-10 w-10 p-0 text-muted hover:text-primary interactive-hover rounded-lg touch-manipulation"
+                aria-label="Close sidebar"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </Button>
             )}
           </div>
@@ -214,10 +217,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
               className={cn(
-                "pl-10 h-10 transition-all transition-normal",
+                "pl-10 h-12 transition-all transition-normal touch-manipulation",
                 "surface-secondary border-secondary text-primary placeholder:text-muted",
                 "focus:surface-elevated focus:border-brand focus:shadow-brand interactive-focus",
-                "interactive-hover"
+                "interactive-hover text-base", // Prevent zoom on iOS
+                isMobile && "text-[16px]" // Prevent iOS zoom
               )}
             />
             {searchQuery && (
@@ -239,7 +243,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           <Button
             variant={activeTab === "all" ? "default" : "ghost"}
             className={cn(
-              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden",
+              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden touch-manipulation",
               activeTab === "all"
                 ? "bg-gradient-brand text-white shadow-brand hover:shadow-brand-lg"
                 : "text-secondary hover:text-primary interactive-hover border-secondary"
@@ -279,7 +283,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
           <Button
             variant={activeTab === "create" ? "default" : "ghost"}
             className={cn(
-              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden",
+              "w-full justify-start gap-3 h-12 px-4 rounded-xl transition-all transition-normal group relative overflow-hidden touch-manipulation",
               activeTab === "create"
                 ? "bg-gradient-to-r from-brand-secondary to-brand-accent text-white shadow-brand hover:shadow-brand-lg"
                 : "text-secondary hover:text-primary interactive-hover border-secondary"
@@ -442,7 +446,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
 
                 <Button
                   variant="ghost"
-                  className="relative w-full justify-start p-4 h-auto gap-4 hover:bg-transparent rounded-xl"
+                  className="relative w-full justify-start p-4 h-auto gap-4 hover:bg-transparent rounded-xl touch-manipulation active:scale-95 transition-transform"
                   title={project.name}
                   onClick={() => handleProjectClick(project.id)}
                 >
@@ -458,7 +462,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                             ? "bg-brand-secondary"
                             : index % 4 === 2
                             ? "bg-brand-tertiary"
-                            : "bg-pink-500",
+                            : "bg-brand-accent",
                           hoveredProject === project.id
                             ? "scale-125 shadow-brand"
                             : "scale-100"
@@ -474,7 +478,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({ activeTab, onTab }) => {
                               ? "bg-brand-secondary/40"
                               : index % 4 === 2
                               ? "bg-brand-tertiary/40"
-                              : "bg-pink-500/40"
+                              : "bg-brand-accent/40"
                           )}
                         />
                       )}

@@ -115,7 +115,7 @@ export function ProjectInfoForm({
                 : isValid
                 ? "border-brand-primary/30 text-text-primary hover:border-brand-primary/50"
                 : name.trim().length > 0
-                ? "border-red-400/50 text-text-primary focus:border-red-500"
+                ? "border-status-error text-text-primary focus:border-status-error"
                 : "border-brand-primary/30 text-text-primary hover:border-brand-primary/50"
             } placeholder:text-text-muted disabled:opacity-50`}
             disabled={saving}
@@ -132,9 +132,9 @@ export function ProjectInfoForm({
             <div
               className={`text-sm px-3 py-2 rounded-xl font-medium transition-all duration-300 ${
                 name.length > 80
-                  ? "bg-orange-100 text-orange-700 border border-orange-300"
+                  ? "surface-elevated text-status-warning border border-status-warning"
                   : name.length > 60
-                  ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  ? "surface-elevated text-status-warning border border-status-warning"
                   : "glass-surface text-text-muted border border-brand-primary/20"
               }`}
             >
@@ -208,9 +208,9 @@ export function ProjectInfoForm({
             <div
               className={`text-sm px-3 py-2 rounded-xl font-medium transition-all duration-300 ${
                 description.length > 400
-                  ? "bg-orange-100 text-orange-700 border border-orange-300"
+                  ? "surface-elevated text-status-warning border border-status-warning"
                   : description.length > 300
-                  ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  ? "surface-elevated text-status-warning border border-status-warning"
                   : "glass-surface text-text-muted border border-brand-secondary/20"
               }`}
             >
@@ -252,7 +252,7 @@ export function ProjectInfoForm({
               <div
                 className={`p-3 rounded-2xl transition-all duration-500 ${
                   focusedField === "newCards"
-                    ? "bg-gradient-to-br from-brand-tertiary/20 to-green-500/20 shadow-brand-lg scale-110"
+                    ? "bg-gradient-to-br from-brand-tertiary/20 to-status-success/20 shadow-brand-lg scale-110"
                     : "glass-surface border border-brand-tertiary/20"
                 }`}
               >
@@ -264,7 +264,7 @@ export function ProjectInfoForm({
                   }`}
                 />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-brand-tertiary to-green-500 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-brand-tertiary to-status-success bg-clip-text text-transparent">
                 New Cards/Day
               </span>
             </div>
@@ -295,7 +295,7 @@ export function ProjectInfoForm({
 
             {/* Enhanced number input glow */}
             {focusedField === "newCards" && (
-              <div className="absolute -inset-1 bg-gradient-to-r from-brand-tertiary/30 to-green-500/30 rounded-2xl blur opacity-70 -z-10" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-brand-tertiary/30 to-status-success/30 rounded-2xl blur opacity-70 -z-10" />
             )}
 
             {/* Enhanced value indicator */}
@@ -303,10 +303,10 @@ export function ProjectInfoForm({
               <div
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
                   newCardsPerDay > 30
-                    ? "bg-red-100 text-red-700 border border-red-300"
+                    ? "surface-elevated text-status-error border border-status-error"
                     : newCardsPerDay > 15
-                    ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                    : "bg-green-100 text-green-700 border border-green-300"
+                    ? "surface-elevated text-status-warning border border-status-warning"
+                    : "surface-elevated text-status-success border border-status-success"
                 }`}
               >
                 {newCardsPerDay === 0
@@ -335,19 +335,19 @@ export function ProjectInfoForm({
               <div
                 className={`p-3 rounded-2xl transition-all duration-500 ${
                   focusedField === "maxReviews"
-                    ? "bg-gradient-to-br from-purple-500/20 to-pink-500/20 shadow-brand-lg scale-110"
-                    : "glass-surface border border-purple-400/20"
+                    ? "bg-gradient-to-br from-brand-accent/20 to-brand-secondary/20 shadow-brand-lg scale-110"
+                    : "glass-surface border border-brand-accent/20"
                 }`}
               >
                 <Target
                   className={`w-6 h-6 transition-all duration-500 ${
                     focusedField === "maxReviews"
-                      ? "text-purple-600 scale-110 rotate-12"
+                      ? "text-brand-accent scale-110 rotate-12"
                       : "text-text-muted"
                   }`}
                 />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-brand-accent to-brand-secondary bg-clip-text text-transparent">
                 Max Reviews/Day
               </span>
             </div>
@@ -370,15 +370,15 @@ export function ProjectInfoForm({
               onBlur={() => setFocusedField(null)}
               className={`w-full h-16 px-6 text-xl font-bold glass-surface rounded-2xl border-2 transition-all duration-500 ${
                 focusedField === "maxReviews"
-                  ? "border-purple-500 text-text-primary shadow-brand-lg scale-[1.02] ring-2 ring-purple-500/20"
-                  : "border-purple-400/30 text-text-primary hover:border-purple-400/50"
+                  ? "border-brand-accent text-text-primary shadow-brand-lg scale-[1.02] ring-2 ring-brand-accent/20"
+                  : "border-brand-accent/30 text-text-primary hover:border-brand-accent/50"
               } disabled:opacity-50`}
               disabled={saving}
             />
 
             {/* Enhanced number input glow */}
             {focusedField === "maxReviews" && (
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-2xl blur opacity-70 -z-10" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-brand-accent/30 to-brand-secondary/30 rounded-2xl blur opacity-70 -z-10" />
             )}
 
             {/* Enhanced value indicator */}
@@ -386,10 +386,10 @@ export function ProjectInfoForm({
               <div
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
                   maxReviewsPerDay === 0
-                    ? "bg-green-100 text-green-700 border border-green-300"
+                    ? "surface-elevated text-status-success border border-status-success"
                     : maxReviewsPerDay > 200
-                    ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                    : "bg-blue-100 text-blue-700 border border-blue-300"
+                    ? "surface-elevated text-status-warning border border-status-warning"
+                    : "surface-elevated text-status-info border border-status-info"
                 }`}
               >
                 {maxReviewsPerDay === 0
@@ -469,8 +469,8 @@ export function ProjectInfoForm({
 
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 surface-elevated rounded-xl border border-subtle group-hover:shadow-brand transition-all duration-200">
-                <div className="p-2 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg flex-shrink-0">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                <div className="p-2 bg-gradient-to-br from-status-success/20 to-status-success/20 rounded-lg flex-shrink-0">
+                  <div className="w-3 h-3 bg-status-success rounded-full animate-pulse" />
                 </div>
                 <div>
                   <div className="font-semibold text-secondary mb-1">
@@ -484,9 +484,9 @@ export function ProjectInfoForm({
               </div>
 
               <div className="flex items-start gap-4 p-4 surface-elevated rounded-xl border border-subtle group-hover:shadow-brand transition-all duration-200">
-                <div className="p-2 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg flex-shrink-0">
+                <div className="p-2 bg-gradient-to-br from-status-info/20 to-status-info/20 rounded-lg flex-shrink-0">
                   <div
-                    className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"
+                    className="w-3 h-3 bg-status-info rounded-full animate-pulse"
                     style={{ animationDelay: "0.5s" }}
                   />
                 </div>
@@ -502,9 +502,9 @@ export function ProjectInfoForm({
               </div>
 
               <div className="flex items-start gap-4 p-4 surface-elevated rounded-xl border border-subtle group-hover:shadow-brand transition-all duration-200">
-                <div className="p-2 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex-shrink-0">
+                <div className="p-2 bg-gradient-to-br from-brand-secondary/20 to-brand-secondary/20 rounded-lg flex-shrink-0">
                   <div
-                    className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"
+                    className="w-3 h-3 bg-brand-secondary rounded-full animate-pulse"
                     style={{ animationDelay: "1s" }}
                   />
                 </div>

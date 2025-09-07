@@ -122,7 +122,7 @@ export function ContentModeration() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, pagination.page, search, sortBy, sortOrder]);
+  }, [activeTab, pagination.page, pagination.limit, search, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchContent();

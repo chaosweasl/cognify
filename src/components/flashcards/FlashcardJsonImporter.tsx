@@ -242,7 +242,7 @@ export function FlashcardJsonImporter({
 
                 {/* Enhanced Error Display */}
                 {error && (
-                  <div className="alert bg-red-500/10 border-red-500/30 text-red-400 mb-6 rounded-xl">
+                  <div className="alert surface-elevated border-status-error text-status-error mb-6 rounded-xl">
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                       <div>
@@ -276,14 +276,14 @@ export function FlashcardJsonImporter({
                 {preview.length > 0 && (
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      <span className="font-medium text-green-400">
+                      <CheckCircle2 className="w-5 h-5 text-status-success" />
+                      <span className="font-medium text-status-success">
                         Found {preview.length} valid flashcard
                         {preview.length !== 1 ? "s" : ""}
                       </span>
                       <div className="flex items-center gap-1 ml-2">
-                        <Sparkles className="w-4 h-4 text-green-500 animate-pulse" />
-                        <span className="text-xs text-green-400">
+                        <Sparkles className="w-4 h-4 text-status-success animate-pulse" />
+                        <span className="text-xs text-status-success">
                           Ready to import
                         </span>
                       </div>

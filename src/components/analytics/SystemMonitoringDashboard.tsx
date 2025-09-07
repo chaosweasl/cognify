@@ -207,8 +207,8 @@ export function SystemMonitoringDashboard() {
           <Badge
             className={
               overallHealth
-                ? "bg-green-100 text-green-800 border-green-200"
-                : "bg-red-100 text-red-800 border-red-200"
+                ? "surface-elevated text-status-success border-status-success"
+                : "surface-elevated text-status-error border-status-error"
             }
           >
             {overallHealth ? (
@@ -248,24 +248,24 @@ export function SystemMonitoringDashboard() {
           value={systemHealth.analytics.users.active}
           subtitle={`${systemHealth.analytics.users.total} total`}
           icon={Users}
-          color="text-blue-600"
-          bgColor="bg-blue-50"
+          color="text-brand-primary"
+          bgColor="surface-elevated"
         />
         <MetricCard
           title="DB Response"
           value={`${latestMetrics?.database.responseTime || 0}ms`}
           subtitle="Average response time"
           icon={Database}
-          color="text-green-600"
-          bgColor="bg-green-50"
+          color="text-status-success"
+          bgColor="surface-elevated"
         />
         <MetricCard
           title="Memory Usage"
           value={`${Math.round(latestMetrics?.application.memoryUsage || 0)}MB`}
           subtitle="Application memory"
           icon={Server}
-          color="text-purple-600"
-          bgColor="bg-purple-50"
+          color="text-brand-accent"
+          bgColor="surface-elevated"
         />
         <MetricCard
           title="Error Rate"
@@ -274,11 +274,11 @@ export function SystemMonitoringDashboard() {
           icon={AlertTriangle}
           color={
             systemHealth.errors.recentCount > 10
-              ? "text-red-600"
-              : "text-green-600"
+              ? "text-status-error"
+              : "text-status-success"
           }
           bgColor={
-            systemHealth.errors.recentCount > 10 ? "bg-red-50" : "bg-green-50"
+            systemHealth.errors.recentCount > 10 ? "surface-elevated" : "surface-elevated"
           }
         />
       </div>

@@ -107,7 +107,7 @@ export function ProjectSRSSettings({
                 <span className="font-bold text-lg text-text-primary group-hover:text-brand-secondary transition-colors">
                   Relearning Steps (minutes)
                 </span>
-                <span className="text-sm text-red-600 bg-red-100 px-3 py-1 rounded-full border border-red-200">
+                <span className="text-sm text-status-error surface-elevated px-3 py-1 rounded-full border border-status-error">
                   Failed cards
                 </span>
               </div>
@@ -146,13 +146,13 @@ export function ProjectSRSSettings({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="glass-surface p-6 rounded-2xl border border-blue-200/50 hover:border-blue-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-brand transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-lg text-text-primary group-hover:text-blue-600 transition-colors">
+                <span className="font-bold text-lg text-text-primary group-hover:text-brand-primary transition-colors">
                   Graduating Interval
                 </span>
-                <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+                <span className="text-sm text-status-info surface-elevated px-3 py-1 rounded-full border border-status-info">
                   days
                 </span>
               </div>
@@ -167,7 +167,7 @@ export function ProjectSRSSettings({
                     parseInt(e.target.value) || 1
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-blue-200/50 glass-surface text-text-primary focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand focus:ring-2 focus:ring-brand-primary/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
@@ -176,13 +176,13 @@ export function ProjectSRSSettings({
             </label>
           </div>
 
-          <div className="glass-surface p-6 rounded-2xl border border-green-200/50 hover:border-green-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-status-success transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-lg text-text-primary group-hover:text-green-600 transition-colors">
+                <span className="font-bold text-lg text-text-primary group-hover:text-status-success transition-colors">
                   Easy Interval
                 </span>
-                <span className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full border border-green-200">
+                <span className="text-sm text-status-success surface-elevated px-3 py-1 rounded-full border border-status-success">
                   days
                 </span>
               </div>
@@ -197,11 +197,11 @@ export function ProjectSRSSettings({
                     parseInt(e.target.value) || 4
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-green-200/50 glass-surface text-text-primary focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-success focus:ring-2 focus:ring-status-success/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
-                Days when you click "Easy" on a new card
+                Days when you click &ldquo;Easy&rdquo; on a new card
               </p>
             </label>
           </div>
@@ -211,11 +211,11 @@ export function ProjectSRSSettings({
       {/* Enhanced Ease Factors Section */}
       <div className="space-y-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-brand-tertiary to-green-500 rounded-2xl flex items-center justify-center shadow-brand-lg">
+          <div className="w-12 h-12 bg-gradient-to-r from-brand-tertiary to-status-success rounded-2xl flex items-center justify-center shadow-brand-lg">
             <Target className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-tertiary to-green-500 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-tertiary to-status-success bg-clip-text text-transparent">
               Ease Factors
             </h3>
             <p className="text-text-muted text-base">
@@ -225,13 +225,13 @@ export function ProjectSRSSettings({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="glass-surface p-6 rounded-2xl border border-orange-200/50 hover:border-orange-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-status-warning transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-lg text-text-primary group-hover:text-orange-600 transition-colors">
+                <span className="font-bold text-lg text-text-primary group-hover:text-status-warning transition-colors">
                   Starting Ease
                 </span>
-                <span className="text-sm text-orange-600 bg-orange-100 px-3 py-1 rounded-full border border-orange-200">
+                <span className="text-sm text-status-warning surface-elevated px-3 py-1 rounded-full border border-status-warning">
                   multiplier
                 </span>
               </div>
@@ -247,7 +247,7 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 2.5
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-orange-200/50 glass-surface text-text-primary focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-warning focus:ring-2 focus:ring-status-warning/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
@@ -256,13 +256,13 @@ export function ProjectSRSSettings({
             </label>
           </div>
 
-          <div className="glass-surface p-6 rounded-2xl border border-purple-200/50 hover:border-purple-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-lg text-text-primary group-hover:text-purple-600 transition-colors">
+                <span className="font-bold text-lg text-text-primary group-hover:text-brand-secondary transition-colors">
                   Minimum Ease
                 </span>
-                <span className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full border border-purple-200">
+                <span className="text-sm text-brand-secondary surface-elevated px-3 py-1 rounded-full border border-brand-secondary">
                   multiplier
                 </span>
               </div>
@@ -278,7 +278,7 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 1.3
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-purple-200/50 glass-surface text-text-primary focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-sm text-text-muted mt-3 leading-relaxed">
@@ -293,11 +293,11 @@ export function ProjectSRSSettings({
       {/* Enhanced Advanced Settings Section */}
       <div className="space-y-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-brand-lg">
+          <div className="w-12 h-12 bg-gradient-to-r from-brand-accent to-brand-secondary rounded-2xl flex items-center justify-center shadow-brand-lg">
             <Settings className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-accent to-brand-secondary bg-clip-text text-transparent">
               Advanced Settings
             </h3>
             <p className="text-text-muted text-base">
@@ -308,13 +308,13 @@ export function ProjectSRSSettings({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Easy Bonus */}
-          <div className="glass-surface p-6 rounded-2xl border border-green-200/50 hover:border-green-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-green-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-status-success transition-colors">
                   Easy Bonus
                 </span>
-                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full border border-green-200">
+                <span className="text-xs text-status-success surface-elevated px-2 py-1 rounded-full border border-status-success">
                   multiplier
                 </span>
               </div>
@@ -330,23 +330,23 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 1.3
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-green-200/50 glass-surface text-text-primary focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-success focus:ring-2 focus:ring-status-success/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
-                Extra multiplier when you click "Easy"
+                Extra multiplier when you click &ldquo;Easy&rdquo;
               </p>
             </label>
           </div>
 
           {/* Hard Factor */}
-          <div className="glass-surface p-6 rounded-2xl border border-orange-200/50 hover:border-orange-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-orange-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-status-warning transition-colors">
                   Hard Factor
                 </span>
-                <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full border border-orange-200">
+                <span className="text-xs text-status-warning surface-elevated px-2 py-1 rounded-full border border-status-warning">
                   multiplier
                 </span>
               </div>
@@ -362,23 +362,23 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 1.2
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-orange-200/50 glass-surface text-text-primary focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-warning focus:ring-2 focus:ring-status-warning/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
-                Interval multiplier when you click "Hard"
+                Interval multiplier when you click &ldquo;Hard&rdquo;
               </p>
             </label>
           </div>
 
           {/* Leech Threshold */}
-          <div className="glass-surface p-6 rounded-2xl border border-red-200/50 hover:border-red-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-status-error/50 hover:border-status-error/70 transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-red-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-status-error transition-colors">
                   Leech Threshold
                 </span>
-                <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full border border-red-200">
+                <span className="text-xs text-status-error surface-elevated px-2 py-1 rounded-full border border-status-error">
                   lapses
                 </span>
               </div>
@@ -393,23 +393,23 @@ export function ProjectSRSSettings({
                     parseInt(e.target.value) || 8
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-red-200/50 glass-surface text-text-primary focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-error focus:ring-2 focus:ring-status-error/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
-                Lapses before a card becomes a "leech"
+                Lapses before a card becomes a &ldquo;leech&rdquo;
               </p>
             </label>
           </div>
 
           {/* Max Interval */}
-          <div className="glass-surface p-6 rounded-2xl border border-blue-200/50 hover:border-blue-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-status-info/50 hover:border-status-info/70 transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-blue-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-status-info transition-colors">
                   Max Interval
                 </span>
-                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full border border-blue-200">
+                <span className="text-xs text-status-info surface-elevated px-2 py-1 rounded-full border border-status-info">
                   days
                 </span>
               </div>
@@ -424,7 +424,7 @@ export function ProjectSRSSettings({
                     parseInt(e.target.value) || 36500
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-blue-200/50 glass-surface text-text-primary focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand focus:ring-2 focus:ring-brand-primary/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
@@ -434,13 +434,13 @@ export function ProjectSRSSettings({
           </div>
 
           {/* Lapse Penalty */}
-          <div className="glass-surface p-6 rounded-2xl border border-purple-200/50 hover:border-purple-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-purple-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-brand-secondary transition-colors">
                   Lapse Penalty
                 </span>
-                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full border border-purple-200">
+                <span className="text-xs text-brand-secondary surface-elevated px-2 py-1 rounded-full border border-brand-secondary">
                   reduction
                 </span>
               </div>
@@ -456,7 +456,7 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 0.2
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-purple-200/50 glass-surface text-text-primary focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
@@ -466,13 +466,13 @@ export function ProjectSRSSettings({
           </div>
 
           {/* Recovery Factor */}
-          <div className="glass-surface p-6 rounded-2xl border border-teal-200/50 hover:border-teal-300/70 transition-all duration-300 group">
+          <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
             <label className="block">
               <div className="flex items-center justify-between mb-4">
-                <span className="font-bold text-text-primary group-hover:text-teal-600 transition-colors">
+                <span className="font-bold text-text-primary group-hover:text-brand-tertiary transition-colors">
                   Recovery Factor
                 </span>
-                <span className="text-xs text-teal-600 bg-teal-100 px-2 py-1 rounded-full border border-teal-200">
+                <span className="text-xs text-brand-tertiary surface-elevated px-2 py-1 rounded-full border border-brand-tertiary">
                   multiplier
                 </span>
               </div>
@@ -488,7 +488,7 @@ export function ProjectSRSSettings({
                     parseFloat(e.target.value) || 0.5
                   )
                 }
-                className="w-full px-4 py-4 rounded-xl border border-teal-200/50 glass-surface text-text-primary focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all duration-300 disabled:opacity-50"
+                className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand-tertiary focus:ring-2 focus:ring-brand-tertiary/20 transition-all duration-300 disabled:opacity-50"
                 disabled={disabled}
               />
               <p className="text-xs text-text-muted mt-3">
@@ -502,11 +502,11 @@ export function ProjectSRSSettings({
       {/* Enhanced Behavior Settings Section */}
       <div className="space-y-8">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-brand-lg">
+          <div className="w-12 h-12 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center shadow-brand-lg">
             <Layers className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-secondary to-brand-accent bg-clip-text text-transparent">
               Behavior Settings
             </h3>
             <p className="text-text-muted text-base">
@@ -518,13 +518,13 @@ export function ProjectSRSSettings({
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Enhanced Dropdowns */}
           <div className="space-y-6">
-            <div className="glass-surface p-6 rounded-2xl border border-indigo-200/50 hover:border-indigo-300/70 transition-all duration-300 group">
+            <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
               <label className="block">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="font-bold text-lg text-text-primary group-hover:text-indigo-600 transition-colors">
+                  <span className="font-bold text-lg text-text-primary group-hover:text-brand-secondary transition-colors">
                     New Card Order
                   </span>
-                  <span className="text-sm text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full border border-indigo-200">
+                  <span className="text-sm text-brand-secondary surface-elevated px-3 py-1 rounded-full border border-brand-secondary">
                     sequence
                   </span>
                 </div>
@@ -533,7 +533,7 @@ export function ProjectSRSSettings({
                   onChange={(e) =>
                     handleSelectChange("new_card_order", e.target.value)
                   }
-                  className="w-full px-4 py-4 rounded-xl border border-indigo-200/50 glass-surface text-text-primary focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                  className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/20 transition-all duration-300 cursor-pointer disabled:opacity-50"
                   disabled={disabled}
                 >
                   <option value="random">Random Order</option>
@@ -545,13 +545,13 @@ export function ProjectSRSSettings({
               </label>
             </div>
 
-            <div className="glass-surface p-6 rounded-2xl border border-red-200/50 hover:border-red-300/70 transition-all duration-300 group">
+            <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group">
               <label className="block">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="font-bold text-lg text-text-primary group-hover:text-red-600 transition-colors">
+                  <span className="font-bold text-lg text-text-primary group-hover:text-status-error transition-colors">
                     Leech Action
                   </span>
-                  <span className="text-sm text-red-600 bg-red-100 px-3 py-1 rounded-full border border-red-200">
+                  <span className="text-sm text-status-error surface-elevated px-3 py-1 rounded-full border border-status-error">
                     behavior
                   </span>
                 </div>
@@ -560,7 +560,7 @@ export function ProjectSRSSettings({
                   onChange={(e) =>
                     handleSelectChange("leech_action", e.target.value)
                   }
-                  className="w-full px-4 py-4 rounded-xl border border-red-200/50 glass-surface text-text-primary focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                  className="w-full px-4 py-4 rounded-xl border border-subtle glass-surface text-text-primary focus:border-status-error focus:ring-2 focus:ring-status-error/20 transition-all duration-300 cursor-pointer disabled:opacity-50"
                   disabled={disabled}
                 >
                   <option value="suspend">Suspend Card</option>
@@ -576,18 +576,18 @@ export function ProjectSRSSettings({
           {/* Enhanced Boolean Settings */}
           <div className="space-y-6">
             <div className="space-y-6">
-              <div className="glass-surface p-6 rounded-2xl border border-blue-200/50 hover:border-blue-300/70 transition-all duration-300 group hover:shadow-brand-md">
+              <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group hover:shadow-brand-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 bg-gradient-to-r from-brand-primary to-brand-tertiary rounded-2xl flex items-center justify-center shadow-lg">
                       <TrendingUp className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <div className="font-bold text-lg text-text-primary group-hover:text-blue-600 transition-colors">
+                      <div className="font-bold text-lg text-text-primary group-hover:text-brand-primary transition-colors">
                         Review Ahead
                       </div>
                       <div className="text-sm text-text-muted">
-                        Study cards before they're due
+                        Study cards before they&rsquo;re due
                       </div>
                     </div>
                   </div>
@@ -606,14 +606,14 @@ export function ProjectSRSSettings({
                 </div>
               </div>
 
-              <div className="glass-surface p-6 rounded-2xl border border-orange-200/50 hover:border-orange-300/70 transition-all duration-300 group hover:shadow-brand-md">
+              <div className="glass-surface p-6 rounded-2xl border border-subtle hover:border-subtle transition-all duration-300 group hover:shadow-brand-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <div className="w-12 h-12 bg-gradient-to-r from-status-warning to-status-error rounded-2xl flex items-center justify-center shadow-lg">
                       <Zap className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <div className="font-bold text-lg text-text-primary group-hover:text-orange-600 transition-colors">
+                      <div className="font-bold text-lg text-text-primary group-hover:text-status-warning transition-colors">
                         Bury Siblings
                       </div>
                       <div className="text-sm text-text-muted">
@@ -654,8 +654,8 @@ export function ProjectSRSSettings({
               </h4>
               <div className="space-y-3 text-base text-text-primary leading-relaxed">
                 <p>
-                  • These settings control how your project's spaced repetition
-                  algorithm works
+                  • These settings control how your project&rsquo;s spaced
+                  repetition algorithm works
                 </p>
                 <p>
                   • Changes only affect new reviews, not cards already in

@@ -47,14 +47,14 @@ const CATEGORIES = [
     icon: Globe,
     title: "Language Learning",
     description: "Master new languages with smart repetition",
-    color: "from-blue-500 to-cyan-500",
+    color: "from-brand-primary to-brand-tertiary",
   },
   {
     id: "academic",
     icon: GraduationCap,
     title: "Academic Study",
     description: "Excel in your coursework and exams",
-    color: "from-violet-500 to-purple-500",
+    color: "from-brand-accent to-brand-secondary",
   },
   {
     id: "professional",
@@ -118,7 +118,7 @@ const INTENSITY_OPTIONS = [
     newCards: 15,
     maxReviews: 100,
     icon: Target,
-    color: "from-blue-400 to-violet-400",
+    color: "from-brand-primary to-violet-400",
   },
   {
     id: "intensive",
@@ -215,10 +215,10 @@ export function ProjectCreator() {
           <Rocket className="w-16 h-16 text-white group-hover:animate-bounce" />
         </div>
         <div className="absolute -inset-4 bg-gradient-glass rounded-3xl blur opacity-60 animate-pulse" />
-        <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full animate-bounce opacity-80 delay-300">
+        <div className="absolute -top-2 -right-2 w-8 h-8 bg-status-warning rounded-full animate-bounce opacity-80 delay-300">
           <Sparkles className="w-5 h-5 text-white m-1.5" />
         </div>
-        <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-pink-400 rounded-full animate-bounce opacity-80 delay-500">
+        <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-brand-secondary rounded-full animate-bounce opacity-80 delay-500">
           <Star className="w-3 h-3 text-white m-1.5" />
         </div>
       </div>
@@ -487,7 +487,7 @@ export function ProjectCreator() {
               )}
 
               <div className="relative space-y-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal">
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-brand-secondary rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal">
                   <IconComponent className="w-8 h-8 text-white" />
                 </div>
 
@@ -842,7 +842,7 @@ export function ProjectCreator() {
               className={`group flex items-center gap-2 px-4 md:px-6 py-3 rounded-xl font-semibold transition-all transition-normal ${
                 canGoNext()
                   ? "bg-gradient-brand text-white hover:shadow-brand shadow-brand hover:scale-[1.02]"
-                  : "bg-white border border-gray-200 text-gray-400 opacity-95 cursor-not-allowed"
+                  : "surface-primary border border-subtle text-muted opacity-95 cursor-not-allowed"
               }`}
             >
               <span>Continue</span>

@@ -398,15 +398,15 @@ export const ChunkErrorBoundary: React.FC<{ children: ReactNode }> = ({
     context="ChunkLoading"
     fallback={({ retry }) => (
       <div className="min-h-[300px] flex items-center justify-center p-6">
-        <div className="max-w-sm w-full bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
-          <AlertTriangle className="mx-auto h-10 w-10 text-orange-600 mb-3" />
-          <h3 className="font-medium text-orange-800 mb-2">Loading Error</h3>
-          <p className="text-orange-600 text-sm mb-4">
+        <div className="max-w-sm w-full surface-elevated border border-status-warning rounded-lg p-6 text-center">
+          <AlertTriangle className="mx-auto h-10 w-10 text-status-warning mb-3" />
+          <h3 className="font-medium text-status-warning mb-2">Loading Error</h3>
+          <p className="text-status-warning text-sm mb-4">
             Failed to load part of the application. Please try refreshing.
           </p>
           <button
             onClick={retry}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 surface-elevated text-white rounded hover:surface-elevated transition-colors text-sm"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh

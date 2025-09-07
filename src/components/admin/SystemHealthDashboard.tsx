@@ -225,7 +225,7 @@ export function SystemHealthDashboard() {
               value={systemAnalytics.activity.sessionsThisWeek}
               changeLabel="this week"
               icon={<Clock className="w-6 h-6" />}
-              color="text-orange-500"
+              color="text-status-warning"
               index={3}
             />
           </div>
@@ -289,10 +289,10 @@ export function SystemHealthDashboard() {
                                 severity === "critical"
                                   ? "bg-red-500/10 text-red-400 border-red-500/30"
                                   : severity === "high"
-                                  ? "bg-orange-500/10 text-orange-400 border-orange-500/30"
+                                  ? "surface-elevated text-status-warning border-status-warning"
                                   : severity === "medium"
                                   ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30"
-                                  : "bg-gray-500/10 text-gray-400 border-gray-500/30"
+                                  : "surface-secondary text-muted border-subtle"
                               )}
                             >
                               {count as number}

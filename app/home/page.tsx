@@ -140,129 +140,218 @@ const Navigation = () => {
   );
 };
 
-// Demo Component
+// Enhanced Demo Component with better animations
 const DemoSection = () => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isFlipping, setIsFlipping] = useState(false);
 
   const demoCards = [
     {
       question: "What is photosynthesis?",
       answer:
-        "The process by which plants convert sunlight into energy using chlorophyll",
+        "The process by which plants convert sunlight into energy using chlorophyll in their leaves",
       subject: "Biology",
+      difficulty: "Easy",
+      color: "from-green-500/20 to-emerald-500/20",
     },
     {
       question: "What is the capital of France?",
-      answer: "Paris is the capital and most populous city of France",
+      answer:
+        "Paris is the capital and most populous city of France, located on the Seine River",
       subject: "Geography",
+      difficulty: "Easy",
+      color: "from-blue-500/20 to-cyan-500/20",
     },
     {
       question: "Who wrote Romeo and Juliet?",
       answer:
-        "William Shakespeare wrote this famous tragedy in the early part of his career",
+        "William Shakespeare wrote this famous tragedy in the early part of his career, around 1595",
       subject: "Literature",
+      difficulty: "Medium",
+      color: "from-purple-500/20 to-pink-500/20",
     },
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentCardIndex((prev) => (prev + 1) % demoCards.length);
-    }, 4000);
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentCardIndex((prev) => (prev + 1) % demoCards.length);
+        setIsFlipping(false);
+      }, 300);
+    }, 5000);
     return () => clearInterval(interval);
   }, [demoCards.length]);
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      <div className="surface-elevated border border-primary backdrop-blur-sm hover:surface-glass transition-slow shadow-brand-lg rounded-lg overflow-hidden">
-        <div className="surface-secondary border-b border-subtle px-4 py-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-primary flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 brand-secondary animate-pulse" />
-              <span className="text-lg sm:text-xl font-semibold">
-                Live Demo
-              </span>
+    <div className="w-full max-w-6xl mx-auto">
+      <div className="surface-elevated border border-brand/30 backdrop-blur-sm hover:border-brand transition-all duration-500 shadow-brand-lg hover:shadow-brand rounded-2xl overflow-hidden relative group">
+        {/* Enhanced header with gradient */}
+        <div className="bg-gradient-to-r from-surface-secondary to-surface-elevated border-b border-subtle px-6 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-primary flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Live AI Demo</h3>
+                <p className="text-sm text-secondary">
+                  Watch flashcards being generated in real-time
+                </p>
+              </div>
             </div>
-            <div className="bg-brand-primary/10 text-brand-primary dark:text-white border border-brand px-3 py-1 rounded-full text-sm self-start sm:self-center animate-pulse font-semibold shadow-sm">
-              AI Processing
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 text-brand-primary border border-brand/30 px-3 py-1.5 rounded-full text-sm font-semibold animate-pulse backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-brand-primary rounded-full animate-ping"></div>
+                  AI Processing
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="p-4 sm:p-6">
-          <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
-            {/* Input Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <FileText className="w-5 h-5 brand-primary flex-shrink-0" />
-                <span className="font-medium brand-primary text-sm sm:text-base">
-                  Your Study Notes:
+
+        <div className="p-8">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Enhanced Input Section */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-semibold text-primary text-lg">
+                  Your Study Material
                 </span>
               </div>
-              <div className="surface-elevated border border-secondary hover:surface-glass transition-normal rounded-lg">
-                <div className="p-3 sm:p-4">
-                  <p className="text-secondary text-xs sm:text-sm leading-relaxed">
+
+              <div className="surface-elevated border border-secondary hover:border-brand transition-all duration-300 rounded-xl group/input">
+                <div className="p-6">
+                  <div className="text-xs text-brand-primary font-medium mb-3 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-brand-primary rounded-full"></div>
+                    PDF Extract • Page 1 of 15
+                  </div>
+                  <p className="text-secondary text-sm leading-relaxed">
                     &quot;Photosynthesis is the process by which plants convert
                     sunlight into energy using chlorophyll. This fundamental
-                    biological process occurs in the chloroplasts...&quot;
+                    biological process occurs in the chloroplasts of plant
+                    cells, where carbon dioxide and water are transformed into
+                    glucose and oxygen through a series of complex chemical
+                    reactions...&quot;
                   </p>
+                </div>
+
+                {/* Processing indicator */}
+                <div className="border-t border-subtle bg-gradient-to-r from-surface-secondary to-surface-elevated px-6 py-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 text-muted">
+                      <div className="w-1.5 h-1.5 bg-brand-primary rounded-full animate-pulse"></div>
+                      <span>Analyzing content structure...</span>
+                    </div>
+                    <span className="text-brand-primary font-medium">
+                      92% complete
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Processing Animation */}
-              <div className="flex items-center justify-center py-3 lg:py-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                  <span className="text-xs sm:text-sm text-brand-primary dark:text-white ml-2 font-semibold">
-                    AI Processing
-                  </span>
+              {/* Enhanced Processing Animation */}
+              <div className="flex items-center justify-center py-6">
+                <div className="flex items-center space-x-4">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-brand-accent rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
+                  <div className="text-sm text-brand-primary font-semibold flex items-center gap-2">
+                    <Brain className="w-4 h-4 animate-pulse" />
+                    AI Processing Magic
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Output Section */}
-            <div className="transform hover:scale-105 transition-normal">
-              <div className="flex items-center space-x-2 mb-3">
-                <Brain className="w-5 h-5 brand-secondary animate-pulse flex-shrink-0" />
-                <span className="font-medium brand-secondary text-sm sm:text-base">
-                  Generated Flashcard:
+            {/* Enhanced Output Section */}
+            <div className="transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-brand-secondary to-brand-accent rounded-lg flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-white animate-pulse" />
+                </div>
+                <span className="font-semibold text-primary text-lg">
+                  Generated Flashcard
                 </span>
               </div>
+
               <div
                 key={currentCardIndex}
-                className="bg-gradient-to-br from-brand-primary/15 to-brand-secondary/15 border border-brand hover:border-brand-hover transition-slow shadow-brand min-h-[200px] sm:min-h-[220px] rounded-lg"
-                style={{
-                  animation: "slideInRight 0.5s ease-out",
-                }}
+                className={`relative min-h-[280px] rounded-2xl transition-all duration-500 ${
+                  isFlipping ? "scale-95 opacity-50" : "scale-100 opacity-100"
+                }`}
               >
-                <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
-                  <div className="space-y-3 sm:space-y-4">
+                {/* Card background with gradient */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${demoCards[currentCardIndex].color} rounded-2xl`}
+                ></div>
+                <div className="absolute inset-0 bg-gradient-brand/5 rounded-2xl"></div>
+
+                {/* Card content */}
+                <div className="relative border border-brand/40 hover:border-brand transition-all duration-300 shadow-brand-lg rounded-2xl p-6 h-full flex flex-col justify-between backdrop-blur-sm">
+                  <div className="space-y-5">
+                    {/* Question section */}
                     <div>
-                      <div className="text-xs sm:text-sm brand-primary mb-2 font-medium">
-                        Question:
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="text-xs font-bold brand-primary uppercase tracking-wider">
+                          Question
+                        </div>
+                        <div className="h-px flex-1 bg-gradient-to-r from-brand-primary/30 to-transparent"></div>
                       </div>
-                      <p className="text-primary text-sm sm:text-base font-medium leading-relaxed">
+                      <p className="text-primary text-lg font-semibold leading-relaxed">
                         {demoCards[currentCardIndex].question}
                       </p>
                     </div>
+
+                    {/* Answer section */}
                     <div>
-                      <div className="text-xs sm:text-sm brand-secondary mb-2 font-medium">
-                        Answer:
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="text-xs font-bold brand-secondary uppercase tracking-wider">
+                          Answer
+                        </div>
+                        <div className="h-px flex-1 bg-gradient-to-r from-brand-secondary/30 to-transparent"></div>
                       </div>
-                      <p className="text-secondary text-xs sm:text-sm leading-relaxed">
+                      <p className="text-secondary text-base leading-relaxed">
                         {demoCards[currentCardIndex].answer}
                       </p>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4">
-                    <div className="bg-brand-primary/20 text-white border border-brand px-2 py-1 rounded text-xs">
-                      {demoCards[currentCardIndex].subject}
+
+                  {/* Enhanced card footer */}
+                  <div className="flex justify-between items-center mt-6 pt-4 border-t border-subtle">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 text-brand-primary border border-brand/30 px-3 py-1 rounded-full text-xs font-medium">
+                        {demoCards[currentCardIndex].subject}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {demoCards[currentCardIndex].difficulty}
+                      </span>
+                    </div>
+
+                    {/* Card indicators */}
+                    <div className="flex space-x-1">
+                      {demoCards.map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            index === currentCardIndex
+                              ? "bg-brand-primary w-6"
+                              : "bg-border-secondary"
+                          }`}
+                        ></div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -275,85 +364,163 @@ const DemoSection = () => {
   );
 };
 
-// Features Grid Component
+// Enhanced Features Grid Component
 const FeaturesSection = () => {
   const features = [
     {
       icon: Brain,
       title: "AI-Powered Generation",
       description:
-        "Automatically converts your notes into flashcards using advanced AI technology",
+        "Automatically converts your notes into flashcards using advanced AI technology with intelligent content parsing",
       color: "from-brand-primary/20 to-brand-secondary/20",
       iconColor: "brand-primary",
+      hoverColor: "hover:from-brand-primary/30 hover:to-brand-secondary/30",
     },
     {
       icon: FileText,
       title: "Multiple Formats",
       description:
-        "Upload PDFs, paste text, or type directly - we support all your study materials",
+        "Upload PDFs, paste text, or type directly - we support all your study materials with seamless processing",
       color: "from-brand-tertiary/20 to-brand-primary/20",
       iconColor: "brand-tertiary",
+      hoverColor: "hover:from-brand-tertiary/30 hover:to-brand-primary/30",
     },
     {
       icon: Database,
       title: "Personal Database",
       description:
-        "Your flashcards are stored securely and accessible from anywhere, anytime",
+        "Your flashcards are stored securely with end-to-end encryption and accessible from anywhere, anytime",
       color: "from-brand-secondary/20 to-brand-accent/20",
       iconColor: "brand-secondary",
+      hoverColor: "hover:from-brand-secondary/30 hover:to-brand-accent/30",
     },
     {
       icon: Zap,
       title: "Spaced Repetition",
       description:
-        "Smart scheduling algorithm optimizes your learning based on memory science",
+        "Smart scheduling algorithm optimizes your learning based on memory science and personal performance",
       color: "from-brand-accent/20 to-brand-tertiary/20",
       iconColor: "brand-accent",
+      hoverColor: "hover:from-brand-accent/30 hover:to-brand-tertiary/30",
     },
   ];
 
   return (
     <section
       id="features"
-      className="py-16 sm:py-20 px-4 surface-secondary backdrop-blur-sm relative"
+      className="py-20 sm:py-24 lg:py-32 px-4 surface-secondary/50 backdrop-blur-sm relative overflow-hidden"
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 sm:mb-6 text-primary">
-            Simple, Powerful Features
+      {/* Background decorations */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-gradient-glass rounded-full blur-3xl opacity-20 animate-pulse" />
+        <div
+          className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-tl from-brand-primary/10 to-brand-secondary/10 rounded-full blur-3xl opacity-30 animate-pulse"
+          style={{ animationDelay: "3s", animationDuration: "6s" }}
+        />
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Enhanced section header */}
+        <div className="text-center mb-16 sm:mb-20">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 backdrop-blur-sm px-4 py-2 rounded-full border border-brand/20 mb-6">
+            <Sparkles className="w-4 h-4 brand-primary" />
+            <span className="text-sm font-semibold brand-primary">
+              Powerful Features
+            </span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-6 text-primary leading-tight">
+            Simple, Yet{" "}
+            <span className="bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
+              Powerful
+            </span>
           </h2>
-          <p className="text-base sm:text-lg text-secondary max-w-2xl mx-auto leading-relaxed px-4">
+
+          <p className="text-lg sm:text-xl text-secondary max-w-3xl mx-auto leading-relaxed px-4">
             Everything you need to transform your study materials into effective
-            learning tools
+            learning tools, powered by cutting-edge AI technology
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        {/* Enhanced features grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
+              className="group"
               style={{
-                animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`,
+                animation: `slideInUp 0.8s ease-out ${index * 0.15}s both`,
               }}
             >
-              <div className="surface-elevated border border-secondary hover:surface-glass hover:border-primary transition-slow group h-full shadow-brand hover:shadow-brand-lg rounded-lg">
-                <div className="p-4 sm:p-6 text-center h-full flex flex-col">
-                  <div className="flex justify-center items-center mb-4 sm:mb-6">
-                    <span
-                      className={`inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${feature.color} rounded-xl group-hover:scale-110 transition-normal`}
+              <div
+                className={`surface-elevated border border-secondary hover:border-brand transition-all duration-500 group-hover:shadow-brand-lg rounded-2xl h-full transform hover:scale-105 hover:-translate-y-2 relative overflow-hidden`}
+              >
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 bg-gradient-brand opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-2xl"></div>
+
+                {/* Card content */}
+                <div className="p-6 lg:p-8 text-center h-full flex flex-col relative z-10">
+                  {/* Enhanced icon container */}
+                  <div className="flex justify-center items-center mb-6">
+                    <div
+                      className={`inline-flex items-center justify-center w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br ${feature.color} ${feature.hoverColor} rounded-2xl group-hover:rotate-6 group-hover:scale-110 transition-all duration-500 relative`}
                     >
                       <feature.icon
-                        className={`w-6 h-6 sm:w-8 sm:h-8 ${feature.iconColor}`}
+                        className={`w-8 h-8 lg:w-10 lg:h-10 ${feature.iconColor} group-hover:scale-110 transition-transform duration-300`}
                       />
-                    </span>
+
+                      {/* Icon glow effect */}
+                      <div
+                        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                        style={{
+                          background: `radial-gradient(circle, var(--color-brand-primary, #3b82f6)/20 0%, transparent 70%)`,
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-lg sm:text-xl mb-2 sm:mb-3 text-primary group-hover:brand-primary transition-normal">
+
+                  {/* Enhanced text content */}
+                  <h3 className="font-bold text-xl lg:text-2xl mb-4 text-primary group-hover:brand-primary transition-colors duration-300">
                     {feature.title}
                   </h3>
-                  <p className="text-muted text-xs sm:text-sm leading-relaxed flex-1">
+
+                  <p className="text-secondary text-sm lg:text-base leading-relaxed flex-1 group-hover:text-primary transition-colors duration-300">
                     {feature.description}
                   </p>
+
+                  {/* Decorative bottom accent */}
+                  <div className="mt-6 h-1 w-12 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-full mx-auto opacity-50 group-hover:opacity-100 group-hover:w-20 transition-all duration-500"></div>
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Enhanced feature highlights */}
+        <div className="mt-16 lg:mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          {[
+            {
+              number: "100%",
+              label: "Free & Open Source",
+              color: "brand-primary",
+            },
+            { number: "< 5min", label: "Setup Time", color: "brand-secondary" },
+            { number: "∞", label: "Flashcards", color: "brand-accent" },
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="text-center p-6 surface-elevated rounded-2xl border border-secondary hover:border-brand hover:surface-glass transition-all duration-300 group"
+              style={{
+                animation: `slideInUp 0.6s ease-out ${1 + index * 0.1}s both`,
+              }}
+            >
+              <div
+                className={`text-4xl lg:text-5xl font-bold ${stat.color} mb-2 group-hover:scale-110 transition-transform duration-300`}
+              >
+                {stat.number}
+              </div>
+              <div className="text-secondary text-sm lg:text-base group-hover:text-primary transition-colors duration-300">
+                {stat.label}
               </div>
             </div>
           ))}
@@ -363,85 +530,147 @@ const FeaturesSection = () => {
   );
 };
 
-// Hero Section Component
+// Hero Section Component with Enhanced Animations
 const HeroSection = () => {
   return (
-    <section className="py-16 sm:py-20 px-4 relative">
-      <div className="max-w-6xl mx-auto text-center">
-        <div className="animate-pulse mb-6 sm:mb-8">
-          <div className="inline-flex items-center border border-brand bg-brand-primary/10 text-brand-primary dark:text-white hover:bg-brand-primary/20 transition-normal px-3 py-1 rounded-full font-semibold shadow-sm">
+    <section className="py-20 sm:py-24 lg:py-32 px-4 relative overflow-hidden">
+      {/* Enhanced background elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-glass rounded-full blur-3xl opacity-30 animate-pulse" />
+        <div
+          className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-brand-secondary/20 to-brand-accent/20 rounded-full blur-3xl opacity-40 animate-pulse"
+          style={{ animationDelay: "2s", animationDuration: "4s" }}
+        />
+      </div>
+
+      <div className="max-w-7xl mx-auto text-center relative z-10">
+        {/* Enhanced badge with pulse animation */}
+        <div className="animate-pulse mb-8 sm:mb-10">
+          <div className="inline-flex items-center border border-brand bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 backdrop-blur-sm text-brand-primary dark:text-white hover:from-brand-primary/20 hover:to-brand-secondary/20 transition-all duration-500 px-4 py-2 rounded-full font-semibold shadow-brand text-sm sm:text-base group">
             <Star
-              className="w-4 h-4 mr-2 text-yellow-400 animate-spin"
-              style={{ animationDuration: "3s" }}
+              className="w-4 h-4 mr-2 text-yellow-400 group-hover:animate-spin"
+              style={{ animationDuration: "2s" }}
             />
-            Free & Open Source
+            <span>Free & Open Source</span>
+            <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
           </div>
         </div>
 
-        <h1
-          className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight px-2"
-          style={{
-            animation: "slideInUp 0.8s ease-out",
-          }}
-        >
-          Transform Your{" "}
-          <span className="bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent animate-pulse">
-            Notes
-          </span>
-          <br />
-          Into Smart{" "}
-          <span
-            className="bg-gradient-to-r from-brand-secondary to-brand-primary bg-clip-text text-transparent animate-pulse"
-            style={{ animationDelay: "0.2s" }}
+        {/* Enhanced hero title with staggered animations */}
+        <div className="mb-8 sm:mb-10">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight"
+            style={{
+              animation: "slideInUp 1s ease-out",
+            }}
           >
-            Flashcards
-          </span>
-        </h1>
+            <div className="mb-2">
+              Transform Your{" "}
+              <span
+                className="relative inline-block"
+                style={{ animation: "slideInLeft 1s ease-out 0.2s both" }}
+              >
+                <span className="bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">
+                  Notes
+                </span>
+                <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 blur opacity-75 animate-pulse"></div>
+              </span>
+            </div>
+            <div>
+              Into Smart{" "}
+              <span
+                className="relative inline-block"
+                style={{ animation: "slideInRight 1s ease-out 0.4s both" }}
+              >
+                <span className="bg-gradient-to-r from-brand-secondary to-brand-accent bg-clip-text text-transparent">
+                  Flashcards
+                </span>
+                <div
+                  className="absolute -inset-1 bg-gradient-to-r from-brand-secondary/20 to-brand-accent/20 blur opacity-75 animate-pulse"
+                  style={{ animationDelay: "0.5s" }}
+                ></div>
+              </span>
+            </div>
+          </h1>
+        </div>
 
+        {/* Enhanced subtitle */}
         <p
-          className="text-base sm:text-lg md:text-xl text-secondary mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed px-4"
+          className="text-lg sm:text-xl lg:text-2xl text-secondary mb-12 sm:mb-16 max-w-4xl mx-auto leading-relaxed px-4"
           style={{
-            animation: "slideInUp 0.8s ease-out 0.2s both",
+            animation: "slideInUp 1s ease-out 0.6s both",
           }}
         >
-          Cognify uses AI to automatically convert your study materials into
-          interactive flashcards with spaced repetition. Study smarter, not
-          harder.
+          Cognify uses{" "}
+          <span className="font-semibold text-primary">advanced AI</span> to
+          automatically convert your study materials into interactive flashcards
+          with{" "}
+          <span className="font-semibold text-primary">spaced repetition</span>.
+          Study smarter, not harder.
         </p>
 
+        {/* Enhanced CTA buttons */}
         <div
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 sm:mb-16 px-4"
+          className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-16 sm:mb-20 px-4"
           style={{
-            animation: "slideInUp 0.8s ease-out 0.4s both",
+            animation: "slideInUp 1s ease-out 0.8s both",
           }}
         >
-          <button className="w-full sm:w-auto bg-gradient-brand hover:bg-gradient-brand-hover transform hover:scale-105 transition-normal shadow-brand-lg px-6 py-3 rounded-lg text-white font-medium">
+          <button className="group w-full sm:w-auto bg-gradient-brand hover:bg-gradient-brand-hover transform hover:scale-105 active:scale-95 transition-all duration-300 shadow-brand-lg hover:shadow-brand px-8 py-4 rounded-xl text-white font-semibold text-lg relative overflow-hidden">
+            {/* Button shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
             <a
               href="/auth/login"
-              className="flex items-center justify-center space-x-2"
+              className="flex items-center justify-center space-x-3 relative z-10"
             >
               <span>Start Creating Flashcards</span>
-              <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-normal" />
+              <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" />
             </a>
           </button>
-          <button className="w-full sm:w-auto bg-white text-blue-700 border border-brand hover:bg-brand-primary hover:text-white font-semibold transform hover:scale-105 transition-normal interactive-focus px-6 py-3 rounded-lg">
+
+          <button className="group w-full sm:w-auto bg-surface-elevated border-2 border-brand text-brand-primary hover:bg-gradient-brand hover:text-white hover:border-brand-hover font-semibold transform hover:scale-105 active:scale-95 transition-all duration-300 px-8 py-4 rounded-xl text-lg">
             <a
               href="https://github.com/chaosweasl/cognify"
-              className="flex items-center justify-center space-x-2"
+              className="flex items-center justify-center space-x-3"
             >
-              <Github className="w-5 h-5" />
+              <Github className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
               <span>View on GitHub</span>
             </a>
           </button>
         </div>
 
-        {/* Demo */}
+        {/* Enhanced demo section */}
         <div
           style={{
-            animation: "slideInUp 0.8s ease-out 0.6s both",
+            animation: "slideInUp 1s ease-out 1s both",
           }}
         >
           <DemoSection />
+        </div>
+
+        {/* Trust indicators */}
+        <div
+          className="mt-16 sm:mt-20 flex justify-center items-center gap-8 text-muted"
+          style={{ animation: "slideInUp 1s ease-out 1.2s both" }}
+        >
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Privacy First</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <div
+              className="w-2 h-2 bg-brand-primary rounded-full animate-pulse"
+              style={{ animationDelay: "0.5s" }}
+            ></div>
+            <span>AI Powered</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <div
+              className="w-2 h-2 bg-brand-secondary rounded-full animate-pulse"
+              style={{ animationDelay: "1s" }}
+            ></div>
+            <span>Open Source</span>
+          </div>
         </div>
       </div>
     </section>

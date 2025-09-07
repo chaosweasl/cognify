@@ -693,8 +693,8 @@ function ProfileSection({
           <div className="p-4 surface-elevated rounded-lg border-subtle">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                  <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-8 h-8 surface-elevated dark:surface-elevated/30 rounded-lg flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-brand-secondary dark:text-brand-secondary" />
                 </div>
                 <div>
                   <div className="text-xs font-medium text-primary">

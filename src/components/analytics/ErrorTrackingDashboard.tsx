@@ -164,21 +164,21 @@ export function ErrorTrackingDashboard() {
             value={stats.total}
             icon={XCircle}
             color="text-error"
-            bgColor="bg-red-50"
+            bgColor="surface-elevated"
           />
           <StatCard
             title="Critical Errors"
             value={stats.bySeverity.critical || 0}
             icon={AlertTriangle}
             color="text-error"
-            bgColor="bg-red-50"
+            bgColor="surface-elevated"
           />
           <StatCard
             title="Recent (24h)"
             value={stats.recentCount}
             icon={Clock}
             color="text-warning"
-            bgColor="bg-yellow-50"
+            bgColor="surface-elevated"
           />
           <StatCard
             title="Trend"
@@ -193,10 +193,10 @@ export function ErrorTrackingDashboard() {
             }
             bgColor={
               stats.trend === "increasing"
-                ? "bg-red-50"
+                ? "surface-elevated"
                 : stats.trend === "decreasing"
-                ? "bg-green-50"
-                : "bg-gray-50"
+                ? "surface-elevated"
+                : "surface-secondary"
             }
           />
         </div>
@@ -308,15 +308,15 @@ function ErrorCard({ error }: { error: ErrorLog }) {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "surface-elevated text-status-error border-status-error";
       case "high":
-        return "bg-orange-100 text-orange-800 border-orange-200";
+        return "surface-elevated text-status-warning border-status-warning";
       case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "surface-elevated text-yellow-800 border-yellow-200";
       case "low":
         return "bg-blue-100 text-blue-800 border-blue-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "surface-secondary text-secondary border-subtle";
     }
   };
 

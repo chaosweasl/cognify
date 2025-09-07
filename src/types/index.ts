@@ -20,8 +20,8 @@ export interface Project {
   easy_interval_factor: number;
   lapse_recovery_factor: number;
   leech_threshold: number;
-  leech_action: 'suspend' | 'tag';
-  new_card_order: 'random' | 'fifo';
+  leech_action: "suspend" | "tag";
+  new_card_order: "random" | "fifo";
   review_ahead: boolean;
   bury_siblings: boolean;
   max_interval: number;
@@ -108,8 +108,8 @@ export interface CreateProjectData {
   easy_interval_factor?: number;
   lapse_recovery_factor?: number;
   leech_threshold?: number;
-  leech_action?: 'suspend' | 'tag';
-  new_card_order?: 'random' | 'fifo';
+  leech_action?: "suspend" | "tag";
+  new_card_order?: "random" | "fifo";
   review_ahead?: boolean;
   bury_siblings?: boolean;
   max_interval?: number;
@@ -133,7 +133,7 @@ export interface Profile {
 // User Settings types
 export interface UserSettings {
   user_id: string;
-  theme: 'light' | 'dark' | 'system';
+  theme: "light" | "dark" | "system";
   notifications_enabled: boolean;
   daily_reminder: boolean;
   reminder_time: string; // time format
@@ -141,7 +141,7 @@ export interface UserSettings {
   updated_at: string;
 }
 
-// Study Session types  
+// Study Session types
 export interface StudySession {
   id: string;
   user_id: string;
@@ -173,7 +173,7 @@ export interface UserNotification {
   id: string;
   user_id: string;
   project_id?: string;
-  type: 'study_reminder' | 'general' | 'achievement';
+  type: "study_reminder" | "general";
   title: string;
   message: string;
   url?: string;

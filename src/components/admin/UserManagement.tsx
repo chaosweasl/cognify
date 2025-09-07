@@ -13,7 +13,6 @@ import {
   Filter,
   UserCheck,
   UserPlus,
-  Clock,
   Shield,
   ChevronLeft,
   ChevronRight,
@@ -22,7 +21,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -108,7 +106,7 @@ export function UserManagement() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, search, sortBy, sortOrder]);
+  }, [pagination.page, pagination.limit, search, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchUsers();
@@ -202,7 +200,7 @@ export function UserManagement() {
             title="Recent Signups"
             value={stats.recentSignups}
             icon={UserPlus}
-            color="text-orange-500"
+            color="text-status-warning"
             index={3}
           />
           <StatCard

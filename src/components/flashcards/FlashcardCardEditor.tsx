@@ -29,23 +29,23 @@ export function FlashcardCardEditor({
   const getFrontStatus = () => {
     if (frontLength === 0) return { color: "text-muted", message: "Empty" };
     if (!frontValid)
-      return { color: "text-yellow-500", message: "Needs content" };
+      return { color: "text-status-warning", message: "Needs content" };
     if (frontLength > maxLength)
-      return { color: "text-red-400", message: "Too long" };
+      return { color: "text-status-error", message: "Too long" };
     if (frontLength > maxLength * 0.8)
-      return { color: "text-yellow-500", message: "Almost full" };
-    return { color: "text-green-500", message: "Valid" };
+      return { color: "text-status-warning", message: "Almost full" };
+    return { color: "text-status-success", message: "Valid" };
   };
 
   const getBackStatus = () => {
     if (backLength === 0) return { color: "text-muted", message: "Empty" };
     if (!backValid)
-      return { color: "text-yellow-500", message: "Needs content" };
+      return { color: "text-status-warning", message: "Needs content" };
     if (backLength > maxLength)
-      return { color: "text-red-400", message: "Too long" };
+      return { color: "text-status-error", message: "Too long" };
     if (backLength > maxLength * 0.8)
-      return { color: "text-yellow-500", message: "Almost full" };
-    return { color: "text-green-500", message: "Valid" };
+      return { color: "text-status-warning", message: "Almost full" };
+    return { color: "text-status-success", message: "Valid" };
   };
 
   const frontStatus = getFrontStatus();
@@ -79,9 +79,9 @@ export function FlashcardCardEditor({
               <span
                 className={`text-sm transition-colors transition-normal ${
                   frontLength > maxLength * 0.8
-                    ? "text-red-400"
+                    ? "text-status-error"
                     : frontLength > maxLength * 0.6
-                    ? "text-yellow-500"
+                    ? "text-status-warning"
                     : "text-muted"
                 }`}
               >
@@ -143,20 +143,20 @@ export function FlashcardCardEditor({
           <div className="text-sm mt-2 flex items-center gap-2">
             {frontLength > maxLength ? (
               <>
-                <AlertCircle className="w-4 h-4 text-red-400" />
-                <span className="text-red-400">
+                <AlertCircle className="w-4 h-4 text-status-error" />
+                <span className="text-status-error">
                   Content exceeds maximum length
                 </span>
               </>
             ) : !frontValid && frontLength > 0 ? (
               <>
-                <AlertCircle className="w-4 h-4 text-yellow-500" />
-                <span className="text-yellow-500">Add meaningful content</span>
+                <AlertCircle className="w-4 h-4 text-status-warning" />
+                <span className="text-status-warning">Add meaningful content</span>
               </>
             ) : (
               <>
-                <AlertCircle className="w-4 h-4 text-yellow-500" />
-                <span className="text-yellow-500">
+                <AlertCircle className="w-4 h-4 text-status-warning" />
+                <span className="text-status-warning">
                   Approaching character limit
                 </span>
               </>
@@ -209,9 +209,9 @@ export function FlashcardCardEditor({
               <span
                 className={`text-sm transition-colors transition-normal ${
                   backLength > maxLength * 0.8
-                    ? "text-red-400"
+                    ? "text-status-error"
                     : backLength > maxLength * 0.6
-                    ? "text-yellow-500"
+                    ? "text-status-warning"
                     : "text-muted"
                 }`}
               >
@@ -272,20 +272,20 @@ export function FlashcardCardEditor({
           <div className="text-sm mt-2 flex items-center gap-2">
             {backLength > maxLength ? (
               <>
-                <AlertCircle className="w-4 h-4 text-red-400" />
-                <span className="text-red-400">
+                <AlertCircle className="w-4 h-4 text-status-error" />
+                <span className="text-status-error">
                   Content exceeds maximum length
                 </span>
               </>
             ) : !backValid && backLength > 0 ? (
               <>
-                <AlertCircle className="w-4 h-4 text-yellow-500" />
-                <span className="text-yellow-500">Add meaningful content</span>
+                <AlertCircle className="w-4 h-4 text-status-warning" />
+                <span className="text-status-warning">Add meaningful content</span>
               </>
             ) : (
               <>
-                <AlertCircle className="w-4 h-4 text-yellow-500" />
-                <span className="text-yellow-500">
+                <AlertCircle className="w-4 h-4 text-status-warning" />
+                <span className="text-status-warning">
                   Approaching character limit
                 </span>
               </>
@@ -305,7 +305,7 @@ export function FlashcardCardEditor({
                 Card Preview
               </span>
               {bothValid && (
-                <div className="ml-auto flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                <div className="ml-auto flex items-center gap-1 text-xs text-status-success bg-green-500/10 px-2 py-1 rounded-full">
                   <CheckCircle2 className="w-3 h-3" />
                   Complete
                 </div>

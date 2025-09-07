@@ -14,7 +14,6 @@ import {
   Calendar,
   BookOpen,
   Brain,
-  Zap,
   Award,
   AlertCircle,
 } from "lucide-react";
@@ -35,7 +34,6 @@ interface UsageStats {
     totalCardsStudied: number;
     totalCardsLearned: number;
     retentionRate: number;
-    studyStreak: number;
     activeProjects: number;
   };
   dailyStats: Array<{
@@ -215,16 +213,8 @@ export function AnalyticsDashboard() {
           title="Retention Rate"
           value={`${summary.retentionRate}%`}
           subtitle="Success rate"
-          color="text-purple-600"
-          bgColor="bg-purple-50"
-        />
-        <StatCard
-          icon={Zap}
-          title="Study Streak"
-          value={`${summary.studyStreak}`}
-          subtitle="days in a row"
-          color="text-orange-600"
-          bgColor="bg-orange-50"
+          color="text-brand-accent"
+          bgColor="surface-elevated"
         />
       </div>
 
@@ -381,8 +371,8 @@ function CardDistributionChart({
     { key: "new", label: "New", color: "bg-blue-500" },
     { key: "learning", label: "Learning", color: "bg-yellow-500" },
     { key: "young", label: "Young", color: "bg-green-500" },
-    { key: "mature", label: "Mature", color: "bg-purple-500" },
-    { key: "suspended", label: "Suspended", color: "bg-gray-500" },
+    { key: "mature", label: "Mature", color: "surface-elevated" },
+    { key: "suspended", label: "Suspended", color: "bg-status-muted" },
   ];
 
   return (

@@ -30,7 +30,7 @@ export const LAZY_LOADING_CONFIG = {
   // Default loading component
   defaultLoadingComponent: () => (
     <div className="flex items-center justify-center min-h-[200px]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary"></div>
     </div>
   ),
 
@@ -42,14 +42,14 @@ export const LAZY_LOADING_CONFIG = {
     error: Error;
     retry: () => void;
   }) => (
-    <div className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-red-50 border border-red-200 rounded-lg">
-      <div className="text-red-600 mb-2">⚠️ Failed to load component</div>
-      <div className="text-sm text-red-500 mb-4 max-w-md text-center">
+    <div className="flex flex-col items-center justify-center min-h-[200px] p-6 surface-elevated border border-status-error rounded-lg">
+      <div className="text-status-error mb-2">⚠️ Failed to load component</div>
+      <div className="text-sm text-status-error mb-4 max-w-md text-center">
         {error.message || "Component failed to load"}
       </div>
       <button
         onClick={retry}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+        className="px-4 py-2 bg-status-error text-white rounded hover:bg-status-error transition-colors focus:outline-none focus:ring-2 focus:ring-status-error"
         type="button"
       >
         Retry
@@ -201,8 +201,8 @@ export class RouteCodeSplitter {
       fallback: (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <div className="text-gray-600">Loading page...</div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
+            <div className="text-muted">Loading page...</div>
           </div>
         </div>
       ),
@@ -248,11 +248,11 @@ export function createLazyFeature<T extends ComponentType<any>>(
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
           <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto"></div>
+            <div className="h-4 surface-elevated rounded w-3/4 mx-auto"></div>
+            <div className="h-4 surface-elevated rounded w-1/2 mx-auto"></div>
+            <div className="h-4 surface-elevated rounded w-2/3 mx-auto"></div>
           </div>
-          <div className="text-sm text-gray-500 mt-4">
+          <div className="text-sm text-muted mt-4">
             Loading {featureName}...
           </div>
         </div>

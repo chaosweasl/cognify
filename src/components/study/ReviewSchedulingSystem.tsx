@@ -357,14 +357,12 @@ export function ReviewSchedulingSystem({
 
       {/* Notification Permission Check */}
       {"Notification" in window && Notification.permission === "default" && (
-        <Card className="p-4 bg-amber-50 border-amber-200">
+        <Card className="p-4 surface-elevated border-status-warning/30 bg-gradient-to-br from-status-warning/5 to-transparent">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-status-warning mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-medium text-amber-800">
-                Enable Notifications
-              </h3>
-              <p className="text-sm text-amber-700 mt-1">
+              <h3 className="font-medium text-primary">Enable Notifications</h3>
+              <p className="text-sm text-secondary mt-1">
                 Allow notifications to receive study reminders in your browser.
               </p>
               <Button
@@ -586,7 +584,7 @@ export function ReviewSchedulingSystem({
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteReminder(reminder.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className="text-status-error hover:text-status-error/80 hover:surface-elevated"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

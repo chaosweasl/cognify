@@ -311,7 +311,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   </div>
 
                   {hasActiveCards && (
-                    <div className="flex items-center gap-2 text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                    <div className="flex items-center gap-2 text-status-success group-hover:text-status-success transition-colors">
                       <Zap className="w-4 h-4" />
                       <span className="font-medium">{totalActiveCards}</span>
                       <span>active</span>
@@ -465,9 +465,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         <div
           className={cn(
             "absolute top-4 right-4 w-3 h-3 rounded-full transition-all duration-slower",
-            priority === "high" && "bg-red-400 animate-pulse",
-            priority === "medium" && "bg-yellow-400 animate-pulse",
-            priority === "low" && "bg-green-400"
+            priority === "high" && "bg-status-error animate-pulse",
+            priority === "medium" && "bg-status-warning animate-pulse",
+            priority === "low" && "bg-status-success"
           )}
         />
       )}
@@ -494,7 +494,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                 {/* Enhanced activity indicator */}
                 {hasActiveCards && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center animate-pulse shadow-lg">
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-status-success rounded-full flex items-center justify-center animate-pulse shadow-lg">
                     <span className="text-white text-xs font-bold">
                       {Math.min(totalActiveCards, 99)}
                     </span>
@@ -563,7 +563,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="border-subtle" />
                 <DropdownMenuItem
-                  className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors interactive-hover"
+                  className="flex items-center gap-2 text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors interactive-hover"
                   onSelect={handleDelete}
                   disabled={isDeleting}
                 >
@@ -615,7 +615,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-emerald-400" />
+                      <Brain className="w-4 h-4 text-status-success" />
                       <span className="text-sm font-semibold text-secondary">
                         Ready to Study
                       </span>
@@ -632,14 +632,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {srsStats.dueCards > 0 && (
-                      <div className="flex items-center gap-1 text-red-400">
+                      <div className="flex items-center gap-1 text-status-error">
                         <Clock className="w-3 h-3" />
                         <span className="font-medium">{srsStats.dueCards}</span>
                         <span>due</span>
                       </div>
                     )}
                     {srsStats.learningCards > 0 && (
-                      <div className="flex items-center gap-1 text-blue-400">
+                      <div className="flex items-center gap-1 text-brand-primary">
                         <TrendingUp className="w-3 h-3" />
                         <span className="font-medium">
                           {srsStats.learningCards}
@@ -648,7 +648,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                       </div>
                     )}
                     {srsStats.newCards > 0 && (
-                      <div className="flex items-center gap-1 text-purple-400">
+                      <div className="flex items-center gap-1 text-brand-accent">
                         <Sparkles className="w-3 h-3" />
                         <span className="font-medium">{srsStats.newCards}</span>
                         <span>new</span>

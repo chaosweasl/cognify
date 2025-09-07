@@ -277,7 +277,7 @@ export function AIConfigurationSection({
                         localConfig.provider === provider.id
                           ? "border-brand bg-gradient-glass shadow-brand"
                           : "border-secondary hover:border-brand",
-                        provider.isDeveloperOnly && "border-amber-500/30"
+                        provider.isDeveloperOnly && "border-status-warning/30"
                       )}
                       onClick={() => handleProviderChange(provider.id)}
                       style={{
@@ -316,7 +316,7 @@ export function AIConfigurationSection({
                               {provider.name}
                             </h5>
                             {provider.isDeveloperOnly && (
-                              <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs font-medium">
+                              <Badge className="bg-status-warning/10 text-status-warning border-status-warning/30 text-xs font-medium">
                                 <Shield className="w-3 h-3 mr-1" />
                                 DEV
                               </Badge>
@@ -402,8 +402,8 @@ export function AIConfigurationSection({
             <Card
               className={
                 isOnboarding
-                  ? "bg-slate-800/60 border-slate-600"
-                  : "bg-slate-800/40 border-slate-700"
+                  ? "surface-elevated border-brand"
+                  : "surface-secondary border-subtle"
               }
             >
               <CardHeader>
@@ -414,7 +414,7 @@ export function AIConfigurationSection({
               <CardContent className="space-y-4">
                 {/* Model Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                  <label className="block text-sm font-medium text-primary mb-2">
                     Model
                   </label>
                   <select
@@ -422,7 +422,7 @@ export function AIConfigurationSection({
                     onChange={(e) =>
                       handleConfigChange("model", e.target.value)
                     }
-                    className="w-full px-4 py-3 rounded-lg border border-slate-600 bg-slate-700 text-white focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                    className="w-full px-4 py-3 rounded-lg border border-primary bg-surface-elevated text-primary focus:border-brand focus:ring-1 focus:ring-brand"
                   >
                     {availableModels.map(
                       (model: {
@@ -437,7 +437,7 @@ export function AIConfigurationSection({
                     )}
                   </select>
                   {localConfig.model && (
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-muted mt-1">
                       {
                         availableModels.find(
                           (m: {
@@ -454,7 +454,7 @@ export function AIConfigurationSection({
                 {/* Custom Model Name */}
                 {localConfig.model === "custom" && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-200 mb-2">
+                    <label className="block text-sm font-medium text-primary mb-2">
                       Custom Model Name
                     </label>
                     <Input
@@ -463,9 +463,9 @@ export function AIConfigurationSection({
                         handleConfigChange("customModelName", e.target.value)
                       }
                       placeholder="Enter the exact model name"
-                      className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                      className="surface glass-surface border border-subtle text-primary placeholder-muted"
                     />
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-muted mt-1">
                       Enter the exact model name as expected by your provider
                     </p>
                   </div>
@@ -474,10 +474,10 @@ export function AIConfigurationSection({
                 {/* Provider-specific Configuration Fields */}
                 {selectedProvider.configFields.map((field: AIProviderField) => (
                   <div key={field.key}>
-                    <label className="block text-sm font-medium text-slate-200 mb-2">
+                    <label className="block text-sm font-medium text-primary mb-2">
                       {field.label}
                       {field.required && (
-                        <span className="text-red-400 ml-1">*</span>
+                        <span className="text-status-error ml-1">*</span>
                       )}
                     </label>
                     <div className="relative">
@@ -496,13 +496,13 @@ export function AIConfigurationSection({
                           handleConfigChange(field.key, e.target.value)
                         }
                         placeholder={field.placeholder}
-                        className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                        className="surface-secondary border-primary text-primary placeholder-muted"
                       />
                       {field.type === "password" && (
                         <button
                           type="button"
                           onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-primary"
                         >
                           {showApiKey ? (
                             <EyeOff className="w-4 h-4" />
@@ -513,7 +513,7 @@ export function AIConfigurationSection({
                       )}
                     </div>
                     {field.description && (
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-muted mt-1">
                         {field.description}
                       </p>
                     )}
@@ -522,13 +522,13 @@ export function AIConfigurationSection({
 
                 {/* Advanced Settings */}
                 <details className="group">
-                  <summary className="cursor-pointer text-sm font-medium text-slate-200 hover:text-white">
+                  <summary className="cursor-pointer text-sm font-medium text-primary hover:brand-primary">
                     Advanced Settings
                   </summary>
                   <div className="mt-4 space-y-4">
                     {/* Temperature */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-200 mb-2">
+                      <label className="block text-sm font-medium text-primary mb-2">
                         Temperature: {localConfig.temperature || 0.7}
                       </label>
                       <input
@@ -545,7 +545,7 @@ export function AIConfigurationSection({
                         step="0.1"
                         className="w-full"
                       />
-                      <div className="flex justify-between text-xs text-slate-400 mt-1">
+                      <div className="flex justify-between text-xs text-muted mt-1">
                         <span>Focused</span>
                         <span>Creative</span>
                       </div>
@@ -553,7 +553,7 @@ export function AIConfigurationSection({
 
                     {/* Max Tokens */}
                     <div>
-                      <label className="block text-sm font-medium text-slate-200 mb-2">
+                      <label className="block text-sm font-medium text-primary mb-2">
                         Max Tokens
                       </label>
                       <Input
@@ -568,7 +568,7 @@ export function AIConfigurationSection({
                         min="100"
                         max="200000"
                         placeholder="2000"
-                        className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
+                        className="surface-secondary border-primary text-primary placeholder-muted"
                       />
                     </div>
                   </div>
@@ -578,12 +578,12 @@ export function AIConfigurationSection({
                 <div className="flex items-center justify-between pt-4">
                   <div className="flex items-center space-x-2">
                     {isValid ? (
-                      <div className="flex items-center space-x-1 text-green-400">
+                      <div className="flex items-center space-x-1 text-status-success">
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="text-sm">Configuration valid</span>
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-1 text-yellow-400">
+                      <div className="flex items-center space-x-1 text-status-warning">
                         <AlertCircle className="w-4 h-4" />
                         <span className="text-sm">
                           Please complete all required fields
@@ -598,7 +598,7 @@ export function AIConfigurationSection({
                       size="sm"
                       onClick={handleReset}
                       disabled={saving}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="border-subtle text-secondary hover:surface-elevated"
                     >
                       Reset
                     </Button>
@@ -609,7 +609,7 @@ export function AIConfigurationSection({
                         size="sm"
                         onClick={handleTestConnection}
                         disabled={testing || saving}
-                        className="border-violet-600 text-violet-300 hover:bg-violet-600/10"
+                        className="border-brand-secondary text-brand-secondary hover:bg-brand-secondary/10"
                       >
                         {testing ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -621,7 +621,7 @@ export function AIConfigurationSection({
                     <Button
                       onClick={handleSave}
                       disabled={saving || !isValid}
-                      className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
+                      className="bg-gradient-to-r from-brand-accent to-brand-secondary hover:from-brand-accent hover:to-brand-secondary"
                     >
                       {saving ? (
                         <>

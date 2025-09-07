@@ -324,14 +324,14 @@ export function PDFUploadModal({
   const getStatusIcon = (status: UploadedFile["status"]) => {
     switch (status) {
       case "pending":
-        return <FileText className="w-4 h-4 text-blue-400" />;
+        return <FileText className="w-4 h-4 text-brand-primary" />;
       case "extracting":
       case "generating":
-        return <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-status-warning animate-spin" />;
       case "completed":
-        return <CheckCircle2 className="w-4 h-4 text-green-400" />;
+        return <CheckCircle2 className="w-4 h-4 text-status-success" />;
       case "error":
-        return <AlertCircle className="w-4 h-4 text-red-400" />;
+        return <AlertCircle className="w-4 h-4 text-status-error" />;
     }
   };
 
@@ -352,7 +352,7 @@ export function PDFUploadModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-slate-900 border-slate-700">
+      <DialogContent className="max-w-4xl max-h-[90vh] surface-elevated border-subtle">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2 text-white">
             <div className="w-6 h-6 bg-gradient-to-br from-violet-500 to-purple-500 rounded-md flex items-center justify-center">
@@ -360,7 +360,7 @@ export function PDFUploadModal({
             </div>
             <span>AI-Powered PDF to Flashcards</span>
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-muted">
             Upload PDF files to automatically generate flashcards using AI.
             Maximum {MAX_FILES} files, up to 50MB each.
             {!isOverDailyLimit() && (
@@ -375,15 +375,15 @@ export function PDFUploadModal({
         <div className="space-y-6">
           {/* AI Configuration Warning */}
           {!aiConfigValid && (
-            <Card className="border-amber-500/50 bg-amber-500/10">
+            <Card className="border-status-warning surface-elevated">
               <CardContent className="pt-4">
-                <div className="flex items-center space-x-2 text-amber-400">
+                <div className="flex items-center space-x-2 text-status-warning">
                   <AlertCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">
                     AI configuration required
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-muted mt-1">
                   Please configure your AI settings before uploading PDFs.
                 </p>
               </CardContent>
@@ -392,15 +392,15 @@ export function PDFUploadModal({
 
           {/* Token Limit Warning */}
           {isOverDailyLimit() && (
-            <Card className="border-red-500/50 bg-red-500/10">
+            <Card className="border-status-error/50 surface-elevated">
               <CardContent className="pt-4">
-                <div className="flex items-center space-x-2 text-red-400">
+                <div className="flex items-center space-x-2 text-status-error">
                   <AlertCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">
                     Daily token limit exceeded
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-muted mt-1">
                   You&apos;ve reached your daily token limit. Please try again
                   tomorrow or increase your limits in settings.
                 </p>
@@ -415,8 +415,8 @@ export function PDFUploadModal({
               <div
                 className={`relative border-2 border-dashed rounded-lg p-8 transition-colors ${
                   dragActive
-                    ? "border-violet-400 bg-violet-500/10"
-                    : "border-slate-600 hover:border-slate-500"
+                    ? "border-brand-accent surface-elevated"
+                    : "border-subtle hover:border-brand"
                 }`}
                 onDragEnter={handleDragIn}
                 onDragLeave={handleDragOut}
@@ -424,19 +424,19 @@ export function PDFUploadModal({
                 onDrop={handleDrop}
               >
                 <div className="text-center">
-                  <Upload className="mx-auto h-12 w-12 text-slate-400" />
+                  <Upload className="mx-auto h-12 w-12 text-muted" />
                   <div className="mt-4">
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-secondary">
                       Drop PDF files here, or{" "}
                       <button
                         type="button"
-                        className="text-violet-400 hover:text-violet-300 font-medium"
+                        className="text-brand-accent hover:text-brand-accent font-medium"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         browse
                       </button>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-muted mt-1">
                       PDF only, max 50MB per file, up to {MAX_FILES} files
                     </p>
                   </div>
@@ -464,7 +464,7 @@ export function PDFUploadModal({
                     variant="ghost"
                     size="sm"
                     onClick={resetUpload}
-                    className="text-slate-400 hover:text-white"
+                    className="text-muted hover:text-primary"
                   >
                     Clear All
                   </Button>
@@ -475,18 +475,18 @@ export function PDFUploadModal({
                 {uploadedFiles.map((fileData) => (
                   <Card
                     key={fileData.id}
-                    className="bg-slate-800/50 border-slate-700"
+                    className="surface-secondary border-subtle"
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {getStatusIcon(fileData.status)}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
+                            <p className="text-sm font-medium text-primary truncate">
                               {fileData.file.name}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
-                              <p className="text-xs text-slate-400">
+                              <p className="text-xs text-muted">
                                 {(fileData.file.size / (1024 * 1024)).toFixed(
                                   1
                                 )}{" "}
@@ -513,7 +513,7 @@ export function PDFUploadModal({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeFile(fileData.id)}
-                            className="text-slate-400 hover:text-white ml-2"
+                            className="text-muted hover:text-primary ml-2"
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -529,7 +529,7 @@ export function PDFUploadModal({
                       )}
 
                       {fileData.error && (
-                        <p className="text-xs text-red-400 mt-2">
+                        <p className="text-xs text-status-error mt-2">
                           {fileData.error}
                         </p>
                       )}
@@ -541,12 +541,12 @@ export function PDFUploadModal({
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-700">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-subtle">
             <Button
               variant="ghost"
               onClick={onClose}
               disabled={isProcessing}
-              className="text-slate-400 hover:text-white"
+              className="text-muted hover:text-primary"
             >
               Cancel
             </Button>

@@ -51,22 +51,45 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen surface-primary relative">
+      {/* Enhanced background elements */}
+      <div className="fixed inset-0 pointer-events-none opacity-30">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-glass rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-brand-secondary/20 to-brand-accent/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s", animationDuration: "6s" }}
+        />
+      </div>
+
       <div className="container mx-auto p-4 sm:p-8 relative z-10">
-        {/* Welcome Section */}
-        <div className="glass-surface shadow-brand-lg rounded-xl overflow-hidden mb-8 border border-subtle">
-          <div className="surface-elevated border-b border-subtle px-4 py-4 sm:px-6">
+        {/* Enhanced Welcome Section */}
+        <div
+          className="glass-surface shadow-brand-lg rounded-2xl overflow-hidden mb-8 border border-subtle/50 backdrop-blur-xl relative group"
+          style={{ animation: "slideInUp 0.6s ease-out" }}
+        >
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-brand opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+
+          <div className="bg-gradient-to-r from-surface-elevated/80 to-surface-secondary/60 backdrop-blur-sm border-b border-subtle px-6 py-5">
             <div className="flex items-center justify-center gap-3">
-              <div className="text-primary flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 brand-secondary animate-pulse" />
-                <span className="text-lg sm:text-xl font-semibold">
-                  Welcome to Cognify
-                </span>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                </div>
+                <div>
+                  <span className="text-xl font-bold text-primary">
+                    Welcome to Cognify
+                  </span>
+                  <div className="text-sm text-secondary">
+                    Your AI-powered learning companion
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="p-4 sm:p-6 text-center">
-            <div className="max-w-md mx-auto">
-              <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-5">
+
+          <div className="p-8 text-center relative z-10">
+            <div className="max-w-2xl mx-auto">
+              <h1 className="text-4xl lg:text-5xl font-bold text-primary mb-6 leading-tight">
                 Dashboard
               </h1>
               <UserProfileInline />
@@ -74,67 +97,78 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">
-                Projects
-              </CardTitle>
-              <FolderOpen className="h-4 w-4 brand-secondary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {stats.totalProjects}
-              </div>
-              <p className="text-xs text-muted">Total projects created</p>
-            </CardContent>
-          </Card>
+        {/* Enhanced Stats Cards with staggered animation */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 card-grid"
+          style={{ animation: "slideInUp 0.6s ease-out 0.2s both" }}
+        >
+          {[
+            {
+              title: "Projects",
+              value: stats.totalProjects,
+              description: "Total projects created",
+              icon: FolderOpen,
+              color: "brand-secondary",
+              bgColor: "from-brand-secondary/10 to-brand-secondary/5",
+            },
+            {
+              title: "Flashcards",
+              value: stats.totalCards,
+              description: "Total flashcards",
+              icon: BookOpen,
+              color: "brand-primary",
+              bgColor: "from-brand-primary/10 to-brand-primary/5",
+            },
+            {
+              title: "Studied Today",
+              value: stats.todayStudied,
+              description: "Cards reviewed today",
+              icon: TrendingUp,
+              color: "text-green-500",
+              bgColor: "from-green-500/10 to-green-500/5",
+            },
+            {
+              title: "Due Cards",
+              value: stats.dueCards,
+              description: "Cards due for review",
+              icon: Clock,
+              color: "text-amber-500",
+              bgColor: "from-amber-500/10 to-amber-500/5",
+            },
+          ].map((stat, index) => (
+            <Card
+              key={stat.title}
+              className="glass-surface shadow-brand border border-subtle hover:border-brand hover:shadow-brand-lg transition-all duration-300 group transform hover:scale-105 hover:-translate-y-2 relative overflow-hidden"
+              style={{
+                animation: `slideInUp 0.6s ease-out ${0.3 + index * 0.1}s both`,
+              }}
+            >
+              {/* Card gradient background */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+              ></div>
 
-          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">
-                Flashcards
-              </CardTitle>
-              <BookOpen className="h-4 w-4 brand-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {stats.totalCards}
-              </div>
-              <p className="text-xs text-muted">Total flashcards</p>
-            </CardContent>
-          </Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                <CardTitle className="text-sm font-semibold text-secondary group-hover:text-primary transition-colors duration-300">
+                  {stat.title}
+                </CardTitle>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}
+                >
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
+              </CardHeader>
 
-          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">
-                Studied Today
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-status-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {stats.todayStudied}
-              </div>
-              <p className="text-xs text-muted">Cards reviewed today</p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-surface shadow-brand border border-subtle hover:border-brand transition-all transition-normal">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-secondary">
-                Due Cards
-              </CardTitle>
-              <Clock className="h-4 w-4 text-status-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {stats.dueCards}
-              </div>
-              <p className="text-xs text-muted">Cards due for review</p>
-            </CardContent>
-          </Card>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold text-primary mb-2 group-hover:scale-105 transition-transform duration-300">
+                  {stat.value.toLocaleString()}
+                </div>
+                <p className="text-sm text-muted group-hover:text-secondary transition-colors duration-300">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Quick Actions */}

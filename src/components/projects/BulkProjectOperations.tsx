@@ -401,7 +401,7 @@ export function BulkProjectOperations({
                       })
                     }
                     disabled={isOperating}
-                    className="flex items-center gap-2 text-orange-600 hover:text-orange-700"
+                    className="flex items-center gap-2 text-status-warning hover:text-status-warning"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Reset SRS
@@ -417,7 +417,7 @@ export function BulkProjectOperations({
                       })
                     }
                     disabled={isOperating}
-                    className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                    className="flex items-center gap-2 text-status-error hover:text-status-error"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -431,28 +431,28 @@ export function BulkProjectOperations({
 
       {/* Confirmation Dialog */}
       {confirmAction && (
-        <Card className="p-6 border-red-200 bg-red-50">
+        <Card className="p-6 border-status-error/50 surface-elevated">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="w-6 h-6 text-status-error flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-red-800">
+                <h3 className="text-lg font-semibold text-status-error">
                   Confirm{" "}
                   {confirmAction.action === "delete" ? "Deletion" : "SRS Reset"}
                 </h3>
-                <p className="text-sm text-red-700 mt-1">
+                <p className="text-sm text-status-error mt-1">
                   {confirmAction.action === "delete"
                     ? `This will permanently delete ${confirmAction.projects.length} project(s) and all their flashcards. This action cannot be undone.`
                     : `This will reset all SRS data for ${confirmAction.projects.length} project(s). All study progress will be lost.`}
                 </p>
 
                 <div className="mt-3 max-h-32 overflow-y-auto">
-                  <div className="text-sm text-red-600 font-medium">
+                  <div className="text-sm text-status-error font-medium">
                     Projects to {confirmAction.action}:
                   </div>
                   <ul className="mt-1 space-y-1">
                     {confirmAction.projects.map((project) => (
-                      <li key={project.id} className="text-sm text-red-700">
+                      <li key={project.id} className="text-sm text-status-error">
                         • {project.name}
                       </li>
                     ))}
@@ -469,7 +469,7 @@ export function BulkProjectOperations({
                     : bulkResetSRS
                 }
                 disabled={isOperating}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-status-error hover:bg-status-error text-white"
               >
                 {isOperating ? (
                   <>
