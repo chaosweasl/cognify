@@ -1,52 +1,26 @@
-# Cognify Project TODO List
+## 🔮 POST-MVP FEATURES
+
+### Future Enhancements (Not MVP)
+
+- [ ] **Advanced AI Features**
+  - [ ] YouTube video transcription and flashcard generation
+  - [ ] AI essay writing assistance
+  - [ ] Worksheet and cheatsheet generation
+  - [ ] Multi-language support
+- [ ] **Collaboration & Sharing**
+  - [ ] Public flashcard libraries
+  - [ ] Team study groups
+  - [ ] Flashcard marketplace
+- [ ] **Mobile & Extensions**
+  - [ ] React Native mobile app
+  - [ ] Browser extension
+  - [ ] Desktop application
+- [ ] **Advanced Analytics**
+  - [ ] ML-powered study insights
+  - [ ] Personalized learning recommendations
+  - [ ] Progress prediction models
 
 ---
-
-## MVP (Minimum Viable Product)
-
-### Core Features
-
-- [ ] **Authentication**
-  - [x] Only allow authenticated users to access any feature
-  - [ ] Secure, clean auth flow (Supabase)
-  - [ ] Onboarding process for freshly authenticated users (creating a profile, configuring AI settings, etc..)
-- [ ] **Flashcard Creation**
-  - [ ] Import PDFs for flashcard generation
-  - [ ] ~~Import YouTube videos for flashcard generation~~
-  - [ ] AI-powered flashcard creation (user brings own API key, stored in localStorage only)
-  - [x] Manual flashcard creation/editing
-- [ ] **SRS (Spaced Repetition System)**
-  - [x] Bug-free SRS algorithm (project-specific settings from DB)
-  - [ ] Study sessions persist across reloads (localStorage)
-  - [ ] Batch SRS state updates (see `lib/srs/SRSDBUtils.ts`)
-- [ ] **Projects**
-  - [ ] Create, edit, delete projects with all the necessary steps
-  - [ ] Organize flashcards by project
-- [ ] **Settings**
-  - [ ] Per-user and per-project SRS config (sync with DB and localStorage)
-  - [ ] Theme selection (sync with DB and localStorage)
-- [ ] **Notifications**
-  - [ ] Personal and app notifications (with RLS)
-  - [ ] Clean up reminders when projects/cards are deleted
-  - [ ] UI to view and manage notifications (`NotificationBell`)
-- [ ] **UI/UX**
-  - [ ] Clean, modern design (Tailwind CSS + DaisyUI)
-  - [ ] Responsive layouts
-  - [ ] Accessible components
-- [ ] **Security**
-  - [ ] Enforce RLS on all data
-  - [ ] Never store API keys or LLM endpoints in DB (localStorage only)
-  - [ ] Avoid leaking data between users
-
-### Developer Experience
-
-- [ ] Monorepo structure (`app/`, `lib/`, `src/components/`, `hooks/`)
-- [ ] Linting, typechecking, and build scripts (`pnpm lint`, `pnpm typecheck`, `pnpm build`)
-- [ ] Manual testing of full user flows
-
----
-
-## Non-MVP / Future Features
 
 ### AI & Study Tools
 
@@ -73,21 +47,67 @@
 ### Other Enhancements
 
 - [ ] In-app onboarding/tutorial
-- [ ] Gamification (badges, streaks)
+- [ ] **Gamification Elements** (moved from MVP)
+  - [ ] Achievement badge system with unlock animations
+  - [ ] Progress levels with visual feedback
+  - [ ] Study streak indicators and tracking
+  - [ ] Interactive achievement tooltips
+  - [ ] Daily goals completion celebrations
 - [ ] Advanced notification/reminder scheduling
 
 ---
 
-## Current State (from codebase)
+## UI/UX MVP: polish and release readiness
 
-- [x] Notification system (personal/app notifications, UI, RLS)
-- [x] Supabase integration for data and auth
-- [x] SRS logic (project-specific, batch updates)
-- [x] Modern UI with Tailwind CSS + DaisyUI
-- [x] Monorepo structure and conventions
-- [x] Settings (theme, SRS config) framework in place
+This section outlines a practical, prioritized plan to make the app look nicer, cleaner, and ready for an MVP release. It includes an audit, design system, page-level improvements, accessibility, performance, QA, and deliverables.
 
----
+High-level goals:
 
-**Next Steps:**  
-Focus on completing and polishing the MVP features above. Once stable, prioritize admin/monitoring and advanced AI tools
+- Create a consistent visual language (colors, spacing, type).
+- Improve clarity of core workflows: onboarding, project creation, study sessions.
+- Ensure responsive and accessible UI across devices.
+- Make the app feel fast with lightweight animations and optimized assets.
+
+Roadmap (prioritized)
+
+1. UI/UX audit & quick wins
+
+- Run a site-wide audit covering: landing, dashboard, projects, flashcards/study, auth/onboarding.
+- Capture screenshots, list severity (critical/high/medium/low), and propose quick fixes.
+- Implement top 10 quick wins (spacing, type scale, CTA prominence, empty states).
+
+2. Design tokens & component library
+
+- Define color palette (primary, accent, neutral, success, warning, error), typographic scale, and spacing tokens.
+- Wire tokens into Tailwind config (extend colors, spacing, fontSizes) and create a short `design-tokens.md` in `docs/`.
+- Create/refactor shared UI primitives in `components/ui/`: Button, Card, Input, Modal, Toast, Skeleton.
+
+3. Page-level polish
+
+- Landing page: stronger hero, clear CTAs, feature highlights, testimonials/metrics placeholder.
+- Dashboard & Projects: card layout, project thumbnails, prominent new-project CTA, loading skeletons, and empty states.
+- Flashcards / Study: large readable card, clear controls (show/hide answer), progress bar, keyboard navigation, and mobile gestures.
+- Auth & Onboarding: friendly copy, clear form field states, helpful errors, and progress steps.
+
+4. Accessibility & responsiveness
+
+- Run automated checks (axe / Lighthouse), fix color contrast, add aria attributes, ensure focus management and keyboard support.
+- Ensure responsive breakpoints and usable touch targets on mobile.
+
+5. Performance & assets
+
+- Optimize images (use webp/avif where possible), implement next/image where appropriate, lazy-load heavy modules, and audit bundle size.
+- Add simple loading skeletons for asynchronous screens.
+
+6. QA, visual regression, and release checklist
+
+- Create a release checklist that includes: accessibility report, Lighthouse score targets, core workflow manual tests, and visual diffs for major screens.
+- Add smoke tests for critical routes (home, dashboard, study session, new project, login).
+
+Checklist mapping to repo files (where to change)
+
+- Global layout: `app/layout.tsx`, `app/(main)/layout.tsx`.
+- Landing: `app/home/page.tsx` and `app/(main)/components/*`.
+- Dashboard/projects: `app/(main)/dashboard/`, `app/(main)/projects/`, `components/*`.
+- Flashcards/study: `app/api/flashcards/*` (backend API), `app/(main)/flashcards/`, `components/ui/*`.
+- Auth/onboarding: `app/auth/*` and `app/(main)/onboarding/`.

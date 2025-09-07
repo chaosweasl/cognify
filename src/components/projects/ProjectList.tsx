@@ -178,72 +178,76 @@ export function ProjectList() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative p-6">
       {/* Enhanced Header Section with Glass Morphism */}
-      <div className="relative mb-8">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 pointer-events-none opacity-20">
+      <div className="relative mb-10">
+        {/* Enhanced animated background elements */}
+        <div className="absolute inset-0 pointer-events-none opacity-30">
           <div
-            className="absolute top-0 left-1/4 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse"
+            className="absolute top-0 left-1/4 w-40 h-40 bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 rounded-full blur-3xl animate-pulse"
             style={{ animationDuration: "8s" }}
           />
           <div
-            className="absolute bottom-0 right-1/4 w-24 h-24 bg-gradient-to-r from-brand-secondary/30 to-brand-accent/30 rounded-full blur-2xl animate-pulse"
+            className="absolute bottom-0 right-1/4 w-32 h-32 bg-gradient-to-r from-brand-secondary/20 to-brand-tertiary/20 rounded-full blur-2xl animate-pulse"
             style={{ animationDuration: "12s", animationDelay: "4s" }}
           />
         </div>
 
-        <div className="relative z-10 surface-elevated glass-surface border border-subtle rounded-3xl p-6 shadow-brand">
-          {/* Title and Stats Row */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-brand transform hover:scale-110 hover:rotate-3 transition-all duration-slower">
-                  <FolderOpen className="w-6 h-6 text-white" />
+        <div className="relative z-10 glass-surface border-2 border-brand-primary/20 rounded-3xl p-8 shadow-brand-lg bg-gradient-to-br from-brand-primary/5 to-transparent">
+          {/* Enhanced Title and Stats Row */}
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8 mb-8">
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                <div className="w-16 h-16 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-3xl flex items-center justify-center shadow-brand-lg group-hover:shadow-brand-xl transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                  <FolderOpen className="w-8 h-8 text-white" />
                 </div>
-                <div className="absolute -inset-1 bg-gradient-glass rounded-2xl blur opacity-60 animate-pulse" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary/50 to-brand-secondary/50 rounded-3xl blur opacity-60 animate-pulse" />
               </div>
 
               <div>
-                <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent flex items-center gap-4">
                   My Projects
                   {projects.length > 0 && (
-                    <Badge className="bg-gradient-glass border-brand text-brand-primary px-3 py-1 text-sm font-semibold">
+                    <Badge className="bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 border-brand-primary/30 text-brand-primary px-4 py-2 text-base font-bold rounded-full">
                       {projects.length} total
                     </Badge>
                   )}
                 </h1>
-                <p className="text-secondary mt-1">
+                <p className="text-text-muted mt-2 text-lg">
                   Organize your knowledge and track your learning progress
                 </p>
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="flex gap-4">
-              <div className="text-center px-4 py-2 surface-secondary rounded-xl border border-subtle glass-surface">
-                <div className="text-2xl font-bold brand-primary">
+            {/* Enhanced Quick Stats */}
+            <div className="flex gap-6">
+              <div className="text-center px-6 py-4 glass-surface border border-status-success/30 rounded-2xl hover:border-status-success/50 transition-all duration-300 group">
+                <div className="text-3xl font-bold text-status-success group-hover:scale-110 transition-transform">
                   {filterCounts.active}
                 </div>
-                <div className="text-xs text-secondary">Ready to Study</div>
+                <div className="text-sm text-muted font-medium">
+                  Ready to Study
+                </div>
               </div>
-              <div className="text-center px-4 py-2 surface-secondary rounded-xl border border-subtle glass-surface">
-                <div className="text-2xl font-bold brand-secondary">
+              <div className="text-center px-6 py-4 glass-surface border border-brand-primary/30 rounded-2xl hover:border-brand-primary/50 transition-all duration-300 group">
+                <div className="text-3xl font-bold text-brand-primary group-hover:scale-110 transition-transform">
                   {filterCounts.completed}
                 </div>
-                <div className="text-xs text-secondary">Completed</div>
+                <div className="text-sm text-muted font-medium">Completed</div>
               </div>
             </div>
           </div>
 
           {/* Enhanced Controls Row */}
-          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
-            {/* Search Input with Enhanced Styling */}
-            <div className="relative flex-1 max-w-md group">
+          <div className="flex flex-col xl:flex-row gap-6 items-stretch xl:items-center">
+            {/* Enhanced Search Input with Glass Morphism */}
+            <div className="relative flex-1 max-w-lg group">
               <Search
                 className={cn(
-                  "absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-slower",
-                  isSearchFocused ? "brand-primary scale-110" : "text-muted"
+                  "absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 transition-all duration-500",
+                  isSearchFocused
+                    ? "text-brand-primary scale-110 rotate-12"
+                    : "text-text-muted"
                 )}
               />
               <Input
@@ -253,10 +257,10 @@ export function ProjectList() {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 className={cn(
-                  "pl-12 pr-4 h-12 transition-all duration-slower rounded-xl",
-                  "surface-secondary border-secondary text-primary placeholder:text-muted",
-                  "focus:surface-elevated focus:border-brand focus:shadow-brand interactive-focus",
-                  "interactive-hover glass-surface"
+                  "pl-14 pr-4 h-14 transition-all duration-500 rounded-2xl text-lg",
+                  "glass-surface border-brand-primary/30 text-text-primary placeholder:text-text-muted",
+                  "focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:shadow-brand-md",
+                  "hover:border-brand-primary/50"
                 )}
               />
               {searchQuery && (
@@ -264,103 +268,103 @@ export function ProjectList() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 p-0 text-muted hover:text-primary interactive-hover rounded-lg"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-text-muted hover:text-brand-primary hover:bg-brand-primary/10 rounded-xl"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </Button>
               )}
             </div>
 
-            {/* Control Buttons */}
-            <div className="flex gap-2 items-center">
-              {/* Filter Dropdown */}
+            {/* Enhanced Control Buttons */}
+            <div className="flex gap-3 items-center">
+              {/* Enhanced Filter Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-12 px-4 gap-2 rounded-xl transition-all duration-slower group",
-                      "surface-secondary border-secondary interactive-hover glass-surface",
-                      "hover:border-brand hover:shadow-brand"
+                      "h-14 px-6 gap-3 rounded-2xl transition-all duration-500 group",
+                      "glass-surface border-brand-primary/30 hover:border-brand-primary/50",
+                      "hover:shadow-brand-md hover:bg-brand-primary/5"
                     )}
                   >
-                    <Filter className="w-4 h-4 text-muted group-hover:brand-primary transition-colors duration-slower" />
-                    <span className="text-secondary group-hover:text-primary transition-colors duration-slower">
+                    <Filter className="w-5 h-5 text-text-muted group-hover:text-brand-primary transition-colors duration-300" />
+                    <span className="text-text-secondary group-hover:text-text-primary transition-colors duration-300 font-medium">
                       {getFilterLabel()}
                     </span>
                     {filterBy !== "all" && (
-                      <Badge className="bg-brand-primary/10 text-brand-primary border-brand-primary/30 text-xs">
+                      <Badge className="bg-brand-primary/10 text-brand-primary border-brand-primary/30 text-sm px-2 py-1">
                         {filterCounts[filterBy]}
                       </Badge>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 surface-elevated glass-surface border border-secondary shadow-lg p-1">
+                <DropdownMenuContent className="w-56 glass-surface border-brand-primary/20 shadow-brand-lg p-2">
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50",
                       filterBy === "all" &&
                         "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setFilterBy("all")}
                   >
-                    <FolderOpen className="w-4 h-4 text-current" />
-                    <span className="flex-1 font-medium">All Projects</span>
-                    <Badge variant="outline" className="text-xs border-current">
+                    <FolderOpen className="w-5 h-5 text-current" />
+                    <span className="flex-1 font-semibold">All Projects</span>
+                    <Badge variant="outline" className="text-sm border-current">
                       {filterCounts.all}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-green-500/10 focus:bg-green-500/10",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary interactive-hover",
                       filterBy === "active" &&
-                        "bg-green-500/15 text-green-600 dark:text-green-400"
+                        "surface-elevated text-status-success border border-status-success"
                     )}
                     onSelect={() => setFilterBy("active")}
                   >
-                    <Brain className="w-4 h-4 text-green-500" />
-                    <span className="flex-1 font-medium">Ready to Study</span>
+                    <Brain className="w-5 h-5 text-status-success" />
+                    <span className="flex-1 font-semibold">Ready to Study</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-green-500 border-green-500/40"
+                      className="text-sm text-status-success border-status-success/30"
                     >
                       {filterCounts.active}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-blue-500/10 focus:bg-blue-500/10",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary interactive-hover",
                       filterBy === "completed" &&
-                        "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                        "surface-elevated text-status-info border border-status-info"
                     )}
                     onSelect={() => setFilterBy("completed")}
                   >
-                    <BookOpen className="w-4 h-4 text-blue-500" />
-                    <span className="flex-1 font-medium">Completed</span>
+                    <BookOpen className="w-5 h-5 text-status-info" />
+                    <span className="flex-1 font-semibold">Completed</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-blue-500 border-blue-500/40"
+                      className="text-sm text-brand-primary border-brand-primary/30"
                     >
                       {filterCounts.completed}
                     </Badge>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-gray-500/10 focus:bg-gray-500/10",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-primary hover:surface-elevated focus:surface-elevated",
                       filterBy === "empty" &&
-                        "bg-gray-500/15 text-gray-600 dark:text-gray-400"
+                        "surface-elevated text-primary border border-subtle"
                     )}
                     onSelect={() => setFilterBy("empty")}
                   >
-                    <Plus className="w-4 h-4 text-gray-500" />
-                    <span className="flex-1 font-medium">Empty</span>
+                    <Plus className="w-5 h-5 text-secondary" />
+                    <span className="flex-1 font-semibold">Empty</span>
                     <Badge
                       variant="outline"
-                      className="text-xs text-gray-500 border-gray-500/40"
+                      className="text-sm text-secondary border-subtle"
                     >
                       {filterCounts.empty}
                     </Badge>
@@ -368,89 +372,89 @@ export function ProjectList() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Sort Dropdown */}
+              {/* Enhanced Sort Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-12 px-4 gap-2 rounded-xl transition-all duration-slower group",
-                      "surface-secondary border-secondary interactive-hover glass-surface",
-                      "hover:border-brand hover:shadow-brand"
+                      "h-14 px-6 gap-3 rounded-2xl transition-all duration-500 group",
+                      "glass-surface border-brand-primary/30 hover:border-brand-primary/50",
+                      "hover:shadow-brand-md hover:bg-brand-primary/5"
                     )}
                   >
                     {getSortIcon()}
                     {sortDirection === "desc" ? (
-                      <SortDesc className="w-4 h-4 text-muted group-hover:brand-primary transition-colors duration-slower" />
+                      <SortDesc className="w-5 h-5 text-text-muted group-hover:text-brand-primary transition-colors duration-300" />
                     ) : (
-                      <SortAsc className="w-4 h-4 text-muted group-hover:brand-primary transition-colors duration-slower" />
+                      <SortAsc className="w-5 h-5 text-text-muted group-hover:text-brand-primary transition-colors duration-300" />
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 surface-elevated glass-surface border border-secondary shadow-lg p-1">
+                <DropdownMenuContent className="w-56 glass-surface border-brand-primary/20 shadow-brand-lg p-2">
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50 font-semibold",
                       sortBy === "name" &&
                         "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("name")}
                   >
-                    <SortAsc className="w-4 h-4" />
+                    <SortAsc className="w-5 h-5" />
                     Sort by Name
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50 font-semibold",
                       sortBy === "created" &&
                         "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("created")}
                   >
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-5 h-5" />
                     Sort by Date
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50 font-semibold",
                       sortBy === "cards" &&
                         "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("cards")}
                   >
-                    <BookOpen className="w-4 h-4" />
+                    <BookOpen className="w-5 h-5" />
                     Sort by Cards
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={cn(
-                      "flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer",
-                      "text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium",
+                      "flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer",
+                      "text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50 font-semibold",
                       sortBy === "activity" &&
                         "bg-brand-primary/10 text-brand-primary"
                     )}
                     onSelect={() => setSortBy("activity")}
                   >
-                    <TrendingUp className="w-4 h-4" />
+                    <TrendingUp className="w-5 h-5" />
                     Sort by Activity
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="border-secondary my-1" />
+                  <DropdownMenuSeparator className="border-brand-primary/20 my-2" />
                   <DropdownMenuItem
-                    className="flex items-center gap-3 py-3 px-3 rounded-lg transition-all duration-fast cursor-pointer text-primary hover:bg-interactive-hover focus:bg-interactive-hover font-medium"
+                    className="flex items-center gap-4 py-4 px-4 rounded-xl transition-all duration-300 cursor-pointer text-text-primary hover:bg-surface-muted/50 focus:bg-surface-muted/50 font-semibold"
                     onSelect={() =>
                       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
                     }
                   >
                     {sortDirection === "desc" ? (
                       <>
-                        <SortAsc className="w-4 h-4" />
+                        <SortAsc className="w-5 h-5" />
                         Ascending
                       </>
                     ) : (
                       <>
-                        <SortDesc className="w-4 h-4" />
+                        <SortDesc className="w-5 h-5" />
                         Descending
                       </>
                     )}
@@ -458,52 +462,58 @@ export function ProjectList() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* View Mode Toggle */}
-              <div className="flex border border-secondary rounded-xl overflow-hidden glass-surface">
+              {/* Enhanced View Mode Toggle */}
+              <div className="flex border-2 border-brand-primary/30 rounded-2xl overflow-hidden glass-surface">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-12 px-4 rounded-none border-r border-secondary transition-all duration-slower",
+                    "h-14 px-6 rounded-none border-r border-brand-primary/30 transition-all duration-300",
                     viewMode === "grid"
-                      ? "bg-gradient-brand text-white hover:bg-gradient-brand-hover"
-                      : "text-secondary hover:text-primary interactive-hover"
+                      ? "bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:from-brand-primary hover:to-brand-secondary shadow-brand"
+                      : "text-text-muted hover:text-brand-primary hover:bg-brand-primary/10"
                   )}
                   onClick={() => setViewMode("grid")}
                 >
-                  <Grid3X3 className="w-4 h-4" />
+                  <Grid3X3 className="w-5 h-5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-12 px-4 rounded-none transition-all duration-slower",
+                    "h-14 px-6 rounded-none transition-all duration-300",
                     viewMode === "list"
-                      ? "bg-gradient-brand text-white hover:bg-gradient-brand-hover"
-                      : "text-secondary hover:text-primary interactive-hover"
+                      ? "bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:from-brand-primary hover:to-brand-secondary shadow-brand"
+                      : "text-text-muted hover:text-brand-primary hover:bg-brand-primary/10"
                   )}
                   onClick={() => setViewMode("list")}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-5 h-5" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Results Summary */}
+          {/* Enhanced Results Summary */}
           {(searchQuery || filterBy !== "all") && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
-              <span className="text-secondary">
+            <div className="mt-6 flex items-center gap-3 text-base">
+              <span className="text-text-muted font-medium">
                 Showing {filteredAndSortedProjects.length} of {projects.length}{" "}
                 projects
               </span>
               {searchQuery && (
-                <Badge variant="outline" className="text-xs">
+                <Badge
+                  variant="outline"
+                  className="text-sm px-3 py-1 bg-brand-primary/10 text-brand-primary border-brand-primary/30"
+                >
                   Search: &ldquo;{searchQuery}&rdquo;
                 </Badge>
               )}
               {filterBy !== "all" && (
-                <Badge variant="outline" className="text-xs">
+                <Badge
+                  variant="outline"
+                  className="text-sm px-3 py-1 bg-status-success/10 text-status-success border-status-success/30"
+                >
                   Filter: {getFilterLabel()}
                 </Badge>
               )}
@@ -514,38 +524,38 @@ export function ProjectList() {
 
       {/* Enhanced Project Grid/List */}
       {filteredAndSortedProjects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center relative">
-          {/* Animated background */}
-          <div className="absolute inset-0 pointer-events-none opacity-20">
+        <div className="flex flex-col items-center justify-center py-20 text-center relative">
+          {/* Enhanced animated background */}
+          <div className="absolute inset-0 pointer-events-none opacity-30">
             <div
-              className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-glass rounded-full blur-3xl animate-pulse"
+              className="absolute top-1/4 left-1/4 w-40 h-40 bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 rounded-full blur-3xl animate-pulse"
               style={{ animationDuration: "6s" }}
             />
             <div
-              className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-gradient-to-r from-brand-secondary/30 to-brand-accent/30 rounded-full blur-2xl animate-pulse"
+              className="absolute bottom-1/4 right-1/4 w-32 h-32 bg-gradient-to-r from-brand-secondary/20 to-brand-tertiary/20 rounded-full blur-2xl animate-pulse"
               style={{ animationDuration: "8s", animationDelay: "3s" }}
             />
           </div>
 
-          <div className="relative z-10 surface-elevated glass-surface border border-subtle rounded-3xl p-12 max-w-lg shadow-brand">
-            <div className="w-16 h-16 bg-gradient-glass rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="relative z-10 glass-surface border-2 border-brand-primary/20 rounded-3xl p-16 max-w-2xl shadow-brand-lg bg-gradient-to-br from-brand-primary/5 to-transparent">
+            <div className="w-20 h-20 bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg">
               {searchQuery || filterBy !== "all" ? (
-                <Search className="w-8 h-8 text-muted" />
+                <Search className="w-10 h-10 text-text-muted" />
               ) : (
-                <FolderOpen className="w-8 h-8 text-muted" />
+                <FolderOpen className="w-10 h-10 text-text-muted" />
               )}
             </div>
 
-            <h3 className="text-xl font-bold text-primary mb-3">
+            <h3 className="text-3xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent mb-4">
               {searchQuery || filterBy !== "all"
                 ? "No projects found"
                 : "No projects yet"}
             </h3>
 
-            <p className="text-secondary mb-6 leading-relaxed">
+            <p className="text-text-muted mb-10 leading-relaxed text-lg max-w-lg">
               {searchQuery || filterBy !== "all"
-                ? "Try adjusting your search or filter criteria"
-                : "Create your first project and start your learning journey"}
+                ? "Try adjusting your search or filter criteria to find what you're looking for"
+                : "Create your first project and start your learning journey with our intelligent spaced repetition system"}
             </p>
 
             {searchQuery || filterBy !== "all" ? (
@@ -555,17 +565,17 @@ export function ProjectList() {
                   setSearchQuery("");
                   setFilterBy("all");
                 }}
-                className="bg-gradient-glass border-brand text-brand-primary hover:bg-gradient-brand hover:text-white transition-all duration-slower"
+                className="h-14 px-8 rounded-2xl bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 border-brand-primary/30 text-brand-primary hover:bg-gradient-to-r hover:from-brand-primary hover:to-brand-secondary hover:text-white transition-all duration-500 shadow-brand-md hover:shadow-brand-lg"
               >
-                <X className="w-4 h-4 mr-2" />
-                Clear Filters
+                <X className="w-5 h-5 mr-3" />
+                Clear All Filters
               </Button>
             ) : (
               <Button
                 onClick={() => router.push("/projects/create")}
-                className="bg-gradient-brand hover:bg-gradient-brand-hover text-white shadow-brand hover:shadow-brand-lg transform hover:scale-105 transition-all duration-slower"
+                className="h-16 px-10 rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-primary hover:to-brand-secondary text-white shadow-brand-lg hover:shadow-brand-xl transform hover:scale-105 transition-all duration-500 text-lg font-semibold"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-6 h-6 mr-3" />
                 Create Your First Project
               </Button>
             )}
@@ -574,10 +584,10 @@ export function ProjectList() {
       ) : (
         <div
           className={cn(
-            "transition-all duration-slower",
+            "transition-all duration-500",
             viewMode === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              : "space-y-4"
+              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+              : "space-y-6"
           )}
         >
           {filteredAndSortedProjects.map((project, index) => (

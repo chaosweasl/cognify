@@ -9,18 +9,20 @@ interface CardTypeIndicatorProps {
   srsSettings: SRSSettings;
 }
 
-export function CardTypeIndicator({ cardState, srsSettings }: CardTypeIndicatorProps) {
-
+export function CardTypeIndicator({
+  cardState,
+  srsSettings,
+}: CardTypeIndicatorProps) {
   const getCardTypeInfo = (state: SRSCardState) => {
     switch (state.state) {
       case "new":
-        return { label: "New", color: "text-blue-600", icon: Zap };
+        return { label: "New", color: "brand-primary", icon: Zap };
       case "learning":
         return {
           label: `Learning (${state.learningStep + 1}/${
             srsSettings.LEARNING_STEPS.length
           })`,
-          color: "text-orange-600",
+          color: "text-status-warning",
           icon: Target,
         };
       case "relearning":
@@ -28,17 +30,17 @@ export function CardTypeIndicator({ cardState, srsSettings }: CardTypeIndicatorP
           label: `Relearning (${state.learningStep + 1}/${
             srsSettings.RELEARNING_STEPS.length
           })`,
-          color: "text-red-600",
+          color: "text-status-error",
           icon: RotateCcw,
         };
       case "review":
         return {
           label: `Review (${state.interval}d)`,
-          color: "text-green-600",
+          color: "text-status-success",
           icon: BookOpen,
         };
       default:
-        return { label: "Unknown", color: "text-gray-600", icon: BookOpen };
+        return { label: "Unknown", color: "text-muted", icon: BookOpen };
     }
   };
 

@@ -23,26 +23,26 @@ export function DailyLimitsProgress({
     maxReviewsPerDay > 0 && reviewsCompleted >= maxReviewsPerDay;
 
   return (
-    <div className="space-y-3 mb-4 p-4 bg-base-100 rounded-lg border border-base-300">
-      <h4 className="text-sm font-medium text-base-content">Daily Progress</h4>
+    <div className="space-y-3 mb-4 p-4 surface-elevated rounded-lg border border-subtle">
+      <h4 className="text-sm font-medium text-primary">Daily Progress</h4>
 
       {/* New Cards */}
       <div className="space-y-2">
         <div className="flex justify-between items-center text-sm">
-          <span className="text-base-content/70">New cards today</span>
+          <span className="text-secondary">New cards today</span>
           <span
             className={`font-medium ${
-              newCardsLimitReached ? "text-orange-600" : ""
+              newCardsLimitReached ? "text-status-warning" : ""
             }`}
           >
             {newCardsStudied} / {newCardsPerDay}
             {newCardsLimitReached && " (Limit reached)"}
           </span>
         </div>
-        <div className="w-full bg-base-200 rounded-full h-2">
+        <div className="w-full surface-secondary rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all duration-300 ${
-              newCardsLimitReached ? "bg-orange-500" : "bg-blue-500"
+              newCardsLimitReached ? "bg-status-warning" : "bg-brand-primary"
             }`}
             style={{
               width: `${Math.min(100, newCardsProgress)}%`,
@@ -58,17 +58,17 @@ export function DailyLimitsProgress({
             <span className="text-base-content/70">Reviews today</span>
             <span
               className={`font-medium ${
-                reviewsLimitReached ? "text-red-600" : ""
+                reviewsLimitReached ? "text-status-error" : ""
               }`}
             >
               {reviewsCompleted} / {maxReviewsPerDay}
               {reviewsLimitReached && " (Limit reached)"}
             </span>
           </div>
-          <div className="w-full bg-base-200 rounded-full h-2">
+          <div className="w-full surface-secondary rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all duration-300 ${
-                reviewsLimitReached ? "bg-red-500" : "bg-green-500"
+                reviewsLimitReached ? "bg-status-error" : "bg-status-success"
               }`}
               style={{
                 width: `${Math.min(100, reviewsProgress)}%`,

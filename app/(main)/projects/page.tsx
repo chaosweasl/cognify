@@ -434,61 +434,9 @@ function ProjectsPageContent() {
   );
 }
 
-// Enhanced Loading Spinner Component
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-40 h-40 bg-gradient-glass rounded-full blur-3xl animate-pulse opacity-30" />
-        <div className="absolute bottom-1/3 right-1/4 w-32 h-32 bg-gradient-to-r from-brand-secondary/20 to-brand-accent/20 rounded-full blur-2xl animate-pulse opacity-40" />
-      </div>
-
-      <div className="surface-elevated glass-surface border border-subtle rounded-3xl p-10 relative z-10 shadow-brand">
-        <div className="flex flex-col items-center space-y-8">
-          {/* Enhanced loading animation */}
-          <div className="relative">
-            <div className="w-20 h-20 border-4 border-secondary/20 border-t-brand-primary rounded-full animate-spin" />
-            <div
-              className="absolute inset-3 w-14 h-14 border-3 border-transparent border-r-brand-secondary rounded-full animate-spin"
-              style={{
-                animationDirection: "reverse",
-                animationDuration: "1.5s",
-              }}
-            />
-            <div className="absolute inset-6 w-8 h-8 bg-gradient-brand rounded-full animate-pulse opacity-80" />
-            <div className="absolute inset-7 w-6 h-6 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white animate-pulse" />
-            </div>
-          </div>
-
-          <div className="text-center space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
-                <div
-                  className="w-2 h-2 bg-brand-secondary rounded-full animate-bounce"
-                  style={{ animationDelay: "0.1s" }}
-                ></div>
-                <div
-                  className="w-2 h-2 bg-brand-accent rounded-full animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                ></div>
-              </div>
-              <span className="text-sm text-secondary animate-pulse">
-                Loading...
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense>
       <ProjectsPageContent />
     </Suspense>
   );

@@ -30,6 +30,7 @@ import { CardTypeIndicator } from "./CardTypeIndicator";
 import { FlashcardDisplay } from "../flashcards/FlashcardDisplay";
 import { SessionComplete } from "./SessionComplete";
 import { EmptyFlashcardState } from "../flashcards/EmptyFlashcardState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Flashcard, Project } from "../../types";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Pencil } from "lucide-react";
@@ -93,7 +94,7 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => router.push(`/projects/${projectId}/edit`)}
-            className="btn btn-outline btn-sm gap-2"
+            className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
             title="Edit flashcards"
           >
             <Pencil className="w-4 h-4" />
@@ -101,7 +102,7 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
           </button>
           <button
             onClick={onReset}
-            className="btn btn-ghost btn-sm gap-2"
+            className="surface-elevated border-subtle text-secondary hover:surface-glass hover:text-primary hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
             title="Reset session"
           >
             <RotateCcw className="w-4 h-4" />
@@ -125,35 +126,35 @@ function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
 
   return (
     <div className="grid grid-cols-3 gap-4 mb-4">
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            newCards > 0 ? "text-blue-600" : "text-gray-400"
+            newCards > 0 ? "brand-primary" : "text-muted"
           }`}
         >
           {newCards}
         </div>
-        <div className="text-xs text-base-content/70">New</div>
+        <div className="text-xs text-muted">New</div>
       </div>
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            learningCards > 0 ? "text-orange-600" : "text-gray-400"
+            learningCards > 0 ? "text-status-warning" : "text-muted"
           }`}
         >
           {learningCards}
         </div>
-        <div className="text-xs text-base-content/70">Learning</div>
+        <div className="text-xs text-muted">Learning</div>
       </div>
-      <div className="bg-base-100 rounded-lg p-3 text-center border">
+      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
-            totalDueCards > 0 ? "text-green-600" : "text-gray-400"
+            totalDueCards > 0 ? "text-status-success" : "text-muted"
           }`}
         >
           {totalDueCards}
         </div>
-        <div className="text-xs text-base-content/70">Due</div>
+        <div className="text-xs text-muted">Due</div>
       </div>
     </div>
   );
@@ -172,24 +173,24 @@ function SessionProgress({
   return (
     <>
       <div className="mt-6 text-center">
-        <div className="text-sm text-base-content/70">
+        <div className="text-sm text-secondary">
           Session: {reviewed} cards reviewed
         </div>
         {learningQueueCount > 0 && (
-          <div className="text-xs text-orange-600 mt-1">
+          <div className="text-xs text-status-warning mt-1">
             {learningQueueCount} card{learningQueueCount === 1 ? "" : "s"} in
             learning queue
           </div>
         )}
         {reviewed > 0 && learningQueueCount === 0 && (
-          <div className="text-xs text-green-600 mt-1">
+          <div className="text-xs text-status-success mt-1">
             ✓ Learning queue empty
           </div>
         )}
       </div>
 
       {/* Shortcuts */}
-      <div className="mt-4 text-xs text-base-content/50 text-center">
+      <div className="mt-4 text-xs text-muted text-center">
         <div className="hidden lg:flex flex-wrap justify-center gap-4">
           <span>Space / F: Flip</span>
           <span>1: Again</span>
@@ -215,28 +216,31 @@ export default function StudyFlashcards({
   const supabase = createClient();
 
   // Convert project settings to SRSSettings format
-  const srsSettings = React.useMemo(() => ({
-    NEW_CARDS_PER_DAY: project.new_cards_per_day,
-    MAX_REVIEWS_PER_DAY: project.max_reviews_per_day,
-    LEARNING_STEPS: project.learning_steps,
-    RELEARNING_STEPS: project.relearning_steps,
-    GRADUATING_INTERVAL: project.graduating_interval,
-    EASY_INTERVAL: project.easy_interval,
-    STARTING_EASE: project.starting_ease,
-    MINIMUM_EASE: project.minimum_ease,
-    EASY_BONUS: project.easy_bonus,
-    HARD_INTERVAL_FACTOR: project.hard_interval_factor,
-    EASY_INTERVAL_FACTOR: project.easy_interval_factor,
-    LAPSE_RECOVERY_FACTOR: project.lapse_recovery_factor,
-    LAPSE_EASE_PENALTY: project.lapse_ease_penalty,
-    INTERVAL_MODIFIER: 1.0, // Not stored in project, use default
-    LEECH_THRESHOLD: project.leech_threshold,
-    LEECH_ACTION: project.leech_action,
-    NEW_CARD_ORDER: project.new_card_order,
-    REVIEW_AHEAD: project.review_ahead,
-    BURY_SIBLINGS: project.bury_siblings,
-    MAX_INTERVAL: project.max_interval,
-  }), [project]);
+  const srsSettings = React.useMemo(
+    () => ({
+      NEW_CARDS_PER_DAY: project.new_cards_per_day,
+      MAX_REVIEWS_PER_DAY: project.max_reviews_per_day,
+      LEARNING_STEPS: project.learning_steps,
+      RELEARNING_STEPS: project.relearning_steps,
+      GRADUATING_INTERVAL: project.graduating_interval,
+      EASY_INTERVAL: project.easy_interval,
+      STARTING_EASE: project.starting_ease,
+      MINIMUM_EASE: project.minimum_ease,
+      EASY_BONUS: project.easy_bonus,
+      HARD_INTERVAL_FACTOR: project.hard_interval_factor,
+      EASY_INTERVAL_FACTOR: project.easy_interval_factor,
+      LAPSE_RECOVERY_FACTOR: project.lapse_recovery_factor,
+      LAPSE_EASE_PENALTY: project.lapse_ease_penalty,
+      INTERVAL_MODIFIER: 1.0, // Not stored in project, use default
+      LEECH_THRESHOLD: project.leech_threshold,
+      LEECH_ACTION: project.leech_action,
+      NEW_CARD_ORDER: project.new_card_order,
+      REVIEW_AHEAD: project.review_ahead,
+      BURY_SIBLINGS: project.bury_siblings,
+      MAX_INTERVAL: project.max_interval,
+    }),
+    [project]
+  );
 
   // Create project-specific settings from project data
   const projectSettings: ProjectSRSSettings = React.useMemo(
@@ -260,7 +264,10 @@ export default function StudyFlashcards({
         }
 
         // Initialize session with database or fallback to localStorage
-        const session = await initStudySessionWithFallback(userId || undefined, project.id);
+        const session = await initStudySessionWithFallback(
+          userId || undefined,
+          project.id
+        );
         setStudySession(session);
       } catch (error) {
         console.error("Failed to initialize study session:", error);
@@ -303,6 +310,7 @@ export default function StudyFlashcards({
 
   // Prevent rating spam
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   // Session statistics
   const [sessionStats, setSessionStats] = useState({
@@ -323,11 +331,11 @@ export default function StudyFlashcards({
         try {
           await saveSRSStates(supabase, userId, project.id, states);
           console.log("SRS states saved to database");
-          
+
           // Invalidate cache to ensure project stats update across the app
-          CacheInvalidation.invalidatePattern('user_projects');
+          CacheInvalidation.invalidatePattern("user_projects");
           CacheInvalidation.invalidatePattern(`project_${project.id}`);
-          CacheInvalidation.invalidatePattern('project_stats_');
+          CacheInvalidation.invalidatePattern("project_stats_");
         } catch (error) {
           console.error("Failed to save SRS states:", error);
         }
@@ -500,6 +508,17 @@ export default function StudyFlashcards({
     ]
   );
 
+  // Initialize study session
+  useEffect(() => {
+    if (initializing) {
+      // Add a small delay to show loading state
+      const timer = setTimeout(() => {
+        setInitializing(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [initializing]);
+
   // Effects
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -624,6 +643,24 @@ export default function StudyFlashcards({
   }, [userId, project.id, srsState, saveSRSStatesToDB]);
 
   // Render conditions
+  if (initializing) {
+    return (
+      <div className="surface-elevated rounded-lg border border-subtle p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <div className="flex justify-center space-x-4">
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+          <Skeleton className="h-10 w-20" />
+        </div>
+      </div>
+    );
+  }
+
   if (!cards || cards.length === 0) {
     return <EmptyFlashcardState type="no-cards" />;
   }
@@ -699,13 +736,20 @@ export default function StudyFlashcards({
         />
 
         <DailyLimitsProgress
-          newCardsStudied={studySession.projectStats[project.id]?.newCardsStudied || 0}
-          reviewsCompleted={studySession.projectStats[project.id]?.reviewsCompleted || 0}
+          newCardsStudied={
+            studySession.projectStats[project.id]?.newCardsStudied || 0
+          }
+          reviewsCompleted={
+            studySession.projectStats[project.id]?.reviewsCompleted || 0
+          }
           newCardsPerDay={project.new_cards_per_day}
           maxReviewsPerDay={project.max_reviews_per_day}
         />
 
-        <CardTypeIndicator cardState={currentCardState} srsSettings={srsSettings} />
+        <CardTypeIndicator
+          cardState={currentCardState}
+          srsSettings={srsSettings}
+        />
       </div>
 
       <FlashcardDisplay

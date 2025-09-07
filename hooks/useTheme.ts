@@ -1,38 +1,75 @@
 import { create } from "zustand";
 
 const THEME_KEY = "theme";
-const DEFAULT_THEME = "dark";
+const DEFAULT_THEME = "system";
+
+type ThemeType = "light" | "dark" | "system";
 
 interface ThemeState {
-  theme: string;
+  theme: ThemeType;
   isHydrated: boolean;
-  setTheme: (theme: string) => void;
+  setTheme: (theme: ThemeType) => void;
   toggleTheme: () => void;
   hydrate: () => void;
-  applyTheme: (theme: string) => void;
+  applyTheme: (theme: ThemeType) => void;
+  getSystemTheme: () => "light" | "dark";
+  getEffectiveTheme: () => "light" | "dark";
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: DEFAULT_THEME,
   isHydrated: false,
 
+  getSystemTheme: () => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+    return "dark";
+  },
+
+  getEffectiveTheme: () => {
+    const { theme, getSystemTheme } = get();
+    return theme === "system" ? getSystemTheme() : theme;
+  },
+
   hydrate: () => {
     if (typeof window !== "undefined") {
-      const storedTheme = localStorage.getItem(THEME_KEY);
-
-      const theme = storedTheme || DEFAULT_THEME;
+      const storedTheme = localStorage.getItem(THEME_KEY) as ThemeType;
+      const validThemes: ThemeType[] = ["light", "dark", "system"];
+      const theme = validThemes.includes(storedTheme)
+        ? storedTheme
+        : DEFAULT_THEME;
 
       set({ theme, isHydrated: true });
       get().applyTheme(theme);
+
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleSystemThemeChange = () => {
+        if (get().theme === "system") {
+          get().applyTheme("system");
+        }
+      };
+
+      mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+      // Cleanup function - store in window for cleanup if needed
+      (window as any).__themeCleanup = () => {
+        mediaQuery.removeEventListener("change", handleSystemThemeChange);
+      };
     }
   },
 
-  applyTheme: (theme: string) => {
+  applyTheme: (theme: ThemeType) => {
     if (typeof window !== "undefined") {
       const html = document.documentElement;
       const body = document.body;
+      const effectiveTheme =
+        theme === "system" ? get().getSystemTheme() : theme;
 
-      if (theme === "dark") {
+      if (effectiveTheme === "dark") {
         html.classList.add("dark");
         body.classList.add("dark");
       } else {
@@ -44,14 +81,15 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     }
   },
 
-  setTheme: (theme) => {
+  setTheme: (theme: ThemeType) => {
     set({ theme });
     get().applyTheme(theme);
   },
 
   toggleTheme: () => {
     const current = get().theme;
-    const next = current === "dark" ? "light" : "dark";
+    const next: ThemeType =
+      current === "light" ? "dark" : current === "dark" ? "system" : "light";
     get().setTheme(next);
   },
 }));

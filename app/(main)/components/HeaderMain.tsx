@@ -9,6 +9,7 @@ import {
   Home,
   BookOpen,
   Settings,
+  Brain,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -44,32 +45,45 @@ export function HeaderMain() {
   ];
 
   return (
-    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-6 h-20 flex items-center">
-      {/* Mobile menu button */}
+    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 sm:px-6 h-16 sm:h-20 flex items-center transition-all duration-300">
+      {/* Mobile menu button with enhanced touch target */}
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="text-secondary hover:text-primary interactive-hover transition-normal"
+              className="h-12 w-12 text-secondary hover:text-primary interactive-hover transition-all transition-normal rounded-xl touch-manipulation"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
           <SheetContent
             side="left"
-            className="w-64 surface-overlay glass-surface border-subtle"
+            className="w-72 surface-overlay glass-surface border-subtle p-0"
           >
-            <nav className="flex flex-col space-y-2 mt-8">
+            {/* Enhanced mobile nav header */}
+            <div className="p-6 border-b border-subtle">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-primary">Cognify</span>
+              </div>
+            </div>
+
+            {/* Enhanced mobile navigation */}
+            <nav className="flex flex-col p-4 space-y-1">
               {navItems.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal"
+                  className="flex items-center gap-4 px-4 py-3 text-base rounded-xl text-secondary hover:text-primary interactive-hover transition-all transition-normal group touch-manipulation"
                 >
-                  <Icon className="h-4 w-4" />
-                  {label}
+                  <div className="w-10 h-10 rounded-xl surface-secondary flex items-center justify-center group-hover:bg-gradient-brand group-hover:text-white transition-all transition-normal">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium">{label}</span>
                 </Link>
               ))}
             </nav>
@@ -77,18 +91,18 @@ export function HeaderMain() {
         </Sheet>
       </div>
 
-      {/* Logo */}
-      <div className="flex-1 md:flex-none">
+      {/* Enhanced logo with better mobile spacing */}
+      <div className="flex-1 md:flex-none ml-2 md:ml-0">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 font-bold text-xl text-primary group"
+          className="flex items-center gap-2 sm:gap-3 font-bold text-lg sm:text-xl text-primary group"
         >
           <Image
             src="/favicon.png"
             alt="Cognify Logo"
             width={32}
             height={32}
-            className="w-8 h-8 rounded-lg hover:scale-110 transition-transform transition-normal"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:scale-110 transition-transform transition-normal"
             priority
           />
           <span className="group-hover:brand-primary transition-colors transition-normal">
@@ -97,38 +111,39 @@ export function HeaderMain() {
         </Link>
       </div>
 
-      {/* Desktop navigation */}
+      {/* Enhanced desktop navigation with better hover effects */}
       <nav className="hidden md:flex flex-1 justify-center">
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 bg-surface-elevated/50 backdrop-blur-sm rounded-2xl p-1 border border-subtle">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-2 px-3 py-2 text-sm rounded-md text-secondary hover:text-primary interactive-hover transition-all transition-normal group"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl text-secondary hover:text-primary interactive-hover transition-all transition-normal group relative overflow-hidden"
             >
-              <Icon className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal" />
-              {label}
+              <div className="absolute inset-0 bg-gradient-brand opacity-0 group-hover:opacity-10 transition-opacity transition-normal rounded-xl"></div>
+              <Icon className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal relative z-10" />
+              <span className="font-medium relative z-10">{label}</span>
             </Link>
           ))}
         </div>
       </nav>
 
-      {/* Right side actions */}
-      <div className="flex items-center gap-3">
+      {/* Enhanced right side actions with better spacing */}
+      <div className="flex items-center gap-2 sm:gap-3">
         <NotificationBell />
 
-        {/* Theme toggle */}
+        {/* Enhanced theme toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
           aria-label="Toggle theme"
-          className="text-secondary hover:text-primary interactive-hover transition-normal group"
+          className="h-10 w-10 sm:h-12 sm:w-12 text-secondary hover:text-primary interactive-hover transition-all transition-normal group rounded-xl touch-manipulation"
         >
           {isHydrated && theme === "dark" ? (
-            <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
+            <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal group-hover:rotate-180" />
           ) : (
-            <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal" />
+            <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal group-hover:-rotate-12" />
           )}
         </Button>
 

@@ -86,7 +86,7 @@ export function FlashcardNavigation({
                     isActive
                       ? "bg-white scale-150 shadow-brand"
                       : isPassed
-                      ? "bg-green-400"
+                      ? "bg-status-success"
                       : "bg-white/30"
                   }`}
                 />
@@ -148,7 +148,7 @@ export function FlashcardNavigation({
                       isActive
                         ? "bg-brand-primary scale-125 shadow-brand"
                         : isPassed
-                        ? "bg-green-500"
+                        ? "bg-status-success"
                         : "bg-text-subtle"
                     }`}
                   />
@@ -184,8 +184,8 @@ export function FlashcardNavigation({
         {/* Delete Controls */}
         <div className="flex items-center gap-4">
           {!canDelete && total === 1 && (
-            <div className="flex items-center gap-2 text-muted text-sm bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 rounded-xl">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+            <div className="flex items-center gap-2 text-muted text-sm surface-elevated border border-status-warning px-3 py-2 rounded-xl">
+              <AlertTriangle className="w-4 h-4 text-status-warning" />
               <span>At least one card required</span>
             </div>
           )}
@@ -193,7 +193,7 @@ export function FlashcardNavigation({
           <button
             className={`btn btn-lg gap-3 transition-all transition-normal group relative overflow-hidden rounded-xl ${
               canDeleteCard
-                ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 interactive-hover shadow-red-500/20 hover:shadow-red-500/40"
+                ? "surface-elevated border-status-error text-status-error hover:surface-elevated hover:border-status-error hover:text-status-error interactive-hover shadow-status-error/20 hover:shadow-status-error/20"
                 : "btn-disabled opacity-40"
             }`}
             onClick={onDelete}
@@ -207,7 +207,7 @@ export function FlashcardNavigation({
             }
           >
             {canDeleteCard && (
-              <div className="absolute inset-0 bg-red-500/10 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+              <div className="absolute inset-0 surface-elevated translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
             )}
             <div className="relative z-10 flex items-center gap-2">
               <Trash2 className="w-5 h-5" />

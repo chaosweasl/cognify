@@ -1,5 +1,9 @@
 import React from "react";
-import { SRSRating, SRSCardState, DEFAULT_SRS_SETTINGS } from "@/lib/srs/SRSScheduler";
+import {
+  SRSRating,
+  SRSCardState,
+  DEFAULT_SRS_SETTINGS,
+} from "@/lib/srs/SRSScheduler";
 
 interface AnkiRatingControlsProps {
   flipped: boolean;
@@ -76,52 +80,85 @@ export const AnkiRatingControls: React.FC<AnkiRatingControlsProps> = ({
   cardState,
 }) => (
   <div
-    className={`flex flex-wrap gap-3 mb-6 min-h-[72px] transition-all duration-200 justify-center ${
+    className={`flex flex-col gap-4 mb-6 transition-all transition-normal ${
       flipped
         ? "opacity-100 pointer-events-auto"
         : "opacity-0 pointer-events-none"
     }`}
     aria-hidden={!flipped}
+    role="group"
+    aria-label="Card difficulty rating controls"
   >
-    <button
-      className="btn btn-outline btn-error flex flex-col h-16"
-      onClick={() => handleRate(0)}
-      disabled={ratingLoading}
-    >
-      <span className="font-medium">Again</span>
-      <span className="text-xs opacity-70">
-        {getNextIntervalDisplay(cardState, 0)}
-      </span>
-    </button>
-    <button
-      className="btn btn-outline btn-warning flex flex-col h-16"
-      onClick={() => handleRate(1)}
-      disabled={ratingLoading}
-    >
-      <span className="font-medium">Hard</span>
-      <span className="text-xs opacity-70">
-        {getNextIntervalDisplay(cardState, 1)}
-      </span>
-    </button>
-    <button
-      className="btn btn-outline btn-success flex flex-col h-16"
-      onClick={() => handleRate(2)}
-      disabled={ratingLoading}
-    >
-      <span className="font-medium">Good</span>
-      <span className="text-xs opacity-70">
-        {getNextIntervalDisplay(cardState, 2)}
-      </span>
-    </button>
-    <button
-      className="btn btn-outline btn-info flex flex-col h-16"
-      onClick={() => handleRate(3)}
-      disabled={ratingLoading}
-    >
-      <span className="font-medium">Easy</span>
-      <span className="text-xs opacity-70">
-        {getNextIntervalDisplay(cardState, 3)}
-      </span>
-    </button>
+    <div id="rating-help" className="sr-only" aria-live="polite">
+      Use keyboard shortcuts: Press 1 for Again, 2 for Hard, 3 for Good, or 4
+      for Easy. These ratings determine when you&rsquo;ll see this card next.
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center">
+      <button
+        className="surface-glass border-2 border-status-error text-status-error hover:bg-status-error hover:text-white interactive-hover flex flex-col h-16 px-4 rounded-md font-medium transition-all transition-normal transform hover:scale-[1.02] shadow-lg focus:ring-2 focus:ring-status-error/50 focus:outline-none"
+        onClick={() => handleRate(0)}
+        disabled={ratingLoading}
+        aria-label={`Rate card as Again. Next review in ${getNextIntervalDisplay(
+          cardState,
+          0
+        )}`}
+        aria-describedby="rating-help"
+        tabIndex={0}
+      >
+        <span className="font-medium">Again</span>
+        <span className="text-xs opacity-70">
+          {getNextIntervalDisplay(cardState, 0)}
+        </span>
+      </button>
+      <button
+        className="surface-glass border-2 border-status-warning text-status-warning hover:bg-status-warning hover:text-white interactive-hover flex flex-col h-16 px-4 rounded-md font-medium transition-all transition-normal transform hover:scale-[1.02] shadow-lg focus:ring-2 focus:ring-status-warning/50 focus:outline-none"
+        onClick={() => handleRate(1)}
+        disabled={ratingLoading}
+        aria-label={`Rate card as Hard. Next review in ${getNextIntervalDisplay(
+          cardState,
+          1
+        )}`}
+        aria-describedby="rating-help"
+        tabIndex={0}
+      >
+        <span className="font-medium">Hard</span>
+        <span className="text-xs opacity-70">
+          {getNextIntervalDisplay(cardState, 1)}
+        </span>
+      </button>
+      <button
+        className="surface-glass border-2 border-status-success text-status-success hover:bg-status-success hover:text-white interactive-hover flex flex-col h-16 px-4 rounded-md font-medium transition-all transition-normal transform hover:scale-[1.02] shadow-lg focus:ring-2 focus:ring-status-success/50 focus:outline-none"
+        onClick={() => handleRate(2)}
+        disabled={ratingLoading}
+        aria-label={`Rate card as Good. Next review in ${getNextIntervalDisplay(
+          cardState,
+          2
+        )}`}
+        aria-describedby="rating-help"
+        tabIndex={0}
+      >
+        <span className="font-medium">Good</span>
+        <span className="text-xs opacity-70">
+          {getNextIntervalDisplay(cardState, 2)}
+        </span>
+      </button>
+      <button
+        className="surface-glass border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white interactive-hover flex flex-col h-16 px-4 rounded-md font-medium transition-all transition-normal transform hover:scale-[1.02] shadow-lg focus:ring-2 focus:ring-brand-primary/50 focus:outline-none"
+        onClick={() => handleRate(3)}
+        disabled={ratingLoading}
+        aria-label={`Rate card as Easy. Next review in ${getNextIntervalDisplay(
+          cardState,
+          3
+        )}`}
+        aria-describedby="rating-help"
+        tabIndex={0}
+      >
+        <span className="font-medium">Easy</span>
+        <span className="text-xs opacity-70">
+          {getNextIntervalDisplay(cardState, 3)}
+        </span>
+      </button>
+    </div>
   </div>
 );
