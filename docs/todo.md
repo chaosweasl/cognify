@@ -84,7 +84,6 @@ Roadmap (prioritized)
 
 3. Page-level polish
 
-- Landing page: stronger hero, clear CTAs, feature highlights, testimonials/metrics placeholder.
 - Dashboard & Projects: card layout, project thumbnails, prominent new-project CTA, loading skeletons, and empty states.
 - Flashcards / Study: large readable card, clear controls (show/hide answer), progress bar, keyboard navigation, and mobile gestures.
 - Auth & Onboarding: friendly copy, clear form field states, helpful errors, and progress steps.
