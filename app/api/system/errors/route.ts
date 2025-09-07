@@ -1,11 +1,12 @@
 /**
  * Error Tracking API Route
- * Collect and manage application errors
+ * Collect and manage application errors with database persistence
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { withApiSecurity } from "@/lib/utils/apiSecurity";
+import { ErrorTrackingDB } from "@/lib/utils/analyticsDB";
 import {
   ErrorLogger,
   ErrorType,
@@ -16,10 +17,27 @@ import { logSecurityEvent } from "@/lib/utils/securityAudit";
 async function handleErrorReport(request: NextRequest) {
   try {
     const body = await request.json();
-    const { error, errorInfo, context, severity, type } = body;
+    const {
+      error,
+      errorInfo,
+      context,
+      severity,
+      type,
+      error_type,
+      message,
+      stack_trace,
+      user_id,
+      session_id,
+      url,
+      user_agent,
+    } = body;
 
-    // Validate required fields
-    if (!error || !error.message) {
+    // Support both new and legacy error reporting formats
+    const errorType = error_type || type || ErrorType.RENDERING_ERROR;
+    const errorMessage = message || (error && error.message) || "Unknown error";
+    const errorSeverity = severity || ErrorSeverity.MEDIUM;
+
+    if (!errorMessage) {
       return NextResponse.json(
         { error: "Missing required error information" },
         { status: 400 }
@@ -32,40 +50,60 @@ async function handleErrorReport(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Log the error
+    const userId = user_id || user?.id;
+
+    // Log error to database
+    await ErrorTrackingDB.logError({
+      error_type: errorType,
+      severity: errorSeverity,
+      message: errorMessage,
+      stack_trace: stack_trace || (error && error.stack),
+      user_id: userId,
+      session_id: session_id,
+      url:
+        url ||
+        (typeof window !== "undefined" ? window.location.href : undefined),
+      user_agent:
+        user_agent ||
+        (typeof navigator !== "undefined" ? navigator.userAgent : undefined),
+      context: context
+        ? typeof context === "string"
+          ? { message: context }
+          : context
+        : undefined,
+    });
+
+    // Also log to existing error logger for backward compatibility
     const errorDetails = {
-      error: new Error(error.message),
+      error: new Error(errorMessage),
       errorInfo,
-      type: type || ErrorType.RENDERING_ERROR,
-      severity: severity || ErrorSeverity.MEDIUM,
+      type: errorType,
+      severity: errorSeverity,
       context: context || "Client Error Report",
-      userId: user?.id,
+      userId,
     };
 
     ErrorLogger.log(errorDetails);
 
     // For critical errors, also log as security events
-    if (severity === ErrorSeverity.CRITICAL) {
+    if (errorSeverity === ErrorSeverity.CRITICAL) {
       await logSecurityEvent(
         "CRITICAL_ERROR_REPORTED",
         "critical",
         {
-          error: error.message,
-          context,
-          userId: user?.id,
+          type: errorType,
+          message: errorMessage.substring(0, 100), // Truncate for security
+          userId,
         },
-        user?.id
+        userId
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Error reported successfully",
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to process error report:", error);
+    console.error("Failed to report error:", error);
     return NextResponse.json(
-      { error: "Failed to process error report" },
+      { error: "Failed to report error" },
       { status: 500 }
     );
   }
@@ -93,12 +131,24 @@ async function handleGetErrors() {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    const errors = ErrorLogger.getErrors();
-    const stats = ErrorLogger.getErrorStats();
+    // Get errors from both database and memory
+    const dbErrors = await ErrorTrackingDB.getErrorLogs(50);
+    const dbStats = await ErrorTrackingDB.getErrorStats();
+    const memoryErrors = ErrorLogger.getErrors().slice(0, 10); // Keep some recent memory errors
+    const memoryStats = ErrorLogger.getErrorStats();
+
+    // Combine database and memory stats
+    const combinedStats = {
+      total: dbStats.total + memoryStats.total,
+      byType: { ...dbStats.byType, ...memoryStats.byType },
+      bySeverity: { ...dbStats.bySeverity, ...memoryStats.bySeverity },
+      recentCount: dbStats.recentCount,
+      trend: dbStats.trend,
+    };
 
     return NextResponse.json({
-      errors: errors.slice(0, 50), // Limit to recent 50 errors
-      stats,
+      errors: [...dbErrors, ...memoryErrors].slice(0, 50),
+      stats: combinedStats,
     });
   } catch (error) {
     console.error("Failed to get error logs:", error);
@@ -131,6 +181,8 @@ async function handleClearErrors() {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
+    // Clear errors from both database and memory
+    await ErrorTrackingDB.clearErrorLogs();
     ErrorLogger.clearErrors();
 
     await logSecurityEvent(

@@ -113,10 +113,30 @@ export class ErrorLogger {
       return acc;
     }, {} as Record<string, number>);
 
+    const recentCount = this.errors.filter(
+      (error) => Date.now() - error.timestamp.getTime() < 24 * 60 * 60 * 1000
+    ).length;
+
+    let trend: "increasing" | "decreasing" | "stable" = "stable";
+    if (this.errors.length >= 2) {
+      const recent = this.errors.slice(0, Math.floor(this.errors.length / 2));
+      const older = this.errors.slice(Math.floor(this.errors.length / 2));
+      const recentRate = recent.length;
+      const olderRate = older.length;
+
+      if (recentRate > olderRate * 1.2) {
+        trend = "increasing";
+      } else if (recentRate < olderRate * 0.8) {
+        trend = "decreasing";
+      }
+    }
+
     return {
       total: this.errors.length,
       byType,
       bySeverity,
+      recentCount,
+      trend,
       recent: this.errors.slice(0, 10),
     };
   }

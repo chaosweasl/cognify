@@ -364,7 +364,6 @@ export class SystemHealthMonitor {
 
   async collectMetrics(): Promise<SystemHealthMetrics> {
     await this.runHealthChecks();
-    AnalyticsService.getInstance();
 
     const metrics: SystemHealthMetrics = {
       timestamp: new Date(),
@@ -372,13 +371,13 @@ export class SystemHealthMonitor {
       database: {
         responseTime: await this.measureDatabaseResponseTime(),
         activeConnections: 0, // Would need to query database for this
-        errorRate: 0, // Calculate from recent events
+        errorRate: await this.getErrorRate(),
         slowQueries: 0, // From database performance monitoring
       },
 
       application: {
         memoryUsage: this.getMemoryUsage(),
-        activeUsers: 1, // Would track active sessions
+        activeUsers: await this.getActiveUsersCount(),
         requestsPerMinute: this.getRequestsPerMinute(),
         averageResponseTime: 0, // From request timing
       },
@@ -411,6 +410,28 @@ export class SystemHealthMonitor {
     if (this.metrics.length > 288) {
       // 24 hours of 5-minute intervals
       this.metrics = this.metrics.slice(-144); // Keep 12 hours
+    }
+
+    // Store metrics in database
+    if (typeof window === "undefined") {
+      // Only on server
+      try {
+        const { SystemHealthDB } = await import("@/lib/utils/analyticsDB");
+        await SystemHealthDB.recordMetrics({
+          database_response_time: metrics.database.responseTime,
+          memory_usage: metrics.application.memoryUsage,
+          active_users: metrics.application.activeUsers,
+          requests_per_minute: metrics.application.requestsPerMinute,
+          error_count: metrics.errors.total,
+          metrics: {
+            features: metrics.features,
+            database: metrics.database,
+            application: metrics.application,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to store health metrics in database:", error);
+      }
     }
 
     return metrics;
@@ -446,6 +467,42 @@ export class SystemHealthMonitor {
     const analytics = AnalyticsService.getInstance();
     const recentEvents = analytics.getEventsForTimeframe(1); // Last hour
     return recentEvents.length;
+  }
+
+  private async getErrorRate(): Promise<number> {
+    try {
+      // Get error rate from database if available
+      if (typeof window === "undefined") {
+        const { ErrorTrackingDB } = await import("@/lib/utils/analyticsDB");
+        const stats = await ErrorTrackingDB.getErrorStats();
+        return stats.recentCount;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private async getActiveUsersCount(): Promise<number> {
+    try {
+      // Get active users from database if available
+      if (typeof window === "undefined") {
+        const supabase = await createClient();
+        const oneHourAgo = new Date();
+        oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+        const { count } = await supabase
+          .from("analytics_events")
+          .select("user_id", { count: "exact", head: true })
+          .gte("timestamp", oneHourAgo.toISOString())
+          .not("user_id", "is", null);
+
+        return count || 0;
+      }
+      return 1; // Default for client-side
+    } catch {
+      return 1;
+    }
   }
 
   private countRecentEvents(eventType: AnalyticsEventType): number {
