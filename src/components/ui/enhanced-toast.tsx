@@ -3,6 +3,18 @@
 import { toast } from "sonner";
 import { CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 
+// Helper to safely extract message from unknown errors without using `any`
+const isErrorWithMessage = (obj: unknown): obj is { message?: string } =>
+  typeof obj === "object" && obj !== null && "message" in obj;
+
+const getErrorMessage = (error: unknown, fallback?: string) => {
+  if (isErrorWithMessage(error)) {
+    const msg = (error as { message?: unknown }).message;
+    if (typeof msg === "string") return msg;
+  }
+  return fallback ?? ERROR_MESSAGES.SERVER_ERROR;
+};
+
 /* =========================== 
    ENHANCED TOAST SYSTEM
    Better user feedback with progress, undo, and clear messaging
@@ -88,11 +100,11 @@ export const useEnhancedToast = () => {
     });
   };
 
-  const showProgress = (message: string, promise: Promise<any>) => {
+  const showProgress = (message: string, promise: Promise<unknown>) => {
     return toast.promise(promise, {
       loading: message,
       success: "Success! Your action completed successfully.",
-      error: (error) => error.message || ERROR_MESSAGES.SERVER_ERROR,
+      error: (error) => getErrorMessage(error),
     });
   };
 
@@ -116,7 +128,7 @@ export const useEnhancedToast = () => {
             toast.dismiss();
             await undoAction();
             toast.success("Action undone successfully!");
-          } catch (error) {
+          } catch {
             toast.error("Failed to undo action. Please try again.");
           }
         },
@@ -125,19 +137,33 @@ export const useEnhancedToast = () => {
     });
   };
 
-  const showFileUpload = (fileName: string, uploadPromise: Promise<any>) => {
+  const showFileUpload = (
+    fileName: string,
+    uploadPromise: Promise<unknown>
+  ) => {
     return toast.promise(uploadPromise, {
       loading: `Uploading ${fileName}...`,
       success: `${fileName} has been uploaded successfully.`,
-      error: (error) => error.message || ERROR_MESSAGES.UPLOAD_ERROR,
+      error: (error) => getErrorMessage(error, ERROR_MESSAGES.UPLOAD_ERROR),
     });
   };
 
-  const showAIGeneration = (generationPromise: Promise<any>) => {
+  const showAIGeneration = (generationPromise: Promise<unknown>) => {
     return toast.promise(generationPromise, {
       loading: "AI is working its magic...",
-      success: (data) => `Created ${data?.count || "several"} new flashcards.`,
-      error: (error) => error.message || ERROR_MESSAGES.GENERATION_ERROR,
+      success: (data: unknown) => {
+        const isCountLike =
+          typeof data === "object" && data !== null && "count" in data;
+        const countValue = isCountLike
+          ? (data as { count?: unknown }).count
+          : undefined;
+        const count =
+          typeof countValue === "number" || typeof countValue === "string"
+            ? String(countValue)
+            : "several";
+        return `Created ${count || "several"} new flashcards.`;
+      },
+      error: (error) => getErrorMessage(error, ERROR_MESSAGES.GENERATION_ERROR),
     });
   };
 
@@ -164,7 +190,7 @@ export const useProgressIndicator = () => {
     uploadFn: (
       file: File,
       onProgress: (progress: number) => void
-    ) => Promise<any>
+    ) => Promise<unknown>
   ) => {
     let progressToast: string | number | undefined;
 
@@ -205,7 +231,7 @@ export const useProgressIndicator = () => {
   const showOperationProgress = (
     operation: string,
     steps: string[],
-    operationFn: (onStep: (stepIndex: number) => void) => Promise<any>
+    operationFn: (onStep: (stepIndex: number) => void) => Promise<unknown>
   ) => {
     let progressToast: string | number | undefined;
 
@@ -279,7 +305,7 @@ export const useConfirmation = () => {
             toast.dismiss();
             await onConfirm();
             toast.success(`${itemName} deleted successfully.`);
-          } catch (error) {
+          } catch {
             toast.error(`Failed to delete ${itemName}.`);
           }
         },
@@ -318,7 +344,7 @@ export const useConfirmation = () => {
             toast.dismiss();
             await onConfirm();
             toast.success("Action completed successfully.");
-          } catch (error) {
+          } catch {
             toast.error("Action failed. Please try again.");
           }
         },

@@ -19,7 +19,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/src/components/ui/skeleton-layouts";
-import { Suspense } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 

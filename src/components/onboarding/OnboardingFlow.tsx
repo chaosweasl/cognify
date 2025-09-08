@@ -117,19 +117,13 @@ export function OnboardingFlow({
         // Small delay to ensure DOM is ready
         setTimeout(() => {
           setIsVisible(true);
-          updateHighlight();
+          // highlight will be updated by the other effect when isVisible changes
         }, 1500);
       }
     }
   }, [autoStart]);
 
-  useEffect(() => {
-    if (isVisible && currentStep < ONBOARDING_STEPS.length) {
-      updateHighlight();
-    }
-  }, [currentStep, isVisible]);
-
-  const updateHighlight = () => {
+  const updateHighlight = React.useCallback(() => {
     const step = ONBOARDING_STEPS[currentStep];
     const target = document.querySelector(step.target);
 
@@ -150,7 +144,13 @@ export function OnboardingFlow({
         height: 200,
       });
     }
-  };
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (isVisible && currentStep < ONBOARDING_STEPS.length) {
+      updateHighlight();
+    }
+  }, [isVisible, updateHighlight, currentStep]);
 
   const nextStep = () => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
@@ -177,12 +177,7 @@ export function OnboardingFlow({
     onComplete?.();
   };
 
-  const restartOnboarding = () => {
-    localStorage.removeItem("cognify-onboarding-completed");
-    setCurrentStep(0);
-    setIsVisible(true);
-    updateHighlight();
-  };
+  // restartOnboarding removed (unused) - can be reintroduced if a UI control needs it
 
   if (!isVisible || currentStep >= ONBOARDING_STEPS.length) {
     return null;

@@ -7,10 +7,9 @@ import {
   Moon,
   FolderOpen,
   Home,
-  BookOpen,
   Settings,
   Brain,
-} from "lucide-react";
+} from "lucide-react"; // Removed unused imports
 import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";

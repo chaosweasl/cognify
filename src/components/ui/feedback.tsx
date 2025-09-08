@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ToastProps {
-  id: string;
   type: "success" | "error" | "warning" | "info";
   title: string;
   message?: string;
@@ -15,7 +14,6 @@ interface ToastProps {
 }
 
 export function Toast({
-  id,
   type,
   title,
   message,
@@ -185,7 +183,7 @@ export function ErrorBoundaryFallback({
         </h2>
 
         <p className="text-secondary mb-6">
-          We're sorry, but something unexpected happened. Please try again.
+          We&apos;re sorry, but something unexpected happened. Please try again.
         </p>
 
         <div className="space-y-3">
@@ -423,18 +421,23 @@ export function ConfirmDialog({
 }
 
 // Context for managing user feedback
+interface ToastItem extends ToastProps {
+  id: string;
+  onClose: () => void;
+}
+
 interface FeedbackState {
-  toasts: ToastProps[];
-  addToast: (toast: Omit<ToastProps, "id" | "onClose">) => void;
+  toasts: ToastItem[];
+  addToast: (toast: Omit<ToastItem, "id" | "onClose">) => void;
   removeToast: (id: string) => void;
 }
 
 export const useFeedback = (): FeedbackState => {
-  const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = (toast: Omit<ToastProps, "id" | "onClose">) => {
+  const addToast = (toast: Omit<ToastItem, "id" | "onClose">) => {
     const id = Math.random().toString(36).substr(2, 9);
-    const newToast: ToastProps = {
+    const newToast: ToastItem = {
       ...toast,
       id,
       onClose: () => removeToast(id),

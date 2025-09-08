@@ -3,18 +3,13 @@
 import { useProjectsStore } from "@/hooks/useProjects";
 import { ProjectList } from "@/src/components/projects/ProjectList";
 import { ProjectGridSkeleton } from "@/src/components/ui/skeleton-layouts";
-import { MobileButton } from "@/src/components/ui/mobile-components";
-import { EmptyState } from "@/src/components/ui/onboarding";
 import {
   Sparkles,
   Brain,
   Loader2,
-  FolderOpen,
   Plus,
-  Coffee,
   Lightbulb,
   TrendingUp,
-  Star,
   Clock,
   FileText,
   RefreshCw,
@@ -22,7 +17,6 @@ import {
 import { useEffect, useState, useRef, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import Head from "next/head";
 
 function ProjectsPageContent() {
   const { projects, loadProjects, reset } = useProjectsStore();
@@ -188,6 +182,7 @@ function ProjectsPageContent() {
                 <strong className="brand-primary">Pro Tip:</strong> Create
                 projects to organize different subjects, then let our AI
                 generate smart flashcards from your notes!
+                {/* apostrophe already escaped in plain text */}
               </p>
             </div>
           </div>
@@ -221,7 +216,7 @@ function ProjectsPageContent() {
               Oops! Something went wrong
             </h2>
             <p className="text-secondary mb-6">
-              We couldn't load your projects right now. This might be a
+              We couldn&apos;t load your projects right now. This might be a
               temporary connection issue.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
