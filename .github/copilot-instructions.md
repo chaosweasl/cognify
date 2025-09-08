@@ -7,7 +7,7 @@
 - **Supabase**: All data access via Supabase client (`lib/supabase/`). Row Level Security (RLS) is enforced; never manually filter by user ID unless necessary.
 - **SRS Logic**: Spaced repetition (SM-2) algorithm in `lib/srs/`. Always use project-specific SRS settings, not hardcoded values.
 - **AI Integration**: Multi-provider AI system (OpenAI, Anthropic, Ollama, LM Studio, DeepSeek) with localStorage-only API key storage.
-- **Styling**: Tailwind CSS + DaisyUI with custom design system. Use semantic class names and utility classes. UI primitives in `components/ui/`.
+- **Styling**: Tailwind CSS + DaisyUI for consistent design system. Use Tailwind utility classes and DaisyUI components. Custom styles in `app/globals.css` and micro-interactions in `app/globals-micro-interactions.css`. UI primitives in `components/ui/`.
 - **State**: Minimal global state via Zustand. Prefer local state/hooks for most UI.
 
 ## Key Conventions

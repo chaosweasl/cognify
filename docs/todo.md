@@ -76,11 +76,11 @@ Roadmap (prioritized)
 - Capture screenshots, list severity (critical/high/medium/low), and propose quick fixes.
 - Implement top 10 quick wins (spacing, type scale, CTA prominence, empty states).
 
-2. Design tokens & component library
+2. Component consistency & polish
 
-- Define color palette (primary, accent, neutral, success, warning, error), typographic scale, and spacing tokens.
-- Wire tokens into Tailwind config (extend colors, spacing, fontSizes) and create a short `design-tokens.md` in `docs/`.
-- Create/refactor shared UI primitives in `components/ui/`: Button, Card, Input, Modal, Toast, Skeleton.
+- Ensure consistent styling across all UI components using Tailwind CSS + DaisyUI
+- Refactor shared UI primitives in `components/ui/`: Button, Card, Input, Modal, Toast, Skeleton for consistent patterns
+- Document component usage patterns and styling conventions
 
 3. Page-level polish
 
