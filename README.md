@@ -113,7 +113,7 @@ Cognify uses Supabase Auth with the following flow:
 ## 🛠️ Technology Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, DaisyUI
+- **Styling**: Tailwind CSS, ShadCN
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
 - **State Management**: Zustand
