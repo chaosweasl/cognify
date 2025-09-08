@@ -26,10 +26,17 @@ export function FlashcardDisplay({
             onFlip();
           }
         }}
-        aria-label={
-          flipped ? "Show front of flashcard" : "Show back of flashcard"
-        }
+        aria-label={`Flashcard: ${
+          flipped ? "Back side showing" : "Front side showing"
+        }. Press space or enter to flip.`}
+        aria-describedby="flashcard-instructions"
       >
+        {/* Screen reader instructions */}
+        <div id="flashcard-instructions" className="sr-only">
+          {flipped
+            ? `Answer: ${card.back}. Press space or enter to show the question again.`
+            : `Question: ${card.front}. Press space or enter to reveal the answer.`}
+        </div>
         {/* Floating particles animation */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div

@@ -7,10 +7,9 @@ import {
   Moon,
   FolderOpen,
   Home,
-  BookOpen,
   Settings,
   Brain,
-} from "lucide-react";
+} from "lucide-react"; // Removed unused imports
 import Image from "next/image";
 import Link from "next/link";
 import { useThemeStore } from "@/hooks/useTheme";
@@ -29,23 +28,37 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import { usePathname } from "next/navigation";
+
 export function HeaderMain() {
   const { theme, toggleTheme, isHydrated, hydrate } = useThemeStore();
   const { userProfile } = useUserProfile();
+  const pathname = usePathname();
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   const navItems = [
-    { href: "/projects", label: "Projects", icon: FolderOpen },
     { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/docs", label: "Docs", icon: BookOpen },
+    { href: "/projects", label: "Projects", icon: FolderOpen },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
+  // Helper function to check if nav item is active
+  const isActiveRoute = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/" || pathname === "/dashboard";
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
-    <header className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 sm:px-6 h-16 sm:h-20 flex items-center transition-all duration-300">
+    <header
+      role="banner"
+      className="surface-overlay glass-surface border-b border-subtle sticky top-0 z-50 px-4 sm:px-6 h-16 sm:h-20 flex items-center transition-all duration-300"
+      aria-label="Site header with navigation and user menu"
+    >
       {/* Mobile menu button with enhanced touch target */}
       <div className="md:hidden">
         <Sheet>
@@ -54,18 +67,23 @@ export function HeaderMain() {
               variant="ghost"
               size="icon"
               className="h-12 w-12 text-secondary hover:text-primary interactive-hover transition-all transition-normal rounded-xl touch-manipulation"
+              aria-label="Open navigation menu"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-6 w-6" aria-hidden="true" />
             </Button>
           </SheetTrigger>
           <SheetContent
             side="left"
             className="w-72 surface-overlay glass-surface border-subtle p-0"
+            aria-label="Main navigation menu"
           >
             {/* Enhanced mobile nav header */}
             <div className="p-6 border-b border-subtle">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center">
+                <div
+                  className="w-10 h-10 bg-gradient-brand rounded-xl flex items-center justify-center"
+                  aria-hidden="true"
+                >
                   <Brain className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-primary">Cognify</span>
@@ -73,19 +91,39 @@ export function HeaderMain() {
             </div>
 
             {/* Enhanced mobile navigation */}
-            <nav className="flex flex-col p-4 space-y-1">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-4 px-4 py-3 text-base rounded-xl text-secondary hover:text-primary interactive-hover transition-all transition-normal group touch-manipulation"
-                >
-                  <div className="w-10 h-10 rounded-xl surface-secondary flex items-center justify-center group-hover:bg-gradient-brand group-hover:text-white transition-all transition-normal">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="font-medium">{label}</span>
-                </Link>
-              ))}
+            <nav
+              className="flex flex-col p-4 space-y-1"
+              role="navigation"
+              aria-label="Main navigation"
+            >
+              {navItems.map(({ href, label, icon: Icon }) => {
+                const isActive = isActiveRoute(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-4 px-4 py-3 text-base rounded-xl transition-all transition-normal group touch-manipulation ${
+                      isActive
+                        ? "bg-gradient-brand text-white"
+                        : "text-secondary hover:text-primary interactive-hover"
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all transition-normal ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "surface-secondary group-hover:bg-gradient-brand group-hover:text-white"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="font-medium">{label}</span>
+                    {isActive && (
+                      <div className="ml-auto w-2 h-2 bg-white rounded-full" />
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
           </SheetContent>
         </Sheet>
@@ -114,17 +152,30 @@ export function HeaderMain() {
       {/* Enhanced desktop navigation with better hover effects */}
       <nav className="hidden md:flex flex-1 justify-center">
         <div className="flex items-center space-x-1 bg-surface-elevated/50 backdrop-blur-sm rounded-2xl p-1 border border-subtle">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl text-secondary hover:text-primary interactive-hover transition-all transition-normal group relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-brand opacity-0 group-hover:opacity-10 transition-opacity transition-normal rounded-xl"></div>
-              <Icon className="h-4 w-4 group-hover:brand-primary transition-colors transition-normal relative z-10" />
-              <span className="font-medium relative z-10">{label}</span>
-            </Link>
-          ))}
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const isActive = isActiveRoute(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all transition-normal group relative overflow-hidden ${
+                  isActive
+                    ? "bg-gradient-brand text-white shadow-brand"
+                    : "text-secondary hover:text-primary interactive-hover"
+                }`}
+              >
+                {!isActive && (
+                  <div className="absolute inset-0 bg-gradient-brand opacity-0 group-hover:opacity-10 transition-opacity transition-normal rounded-xl"></div>
+                )}
+                <Icon
+                  className={`h-4 w-4 relative z-10 transition-colors transition-normal ${
+                    isActive ? "text-white" : "group-hover:brand-primary"
+                  }`}
+                />
+                <span className="font-medium relative z-10">{label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

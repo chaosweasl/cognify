@@ -261,33 +261,137 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <header className="mb-8">
-          <Header userProfile={userProfile} />
-        </header>
+    <div className="flex-1 overflow-hidden">
+      {/* Enhanced Background Elements */}
+      <div className="fixed inset-0 pointer-events-none opacity-20">
+        <div
+          className="absolute w-80 h-80 bg-gradient-brand rounded-full blur-3xl animate-pulse"
+          style={{
+            right: "15%",
+            top: "10%",
+            animationDuration: "6s",
+          }}
+        />
+        <div
+          className="absolute w-64 h-64 bg-gradient-to-br from-brand-secondary/30 to-brand-accent/30 rounded-full blur-2xl animate-pulse"
+          style={{
+            left: "10%",
+            bottom: "20%",
+            animationDelay: "3s",
+            animationDuration: "8s",
+          }}
+        />
+      </div>
 
-        {/* Main Card */}
-        <div className="glass-surface rounded-2xl shadow-lg border border-primary/10 overflow-hidden">
-          <TabNavigation
-            tabs={tabs}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
+      <div className="relative z-10 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-brand rounded-2xl blur-md opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                <div className="relative w-14 h-14 bg-gradient-brand rounded-2xl flex items-center justify-center shadow-lg">
+                  <Settings className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-primary mb-1">
+                  Settings
+                </h1>
+                <p className="text-muted">Customize your Cognify experience</p>
+              </div>
+            </div>
 
+            {userProfile?.is_admin && (
+              <div className="flex items-center gap-2 px-4 py-2 surface-glass rounded-xl border border-brand/20 shadow-brand">
+                <Shield className="w-4 h-4 brand-primary" />
+                <span className="text-sm font-semibold text-primary">
+                  Admin
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Enhanced Navigation Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative group p-4 rounded-2xl border transition-all duration-300 ${
+                  active
+                    ? "surface-glass border-brand/30 shadow-brand"
+                    : "surface-elevated border-subtle hover:border-brand/20 hover:shadow-md"
+                }`}
+              >
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                      active
+                        ? "bg-gradient-brand shadow-brand"
+                        : "surface-secondary group-hover:bg-gradient-brand/10"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 transition-all duration-200 ${
+                        active
+                          ? "text-white"
+                          : "text-muted group-hover:text-brand-primary"
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`font-medium transition-colors duration-200 ${
+                      active ? "text-primary" : "text-secondary"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </div>
+                {active && (
+                  <div className="absolute inset-0 rounded-2xl ring-1 ring-brand/20 bg-gradient-to-r from-brand-primary/5 to-brand-secondary/5" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Enhanced Content Area */}
+        <div className="glass-surface rounded-3xl shadow-xl border border-primary/10 overflow-hidden backdrop-blur-xl">
           <div className="p-6 lg:p-8">
             {activeTab === "user" && (
               <div className="space-y-8">
-                {/* Two-column layout */}
+                {/* Modern Section Header */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary">
+                      Profile Settings
+                    </h2>
+                    <p className="text-muted">
+                      Manage your personal information and preferences
+                    </p>
+                  </div>
+                </div>
+
+                {/* Enhanced Two-column layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Profile Section */}
                   <div className="space-y-6">
-                    <SectionHeader
-                      icon={<User className="w-5 h-5 text-white" />}
-                      title="Profile Information"
-                      subtitle="Update your personal details"
-                    />
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-brand/20 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 brand-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Personal Information
+                      </h3>
+                    </div>
                     <ProfileSection
                       userProfile={userProfile}
                       username={username}
@@ -302,30 +406,35 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  {/* Basic Preferences Section */}
+                  {/* Quick Settings Section */}
                   <div className="space-y-6">
-                    <SectionHeader
-                      icon={<Settings className="w-5 h-5 text-white" />}
-                      title="Basic Preferences"
-                      subtitle="Quick theme settings"
-                    />
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-gradient-brand/20 rounded-lg flex items-center justify-center">
+                        <Settings className="w-4 h-4 brand-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-primary">
+                        Quick Settings
+                      </h3>
+                    </div>
                     <ThemeSelector />
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle">
+                {/* Enhanced Action Bar */}
+                <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-subtle bg-gradient-to-r from-transparent to-brand-primary/5 rounded-xl p-6">
                   <button
-                    className="px-5 py-2.5 surface-elevated border border-secondary text-secondary rounded-xl font-medium interactive-hover transition-all duration-200 flex items-center justify-center gap-2"
+                    className="px-6 py-3 surface-elevated border border-subtle text-secondary rounded-xl font-medium interactive-hover transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-md"
                     onClick={handleReset}
                     disabled={pending}
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Reset
+                    Reset Changes
                   </button>
                   <button
-                    className={`px-6 py-2.5 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200 flex items-center justify-center gap-2 ${
-                      pending ? "opacity-70 pointer-events-none" : ""
+                    className={`px-8 py-3 bg-gradient-brand text-white rounded-xl font-medium shadow-brand hover:shadow-brand-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                      pending
+                        ? "opacity-70 pointer-events-none"
+                        : "hover:scale-105"
                     }`}
                     onClick={handleSaveAll}
                   >
@@ -334,7 +443,7 @@ export default function SettingsPage() {
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    {pending ? "Saving..." : "Save Changes"}
+                    {pending ? "Saving..." : "Save All Changes"}
                   </button>
                 </div>
               </div>
@@ -342,19 +451,44 @@ export default function SettingsPage() {
 
             {activeTab === "preferences" && (
               <div className="space-y-8">
-                <SectionHeader
-                  icon={<Palette className="w-5 h-5 text-white" />}
-                  title="Appearance & Theme"
-                  subtitle="Customize how Cognify looks and feels"
-                />
-                <ThemeSelector />
+                {/* Modern Section Header */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
+                    <Palette className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary">
+                      Preferences
+                    </h2>
+                    <p className="text-muted">
+                      Customize your learning experience and app appearance
+                    </p>
+                  </div>
+                </div>
 
-                <div className="pt-8 border-t border-subtle">
-                  <SectionHeader
-                    icon={<Settings className="w-5 h-5 text-white" />}
-                    title="Study Preferences"
-                    subtitle="Configure your learning experience"
-                  />
+                {/* Theme Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-brand/20 rounded-lg flex items-center justify-center">
+                      <Palette className="w-4 h-4 brand-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-primary">
+                      Appearance & Theme
+                    </h3>
+                  </div>
+                  <ThemeSelector />
+                </div>
+
+                {/* Study Settings */}
+                <div className="pt-6 border-t border-subtle space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-brand/20 rounded-lg flex items-center justify-center">
+                      <Settings className="w-4 h-4 brand-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-primary">
+                      Study Preferences
+                    </h3>
+                  </div>
                   <PreferencesSection
                     theme={theme}
                     setTheme={setTheme}
@@ -371,22 +505,40 @@ export default function SettingsPage() {
 
             {activeTab === "notifications" && (
               <div className="space-y-8">
-                <SectionHeader
-                  icon={<Bell className="w-5 h-5 text-white" />}
-                  title="Notifications & Reminders"
-                  subtitle="Manage how and when you receive notifications"
-                />
+                {/* Modern Section Header */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
+                    <Bell className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary">
+                      Notifications & Reminders
+                    </h2>
+                    <p className="text-muted">
+                      Manage how and when you receive notifications
+                    </p>
+                  </div>
+                </div>
                 <NotificationSettings />
               </div>
             )}
 
             {activeTab === "backup" && (
               <div className="space-y-8">
-                <SectionHeader
-                  icon={<Shield className="w-5 h-5 text-white" />}
-                  title="Data Management"
-                  subtitle="Backup and restore your learning data"
-                />
+                {/* Modern Section Header */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-primary">
+                      Data Management
+                    </h2>
+                    <p className="text-muted">
+                      Backup, restore, and manage your learning data
+                    </p>
+                  </div>
+                </div>
                 <BackupRestoreSettings />
               </div>
             )}
@@ -462,109 +614,7 @@ function ErrorScreen({ error }: { error: string }) {
   );
 }
 
-/* ===== HEADER ===== */
-function Header({ userProfile }: { userProfile: UserProfile | null }) {
-  return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="relative group">
-          <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center shadow-brand">
-            <Settings className="w-6 h-6 text-white" />
-          </div>
-        </div>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary">
-            Settings
-          </h1>
-          <p className="text-muted mt-1">Customize your Cognify experience</p>
-        </div>
-      </div>
-
-      {userProfile?.is_admin && (
-        <div className="flex items-center gap-2 px-3 py-1.5 surface-glass rounded-lg border-brand shadow-brand">
-          <Shield className="w-4 h-4 brand-primary" />
-          <span className="text-sm font-semibold text-primary">Admin</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ===== SECTION HEADER ===== */
-function SectionHeader({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-gradient-brand rounded-lg flex items-center justify-center shadow-brand">
-        {icon}
-      </div>
-      <div>
-        <h2 className="text-lg font-bold text-primary">{title}</h2>
-        <p className="text-muted text-sm">{subtitle}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ===== TAB NAV ===== */
-function TabNavigation({
-  tabs,
-  activeTab,
-  setActiveTab,
-}: {
-  tabs: { id: string; label: string; icon: React.ElementType }[];
-  activeTab: string;
-  setActiveTab: (tabId: string) => void;
-}) {
-  return (
-    <div className="border-b border-subtle surface-glass">
-      <div className="flex overflow-x-auto">
-        {tabs.map((tab) => {
-          const TabIcon = tab.icon;
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-2 px-6 py-4 font-semibold transition-all duration-200 whitespace-nowrap ${
-                active
-                  ? "text-primary surface-elevated"
-                  : "text-secondary hover:text-primary interactive-hover"
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                  active
-                    ? "bg-gradient-brand shadow-brand"
-                    : "surface-secondary group-hover:surface-elevated"
-                }`}
-              >
-                <TabIcon
-                  className={`w-4 h-4 transition-all duration-200 ${
-                    active
-                      ? "text-white"
-                      : "text-muted group-hover:brand-primary"
-                  }`}
-                />
-              </div>
-              <span className="text-sm">{tab.label}</span>
-              {active && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-brand rounded-t-full" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// Helper components removed: Header, SectionHeader, TabNavigation
 
 /* ===== PROFILE SECTION ===== */
 function ProfileSection({
