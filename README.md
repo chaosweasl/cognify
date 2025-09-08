@@ -59,7 +59,7 @@ Cognify is an AI-powered learning platform that automatically converts your note
 
 ### Essential Commands
 
-```bash
+````bash
 # Development
 pnpm dev                    # Start development server with Turbopack
 pnpm build                  # Build for production
@@ -69,12 +69,6 @@ pnpm lint --fix            # Fix auto-fixable lint issues
 
 # Type Checking
 npx tsc --noEmit           # Check TypeScript compilation
-
-# Database Management
-pnpm exec tsx scripts/createTestProject.ts    # Create test data
-pnpm exec tsx scripts/deleteTestUserProjects.ts  # Clean test data
-pnpm exec tsx scripts/debugSRSCardStates.ts   # Debug SRS states
-```
 
 ### Environment Setup
 
@@ -88,7 +82,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Optional: Analytics
 NEXT_PUBLIC_VERCEL_ANALYTICS=true
-```
+````
 
 Copy `.env.example` to `.env.local` and fill in your Supabase credentials.
 

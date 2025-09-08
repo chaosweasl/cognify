@@ -27,8 +27,6 @@ Most contributors can work without a full local Supabase setup by focusing on do
 3. Fill in required Supabase variables (or use a throwaway Supabase project for testing)
 4. Start dev server: `pnpm dev`
 
-Note: The codebase relies on Supabase and certain DB schemas; consider mocking or using test data scripts in `scripts/` for isolated UI work.
-
 ## Pull request process
 
 1. Create a clear, focused branch: `git checkout -b feat/description`
