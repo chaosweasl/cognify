@@ -1,349 +1,69 @@
 # Contributing to Cognify
 
-Thank you for your interest in contributing to Cognify! We appreciate community involvement in making this learning platform better for everyone.
+Thanks for your interest in contributing. This project prefers focused contributions that keep the core system stable while improving UX, docs, themes, and small bug fixes.
 
-## 🎯 Areas We Welcome Contributions
+## What to contribute
 
-Cognify has a **selective contribution model**. We welcome contributions in these specific areas:
+We welcome contributions in these areas:
 
-### 🎨 **Themes & UI Improvements**
+- Documentation: README, how-to guides, API docs under `docs/`
+- UI & Accessibility: component improvements, responsive fixes, themes
+- Bug reports & small fixes: issues that can be reviewed and tested without complex infra
+- Tests and type-safety improvements
 
-- Create new shadcn themes
-- Improve existing component designs
-- Enhance mobile responsiveness
-- Add animations and visual polish
-- Improve accessibility features
+Please avoid large-scale changes that touch core business logic without prior discussion (see "Not accepted" below).
 
-### 📝 **Documentation**
+## Before you start
 
-- Improve README and setup guides
-- Write tutorials and how-to guides
-- Create video documentation
-- Translate documentation
-- Fix typos and clarity issues
+1. Search existing issues and discussions to avoid duplicates.
+2. For non-trivial work, open an issue describing the change and wait for maintainer feedback.
 
-### 🐛 **Bug Reports**
+## Quick local development notes
 
-- Report issues with detailed reproduction steps
-- Identify UI bugs and visual inconsistencies
-- Suggest improvements for error handling and user feedback
-- Report performance issues
+Most contributors can work without a full local Supabase setup by focusing on docs, styles, and isolated UI changes. If you need to run the app locally:
 
-### 💡 **Feature Suggestions & Ideas**
+1. Install dependencies: `pnpm install`
+2. Copy env example: `copy .env.example .env.local`
+3. Fill in required Supabase variables (or use a throwaway Supabase project for testing)
+4. Start dev server: `pnpm dev`
 
-- Suggest UI/UX improvements
-- Propose new themes or design concepts
-- Recommend accessibility enhancements
-- Ideas for better user onboarding
-- Export/import functionality suggestions
-- Minor workflow enhancement ideas
+Note: The codebase relies on Supabase and certain DB schemas; consider mocking or using test data scripts in `scripts/` for isolated UI work.
 
-## ❌ Areas We're NOT Accepting Contributions For
+## Pull request process
 
-To maintain code quality and architectural consistency, we're **not accepting contributions** for:
-
-- Core SRS (Spaced Repetition System) algorithm changes (unless well-documented and well-argued!)
-- Database schema modifications
-- Authentication system changes
-- AI integration architecture
-- Core application logic and business rules
-- Major feature additions or architectural changes
-
-## 📋 Before Contributing
-
-### 1. Check Existing Issues
-
-- Browse [existing issues](https://github.com/chaosweasl/cognify/issues) to avoid duplicates
-- Look for issues labeled `good first issue` or `help wanted`
-- Join discussions to understand requirements
-
-### 2. Create an Issue First
-
-For any non-trivial contribution:
-
-- Create an issue describing your proposed change
-- Wait for maintainer approval before starting work
-- Discuss implementation approaches
-
-### 3. Development Environment
-
-**⚠️ Important Note**: Due to Cognify's sophisticated database schema and complex infrastructure requirements, local development setup is **not practical** for most contributors.
-
-**We welcome contributions that don't require local development:**
-
-- **📝 Documentation edits** (can be done directly on GitHub)
-- **🎨 Theme suggestions** (CSS snippets or design mockups)
-- **🐛 Bug reports** (no setup needed)
-- **💡 Feature suggestions** (through GitHub issues)
-- **🌍 Translations** (text-only contributions)
-
-**For advanced contributors only** (contact maintainers first):
+1. Create a clear, focused branch: `git checkout -b feat/description`
+2. If the change is non-trivial, open an issue first and reference it from the PR
+3. Keep PRs small and focused. Provide screenshots for visual changes and clear reproduction steps for bug fixes
+4. Ensure linting and types pass:
 
 ```bash
-# Complex enterprise-grade setup required
-# Requires sophisticated Supabase schema, RLS policies,
-# custom authentication flows, and extensive environment configuration
-git clone https://github.com/YOUR_USERNAME/cognify.git
-# ... extensive database setup and configuration required
+pnpm lint
+npx tsc --noEmit
 ```
 
-## 🛠️ Contribution Guidelines
+## PR checklist
 
-### Non-Development Contributions
+- [ ] Lint passes (`pnpm lint`)
+- [ ] TypeScript compiles (`npx tsc --noEmit`)
+- [ ] Relevant docs updated
+- [ ] Screenshots included for UI changes
 
-Most contributions don't require local setup! You can contribute by:
+## What we rarely accept
 
-- **Editing documentation** directly on GitHub
-- **Suggesting themes** with CSS snippets or color palettes
-- **Reporting bugs** with detailed descriptions
-- **Proposing features** through GitHub issues
-- **Improving content** like README files, guides, and help text
+- Large changes to the SRS algorithm or core scheduling without maintainer review
+- Database schema/migration changes without discussion
+- Major architectural rewrites
 
-### For Advanced Contributors
+If you're unsure, open an issue and describe your approach — maintainers will advise.
 
-If you're working on code changes (themes, UI improvements), please:
+## Filing good issues
 
-- **Contact maintainers first** to discuss the complex setup requirements
-- **Focus on CSS/styling changes** that can be reviewed without full local testing
-- **Provide detailed screenshots** of any visual changes
-- **Test across multiple browsers** if possible
+Provide a descriptive title, steps to reproduce, expected vs actual behavior, environment, and screenshots or console logs when relevant.
 
-### Contribution Process
+## License
 
-1. **Create an Issue First**
-
-   - Describe your proposed change or report
-   - Wait for maintainer feedback before proceeding
-   - Discuss implementation approach if needed
-
-2. **For Documentation/Content Changes**
-
-   - Edit files directly on GitHub
-   - Use the web interface for simple changes
-   - Submit pull request with clear description
-
-3. **For Theme/Design Contributions**
-
-   - Provide CSS snippets or design mockups
-   - Include screenshots or previews
-   - Reference shadcn/ui documentation for compatibility and best practices
-
-4. **Submit Pull Request**
-   - Use a descriptive title
-   - Include screenshots for visual changes
-   - Reference any related issues
-   - Keep description clear and concise
-
-## 📋 Pull Request Guidelines
-
-### Before Submitting a PR
-
-**Code Quality Checklist**:
-
-- [ ] ESLint passes without warnings (`pnpm lint`)
-- [ ] TypeScript compilation succeeds (`npx tsc --noEmit`)
-- [ ] Build succeeds (`pnpm build`)
-- [ ] No console errors in browser
-- [ ] Changes tested in multiple browsers/devices
-
-**Performance Checklist**:
-
-- [ ] No N+1 database queries introduced
-- [ ] API endpoints use batch operations where possible
-- [ ] Components use React.memo/useCallback for optimization
-- [ ] No unnecessary re-renders or infinite loops
-- [ ] Images optimized and properly sized
-- [ ] Bundle size impact considered
-
-**Documentation Checklist**:
-
-- [ ] README updated if functionality changed
-- [ ] Comments added for complex logic
-- [ ] Type definitions updated if needed
-- [ ] API documentation updated if endpoints changed
-
-### PR Template
-
-Use this template for your pull request:
-
-```markdown
-## Description
-
-Brief description of what this PR does.
-
-## Type of Change
-
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🎨 Style/UI improvement
-- [ ] ⚡ Performance improvement
-
-## Testing
-
-- [ ] Tested locally in development mode
-- [ ] Tested build version
-- [ ] Cross-browser testing completed
-- [ ] Mobile responsiveness verified
-
-## Screenshots (if applicable)
-
-Include before/after screenshots for UI changes.
-
-## Performance Impact
-
-- [ ] No performance degradation
-- [ ] Database queries optimized
-- [ ] No infinite loops or excessive re-renders
-- [ ] Bundle size impact acceptable
-
-## Checklist
-
-- [ ] ESLint passes
-- [ ] TypeScript compiles without errors
-- [ ] Build succeeds
-- [ ] Documentation updated
-- [ ] Related issue referenced
-```
-
-### Code Review Process
-
-**Review Focus Areas**:
-
-1. **Performance**: Check for N+1 queries, excessive re-renders, memory leaks
-2. **Security**: Validate input sanitization, authentication checks
-3. **Accessibility**: Ensure ARIA labels, keyboard navigation, contrast
-4. **Type Safety**: Verify TypeScript usage, no `any` types
-5. **Code Quality**: Consistent patterns, readable code, proper error handling
-
-**Review Timeline**:
-
-- Initial feedback within 48 hours
-- Final approval within 1 week
-- Merge after all checks pass
-
-## 🎨 Theme Contribution Guide
-
-We especially welcome new themes!:
-
-1. **Design Your Theme**
-
-   - Create a color palette following shadcn practices
-   - Ensure accessibility with sufficient contrast ratios
-   - Consider both light and dark mode preferences
-
-2. **Provide Theme Definition**
-
-3. **Submit Your Theme**
-   - Create a GitHub issue with your theme
-   - Include color palette and rationale
-   - Provide screenshots or mockups if possible
-   - Maintainers will implement and test the theme
-
-### Theme Guidelines
-
-- Ensure sufficient contrast for accessibility
-- Test with all component states (hover, active, disabled)
-- Consider both light and dark preferences
-- Follow semantic color naming
-
-## 📝 Documentation Contributions
-
-### What We Need
-
-- Step-by-step setup guides
-- Troubleshooting documentation
-- Feature explanation guides
-- Video tutorials
-- Translation to other languages
-
-### Documentation Style
-
-- Use clear, simple language
-- Include code examples where helpful
-- Add screenshots for UI guidance
-- Structure with proper headings
-
-## 🐛 Bug Reports
-
-### Before Reporting
-
-- Check if the bug already exists
-- Try reproducing in different browsers
-- Clear cache and try again
-
-### Good Bug Reports Include
-
-- **Clear title** describing the issue
-- **Steps to reproduce** the problem
-- **Expected behavior** vs actual behavior
-- **Screenshots or videos** if applicable
-- **Environment details** (browser, OS, device)
-- **Console errors** if any
-
-### Bug Report Template
-
-```markdown
-**Describe the bug**
-A clear description of what the bug is.
-
-**To Reproduce**
-
-1. Go to '...'
-2. Click on '....'
-3. See error
-
-**Expected behavior**
-What you expected to happen.
-
-**Screenshots**
-If applicable, add screenshots.
-
-**Environment:**
-
-- Browser: [e.g. Chrome 91]
-- OS: [e.g. Windows 10]
-- Device: [e.g. Desktop, iPhone 12]
-```
-
-## ✅ Contribution Checklist
-
-Before submitting your contribution:
-
-- [ ] Created an issue to discuss the change first
-- [ ] Contribution aligns with our accepted areas
-- [ ] Documentation changes are clear and helpful
-- [ ] Theme suggestions include complete color palettes
-- [ ] Bug reports include detailed reproduction steps
-- [ ] Screenshots included for visual changes
-- [ ] Related issue referenced (if applicable)
-
-## 🚫 What We Won't Accept
-
-Due to the sophisticated architecture and complex setup requirements:
-
-- Code changes to core SRS algorithm or business logic
-- Database schema or migration modifications
-- Major architectural changes or new features
-- Pull requests without prior issue discussion
-- Contributions that require extensive local testing
-- Changes that break existing functionality
-- Features that conflict with project goals
-
-## 🤔 Questions?
-
-- **Small questions**: Comment on related issues
-- **General discussion**: Use GitHub Discussions
-- **Bug reports**: Create a new issue
-- **Feature ideas**: Create an issue for discussion first
-
-## 📄 License
-
-By contributing to Cognify, you agree that your contributions will be licensed under the MIT License.
+By contributing you agree to license your work under the project's MIT license.
 
 ---
 
-**Thank you for helping make Cognify better!** 🙏
-
-Your contributions in themes, documentation, and quality-of-life improvements help create a better learning experience for everyone.
+Thanks — your improvements help make Cognify better for everyone!
