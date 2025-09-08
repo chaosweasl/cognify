@@ -48,8 +48,6 @@ export function ProjectList() {
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  console.log("[ProjectList] Rendering with projects:", projects.length);
-
   useEffect(() => {
     loadProjects().catch((error) => {
       console.error("[ProjectList] Error loading projects:", error);

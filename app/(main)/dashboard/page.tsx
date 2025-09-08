@@ -18,20 +18,27 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DashboardSkeleton } from "@/src/components/ui/skeleton-layouts";
+import { Suspense } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
-  const { projects, loadProjects } = useProjectsStore();
+  const { projects, loadProjects, isLoadingProjects } = useProjectsStore();
   const [stats, setStats] = useState({
     totalProjects: 0,
     totalCards: 0,
     todayStudied: 0,
     dueCards: 0,
   });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    loadProjects();
+    const init = async () => {
+      await loadProjects();
+      setIsInitialLoad(false);
+    };
+    init();
   }, [loadProjects]);
 
   useEffect(() => {
@@ -48,6 +55,11 @@ export default function DashboardPage() {
       });
     }
   }, [projects]);
+
+  // Show loading state on initial load
+  if (isInitialLoad || isLoadingProjects) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen surface-primary relative">
@@ -89,87 +101,123 @@ export default function DashboardPage() {
 
           <div className="p-8 text-center relative z-10">
             <div className="max-w-2xl mx-auto">
-              <h1 className="text-4xl lg:text-5xl font-bold text-primary mb-6 leading-tight">
-                Dashboard
+              <h1 className="text-3xl lg:text-4xl font-bold text-primary mb-4 leading-tight">
+                Welcome to Your Learning Dashboard
               </h1>
+              <p className="text-lg text-secondary mb-6">
+                Track your progress and continue your learning journey
+              </p>
               <UserProfileInline />
             </div>
           </div>
         </div>
 
-        {/* Enhanced Stats Cards with staggered animation */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 card-grid"
-          style={{ animation: "slideInUp 0.6s ease-out 0.2s both" }}
-        >
-          {[
-            {
-              title: "Projects",
-              value: stats.totalProjects,
-              description: "Total projects created",
-              icon: FolderOpen,
-              color: "brand-secondary",
-              bgColor: "from-brand-secondary/10 to-brand-secondary/5",
-            },
-            {
-              title: "Flashcards",
-              value: stats.totalCards,
-              description: "Total flashcards",
-              icon: BookOpen,
-              color: "brand-primary",
-              bgColor: "from-brand-primary/10 to-brand-primary/5",
-            },
-            {
-              title: "Studied Today",
-              value: stats.todayStudied,
-              description: "Cards reviewed today",
-              icon: TrendingUp,
-              color: "text-green-500",
-              bgColor: "from-green-500/10 to-green-500/5",
-            },
-            {
-              title: "Due Cards",
-              value: stats.dueCards,
-              description: "Cards due for review",
-              icon: Clock,
-              color: "text-amber-500",
-              bgColor: "from-amber-500/10 to-amber-500/5",
-            },
-          ].map((stat, index) => (
-            <Card
-              key={stat.title}
-              className="glass-surface shadow-brand border border-subtle hover:border-brand hover:shadow-brand-lg transition-all duration-300 group transform hover:scale-105 hover:-translate-y-2 relative overflow-hidden"
-              style={{
-                animation: `slideInUp 0.6s ease-out ${0.3 + index * 0.1}s both`,
-              }}
-            >
-              {/* Card gradient background */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-              ></div>
-
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
-                <CardTitle className="text-sm font-semibold text-secondary group-hover:text-primary transition-colors duration-300">
-                  {stat.title}
-                </CardTitle>
-                <div
-                  className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}
-                >
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+        {/* Primary Action for New Users */}
+        {stats.totalProjects === 0 && (
+          <div className="mb-8">
+            <Card className="glass-surface shadow-brand-lg border border-brand/20 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Plus className="w-8 h-8 text-white" />
                 </div>
-              </CardHeader>
-
-              <CardContent className="relative z-10">
-                <div className="text-3xl font-bold text-primary mb-2 group-hover:scale-105 transition-transform duration-300">
-                  {stat.value.toLocaleString()}
-                </div>
-                <p className="text-sm text-muted group-hover:text-secondary transition-colors duration-300">
-                  {stat.description}
+                <h3 className="text-2xl font-bold text-primary mb-3">
+                  Create Your First Project
+                </h3>
+                <p className="text-secondary mb-6 max-w-md mx-auto">
+                  Start your learning journey by creating a project and adding
+                  flashcards or uploading a PDF.
                 </p>
+                <Link href="/projects/create">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-brand hover:bg-gradient-brand-hover text-white text-lg px-8 py-4 h-auto"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create Project
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Enhanced Stats Cards with staggered animation */}
+        {stats.totalProjects > 0 && (
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 card-grid"
+            style={{ animation: "slideInUp 0.6s ease-out 0.2s both" }}
+          >
+            {[
+              {
+                title: "Projects",
+                value: stats.totalProjects,
+                description: "Total projects created",
+                icon: FolderOpen,
+                color: "brand-secondary",
+                bgColor: "from-brand-secondary/10 to-brand-secondary/5",
+              },
+              {
+                title: "Flashcards",
+                value: stats.totalCards,
+                description: "Total flashcards",
+                icon: BookOpen,
+                color: "brand-primary",
+                bgColor: "from-brand-primary/10 to-brand-primary/5",
+              },
+              {
+                title: "Studied Today",
+                value: stats.todayStudied,
+                description: "Cards reviewed today",
+                icon: TrendingUp,
+                color: "text-green-500",
+                bgColor: "from-green-500/10 to-green-500/5",
+              },
+              {
+                title: "Due Cards",
+                value: stats.dueCards,
+                description: "Cards due for review",
+                icon: Clock,
+                color: "text-amber-500",
+                bgColor: "from-amber-500/10 to-amber-500/5",
+              },
+            ].map((stat, index) => (
+              <Card
+                key={stat.title}
+                className="glass-surface shadow-brand border border-subtle hover:border-brand hover:shadow-brand-lg transition-all duration-300 group transform hover:scale-105 hover:-translate-y-2 relative overflow-hidden"
+                style={{
+                  animation: `slideInUp 0.6s ease-out ${
+                    0.3 + index * 0.1
+                  }s both`,
+                }}
+              >
+                {/* Card gradient background */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                ></div>
+
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                  <CardTitle className="text-sm font-semibold text-secondary group-hover:text-primary transition-colors duration-300">
+                    {stat.title}
+                  </CardTitle>
+                  <div
+                    className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}
+                  >
+                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                </CardHeader>
+
+                <CardContent className="relative z-10">
+                  <div className="text-3xl font-bold text-primary mb-2 group-hover:scale-105 transition-transform duration-300">
+                    {stat.value.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-muted group-hover:text-secondary transition-colors duration-300">
+                    {stat.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -183,9 +231,18 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Link href="/projects" className="block">
-                <Button className="w-full bg-gradient-brand hover:bg-gradient-brand-hover text-white justify-start shadow-brand transition-all transition-normal">
-                  <FolderOpen className="mr-2 h-4 w-4" />
-                  Manage Projects
+                <Button className="w-full bg-gradient-brand hover:bg-gradient-brand-hover text-white justify-start shadow-brand transition-all transition-normal text-base py-3 h-auto">
+                  <FolderOpen className="mr-3 h-5 w-5" />
+                  View All Projects
+                </Button>
+              </Link>
+              <Link href="/projects/create" className="block">
+                <Button
+                  className="w-full justify-start text-base py-3 h-auto"
+                  variant="outline"
+                >
+                  <Plus className="mr-3 h-5 w-5" />
+                  Create New Project
                 </Button>
               </Link>
 

@@ -86,27 +86,28 @@ function StudyHeader({ projectName, projectId, onReset }: StudyHeaderProps) {
   const router = useRouter();
 
   return (
-    <div className="w-full max-w-2xl mb-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-primary">
+    <div className="w-full max-w-2xl mb-4 sm:mb-6">
+      <div className="flex flex-col gap-3 sm:gap-4 mb-4">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary text-center sm:text-left">
           Study: {projectName || "Demo Flashcards"}
         </h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-center sm:justify-start gap-2">
           <button
             onClick={() => router.push(`/projects/${projectId}/edit`)}
-            className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
+            className="surface-glass border-subtle text-primary hover:surface-elevated hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2 min-h-[44px]"
             title="Edit flashcards"
           >
             <Pencil className="w-4 h-4" />
-            Edit
+            <span className="hidden sm:inline">Edit Cards</span>
+            <span className="sm:hidden">Edit</span>
           </button>
           <button
             onClick={onReset}
-            className="surface-elevated border-subtle text-secondary hover:surface-glass hover:text-primary hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2"
+            className="surface-elevated border-subtle text-secondary hover:surface-glass hover:text-primary hover:border-brand interactive-hover px-3 py-2 rounded-md text-sm font-medium transition-all transition-normal flex items-center gap-2 min-h-[44px]"
             title="Reset session"
           >
             <RotateCcw className="w-4 h-4" />
-            Reset
+            <span className="hidden sm:inline">Reset</span>
           </button>
         </div>
       </div>
@@ -125,10 +126,10 @@ function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
   const totalDueCards = dueCards || 0;
 
   return (
-    <div className="grid grid-cols-3 gap-4 mb-4">
-      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+      <div className="surface-elevated rounded-lg p-2 sm:p-3 text-center border border-subtle">
         <div
-          className={`text-lg font-bold ${
+          className={`text-base sm:text-lg font-bold ${
             newCards > 0 ? "brand-primary" : "text-muted"
           }`}
         >
@@ -136,9 +137,9 @@ function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
         </div>
         <div className="text-xs text-muted">New</div>
       </div>
-      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
+      <div className="surface-elevated rounded-lg p-2 sm:p-3 text-center border border-subtle">
         <div
-          className={`text-lg font-bold ${
+          className={`text-base sm:text-lg font-bold ${
             learningCards > 0 ? "text-status-warning" : "text-muted"
           }`}
         >
@@ -146,7 +147,7 @@ function StudyStats({ newCards, learningCards, dueCards }: StudyStatsProps) {
         </div>
         <div className="text-xs text-muted">Learning</div>
       </div>
-      <div className="surface-elevated rounded-lg p-3 text-center border border-subtle">
+      <div className="surface-elevated rounded-lg p-2 sm:p-3 text-center border border-subtle">
         <div
           className={`text-lg font-bold ${
             totalDueCards > 0 ? "text-status-success" : "text-muted"
@@ -330,7 +331,6 @@ export default function StudyFlashcards({
       if (userId && project.id) {
         try {
           await saveSRSStates(supabase, userId, project.id, states);
-          console.log("SRS states saved to database");
 
           // Invalidate cache to ensure project stats update across the app
           CacheInvalidation.invalidatePattern("user_projects");
@@ -404,11 +404,6 @@ export default function StudyFlashcards({
       });
 
       // Schedule the card
-      console.log(
-        `[StudyFlashcards] Scheduling card ${currentCard.id} with rating ${rating}`
-      );
-      console.log(`[StudyFlashcards] Previous state:`, currentCardState);
-
       const newCardState = scheduleSRSCardWithSettings(
         currentCardState,
         rating,
@@ -416,16 +411,9 @@ export default function StudyFlashcards({
         now
       );
 
-      console.log(`[StudyFlashcards] New card state:`, newCardState);
-
       // Update SRS state and save to database
       setSRSState((prev) => {
         const newSRSState = { ...prev, [currentCard.id]: newCardState };
-        console.log(
-          `[StudyFlashcards] Saving SRS states to database (${
-            Object.keys(newSRSState).length
-          } total states)`
-        );
         // Debounced save to database
         debouncedSave(newSRSState);
         return newSRSState;

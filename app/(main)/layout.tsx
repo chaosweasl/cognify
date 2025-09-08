@@ -12,7 +12,10 @@ export default function MainLayout({
       <ToasterProvider />
       <div className="min-h-screen surface-primary text-primary flex flex-col overflow-hidden relative">
         {/* Enhanced animated background elements - using semantic colors */}
-        <div className="fixed inset-0 pointer-events-none opacity-20">
+        <div
+          className="fixed inset-0 pointer-events-none opacity-20"
+          aria-hidden="true"
+        >
           {/* Primary gradient orb */}
           <div
             className="absolute w-96 h-96 bg-gradient-glass rounded-full blur-3xl animate-pulse"
@@ -58,7 +61,10 @@ export default function MainLayout({
         </div>
 
         {/* Enhanced subtle gradient overlay for depth with improved blend modes */}
-        <div className="fixed inset-0 pointer-events-none opacity-40">
+        <div
+          className="fixed inset-0 pointer-events-none opacity-40"
+          aria-hidden="true"
+        >
           <div
             className="absolute inset-0"
             style={{
@@ -72,12 +78,18 @@ export default function MainLayout({
           />
         </div>
 
-        {/* Fixed header with improved z-index layering */}
+        {/* Fixed header with improved z-index layering - Added role="banner" */}
         <HeaderMain />
 
         {/* Enhanced main content area with improved responsive handling */}
         <div className="flex-1 flex flex-col min-h-0 relative z-10">
-          <main className="flex-1 flex overflow-y-auto">
+          <main
+            id="main-content"
+            role="main"
+            className="flex-1 flex overflow-y-auto"
+            aria-label="Main content"
+            tabIndex={-1}
+          >
             <div className="w-full">{children}</div>
           </main>
 

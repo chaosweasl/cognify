@@ -11,8 +11,6 @@ import {
 import { Brain, Sparkles, Shield, Zap } from "lucide-react";
 
 export default function LoginPage() {
-  console.log("LoginPage: render");
-
   return (
     <div className="min-h-screen surface-primary overflow-hidden relative">
       {/* Enhanced animated background elements with improved depth */}

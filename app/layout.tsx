@@ -27,8 +27,54 @@ const fontMono = {
 };
 
 export const metadata: Metadata = {
-  title: "Cognify",
-  description: "A website for creating flashcards from PDFs",
+  title:
+    "Cognify - AI-Powered Learning Platform | Smart Flashcards & Spaced Repetition",
+  description:
+    "Transform your PDFs into effective study materials with AI-generated flashcards and proven spaced repetition algorithms. Boost your learning efficiency today.",
+  keywords:
+    "flashcards, spaced repetition, AI learning, study tools, PDF to flashcards, learning platform, education technology, SRS, Anki alternative",
+  authors: [{ name: "Cognify Team" }],
+  creator: "Cognify",
+  publisher: "Cognify",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    title: "Cognify - AI-Powered Learning Platform",
+    description:
+      "Transform your learning with AI-generated flashcards and spaced repetition",
+    siteName: "Cognify",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Cognify - AI-Powered Learning Platform",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cognify - AI-Powered Learning Platform",
+    description:
+      "Transform your learning with AI-generated flashcards and spaced repetition",
+    images: ["/twitter-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 // Script to prevent FOUC by setting theme before any rendering
@@ -68,6 +114,14 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${fontSans.variable} ${fontMono.variable} antialiased bg-background min-h-screen`}
       >
+        {/* Skip to main content for accessibility */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[1100] bg-brand-primary text-white px-4 py-2 rounded-md font-medium transition-all"
+        >
+          Skip to main content
+        </a>
+
         <SpeedInsights />
         <Analytics />
         <ToasterProvider />

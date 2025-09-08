@@ -20,7 +20,6 @@ const SIGNUP_RATE_LIMIT = {
 };
 
 export async function login(formData: FormData) {
-  console.log("loginActions: login called");
   const supabase = await createClient();
 
   const email = formData.get("email") as string;
@@ -58,7 +57,6 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  console.log("loginActions: signup called");
   const supabase = await createClient();
 
   const email = formData.get("email") as string;
@@ -105,25 +103,15 @@ export async function signInWithGithub() {
   const config = getConfig();
   const siteUrl = config.NEXT_PUBLIC_SITE_URL;
 
-  console.log("[signInWithGithub] NODE_ENV:", config.NODE_ENV);
-  console.log("[signInWithGithub] siteUrl:", siteUrl);
-  console.log(
-    "[signInWithGithub] redirectTo:",
-    `${siteUrl}/auth/callback?next=/dashboard`
-  );
-
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
       redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
     },
   });
-  console.log("[signInWithOAuth] data:", data);
-  console.log("[signInWithOAuth] error:", error);
 
   if (data?.url) {
     // Use Next.js redirect to send the user to the GitHub OAuth URL
-    console.log("[signInWithGithub] Redirecting to:", data.url);
     redirect(data.url);
   }
   if (error) {
