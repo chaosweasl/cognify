@@ -1,6 +1,5 @@
 
 
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -102,6 +101,60 @@ $$;
 
 
 ALTER FUNCTION "public"."clean_old_system_metrics"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."cleanup_expired_project_descriptions"() RETURNS TABLE("cleaned_count" integer, "cleaned_project_ids" "uuid"[])
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  project_record RECORD;
+  cleaned_ids UUID[] := '{}';
+  count_cleaned INTEGER := 0;
+BEGIN
+  -- Find projects with expired privacy deletion dates
+  FOR project_record IN 
+    SELECT id, name
+    FROM public.projects 
+    WHERE privacy_delete_description_after IS NOT NULL 
+    AND privacy_delete_description_after <= NOW()
+    AND description IS NOT NULL
+  LOOP
+    -- Clear the description and mark as cleaned
+    UPDATE public.projects 
+    SET 
+      description = NULL,
+      privacy_cleaned_at = NOW()
+    WHERE id = project_record.id;
+    
+    -- Track cleaned project
+    cleaned_ids := array_append(cleaned_ids, project_record.id);
+    count_cleaned := count_cleaned + 1;
+    
+    -- Log the cleanup action
+    INSERT INTO public.audit_logs (
+      user_id, 
+      action, 
+      resource_type, 
+      resource_id, 
+      metadata
+    ) VALUES (
+      NULL, -- System action
+      'privacy_cleanup',
+      'project_description',
+      project_record.id::TEXT,
+      jsonb_build_object(
+        'project_name', project_record.name,
+        'cleaned_at', NOW()
+      )
+    );
+  END LOOP;
+  
+  RETURN QUERY SELECT count_cleaned, cleaned_ids;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."cleanup_expired_project_descriptions"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."create_srs_state_for_flashcard"() RETURNS "trigger"
@@ -373,6 +426,48 @@ CREATE TABLE IF NOT EXISTS "public"."app_notifications" (
 ALTER TABLE "public"."app_notifications" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid",
+    "action" "text" NOT NULL,
+    "resource_type" "text" NOT NULL,
+    "resource_id" "text" NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "timestamp" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."audit_logs" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."cheatsheets" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "project_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "content" "jsonb" NOT NULL,
+    "tags" "text"[] DEFAULT '{}'::"text"[],
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "cheatsheets_title_not_empty" CHECK (("length"(TRIM(BOTH FROM "title")) > 0))
+);
+
+
+ALTER TABLE "public"."cheatsheets" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."cheatsheets" IS 'User-generated cheatsheets with structured content sections';
+
+
+
+COMMENT ON COLUMN "public"."cheatsheets"."content" IS 'JSONB structure containing sections, topics, and key points';
+
+
+
+COMMENT ON COLUMN "public"."cheatsheets"."tags" IS 'Array of string tags for categorization';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."daily_study_stats" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -486,6 +581,11 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
     "bury_siblings" boolean DEFAULT false NOT NULL,
     "max_interval" integer DEFAULT 36500 NOT NULL,
     "lapse_ease_penalty" real DEFAULT 0.2 NOT NULL,
+    "privacy_delete_description_after" timestamp with time zone,
+    "privacy_cleaned_at" timestamp with time zone,
+    "category" "text",
+    "study_intensity" "jsonb",
+    "study_schedule" "text",
     CONSTRAINT "projects_easy_bonus_check" CHECK ((("easy_bonus" >= (1.0)::double precision) AND ("easy_bonus" <= (2.0)::double precision))),
     CONSTRAINT "projects_easy_interval_check" CHECK (("easy_interval" >= 1)),
     CONSTRAINT "projects_easy_interval_factor_check" CHECK ((("easy_interval_factor" >= (1.0)::double precision) AND ("easy_interval_factor" <= (2.0)::double precision))),
@@ -505,6 +605,68 @@ CREATE TABLE IF NOT EXISTS "public"."projects" (
 
 
 ALTER TABLE "public"."projects" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."quiz_attempts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "quiz_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "answers" "jsonb" NOT NULL,
+    "score" integer DEFAULT 0 NOT NULL,
+    "total_questions" integer DEFAULT 0 NOT NULL,
+    "time_spent_seconds" integer,
+    "completed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "quiz_attempts_score_check" CHECK (("score" >= 0)),
+    CONSTRAINT "quiz_attempts_time_spent_check" CHECK ((("time_spent_seconds" IS NULL) OR ("time_spent_seconds" >= 0))),
+    CONSTRAINT "quiz_attempts_total_questions_check" CHECK (("total_questions" > 0))
+);
+
+
+ALTER TABLE "public"."quiz_attempts" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."quiz_attempts" IS 'User quiz attempts with scoring and timing data';
+
+
+
+COMMENT ON COLUMN "public"."quiz_attempts"."answers" IS 'JSONB object mapping question IDs to user answers';
+
+
+
+COMMENT ON COLUMN "public"."quiz_attempts"."time_spent_seconds" IS 'Time spent on quiz in seconds (nullable)';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."quizzes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "project_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "questions" "jsonb" NOT NULL,
+    "settings" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "tags" "text"[] DEFAULT '{}'::"text"[],
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "quizzes_title_not_empty" CHECK (("length"(TRIM(BOTH FROM "title")) > 0))
+);
+
+
+ALTER TABLE "public"."quizzes" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."quizzes" IS 'User-generated quizzes with various question types';
+
+
+
+COMMENT ON COLUMN "public"."quizzes"."questions" IS 'JSONB array of question objects with type, question, options, and correct answers';
+
+
+
+COMMENT ON COLUMN "public"."quizzes"."settings" IS 'JSONB object with quiz settings like time limits, randomization, etc.';
+
+
+
+COMMENT ON COLUMN "public"."quizzes"."tags" IS 'Array of string tags for categorization';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."srs_states" (
@@ -731,6 +893,16 @@ ALTER TABLE ONLY "public"."app_notifications"
 
 
 
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."cheatsheets"
+    ADD CONSTRAINT "cheatsheets_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."daily_study_stats"
     ADD CONSTRAINT "daily_study_stats_pkey" PRIMARY KEY ("id");
 
@@ -763,6 +935,16 @@ ALTER TABLE ONLY "public"."profiles"
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."quiz_attempts"
+    ADD CONSTRAINT "quiz_attempts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."quizzes"
+    ADD CONSTRAINT "quizzes_pkey" PRIMARY KEY ("id");
 
 
 
@@ -832,6 +1014,22 @@ CREATE INDEX "idx_app_notification_reads_notification_id" ON "public"."app_notif
 
 
 
+CREATE INDEX "idx_audit_logs_resource" ON "public"."audit_logs" USING "btree" ("resource_type", "resource_id");
+
+
+
+CREATE INDEX "idx_audit_logs_user_timestamp" ON "public"."audit_logs" USING "btree" ("user_id", "timestamp" DESC);
+
+
+
+CREATE INDEX "idx_cheatsheets_created_at" ON "public"."cheatsheets" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_cheatsheets_project_id" ON "public"."cheatsheets" USING "btree" ("project_id");
+
+
+
 CREATE INDEX "idx_daily_study_stats_project_id" ON "public"."daily_study_stats" USING "btree" ("project_id");
 
 
@@ -864,7 +1062,31 @@ CREATE INDEX "idx_flashcards_project_id" ON "public"."flashcards" USING "btree" 
 
 
 
+CREATE INDEX "idx_projects_privacy_deletion" ON "public"."projects" USING "btree" ("privacy_delete_description_after") WHERE ("privacy_delete_description_after" IS NOT NULL);
+
+
+
 CREATE INDEX "idx_projects_user_created" ON "public"."projects" USING "btree" ("user_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_quiz_attempts_completed_at" ON "public"."quiz_attempts" USING "btree" ("completed_at" DESC);
+
+
+
+CREATE INDEX "idx_quiz_attempts_quiz_id" ON "public"."quiz_attempts" USING "btree" ("quiz_id");
+
+
+
+CREATE INDEX "idx_quiz_attempts_user_id" ON "public"."quiz_attempts" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_quizzes_created_at" ON "public"."quizzes" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_quizzes_project_id" ON "public"."quizzes" USING "btree" ("project_id");
 
 
 
@@ -952,6 +1174,10 @@ CREATE OR REPLACE TRIGGER "study_reminders_updated_at" BEFORE UPDATE ON "public"
 
 
 
+CREATE OR REPLACE TRIGGER "update_cheatsheets_updated_at" BEFORE UPDATE ON "public"."cheatsheets" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
 CREATE OR REPLACE TRIGGER "update_daily_study_stats_updated_at" BEFORE UPDATE ON "public"."daily_study_stats" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
@@ -965,6 +1191,10 @@ CREATE OR REPLACE TRIGGER "update_profiles_updated_at" BEFORE UPDATE ON "public"
 
 
 CREATE OR REPLACE TRIGGER "update_projects_updated_at" BEFORE UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_quizzes_updated_at" BEFORE UPDATE ON "public"."quizzes" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -988,6 +1218,16 @@ ALTER TABLE ONLY "public"."app_notification_reads"
 
 ALTER TABLE ONLY "public"."app_notification_reads"
     ADD CONSTRAINT "app_notification_reads_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."cheatsheets"
+    ADD CONSTRAINT "cheatsheets_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 
 
@@ -1018,6 +1258,21 @@ ALTER TABLE ONLY "public"."profiles"
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."quiz_attempts"
+    ADD CONSTRAINT "quiz_attempts_quiz_id_fkey" FOREIGN KEY ("quiz_id") REFERENCES "public"."quizzes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."quiz_attempts"
+    ADD CONSTRAINT "quiz_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."quizzes"
+    ADD CONSTRAINT "quizzes_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 
 
@@ -1088,6 +1343,12 @@ CREATE POLICY "Admin read all analytics" ON "public"."analytics_events" FOR SELE
 
 
 
+CREATE POLICY "Admin read audit logs" ON "public"."audit_logs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
+
+
+
 CREATE POLICY "Admin read error logs" ON "public"."error_logs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."profiles"
   WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."is_admin" = true)))));
@@ -1111,6 +1372,10 @@ CREATE POLICY "Admin update error logs" ON "public"."error_logs" FOR UPDATE TO "
 
 
 CREATE POLICY "Allow error reporting" ON "public"."error_logs" FOR INSERT TO "authenticated", "anon" WITH CHECK (true);
+
+
+
+CREATE POLICY "System insert audit logs" ON "public"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 
 
@@ -1150,6 +1415,10 @@ CREATE POLICY "Users can view their own study reminders" ON "public"."study_remi
 
 
 
+CREATE POLICY "Users read own audit logs" ON "public"."audit_logs" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
+
+
+
 ALTER TABLE "public"."analytics_events" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1164,6 +1433,18 @@ ALTER TABLE "public"."app_notifications" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "app_notifications_select" ON "public"."app_notifications" FOR SELECT USING (("published" = true));
+
+
+
+ALTER TABLE "public"."audit_logs" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."cheatsheets" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "cheatsheets_policy" ON "public"."cheatsheets" USING (("project_id" IN ( SELECT "projects"."id"
+   FROM "public"."projects"
+  WHERE ("projects"."user_id" = ( SELECT "auth"."uid"() AS "uid")))));
 
 
 
@@ -1199,6 +1480,22 @@ ALTER TABLE "public"."projects" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "projects_policy" ON "public"."projects" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+ALTER TABLE "public"."quiz_attempts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "quiz_attempts_policy" ON "public"."quiz_attempts" USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+
+
+
+ALTER TABLE "public"."quizzes" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "quizzes_policy" ON "public"."quizzes" USING (("project_id" IN ( SELECT "projects"."id"
+   FROM "public"."projects"
+  WHERE ("projects"."user_id" = ( SELECT "auth"."uid"() AS "uid")))));
 
 
 
@@ -1426,6 +1723,11 @@ GRANT ALL ON FUNCTION "public"."clean_old_system_metrics"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."cleanup_expired_project_descriptions"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cleanup_expired_project_descriptions"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_srs_state_for_flashcard"() TO "service_role";
 
@@ -1502,6 +1804,16 @@ GRANT ALL ON TABLE "public"."app_notifications" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."audit_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."cheatsheets" TO "authenticated";
+GRANT ALL ON TABLE "public"."cheatsheets" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."daily_study_stats" TO "authenticated";
 GRANT ALL ON TABLE "public"."daily_study_stats" TO "service_role";
 
@@ -1525,6 +1837,16 @@ GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 GRANT ALL ON TABLE "public"."projects" TO "authenticated";
 GRANT ALL ON TABLE "public"."projects" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."quiz_attempts" TO "authenticated";
+GRANT ALL ON TABLE "public"."quiz_attempts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."quizzes" TO "authenticated";
+GRANT ALL ON TABLE "public"."quizzes" TO "service_role";
 
 
 
