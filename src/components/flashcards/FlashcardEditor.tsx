@@ -29,6 +29,7 @@ import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { FlashcardExporter } from "./FlashcardExporter";
 import { FlashcardDuplicateDetector } from "./FlashcardDuplicateDetector";
 import { useAISettings } from "@/hooks/useAISettings";
+import { BYOBanner } from "@/src/components/ui/byo-banner";
 import type { Project, Flashcard } from "@/src/types";
 
 interface FlashcardEditorProps {
@@ -324,6 +325,13 @@ export function FlashcardEditor({
             )}
           </div>
         </div>
+
+        {/* BYO Banner for AI features */}
+        {aiEnabled && !isConfigValid() && (
+          <div className="mb-8 animate-[slideUp_0.8s_ease-out_0.2s_both]">
+            <BYOBanner variant="warning" showDismiss={true} />
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-12">

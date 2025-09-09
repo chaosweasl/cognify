@@ -109,7 +109,86 @@ Cognify supports multiple AI providers. Set up your preferred provider:
 
 ---
 
-## 📖 Usage Guide
+## � Security & API Keys
+
+### BYO (Bring Your Own) API Keys Model
+
+Cognify is built with a **privacy-first, security-by-design** approach. We use a "Bring Your Own" (BYO) API keys model that puts you in complete control of your AI usage and data.
+
+#### 🛡️ **How It Works**
+
+| **Component**     | **Your Control**               | **Our Involvement**            |
+| ----------------- | ------------------------------ | ------------------------------ |
+| **API Keys**      | ✅ Stored in your browser only | ❌ Never stored on our servers |
+| **AI Requests**   | ✅ Direct from your browser    | ❌ Never proxied through us    |
+| **Usage & Costs** | ✅ Your provider account       | ❌ We don't monitor or bill    |
+| **Data Privacy**  | ✅ Content stays with you      | ❌ We never see your content   |
+
+#### 🔐 **Security Features**
+
+- **Client-Side Storage**: API keys stored in browser `localStorage` only
+- **Ephemeral Mode**: Option to never store keys anywhere
+- **Manual Workflow**: Copy-paste prompts when browser CORS fails
+- **Clear Controls**: One-click key deletion and management
+- **Self-Hostable**: Deploy on your own infrastructure for maximum control
+
+#### ⚠️ **Your Responsibilities**
+
+As the key holder, you are responsible for:
+
+- **API Key Security**: Keep your keys private and secure
+- **Usage Monitoring**: Monitor your provider billing and set limits
+- **Shared Computers**: Use ephemeral mode or clear keys when done
+- **Account Management**: Manage quotas and permissions on provider accounts
+
+### 🚀 **Getting Started with BYO**
+
+#### **Option 1: Direct API Integration**
+
+1. Get API keys from [OpenAI](https://platform.openai.com), [Anthropic](https://console.anthropic.com), or other providers
+2. Configure in Cognify Settings → AI Configuration
+3. Generate content directly in your browser
+
+#### **Option 2: Manual Copy-Paste Workflow**
+
+1. Copy prompts from [/docs/generate](/docs/generate)
+2. Paste into ChatGPT, Claude, or any AI service
+3. Import the JSON response back into Cognify
+
+### 📚 **Documentation & Support**
+
+- **📖 [Security Guide](/docs/api-keys)**: Comprehensive key management documentation
+- **⚡ [Generation Templates](/docs/generate)**: Copy-paste prompts for manual workflow
+- **🛠️ [Troubleshooting](/docs/troubleshooting)**: Common issues and CORS solutions
+
+### 🏠 **Self-Hosting for Maximum Privacy**
+
+For organizations requiring complete data control:
+
+```bash
+# Deploy your own instance
+git clone https://github.com/chaosweasl/cognify.git
+cd cognify
+
+# Configure your environment
+cp .env.example .env.local
+# Set your Supabase credentials
+
+# Deploy to your infrastructure
+pnpm build
+pnpm start
+```
+
+**Benefits of self-hosting:**
+
+- Complete data sovereignty
+- Custom security policies
+- Internal network deployment
+- No external dependencies
+
+---
+
+## �📖 Usage Guide
 
 ### Creating Your First Study Set
 

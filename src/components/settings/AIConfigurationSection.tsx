@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Eye,
-  EyeOff,
   Loader2,
   Zap,
   Settings,
@@ -23,6 +21,7 @@ import { useAIConfig } from "@/hooks/useAISettings";
 import { validateAIConfig } from "@/lib/ai/types";
 import { getAvailableAIProviders } from "@/lib/ai/developer";
 import { cn } from "@/lib/utils";
+import { ApiKeySecurityInput } from "@/src/components/ui/api-key-security";
 
 interface AIProviderField {
   key: string;
@@ -61,7 +60,6 @@ export function AIConfigurationSection({
   const [localConfig, setLocalConfig] = useState(currentConfig);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
 
   // Update local state when global config changes
   useEffect(() => {
@@ -474,48 +472,47 @@ export function AIConfigurationSection({
                 {/* Provider-specific Configuration Fields */}
                 {selectedProvider.configFields.map((field: AIProviderField) => (
                   <div key={field.key}>
-                    <label className="block text-sm font-medium text-primary mb-2">
-                      {field.label}
-                      {field.required && (
-                        <span className="text-status-error ml-1">*</span>
-                      )}
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type={
-                          field.type === "password" && !showApiKey
-                            ? "password"
-                            : "text"
-                        }
-                        value={
+                    {field.type === "password" ? (
+                      <ApiKeySecurityInput
+                        providerId={selectedProvider.id}
+                        providerName={selectedProvider.name}
+                        currentKey={
                           (localConfig[
                             field.key as keyof typeof localConfig
                           ] as string) || ""
                         }
-                        onChange={(e) =>
-                          handleConfigChange(field.key, e.target.value)
+                        onKeyChange={(key) =>
+                          handleConfigChange(field.key, key)
                         }
                         placeholder={field.placeholder}
-                        className="surface-secondary border-primary text-primary placeholder-muted"
                       />
-                      {field.type === "password" && (
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-primary"
-                        >
-                          {showApiKey ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
+                    ) : (
+                      <>
+                        <label className="block text-sm font-medium text-primary mb-2">
+                          {field.label}
+                          {field.required && (
+                            <span className="text-status-error ml-1">*</span>
                           )}
-                        </button>
-                      )}
-                    </div>
-                    {field.description && (
-                      <p className="text-xs text-muted mt-1">
-                        {field.description}
-                      </p>
+                        </label>
+                        <Input
+                          type={field.type}
+                          value={
+                            (localConfig[
+                              field.key as keyof typeof localConfig
+                            ] as string) || ""
+                          }
+                          onChange={(e) =>
+                            handleConfigChange(field.key, e.target.value)
+                          }
+                          placeholder={field.placeholder}
+                          className="surface-secondary border-primary text-primary placeholder-muted"
+                        />
+                        {field.description && (
+                          <p className="text-xs text-muted mt-1">
+                            {field.description}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
