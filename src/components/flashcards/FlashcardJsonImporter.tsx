@@ -10,7 +10,17 @@ import {
   X,
   Sparkles,
   Code,
+  Eye,
+  EyeOff,
+  Info,
+  RefreshCw,
 } from "lucide-react";
+import { 
+  validateImportData, 
+  generateImportGuidance,
+  ImportPreview,
+  ImportableFlashcard
+} from "@/lib/utils/importValidation";
 
 // Define Flashcard type that matches the new format
 type ImportFlashcard = {
@@ -32,7 +42,9 @@ export function FlashcardJsonImporter({
   const [isOpen, setIsOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<ImportFlashcard[]>([]);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [showInvalid, setShowInvalid] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (
@@ -43,7 +55,8 @@ export function FlashcardJsonImporter({
 
     setImporting(true);
     setError(null);
-    setPreview([]);
+    setImportPreview(null);
+    setSelectedItems(new Set());
 
     try {
       // Validate file type
@@ -51,24 +64,32 @@ export function FlashcardJsonImporter({
         throw new Error("Please select a JSON file (.json)");
       }
 
+      // Check file size (max 5MB for performance)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("File too large. Please select a file smaller than 5MB.");
+      }
+
       // Read file content
       const text = await file.text();
-      let data;
-
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error("Invalid JSON format. Please check your file.");
+      
+      // Validate and parse the data
+      const preview = validateImportData(text);
+      
+      if (preview.validation.errors.length > 0 && preview.metadata.validCount === 0) {
+        // Show first error if no valid items found
+        throw new Error(preview.validation.errors[0].message);
       }
 
-      // Validate and normalize the data
-      const flashcards = validateAndNormalizeFlashcards(data);
-
-      if (flashcards.length === 0) {
-        throw new Error("No valid flashcards found in the file.");
-      }
-
-      setPreview(flashcards);
+      setImportPreview(preview);
+      
+      // Auto-select all valid items
+      const validIndices = new Set(
+        preview.flashcards
+          .map((card, index) => card.isValid ? index : -1)
+          .filter(index => index !== -1)
+      );
+      setSelectedItems(validIndices);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to import file");
     } finally {
@@ -80,24 +101,128 @@ export function FlashcardJsonImporter({
     }
   };
 
-  const validateAndNormalizeFlashcards = (data: unknown): ImportFlashcard[] => {
-    const flashcards: ImportFlashcard[] = [];
+  const handleImport = () => {
+    if (!importPreview || selectedItems.size === 0) return;
 
-    // Handle different JSON structures
-    let items: unknown[] = [];
+    // Get selected valid flashcards
+    const selectedFlashcards = Array.from(selectedItems)
+      .map(index => importPreview.flashcards[index])
+      .filter(card => card && card.isValid)
+      .map(card => ({
+        front: card.front,
+        back: card.back,
+      }));
 
-    if (Array.isArray(data)) {
-      items = data;
-    } else if (data && typeof data === "object") {
-      const dataObj = data as Record<string, unknown>;
-      if (dataObj.flashcards && Array.isArray(dataObj.flashcards)) {
-        items = dataObj.flashcards;
-      } else if (dataObj.cards && Array.isArray(dataObj.cards)) {
-        items = dataObj.cards;
-      } else {
-        throw new Error(
-          'Expected an array of flashcards or an object with "flashcards" or "cards" property'
-        );
+    if (selectedFlashcards.length > 0) {
+      // Merge with existing flashcards
+      const merged = [...existingFlashcards, ...selectedFlashcards];
+      onImport(merged);
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setError(null);
+    setImportPreview(null);
+    setSelectedItems(new Set());
+    setShowInvalid(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const toggleItemSelection = (index: number) => {
+    const newSelection = new Set(selectedItems);
+    if (newSelection.has(index)) {
+      newSelection.delete(index);
+    } else {
+      newSelection.add(index);
+    }
+    setSelectedItems(newSelection);
+  };
+
+  const selectAllValid = () => {
+    if (!importPreview) return;
+    const validIndices = new Set(
+      importPreview.flashcards
+        .map((card, index) => card.isValid ? index : -1)
+        .filter(index => index !== -1)
+    );
+    setSelectedItems(validIndices);
+  };
+
+  const deselectAll = () => {
+    setSelectedItems(new Set());
+  };
+
+  const getExampleJson = () => {
+    return JSON.stringify(
+      [
+        {
+          front: "What is the capital of France?",
+          back: "Paris",
+        },
+        {
+          front: "What is 2 + 2?",
+          back: "4",
+        },
+      ],
+      null,
+      2
+    );
+  };
+
+  return (
+    <>
+      {/* Enhanced Import Button */}
+      <button
+        className="btn btn-outline border-brand-primary text-brand-primary hover:bg-gradient-brand hover:border-brand hover:text-white interactive-hover transition-all transition-normal rounded-xl shadow-brand hover:shadow-brand-lg group relative overflow-hidden"
+        onClick={() => setIsOpen(true)}
+        disabled={disabled}
+      >
+        <div className="absolute inset-0 bg-gradient-glass translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
+        <div className="relative z-10 flex items-center gap-2">
+          <Upload className="w-4 h-4" />
+          Import JSON
+        </div>
+      </button>
+
+      {/* Enhanced Modal */}
+      {isOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="modal modal-open z-[1000] bg-black/40 backdrop-blur-sm">
+            <div className="modal-box max-w-6xl max-h-[90vh] overflow-y-auto surface-elevated border border-subtle backdrop-blur rounded-2xl shadow-brand-lg">
+              {/* Background overlay */}
+              <div className="absolute inset-0 bg-gradient-glass opacity-20 pointer-events-none rounded-2xl" />
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="relative group">
+                      <div className="p-3 bg-gradient-brand rounded-xl shadow-brand transform group-hover:scale-110 transition-all transition-normal">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="absolute -inset-1 bg-gradient-glass rounded-xl blur opacity-0 group-hover:opacity-100 transition-all transition-normal" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-primary">
+                        Import Flashcards from JSON
+                      </h3>
+                      <p className="text-muted">
+                        Upload a JSON file containing your flashcards
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-sm btn-circle surface-secondary border-subtle interactive-hover rounded-xl"
+                    onClick={handleClose}
+                    disabled={importing}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
       }
     } else {
       throw new Error(

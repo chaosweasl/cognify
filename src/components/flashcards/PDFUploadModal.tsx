@@ -25,6 +25,8 @@ import {
 import { useAISettings } from "@/hooks/useAISettings";
 import { useTokenUsage, estimateTokenCost } from "@/hooks/useTokenUsage";
 import { validateAIConfig } from "@/lib/ai/types";
+import { AIErrorHandler } from "@/src/components/ai/AIErrorHandler";
+import { AIError, AIFallbackSuggestion } from "@/lib/utils/aiErrorHandling";
 
 interface PDFUploadModalProps {
   isOpen: boolean;
@@ -46,6 +48,8 @@ interface UploadedFile {
   status: "pending" | "extracting" | "generating" | "completed" | "error";
   extractedText?: string;
   error?: string;
+  aiError?: AIError;
+  fallbackSuggestions?: AIFallbackSuggestion[];
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -61,6 +65,11 @@ export function PDFUploadModal({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [showAIError, setShowAIError] = useState(false);
+  const [currentAIError, setCurrentAIError] = useState<{
+    error: AIError;
+    suggestions: AIFallbackSuggestion[];
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { currentConfig, isConfigValid } = useAISettings();
@@ -252,7 +261,29 @@ export function PDFUploadModal({
 
         if (!generateResponse.ok) {
           const errorData = await generateResponse.json();
-          throw new Error(errorData.error || "Failed to generate flashcards");
+          
+          // Check for enhanced AI error handling
+          if (errorData.aiError && errorData.fallbackSuggestions) {
+            // Store enhanced error data for display
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.id === fileData.id
+                  ? { 
+                      ...f, 
+                      status: "error",
+                      error: errorData.error || "AI generation failed",
+                      aiError: errorData.aiError,
+                      fallbackSuggestions: errorData.fallbackSuggestions,
+                    }
+                  : f
+              )
+            );
+            
+            // Don't throw here - let the enhanced error be displayed in UI
+            continue; // Skip to next file
+          } else {
+            throw new Error(errorData.error || "Failed to generate flashcards");
+          }
         }
 
         const { flashcards, metadata } = await generateResponse.json();
@@ -318,6 +349,29 @@ export function PDFUploadModal({
 
   const resetUpload = () => {
     setUploadedFiles([]);
+    setShowAIError(false);
+    setCurrentAIError(null);
+  };
+
+  const handleShowAIError = (fileId: string) => {
+    const file = uploadedFiles.find(f => f.id === fileId);
+    if (file?.aiError && file?.fallbackSuggestions) {
+      setCurrentAIError({
+        error: file.aiError,
+        suggestions: file.fallbackSuggestions,
+      });
+      setShowAIError(true);
+    }
+  };
+
+  const handleRetryGeneration = async () => {
+    setShowAIError(false);
+    // Reset failed files and retry generation
+    setUploadedFiles(prev => 
+      prev.map(f => f.aiError ? { ...f, status: "pending" as const, error: undefined, aiError: undefined, fallbackSuggestions: undefined } : f)
+    );
+    await processFiles();
+  };
     setIsProcessing(false);
   };
 
@@ -529,9 +583,22 @@ export function PDFUploadModal({
                       )}
 
                       {fileData.error && (
-                        <p className="text-xs text-status-error mt-2">
-                          {fileData.error}
-                        </p>
+                        <div className="mt-2">
+                          <p className="text-xs text-status-error">
+                            {fileData.error}
+                          </p>
+                          {fileData.aiError && fileData.fallbackSuggestions && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleShowAIError(fileData.id)}
+                              className="mt-2 text-xs"
+                            >
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Show Solutions
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -575,6 +642,26 @@ export function PDFUploadModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* AI Error Handler Modal */}
+      {showAIError && currentAIError && (
+        <Dialog open={showAIError} onOpenChange={setShowAIError}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader className="mb-4">
+              <DialogTitle>AI Generation Failed</DialogTitle>
+              <DialogDescription>
+                The AI couldn't generate flashcards directly. Here are some solutions:
+              </DialogDescription>
+            </DialogHeader>
+            <AIErrorHandler
+              error={currentAIError.error}
+              suggestions={currentAIError.suggestions}
+              onRetry={handleRetryGeneration}
+              onDismiss={() => setShowAIError(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

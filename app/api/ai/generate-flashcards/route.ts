@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
 import { withApiSecurity } from "@/lib/utils/apiSecurity";
 import { validateAndSanitizeText } from "@/lib/utils/security";
+import {
+  enhanceAIError,
+  getFallbackSuggestions,
+  executeAIOperation,
+  detectCORSError,
+  detectRateLimitError,
+  detectAuthError,
+} from "@/lib/utils/aiErrorHandling";
 import { v4 as uuidv4 } from "uuid";
 
 interface FlashcardGenerationRequest {
@@ -29,6 +37,8 @@ const MAX_TEXT_LENGTH = 50000; // Maximum total text length for security
 const MAX_FILE_NAME_LENGTH = 255; // Maximum file name length
 
 async function handleGenerateFlashcards(request: NextRequest) {
+  let config: AIConfiguration | undefined;
+
   try {
     // Verify authentication
     const supabase = await createClient();
@@ -44,7 +54,14 @@ async function handleGenerateFlashcards(request: NextRequest) {
     }
 
     const body: FlashcardGenerationRequest = await request.json();
-    const { text, projectId, fileName, config, options = {} } = body;
+    const {
+      text,
+      projectId,
+      fileName,
+      config: requestConfig,
+      options = {},
+    } = body;
+    config = requestConfig; // Store config for catch block
 
     // Input validation and sanitization
     if (!text || !projectId || !config) {
@@ -113,18 +130,27 @@ async function handleGenerateFlashcards(request: NextRequest) {
 
     let allGeneratedCards: GeneratedFlashcard[] = [];
     let totalTokensUsed = 0;
+    let lastError: any = null;
+    let corsErrorDetected = false;
 
     for (const chunk of textChunks) {
-      try {
-        const result = await generateFlashcardsForChunk({
-          text: chunk,
-          config,
-          maxCards: cardsPerChunk,
-          difficulty: options.difficulty || "intermediate",
-          focusAreas: options.focusAreas,
-          fileName: sanitizedFileName,
-        });
+      const result = await generateFlashcardsForChunk({
+        text: chunk,
+        config,
+        maxCards: cardsPerChunk,
+        difficulty: options.difficulty || "intermediate",
+        focusAreas: options.focusAreas,
+        fileName: sanitizedFileName,
+      });
 
+      if (result.error) {
+        lastError = result.error;
+        if (result.error.isCORSError) {
+          corsErrorDetected = true;
+        }
+        console.error("Error processing chunk:", result.error);
+        // Continue with other chunks even if one fails
+      } else {
         allGeneratedCards = [...allGeneratedCards, ...result.flashcards];
         totalTokensUsed += result.tokensUsed || 0;
 
@@ -132,10 +158,22 @@ async function handleGenerateFlashcards(request: NextRequest) {
         if (textChunks.length > 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-      } catch (chunkError) {
-        console.error("Error processing chunk:", chunkError);
-        // Continue with other chunks even if one fails
       }
+    }
+
+    // If all chunks failed, return enhanced error
+    if (allGeneratedCards.length === 0 && lastError) {
+      const suggestions = getFallbackSuggestions(lastError, config);
+
+      return NextResponse.json(
+        {
+          error: lastError.message,
+          aiError: lastError,
+          fallbackSuggestions: suggestions,
+          corsDetected: corsErrorDetected,
+        },
+        { status: 400 }
+      );
     }
 
     if (allGeneratedCards.length === 0) {
@@ -192,10 +230,31 @@ async function handleGenerateFlashcards(request: NextRequest) {
     });
   } catch (error) {
     console.error("Flashcard generation error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate flashcards" },
-      { status: 500 }
-    );
+
+    // Enhanced error handling with fallback suggestions
+    if (config) {
+      const enhancedError = enhanceAIError(
+        error,
+        config,
+        "Flashcard generation"
+      );
+      const suggestions = getFallbackSuggestions(enhancedError, config);
+
+      return NextResponse.json(
+        {
+          error: enhancedError.message,
+          aiError: enhancedError,
+          fallbackSuggestions: suggestions,
+          corsDetected: enhancedError.isCORSError,
+        },
+        { status: 500 }
+      );
+    } else {
+      return NextResponse.json(
+        { error: "Failed to generate flashcards" },
+        { status: 500 }
+      );
+    }
   }
 }
 
@@ -260,6 +319,7 @@ async function generateFlashcardsForChunk({
 }: ChunkGenerationParams): Promise<{
   flashcards: GeneratedFlashcard[];
   tokensUsed?: number;
+  error?: any;
 }> {
   const prompt = createFlashcardPrompt({
     text,
@@ -269,24 +329,43 @@ async function generateFlashcardsForChunk({
     fileName,
   });
 
-  switch (config.provider) {
-    case "openai":
-      return generateWithOpenAI(config, prompt);
-    case "anthropic":
-      return generateWithAnthropic(config, prompt);
-    case "ollama":
-    case "localhost-ollama":
-      return generateWithOllama(config, prompt);
-    case "lmstudio":
-    case "localhost-lmstudio":
-      return generateWithLMStudio(config, prompt);
-    case "localhost-openai-compatible":
-      return generateWithLocalOpenAICompatible(config, prompt);
-    case "deepseek":
-      return generateWithDeepSeek(config, prompt);
-    default:
-      throw new Error(`Unsupported AI provider: ${config.provider}`);
+  const operation = async () => {
+    switch (config.provider) {
+      case "openai":
+        return generateWithOpenAI(config, prompt);
+      case "anthropic":
+        return generateWithAnthropic(config, prompt);
+      case "ollama":
+      case "localhost-ollama":
+        return generateWithOllama(config, prompt);
+      case "lmstudio":
+      case "localhost-lmstudio":
+        return generateWithLMStudio(config, prompt);
+      case "localhost-openai-compatible":
+        return generateWithLocalOpenAICompatible(config, prompt);
+      case "deepseek":
+        return generateWithDeepSeek(config, prompt);
+      default:
+        throw new Error(`Unsupported AI provider: ${config.provider}`);
+    }
+  };
+
+  // Use enhanced AI operation wrapper
+  const { result, error } = await executeAIOperation(
+    operation,
+    config,
+    `Generating flashcards for chunk (${Math.min(text.length, 100)}... chars)`
+  );
+
+  if (error) {
+    return {
+      flashcards: [],
+      tokensUsed: 0,
+      error,
+    };
   }
+
+  return result!;
 }
 
 function createFlashcardPrompt({

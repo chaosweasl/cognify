@@ -37,6 +37,8 @@ const troubleshootingItems = [
           "Copy prompts from /docs/generate",
           "Paste into web-based AI services (ChatGPT, Claude)",
           "Import the JSON response back into Cognify",
+          "For immediate access, click 'Show Solutions' when CORS errors occur",
+          "Consider setting up local AI (Ollama/LM Studio) for direct browser access",
         ],
       },
       {
