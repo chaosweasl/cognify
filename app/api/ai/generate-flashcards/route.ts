@@ -11,6 +11,16 @@ import {
   detectRateLimitError,
   detectAuthError,
 } from "@/lib/utils/aiErrorHandling";
+import {
+  rateLimiter,
+  optimizeTextChunking,
+  sanitizeAIRequest,
+  sanitizeAIResponse,
+  optimizePromptForTokens,
+  adaptiveDelayManager,
+  performanceMonitor,
+  getMaxTokensForModel,
+} from "@/lib/utils/performanceOptimization";
 import { v4 as uuidv4 } from "uuid";
 
 interface FlashcardGenerationRequest {
@@ -38,6 +48,7 @@ const MAX_FILE_NAME_LENGTH = 255; // Maximum file name length
 
 async function handleGenerateFlashcards(request: NextRequest) {
   let config: AIConfiguration | undefined;
+  const operationId = uuidv4();
 
   try {
     // Verify authentication
@@ -61,7 +72,36 @@ async function handleGenerateFlashcards(request: NextRequest) {
       config: requestConfig,
       options = {},
     } = body;
-    config = requestConfig; // Store config for catch block
+    config = requestConfig;
+
+    // Start performance monitoring
+    performanceMonitor.startOperation(
+      operationId,
+      config.provider,
+      config.model === "custom"
+        ? config.customModelName || "unknown"
+        : config.model
+    );
+
+    // Rate limiting check
+    const rateLimitResult = await rateLimiter.checkRateLimit(
+      user.id,
+      config.provider
+    );
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: `Rate limit exceeded for ${config.provider}. Try again in ${rateLimitResult.retryAfter} seconds.`,
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": rateLimitResult.retryAfter?.toString() || "60",
+          },
+        }
+      );
+    }
 
     // Input validation and sanitization
     if (!text || !projectId || !config) {
@@ -71,15 +111,11 @@ async function handleGenerateFlashcards(request: NextRequest) {
       );
     }
 
-    // Sanitize and validate text input
-    const textValidation = validateAndSanitizeText(
-      text,
-      MAX_TEXT_LENGTH,
-      "PDF text content"
-    );
-    if (!textValidation.isValid) {
+    // Enhanced sanitization with token optimization
+    const sanitizationResult = sanitizeAIRequest(text, MAX_TEXT_LENGTH);
+    if (!sanitizationResult.isValid) {
       return NextResponse.json(
-        { error: textValidation.error },
+        { error: "Invalid or potentially unsafe content provided" },
         { status: 400 }
       );
     }
@@ -97,7 +133,7 @@ async function handleGenerateFlashcards(request: NextRequest) {
       );
     }
 
-    const sanitizedText = textValidation.sanitized;
+    const sanitizedText = sanitizationResult.content;
     const sanitizedFileName = fileNameValidation.sanitized;
 
     // Validate AI configuration
@@ -123,41 +159,71 @@ async function handleGenerateFlashcards(request: NextRequest) {
       );
     }
 
-    // Chunk text if it's too large
-    const textChunks = chunkText(sanitizedText, MAX_TEXT_CHUNK_SIZE);
-    const maxCards = Math.min(options.maxCards || DEFAULT_MAX_CARDS, 50); // Cap at 50 cards for security
+    // Enhanced text chunking with optimization
+    const textChunks = optimizeTextChunking(sanitizedText, {
+      maxChunkSize: MAX_TEXT_CHUNK_SIZE,
+      overlapSize: 200, // Add context overlap between chunks
+      preserveContext: true,
+      balanceChunks: true, // Distribute content more evenly
+    });
+
+    const maxCards = Math.min(options.maxCards || DEFAULT_MAX_CARDS, 50);
     const cardsPerChunk = Math.ceil(maxCards / textChunks.length);
 
     let allGeneratedCards: GeneratedFlashcard[] = [];
     let totalTokensUsed = 0;
     let lastError: any = null;
     let corsErrorDetected = false;
+    let consecutiveErrors = 0;
 
-    for (const chunk of textChunks) {
-      const result = await generateFlashcardsForChunk({
-        text: chunk,
-        config,
-        maxCards: cardsPerChunk,
-        difficulty: options.difficulty || "intermediate",
-        focusAreas: options.focusAreas,
-        fileName: sanitizedFileName,
-      });
+    // Process chunks with adaptive delays and error handling
+    for (let i = 0; i < textChunks.length; i++) {
+      const chunk = textChunks[i];
 
-      if (result.error) {
-        lastError = result.error;
-        if (result.error.isCORSError) {
-          corsErrorDetected = true;
+      try {
+        // Apply adaptive delay based on provider performance and error history
+        if (i > 0) {
+          await adaptiveDelayManager.delay(config.provider, consecutiveErrors);
         }
-        console.error("Error processing chunk:", result.error);
-        // Continue with other chunks even if one fails
-      } else {
-        allGeneratedCards = [...allGeneratedCards, ...result.flashcards];
-        totalTokensUsed += result.tokensUsed || 0;
 
-        // Small delay between chunks to avoid rate limiting
-        if (textChunks.length > 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+        const result = await generateFlashcardsForChunk({
+          text: chunk,
+          config,
+          maxCards: cardsPerChunk,
+          difficulty: options.difficulty || "intermediate",
+          focusAreas: options.focusAreas,
+          fileName: sanitizedFileName,
+        });
+
+        if (result.error) {
+          lastError = result.error;
+          consecutiveErrors++;
+          performanceMonitor.recordError(operationId);
+
+          if (result.error.isCORSError) {
+            corsErrorDetected = true;
+          }
+          console.error(
+            `Error processing chunk ${i + 1}/${textChunks.length}:`,
+            result.error
+          );
+        } else {
+          allGeneratedCards = [...allGeneratedCards, ...result.flashcards];
+          totalTokensUsed += result.tokensUsed || 0;
+          consecutiveErrors = 0; // Reset error counter on success
+
+          performanceMonitor.recordTokenUsage(
+            operationId,
+            result.tokensUsed || 0
+          );
         }
+
+        performanceMonitor.recordChunkProcessed(operationId);
+      } catch (chunkError) {
+        console.error(`Unexpected error in chunk ${i + 1}:`, chunkError);
+        consecutiveErrors++;
+        performanceMonitor.recordError(operationId);
+        lastError = chunkError;
       }
     }
 
@@ -214,18 +280,45 @@ async function handleGenerateFlashcards(request: NextRequest) {
       );
     }
 
+    // Sanitize response data
+    const { sanitized: sanitizedCards, warnings: sanitizationWarnings } =
+      sanitizeAIResponse(validFlashcards);
+
+    // Finish performance monitoring
+    const performanceMetrics = performanceMonitor.finishOperation(operationId);
+
     return NextResponse.json({
-      flashcards: validFlashcards,
+      flashcards: sanitizedCards,
       metadata: {
         totalGenerated: validFlashcards.length,
         totalRequested: maxCards,
-        fileName,
+        fileName: sanitizedFileName,
         tokensUsed: totalTokensUsed,
         chunksProcessed: textChunks.length,
         generatedAt: new Date().toISOString(),
         provider: config.provider,
         model:
           config.model === "custom" ? config.customModelName : config.model,
+        performance: performanceMetrics
+          ? {
+              duration: performanceMetrics.duration,
+              tokensPerSecond:
+                performanceMetrics.tokensUsed && performanceMetrics.duration
+                  ? Math.round(
+                      (performanceMetrics.tokensUsed /
+                        performanceMetrics.duration) *
+                        1000
+                    )
+                  : undefined,
+              errorsEncountered: performanceMetrics.errorsEncountered,
+            }
+          : undefined,
+        warnings: sanitizationResult.warnings.concat(sanitizationWarnings),
+        optimizations: {
+          chunksBalanced: true,
+          contextPreserved: true,
+          adaptiveDelaysUsed: textChunks.length > 1,
+        },
       },
     });
   } catch (error) {
@@ -321,13 +414,36 @@ async function generateFlashcardsForChunk({
   tokensUsed?: number;
   error?: any;
 }> {
-  const prompt = createFlashcardPrompt({
+  // Create and optimize prompt for token efficiency
+  let prompt = createFlashcardPrompt({
     text,
     maxCards,
     difficulty,
     focusAreas,
     fileName,
   });
+
+  // Optimize prompt for token limits if needed
+  const maxTokensForModel = getMaxTokensForModel(config.provider, config.model);
+  if (maxTokensForModel) {
+    const optimization = optimizePromptForTokens(prompt, {
+      provider: config.provider,
+      model: config.model,
+      maxTokens: maxTokensForModel,
+      reserveTokens: 1000, // Reserve tokens for response
+    });
+
+    prompt = optimization.optimizedPrompt;
+
+    // Log if significant compression was applied
+    if (optimization.compressionRatio < 0.8) {
+      console.log(
+        `Prompt compressed by ${Math.round(
+          (1 - optimization.compressionRatio) * 100
+        )}% for ${config.provider}`
+      );
+    }
+  }
 
   const operation = async () => {
     switch (config.provider) {

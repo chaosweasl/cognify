@@ -96,14 +96,7 @@
   - [ ] Add selective import (choose which items to accept)
   - [ ] Provide format conversion helpers for common AI outputs
 
-### **Phase 4: Testing & Polish (Week 4)**
-
-- [ ] **Comprehensive Testing**
-
-  - [ ] Unit tests for multi-provider generation endpoints
-  - [ ] Integration tests for generate → preview → accept → DB flow
-  - [ ] E2E tests for manual copy/paste workflow from docs
-  - [ ] Provider compatibility testing across major browsers
+### **Phase 4: Polish (Week 4)**
 
 - [ ] **User Experience Polish**
 

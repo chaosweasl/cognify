@@ -1,0 +1,48 @@
+{
+  "title": "World History: Ancient Civilizations",
+  "description": "Key facts and concepts about ancient civilizations",
+  "subject": "history",
+  "difficulty": "intermediate",
+  "flashcards": [
+    {
+      "id": "hist-1",
+      "front": "When did Ancient Egypt begin and what marked its start?",
+      "back": "Ancient Egypt began around 3100 BCE when King Menes unified Upper and Lower Egypt, establishing the first dynasty and beginning the Early Dynastic Period."
+    },
+    {
+      "id": "hist-2",
+      "front": "What were the main achievements of Ancient Mesopotamia?",
+      "back": "Ancient Mesopotamia (3500-539 BCE) achieved the first cities, cuneiform writing system, the wheel, the sailboat, the first laws (Code of Hammurabi), and advanced astronomy and mathematics."
+    },
+    {
+      "id": "hist-3",
+      "front": "What was the Silk Road and why was it important?",
+      "back": "The Silk Road was a network of trade routes connecting East and West from around 130 BCE to 1453 CE. It facilitated not just trade in silk, spices, and goods, but also cultural exchange, technology transfer, and the spread of religions."
+    },
+    {
+      "id": "hist-4",
+      "front": "What were the key features of Greek democracy in Athens?",
+      "back": "Athenian democracy (5th-4th century BCE) featured direct participation by male citizens in the Assembly (Ecclesia), random selection for many offices, ostracism to prevent tyranny, and trial by jury. However, it excluded women, slaves, and foreigners."
+    },
+    {
+      "id": "hist-5",
+      "front": "What caused the fall of the Roman Empire?",
+      "back": "The fall of the Western Roman Empire (476 CE) resulted from multiple factors: barbarian invasions, economic troubles, military problems, political instability, administrative difficulties, and the rise of Christianity changing traditional values."
+    },
+    {
+      "id": "hist-6",
+      "front": "What was the significance of the Rosetta Stone?",
+      "back": "Discovered in 1799, the Rosetta Stone contained the same text in three scripts: hieroglyphic, Demotic, and Greek. This enabled Jean-François Champollion to decipher Egyptian hieroglyphs in 1822, unlocking ancient Egyptian history."
+    },
+    {
+      "id": "hist-7",
+      "front": "What were the main contributions of the Islamic Golden Age?",
+      "back": "The Islamic Golden Age (8th-13th centuries) contributed advances in mathematics (algebra, algorithms), medicine, astronomy, chemistry, philosophy, and translation of Greek texts that preserved classical knowledge for Europe."
+    },
+    {
+      "id": "hist-8",
+      "front": "What was the Maya civilization known for?",
+      "back": "The Maya civilization (2000 BCE - 1500 CE) was known for their advanced writing system, accurate calendars, sophisticated astronomy, impressive architecture (pyramids), complex political systems, and mathematical innovations including the concept of zero."
+    }
+  ]
+}

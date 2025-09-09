@@ -1,0 +1,58 @@
+{
+  "title": "JavaScript Programming Fundamentals",
+  "description": "Essential JavaScript concepts for beginners",
+  "subject": "programming",
+  "difficulty": "beginner",
+  "flashcards": [
+    {
+      "id": "js-1",
+      "front": "What is a variable in JavaScript?",
+      "back": "A variable is a container that stores data values. It can hold different types of data like numbers, strings, objects, etc. Variables are declared using 'var', 'let', or 'const' keywords."
+    },
+    {
+      "id": "js-2", 
+      "front": "What's the difference between 'let' and 'const'?",
+      "back": "'let' declares variables that can be reassigned, while 'const' declares constants that cannot be reassigned after initialization. Both have block scope."
+    },
+    {
+      "id": "js-3",
+      "front": "What is a function in JavaScript?",
+      "back": "A function is a reusable block of code designed to perform a particular task. Functions are defined with the 'function' keyword or as arrow functions (=>) and can accept parameters and return values."
+    },
+    {
+      "id": "js-4",
+      "front": "What are the primitive data types in JavaScript?",
+      "back": "The primitive data types are: string, number, boolean, undefined, null, symbol (ES6), and bigint (ES2020). These are immutable and stored by value."
+    },
+    {
+      "id": "js-5",
+      "front": "What is the difference between '==' and '===' operators?",
+      "back": "'==' performs type coercion and compares values, while '===' (strict equality) compares both value and type without coercion. '===' is generally preferred for more predictable comparisons."
+    },
+    {
+      "id": "js-6",
+      "front": "What is an array in JavaScript?",
+      "back": "An array is an ordered collection of elements that can store multiple values in a single variable. Arrays are indexed starting from 0 and can contain elements of different data types."
+    },
+    {
+      "id": "js-7",
+      "front": "What is the 'this' keyword in JavaScript?",
+      "back": "'this' refers to the object that is currently calling the function. Its value depends on how a function is called - in methods it refers to the owner object, in regular functions it refers to the global object."
+    },
+    {
+      "id": "js-8",
+      "front": "What is an object in JavaScript?",
+      "back": "An object is a collection of key-value pairs where keys are strings (or symbols) and values can be any data type. Objects are created using curly braces {} or the Object constructor."
+    },
+    {
+      "id": "js-9",
+      "front": "What is the difference between null and undefined?",
+      "back": "'undefined' means a variable has been declared but not assigned a value. 'null' is an intentional assignment representing 'no value' or 'empty value'. Both are falsy values but are distinct types."
+    },
+    {
+      "id": "js-10",
+      "front": "What is a callback function?",
+      "back": "A callback function is a function passed as an argument to another function and is executed after some operation has been completed. It allows for asynchronous programming and function composition."
+    }
+  ]
+}

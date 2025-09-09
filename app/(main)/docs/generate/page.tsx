@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import SampleContentLibrary from "@/src/components/ui/SampleContentLibrary";
 
 const flashcardPrompt = `Please analyze the following content and create flashcards in JSON format. Generate comprehensive question-answer pairs that test understanding, recall, and application of the key concepts.
 
@@ -717,6 +718,9 @@ export default function GeneratePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sample Content Library */}
+      <SampleContentLibrary />
 
       {/* Next Steps */}
       <Card className="surface-elevated border-subtle">

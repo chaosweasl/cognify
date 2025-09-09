@@ -1,0 +1,80 @@
+{
+  "title": "JavaScript Fundamentals Quiz",
+  "description": "Test your knowledge of JavaScript basics",
+  "subject": "programming",
+  "difficulty": "beginner",
+  "timeLimit": 600,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "question": "Which of the following is the correct way to declare a variable in JavaScript?",
+      "options": [
+        "var myVariable = 'Hello';",
+        "variable myVariable = 'Hello';",
+        "declare myVariable = 'Hello';",
+        "myVariable := 'Hello';"
+      ],
+      "correctAnswer": 0,
+      "explanation": "In JavaScript, variables are declared using 'var', 'let', or 'const' keywords. The 'var' keyword is the traditional way to declare variables."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "question": "What will be the output of: console.log(typeof null);",
+      "options": ["'null'", "'undefined'", "'object'", "'boolean'"],
+      "correctAnswer": 2,
+      "explanation": "This is a well-known quirk in JavaScript. typeof null returns 'object', which is considered a bug in the language but is maintained for compatibility."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "question": "JavaScript is a case-sensitive language.",
+      "correctAnswer": true,
+      "explanation": "Yes, JavaScript is case-sensitive. Variables 'myVariable' and 'myvariable' would be treated as different variables."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "question": "Which method is used to add an element to the end of an array?",
+      "options": ["push()", "pop()", "shift()", "unshift()"],
+      "correctAnswer": 0,
+      "explanation": "The push() method adds one or more elements to the end of an array and returns the new length of the array."
+    },
+    {
+      "id": "q5",
+      "type": "short-answer",
+      "question": "What keyword is used to create a function in JavaScript?",
+      "correctAnswers": ["function", "Function"],
+      "explanation": "The 'function' keyword is used to declare functions in JavaScript, though arrow functions (=>) are also available in ES6+."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "question": "What does the '===' operator do in JavaScript?",
+      "options": [
+        "Assigns a value",
+        "Compares values with type coercion",
+        "Compares values and types without coercion",
+        "Performs logical AND operation"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The '===' operator performs strict equality comparison, checking both value and type without any type coercion."
+    },
+    {
+      "id": "q7",
+      "type": "true-false",
+      "question": "Arrays in JavaScript can contain elements of different data types.",
+      "correctAnswer": true,
+      "explanation": "Yes, JavaScript arrays are heterogeneous, meaning they can contain elements of different data types in the same array."
+    },
+    {
+      "id": "q8",
+      "type": "multiple-choice",
+      "question": "Which of the following is NOT a primitive data type in JavaScript?",
+      "options": ["string", "number", "array", "boolean"],
+      "correctAnswer": 2,
+      "explanation": "Array is not a primitive data type in JavaScript. It's actually an object type. The primitive types are: string, number, boolean, undefined, null, symbol, and bigint."
+    }
+  ]
+}

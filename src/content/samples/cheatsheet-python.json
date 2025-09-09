@@ -1,0 +1,88 @@
+{
+  "title": "Python Programming Cheatsheet",
+  "description": "Essential Python syntax and concepts reference",
+  "subject": "programming",
+  "difficulty": "beginner",
+  "sections": [
+    {
+      "title": "Basic Syntax",
+      "items": [
+        {
+          "type": "code",
+          "title": "Variables & Data Types",
+          "content": "# Variables\nname = \"Alice\"\nage = 25\nis_student = True\nscore = 95.5\n\n# Type checking\nprint(type(name))  # <class 'str'>"
+        },
+        {
+          "type": "code",
+          "title": "Lists",
+          "content": "# Creating and using lists\nfruits = ['apple', 'banana', 'orange']\nfruits.append('grape')  # Add item\nprint(fruits[0])       # Access by index\nprint(len(fruits))     # Length"
+        },
+        {
+          "type": "code",
+          "title": "Dictionaries",
+          "content": "# Creating and using dictionaries\nperson = {'name': 'Bob', 'age': 30}\nprint(person['name'])   # Access value\nperson['city'] = 'NYC' # Add new key-value\nprint(person.keys())   # Get all keys"
+        }
+      ]
+    },
+    {
+      "title": "Control Flow",
+      "items": [
+        {
+          "type": "code",
+          "title": "If Statements",
+          "content": "if age >= 18:\n    print(\"Adult\")\nelif age >= 13:\n    print(\"Teenager\")\nelse:\n    print(\"Child\")"
+        },
+        {
+          "type": "code",
+          "title": "Loops",
+          "content": "# For loop\nfor i in range(5):\n    print(i)\n\n# While loop\ncount = 0\nwhile count < 3:\n    print(count)\n    count += 1"
+        }
+      ]
+    },
+    {
+      "title": "Functions",
+      "items": [
+        {
+          "type": "code",
+          "title": "Function Definition",
+          "content": "def greet(name, greeting=\"Hello\"):\n    \"\"\"Function with default parameter\"\"\"\n    return f\"{greeting}, {name}!\"\n\n# Usage\nmessage = greet(\"Alice\")\nprint(message)  # Hello, Alice!"
+        },
+        {
+          "type": "code",
+          "title": "Lambda Functions",
+          "content": "# Lambda (anonymous) functions\nsquare = lambda x: x ** 2\nprint(square(5))  # 25\n\n# With map()\nnumbers = [1, 2, 3, 4]\nsquared = list(map(lambda x: x**2, numbers))"
+        }
+      ]
+    },
+    {
+      "title": "Common Methods",
+      "items": [
+        {
+          "type": "reference",
+          "title": "String Methods",
+          "content": ".upper() - Convert to uppercase\n.lower() - Convert to lowercase\n.strip() - Remove whitespace\n.split() - Split into list\n.join() - Join list into string\n.replace() - Replace substring"
+        },
+        {
+          "type": "reference",
+          "title": "List Methods",
+          "content": ".append() - Add item to end\n.insert() - Insert at position\n.remove() - Remove first occurrence\n.pop() - Remove and return item\n.sort() - Sort in place\n.reverse() - Reverse in place"
+        }
+      ]
+    },
+    {
+      "title": "File Handling",
+      "items": [
+        {
+          "type": "code",
+          "title": "Reading Files",
+          "content": "# Read entire file\nwith open('file.txt', 'r') as file:\n    content = file.read()\n    print(content)\n\n# Read line by line\nwith open('file.txt', 'r') as file:\n    for line in file:\n        print(line.strip())"
+        },
+        {
+          "type": "code",
+          "title": "Writing Files",
+          "content": "# Write to file\nwith open('output.txt', 'w') as file:\n    file.write('Hello, World!')\n    file.write('\\nSecond line')\n\n# Append to file\nwith open('output.txt', 'a') as file:\n    file.write('\\nAppended text')"
+        }
+      ]
+    }
+  ]
+}

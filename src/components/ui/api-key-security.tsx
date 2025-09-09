@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Eye,
   EyeOff,
   Shield,
@@ -14,6 +22,9 @@ import {
   Info,
   Trash2,
   Key,
+  Lock,
+  ShieldAlert,
+  CheckCircle,
 } from "lucide-react";
 import {
   Tooltip,
@@ -33,6 +44,69 @@ interface ApiKeySecurityProps {
   className?: string;
 }
 
+// Security Consent Modal Component
+interface SecurityConsentModalProps {
+  open: boolean;
+  onClose: () => void;
+  onConsent: () => void;
+  providerName: string;
+}
+
+function SecurityConsentModal({
+  open,
+  onClose,
+  onConsent,
+  providerName,
+}: SecurityConsentModalProps) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-status-warning/10 rounded-lg flex items-center justify-center">
+              <ShieldAlert className="w-5 h-5 text-status-warning" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg">Security Notice</DialogTitle>
+            </div>
+          </div>
+          <DialogDescription className="text-left space-y-3">
+            <p>
+              You're about to store your <strong>{providerName}</strong> API key
+              in your browser's localStorage.
+            </p>
+            <div className="p-3 border border-status-warning/30 bg-status-warning/5 rounded-lg space-y-2">
+              <h4 className="font-semibold text-status-warning text-sm">
+                What this means:
+              </h4>
+              <ul className="text-sm space-y-1 text-secondary">
+                <li>• Key persists until you clear it or browser data</li>
+                <li>• Only accessible to Cognify on this device</li>
+                <li>• Never sent to our servers or shared</li>
+                <li>• You can enable ephemeral mode for higher security</li>
+              </ul>
+            </div>
+            <div className="p-3 border border-brand/30 bg-brand/5 rounded-lg">
+              <p className="text-sm text-secondary">
+                <strong className="text-brand">Recommended:</strong> Use API
+                keys with limited scope and monitor your provider's billing.
+              </p>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={onConsent} className="bg-brand text-white">
+            <CheckCircle className="w-4 h-4 mr-2" />I Understand & Consent
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ApiKeySecurityInput({
   providerId,
   providerName,
@@ -49,6 +123,8 @@ export function ApiKeySecurityInput({
   const [showSecurityWarning, setShowSecurityWarning] = useState(
     !aiKeyStorage.getApiKey(providerId)
   );
+  const [hasConsentedToStorage, setHasConsentedToStorage] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   const handleKeyChange = (value: string) => {
     onKeyChange(value);
@@ -66,6 +142,11 @@ export function ApiKeySecurityInput({
   };
 
   const handleRememberToggle = (enabled: boolean) => {
+    if (enabled && !hasConsentedToStorage) {
+      setShowSecurityModal(true);
+      return;
+    }
+
     setRememberKey(enabled);
 
     if (!enabled) {
@@ -74,6 +155,17 @@ export function ApiKeySecurityInput({
       toast.info("API key removed from browser storage");
     } else if (currentKey.trim()) {
       // Save to localStorage when enabled
+      aiKeyStorage.setApiKey(providerId, currentKey);
+      toast.success("API key saved to browser storage");
+    }
+  };
+
+  const handleConsentToStorage = () => {
+    setHasConsentedToStorage(true);
+    setShowSecurityModal(false);
+    setRememberKey(true);
+
+    if (currentKey.trim()) {
       aiKeyStorage.setApiKey(providerId, currentKey);
       toast.success("API key saved to browser storage");
     }
@@ -99,32 +191,72 @@ export function ApiKeySecurityInput({
 
   return (
     <div className={className}>
-      {/* Security Warning Banner */}
+      {/* Enhanced Security Warning Banner */}
       {showSecurityWarning && (
-        <Card className="border-status-warning/30 bg-status-warning/5 mb-4">
-          <CardContent className="p-4">
+        <Card className="border-status-warning/40 bg-gradient-to-r from-status-warning/5 to-orange-500/5 mb-4 shadow-sm">
+          <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-status-warning mt-0.5 flex-shrink-0" />
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-status-warning">
-                  API Key Security Notice
-                </h4>
-                <div className="text-sm text-secondary space-y-1">
-                  <p>• Your API key is stored locally in your browser only</p>
-                  <p>
-                    • It's never sent to our servers or stored in our database
-                  </p>
-                  <p>• Consider using ephemeral mode for enhanced security</p>
-                  <p>• You can clear stored keys anytime from this interface</p>
+              <div className="w-8 h-8 bg-status-warning/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                <Lock className="w-4 h-4 text-status-warning" />
+              </div>
+              <div className="space-y-3 flex-1">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-status-warning flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Bring Your Own API Key (BYO) Model
+                  </h4>
+                  <div className="text-sm text-secondary space-y-2">
+                    <p>
+                      <strong>Your security, your control:</strong> API keys are
+                      stored locally in your browser only and never sent to our
+                      servers.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                      <div className="space-y-1">
+                        <h5 className="font-medium text-status-success text-xs flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          What we DO:
+                        </h5>
+                        <ul className="text-xs text-secondary space-y-1 ml-4">
+                          <li>• Store keys locally only</li>
+                          <li>• Provide ephemeral mode</li>
+                          <li>• Direct browser-to-AI requests</li>
+                          <li>• Full code transparency</li>
+                        </ul>
+                      </div>
+                      <div className="space-y-1">
+                        <h5 className="font-medium text-status-error text-xs flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          What we DON'T do:
+                        </h5>
+                        <ul className="text-xs text-secondary space-y-1 ml-4">
+                          <li>• Store keys on our servers</li>
+                          <li>• Log your API usage</li>
+                          <li>• Access your AI accounts</li>
+                          <li>• Share keys between users</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSecurityWarning(false)}
-                  className="text-status-warning border-status-warning/30 hover:bg-status-warning/10"
-                >
-                  I understand
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSecurityWarning(false)}
+                    className="text-status-warning border-status-warning/30 hover:bg-status-warning/10"
+                  >
+                    I Understand
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open("/docs/api-keys", "_blank")}
+                    className="text-muted hover:text-primary"
+                  >
+                    Learn More
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -257,23 +389,71 @@ export function ApiKeySecurityInput({
           </div>
         </div>
 
-        {/* Key Storage Status */}
-        <div className="flex items-start gap-2 p-3 surface-elevated rounded-lg border border-subtle">
-          <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse mt-2" />
-          <div className="text-xs text-muted">
+        {/* Enhanced Key Storage Status */}
+        <div className="flex items-start gap-3 p-4 surface-elevated rounded-lg border border-subtle">
+          <div className="flex-shrink-0 mt-1">
+            {ephemeralMode ? (
+              <div className="w-3 h-3 rounded-full bg-status-warning animate-pulse" />
+            ) : rememberKey && hasStoredKey ? (
+              <div className="w-3 h-3 rounded-full bg-status-success" />
+            ) : rememberKey && currentKey ? (
+              <div className="w-3 h-3 rounded-full bg-status-info animate-pulse" />
+            ) : (
+              <div className="w-3 h-3 rounded-full bg-muted" />
+            )}
+          </div>
+          <div className="text-xs text-muted flex-1">
             <p className="font-medium text-secondary mb-1">Storage Status:</p>
             {ephemeralMode ? (
-              <p>🛡️ Ephemeral mode - key not stored anywhere</p>
+              <div className="space-y-1">
+                <p className="flex items-center gap-1">
+                  <Shield className="w-3 h-3 text-status-warning" />
+                  <span className="text-status-warning font-medium">
+                    Maximum Security Mode
+                  </span>
+                </p>
+                <p>Key will be cleared after session ends</p>
+              </div>
             ) : rememberKey && hasStoredKey ? (
-              <p>💾 Key stored in browser localStorage</p>
+              <div className="space-y-1">
+                <p className="flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-status-success" />
+                  <span className="text-status-success font-medium">
+                    Stored Securely
+                  </span>
+                </p>
+                <p>Key persists in browser localStorage</p>
+              </div>
             ) : rememberKey && currentKey ? (
-              <p>⚠️ Key will be stored when you save configuration</p>
+              <div className="space-y-1">
+                <p className="flex items-center gap-1">
+                  <Info className="w-3 h-3 text-status-info" />
+                  <span className="text-status-info font-medium">
+                    Pending Storage
+                  </span>
+                </p>
+                <p>Key will be stored when you save configuration</p>
+              </div>
             ) : (
-              <p>🔑 Key will be cleared after session ends</p>
+              <div className="space-y-1">
+                <p className="flex items-center gap-1">
+                  <Eye className="w-3 h-3 text-muted" />
+                  <span className="text-muted font-medium">Session Only</span>
+                </p>
+                <p>Key will be cleared after session ends</p>
+              </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Security Consent Modal */}
+      <SecurityConsentModal
+        open={showSecurityModal}
+        onClose={() => setShowSecurityModal(false)}
+        onConsent={handleConsentToStorage}
+        providerName={providerName}
+      />
     </div>
   );
 }

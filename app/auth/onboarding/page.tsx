@@ -16,7 +16,9 @@ import {
   ChevronLeft,
   CheckCircle2,
 } from "lucide-react";
-import { AIConfigurationSection } from "@/src/components/settings/AIConfigurationSection";
+import { ProgressiveAISettings } from "@/src/components/settings/ProgressiveAISettings";
+import { ContextualGuidance } from "@/src/components/ui/ContextualGuidance";
+import { HelpTooltip, CommonTooltips } from "@/src/components/ui/HelpTooltip";
 import { useAISettings } from "@/hooks/useAISettings";
 
 export default function OnboardingPage() {
@@ -229,6 +231,44 @@ export default function OnboardingPage() {
       case 1:
         return (
           <div className="space-y-6">
+            {/* Welcome section */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-brand rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Brain className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-primary mb-3">
+                Welcome to Cognify! 🧠
+              </h2>
+              <p className="text-secondary mb-4">
+                Your AI-powered spaced repetition learning platform
+              </p>
+
+              <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg text-left max-w-md mx-auto">
+                <h4 className="text-sm font-medium text-brand mb-2 flex items-center gap-2">
+                  <span>🔑</span>
+                  What makes Cognify different?
+                </h4>
+                <ul className="text-xs text-secondary space-y-1">
+                  <li>
+                    • <strong>Bring Your Own API Keys:</strong> You control your
+                    AI costs and data
+                  </li>
+                  <li>
+                    • <strong>Privacy First:</strong> API keys never leave your
+                    device
+                  </li>
+                  <li>
+                    • <strong>Smart Learning:</strong> Spaced repetition with
+                    AI-generated content
+                  </li>
+                  <li>
+                    • <strong>Cost Transparent:</strong> Pay only your AI
+                    provider directly
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold text-primary mb-2">
                 Create Your Profile
@@ -355,21 +395,35 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-xl font-semibold text-white mb-2 flex items-center justify-center gap-2">
                 AI Configuration
+                <HelpTooltip
+                  content={CommonTooltips.byoModel}
+                  type="feature"
+                  showIcon={false}
+                >
+                  <Settings className="w-5 h-5 text-brand cursor-help" />
+                </HelpTooltip>
               </h3>
               <p className="text-secondary">
                 Configure AI to automatically generate flashcards from your
-                content (optional)
+                content
+              </p>
+              <p className="text-xs text-muted mt-2">
+                💡 This step is optional - you can always set this up later
               </p>
             </div>
 
-            <AIConfigurationSection
-              showTitle={false}
-              showDescription={false}
-              onConfigurationComplete={() => {}}
-              variant="onboarding"
-            />
+            <div className="space-y-4">
+              <ContextualGuidance context="first-time-user" className="mb-6" />
+
+              <ProgressiveAISettings
+                showTitle={false}
+                showDescription={false}
+                onConfigurationComplete={() => {}}
+                variant="onboarding"
+              />
+            </div>
           </div>
         );
 
@@ -657,13 +711,41 @@ export default function OnboardingPage() {
 
             {/* Skip Options */}
             {currentStep === 2 && (
-              <div className="text-center mt-4">
+              <div className="text-center mt-6 space-y-3">
+                <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Settings className="w-5 h-5 text-brand mt-0.5" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-brand mb-2">
+                        Why configure AI now?
+                      </p>
+                      <ul className="text-xs text-secondary space-y-1">
+                        <li>
+                          • Generate flashcards automatically from your content
+                        </li>
+                        <li>
+                          • Create cheatsheets and quizzes with AI assistance
+                        </li>
+                        <li>• Save time on manual content creation</li>
+                        <li>
+                          • Your API keys are stored securely on your device
+                          only
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   onClick={() => setCurrentStep(3)}
                   className="text-sm text-muted hover:text-secondary transition-colors transition-normal underline"
                 >
                   Skip AI setup for now
                 </button>
+
+                <div className="text-xs text-muted">
+                  You can always set up AI later in Settings → AI Configuration
+                </div>
               </div>
             )}
 
@@ -676,9 +758,16 @@ export default function OnboardingPage() {
                   </>
                 )}
                 {currentStep === 2 && (
-                  <>
-                    AI setup is optional but recommended for the best experience
-                  </>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <span>🔐</span>
+                      <span>Your API keys never leave your device</span>
+                    </div>
+                    <div className="text-xs">
+                      We use a "Bring Your Own" model for maximum security and
+                      cost transparency
+                    </div>
+                  </div>
                 )}
                 {currentStep === 3 && (
                   <>

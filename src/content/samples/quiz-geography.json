@@ -1,0 +1,80 @@
+{
+  "title": "World Geography Quiz",
+  "description": "Test your knowledge of world geography and capitals",
+  "subject": "geography",
+  "difficulty": "intermediate",
+  "timeLimit": 900,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "question": "What is the capital of Australia?",
+      "options": ["Sydney", "Melbourne", "Canberra", "Perth"],
+      "correctAnswer": 2,
+      "explanation": "Canberra is the capital of Australia. While Sydney and Melbourne are larger cities, Canberra was specifically planned and built to be the national capital."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "question": "Which river is the longest in the world?",
+      "options": [
+        "Amazon River",
+        "Nile River",
+        "Yangtze River",
+        "Mississippi River"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Nile River in Africa is generally considered the longest river in the world at approximately 4,135 miles (6,650 km), though there's some debate with the Amazon."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "question": "The Sahara Desert is larger than the continental United States.",
+      "correctAnswer": true,
+      "explanation": "Yes, the Sahara Desert covers about 3.5 million square miles, while the continental US covers about 3 million square miles."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "question": "Which mountain range contains Mount Everest?",
+      "options": ["Rocky Mountains", "Andes Mountains", "Himalayas", "Alps"],
+      "correctAnswer": 2,
+      "explanation": "Mount Everest is located in the Himalayas on the border between Nepal and Tibet (China)."
+    },
+    {
+      "id": "q5",
+      "type": "short-answer",
+      "question": "What is the smallest country in the world?",
+      "correctAnswers": ["Vatican City", "Vatican", "Holy See"],
+      "explanation": "Vatican City is the smallest sovereign nation in the world, covering only about 0.17 square miles (0.44 square kilometers)."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "question": "Which ocean is the largest by surface area?",
+      "options": [
+        "Atlantic Ocean",
+        "Indian Ocean",
+        "Arctic Ocean",
+        "Pacific Ocean"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The Pacific Ocean is the largest ocean, covering about one-third of the Earth's surface and containing more than half of the world's ocean water."
+    },
+    {
+      "id": "q7",
+      "type": "true-false",
+      "question": "Brazil is the only South American country where Portuguese is the official language.",
+      "correctAnswer": true,
+      "explanation": "Yes, Brazil is the only Portuguese-speaking country in South America. All other South American countries primarily speak Spanish, except for Guyana (English), Suriname (Dutch), and French Guiana (French)."
+    },
+    {
+      "id": "q8",
+      "type": "multiple-choice",
+      "question": "The Great Barrier Reef is located off the coast of which country?",
+      "options": ["New Zealand", "Australia", "Philippines", "Indonesia"],
+      "correctAnswer": 1,
+      "explanation": "The Great Barrier Reef is located off the northeastern coast of Australia in the Coral Sea, stretching over 2,300 kilometers."
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "title": "Biology: Cell Structure & Function",
+  "description": "Essential concepts about cell biology and cellular processes",
+  "subject": "science",
+  "difficulty": "intermediate",
+  "flashcards": [
+    {
+      "id": "bio-1",
+      "front": "What is the difference between prokaryotic and eukaryotic cells?",
+      "back": "Prokaryotic cells lack a membrane-bound nucleus and organelles (bacteria, archaea), while eukaryotic cells have a membrane-bound nucleus and organelles (plants, animals, fungi, protists)."
+    },
+    {
+      "id": "bio-2",
+      "front": "What is the function of mitochondria?",
+      "back": "Mitochondria are the 'powerhouses' of the cell, producing ATP through cellular respiration. They have their own DNA and are thought to have originated from endosymbiotic bacteria."
+    },
+    {
+      "id": "bio-3",
+      "front": "What is the cell membrane and what does it do?",
+      "back": "The cell membrane is a phospholipid bilayer that surrounds the cell, controlling what enters and exits through selective permeability. It maintains cell shape and facilitates communication between cells."
+    },
+    {
+      "id": "bio-4",
+      "front": "What is photosynthesis and where does it occur?",
+      "back": "Photosynthesis is the process where plants convert light energy, carbon dioxide, and water into glucose and oxygen. It occurs in chloroplasts, specifically in the thylakoids and stroma."
+    },
+    {
+      "id": "bio-5",
+      "front": "What is the function of ribosomes?",
+      "back": "Ribosomes are responsible for protein synthesis (translation). They read mRNA and assemble amino acids into proteins. They can be free-floating in cytoplasm or attached to the endoplasmic reticulum."
+    },
+    {
+      "id": "bio-6",
+      "front": "What is DNA and what is its structure?",
+      "back": "DNA (deoxyribonucleic acid) is the hereditary material containing genetic instructions. It has a double helix structure with two complementary strands held together by hydrogen bonds between base pairs (A-T, G-C)."
+    },
+    {
+      "id": "bio-7",
+      "front": "What is cellular respiration and what are its stages?",
+      "back": "Cellular respiration breaks down glucose to produce ATP. It has three stages: glycolysis (cytoplasm), Krebs cycle (mitochondrial matrix), and electron transport chain (inner mitochondrial membrane)."
+    },
+    {
+      "id": "bio-8",
+      "front": "What is the difference between plant and animal cells?",
+      "back": "Plant cells have a cell wall, chloroplasts, and large central vacuoles that animal cells lack. Animal cells have centrosomes and may have smaller vacuoles, while plant cells are generally more rigid in shape."
+    }
+  ]
+}

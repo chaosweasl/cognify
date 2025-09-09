@@ -1,0 +1,63 @@
+{
+  "title": "React Hooks Cheatsheet",
+  "description": "Essential React Hooks patterns and usage",
+  "subject": "programming",
+  "difficulty": "intermediate",
+  "sections": [
+    {
+      "title": "Basic Hooks",
+      "items": [
+        {
+          "type": "code",
+          "title": "useState",
+          "content": "import React, { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  \n  return (\n    <div>\n      <p>Count: {count}</p>\n      <button onClick={() => setCount(count + 1)}>\n        Increment\n      </button>\n    </div>\n  );\n}"
+        },
+        {
+          "type": "code",
+          "title": "useEffect",
+          "content": "import React, { useState, useEffect } from 'react';\n\nfunction DataFetcher() {\n  const [data, setData] = useState(null);\n  \n  useEffect(() => {\n    // Fetch data on mount\n    fetch('/api/data')\n      .then(res => res.json())\n      .then(setData);\n  }, []); // Empty dependency array\n  \n  return <div>{data ? JSON.stringify(data) : 'Loading...'}</div>;\n}"
+        }
+      ]
+    },
+    {
+      "title": "Advanced Hooks",
+      "items": [
+        {
+          "type": "code",
+          "title": "useContext",
+          "content": "import React, { useContext, createContext } from 'react';\n\n// Create context\nconst ThemeContext = createContext();\n\n// Provider\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Component />\n    </ThemeContext.Provider>\n  );\n}\n\n// Consumer\nfunction Component() {\n  const theme = useContext(ThemeContext);\n  return <div>Theme: {theme}</div>;\n}"
+        },
+        {
+          "type": "code",
+          "title": "useReducer",
+          "content": "import React, { useReducer } from 'react';\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment':\n      return { count: state.count + 1 };\n    case 'decrement':\n      return { count: state.count - 1 };\n    default:\n      throw new Error();\n  }\n}\n\nfunction Counter() {\n  const [state, dispatch] = useReducer(reducer, { count: 0 });\n  \n  return (\n    <div>\n      <p>Count: {state.count}</p>\n      <button onClick={() => dispatch({ type: 'increment' })}>\n        +\n      </button>\n    </div>\n  );\n}"
+        }
+      ]
+    },
+    {
+      "title": "Custom Hooks",
+      "items": [
+        {
+          "type": "code",
+          "title": "Custom Hook Example",
+          "content": "// Custom hook for localStorage\nfunction useLocalStorage(key, initialValue) {\n  const [storedValue, setStoredValue] = useState(() => {\n    try {\n      const item = window.localStorage.getItem(key);\n      return item ? JSON.parse(item) : initialValue;\n    } catch (error) {\n      return initialValue;\n    }\n  });\n  \n  const setValue = (value) => {\n    try {\n      setStoredValue(value);\n      window.localStorage.setItem(key, JSON.stringify(value));\n    } catch (error) {\n      console.error(error);\n    }\n  };\n  \n  return [storedValue, setValue];\n}"
+        }
+      ]
+    },
+    {
+      "title": "Common Patterns",
+      "items": [
+        {
+          "type": "reference",
+          "title": "useEffect Patterns",
+          "content": "[] - Run once on mount\n[dep] - Run when dep changes\nNo array - Run on every render\nReturn cleanup function for unmount"
+        },
+        {
+          "type": "reference",
+          "title": "Performance Hooks",
+          "content": "useMemo - Memoize expensive calculations\nuseCallback - Memoize function references\nReact.memo - Memoize component renders"
+        }
+      ]
+    }
+  ]
+}
