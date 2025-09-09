@@ -101,12 +101,23 @@ async function handleUpdateCheatsheet(
       );
     }
 
-    const updateData: any = { id };
-    if (title !== undefined) updateData.title = title.trim();
-    if (content !== undefined) updateData.content = content;
-    if (tags !== undefined) updateData.tags = tags;
+    // Build update data dynamically to avoid type complexity
+    const updateDataObj: Record<string, unknown> = { id };
+    if (title !== undefined) updateDataObj.title = title.trim();
+    if (content !== undefined) updateDataObj.content = content;
+    if (tags !== undefined) updateDataObj.tags = tags;
 
-    const cheatsheet = await updateCheatsheet(updateData);
+    // Ensure we have the required fields for the update
+    if (!updateDataObj.title) {
+      return NextResponse.json(
+        { error: "Title is required for cheatsheet update" },
+        { status: 400 }
+      );
+    }
+
+    const cheatsheet = await updateCheatsheet(
+      updateDataObj as unknown as Parameters<typeof updateCheatsheet>[0]
+    );
 
     if (!cheatsheet) {
       return NextResponse.json(
@@ -164,7 +175,10 @@ async function handleDeleteCheatsheet(
 
 // Route handlers with security
 export const GET = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleGetCheatsheet(request, context);
   },
   {
@@ -175,7 +189,10 @@ export const GET = withApiSecurity(
 );
 
 export const PUT = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleUpdateCheatsheet(request, context);
   },
   {
@@ -186,7 +203,10 @@ export const PUT = withApiSecurity(
 );
 
 export const DELETE = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleDeleteCheatsheet(request, context);
   },
   {

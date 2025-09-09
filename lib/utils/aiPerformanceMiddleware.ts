@@ -14,7 +14,10 @@ import {
 import { AIConfiguration } from "@/lib/ai/types";
 
 export interface AIRequestContext {
-  user: any;
+  user: {
+    id: string;
+    email?: string;
+  };
   config: AIConfiguration;
   operationId: string;
   sanitizedInput: string;
@@ -125,12 +128,15 @@ export async function withAIPerformanceOptimization<T>(
     const performanceMetrics = performanceMonitor.finishOperation(operationId);
 
     // Add performance metadata to response
-    let enhancedResult: any;
+    let enhancedResult: Record<string, unknown>;
     if (typeof sanitizedResult === "object" && sanitizedResult !== null) {
+      const sanitizedObj = sanitizedResult as Record<string, unknown>;
       enhancedResult = {
-        ...sanitizedResult,
+        ...sanitizedObj,
         metadata: {
-          ...sanitizedResult.metadata,
+          ...(sanitizedObj.metadata && typeof sanitizedObj.metadata === "object"
+            ? (sanitizedObj.metadata as Record<string, unknown>)
+            : {}),
           operationId,
           performance: performanceMetrics
             ? {
@@ -151,11 +157,11 @@ export async function withAIPerformanceOptimization<T>(
         },
       };
     } else {
-      enhancedResult = sanitizedResult;
+      enhancedResult = sanitizedResult as Record<string, unknown>;
     }
 
     return NextResponse.json(enhancedResult);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Record error if we have monitoring set up
     if (operationId) {
       performanceMonitor.recordError(operationId);
@@ -165,8 +171,8 @@ export async function withAIPerformanceOptimization<T>(
     console.error(`${operationType} error:`, error);
 
     // Enhanced error response
-    const errorResponse: any = {
-      error: error?.message || `${operationType} failed`,
+    const errorResponse: Record<string, unknown> = {
+      error: error instanceof Error ? error.message : `${operationType} failed`,
       timestamp: new Date().toISOString(),
       operationId: operationId || "unknown",
     };
@@ -183,14 +189,17 @@ export async function withAIPerformanceOptimization<T>(
 }
 
 // Helper function to add error tracking during AI operations
-export function trackAIError(operationId: string, error: any): void {
+export function trackAIError(
+  operationId: string,
+  error: Error | unknown
+): void {
   performanceMonitor.recordError(operationId);
 
   // Log structured error for debugging
   console.error("AI Operation Error:", {
     operationId,
-    error: error?.message || "Unknown error",
-    stack: error?.stack,
+    error: error instanceof Error ? error.message : "Unknown error",
+    stack: error instanceof Error ? error.stack : undefined,
     timestamp: new Date().toISOString(),
   });
 }
@@ -212,7 +221,7 @@ export function getAIPerformanceSummary(
 ): {
   provider?: string;
   timeWindow: string;
-  averagePerformance: any;
+  averagePerformance: Record<string, unknown> | string;
   recommendations: string[];
 } {
   const windowMs = timeWindowHours * 60 * 60 * 1000;

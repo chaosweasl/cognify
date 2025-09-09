@@ -43,16 +43,14 @@ interface Cheatsheet {
 }
 
 interface CheatsheetViewerProps {
-  projectId: string;
+  projectId?: string;
   initialCheatsheets: Cheatsheet[];
 }
 
 export default function CheatsheetViewer({
-  projectId,
   initialCheatsheets,
 }: CheatsheetViewerProps) {
-  const [cheatsheets, setCheatsheets] =
-    useState<Cheatsheet[]>(initialCheatsheets);
+  const [cheatsheets] = useState<Cheatsheet[]>(initialCheatsheets);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCheatsheet, setSelectedCheatsheet] =
     useState<Cheatsheet | null>(null);
@@ -70,11 +68,13 @@ export default function CheatsheetViewer({
   };
 
   const handleEdit = (cheatsheet: Cheatsheet) => {
-    // TODO: Implement edit functionality
+    // TODO: Implement edit functionality for cheatsheet: ${cheatsheet.title}
+    console.log("Edit cheatsheet:", cheatsheet.title);
   };
 
   const handleDelete = async (cheatsheet: Cheatsheet) => {
-    // TODO: Implement delete functionality
+    // TODO: Implement delete functionality for cheatsheet: ${cheatsheet.title}
+    console.log("Delete cheatsheet:", cheatsheet.title);
   };
 
   if (selectedCheatsheet) {

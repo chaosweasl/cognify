@@ -10,7 +10,7 @@ import { AIConfiguration } from "@/lib/ai/types";
 export interface AIError {
   code: string;
   message: string;
-  originalError?: any;
+  originalError?: Error | unknown;
   provider?: string;
   model?: string;
   isCORSError?: boolean;
@@ -79,11 +79,18 @@ const AUTH_ERROR_PATTERNS = {
 /**
  * Detects if an error is likely caused by CORS restrictions
  */
-export function detectCORSError(error: any, provider?: string): boolean {
+export function detectCORSError(
+  error: Error | unknown,
+  provider?: string
+): boolean {
   if (!error) return false;
 
   const errorMessage =
-    typeof error === "string" ? error : error.message || error.toString() || "";
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+      ? error.message
+      : String(error);
 
   const lowerMessage = errorMessage.toLowerCase();
 
@@ -114,11 +121,18 @@ export function detectCORSError(error: any, provider?: string): boolean {
 /**
  * Detects if an error is related to rate limiting
  */
-export function detectRateLimitError(error: any, provider?: string): boolean {
+export function detectRateLimitError(
+  error: Error | unknown,
+  provider?: string
+): boolean {
   if (!error) return false;
 
   const errorMessage =
-    typeof error === "string" ? error : error.message || error.toString() || "";
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+      ? error.message
+      : String(error);
 
   const lowerMessage = errorMessage.toLowerCase();
 
@@ -142,11 +156,18 @@ export function detectRateLimitError(error: any, provider?: string): boolean {
 /**
  * Detects if an error is related to authentication/API key issues
  */
-export function detectAuthError(error: any, provider?: string): boolean {
+export function detectAuthError(
+  error: Error | unknown,
+  provider?: string
+): boolean {
   if (!error) return false;
 
   const errorMessage =
-    typeof error === "string" ? error : error.message || error.toString() || "";
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+      ? error.message
+      : String(error);
 
   const lowerMessage = errorMessage.toLowerCase();
 
@@ -171,9 +192,8 @@ export function detectAuthError(error: any, provider?: string): boolean {
  * Enhances an error with additional context and classification
  */
 export function enhanceAIError(
-  error: any,
-  config: AIConfiguration,
-  context?: string
+  error: Error | unknown,
+  config: AIConfiguration
 ): AIError {
   const provider = config.provider;
   const model =
@@ -182,7 +202,9 @@ export function enhanceAIError(
   const originalMessage =
     typeof error === "string"
       ? error
-      : error.message || error.toString() || "Unknown error";
+      : error instanceof Error
+      ? error.message
+      : String(error);
 
   const isCORSError = detectCORSError(error, provider);
   const isRateLimit = detectRateLimitError(error, provider);
@@ -340,9 +362,9 @@ export function getFallbackSuggestions(
 export async function retryWithBackoff<T>(
   operation: () => Promise<T>,
   config: RetryConfig = DEFAULT_RETRY_CONFIG,
-  shouldRetry?: (error: any, attempt: number) => boolean
+  shouldRetry?: (error: Error | unknown, attempt: number) => boolean
 ): Promise<T> {
-  let lastError: any;
+  let lastError: Error | unknown;
 
   for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
     try {
@@ -380,7 +402,7 @@ export async function retryWithBackoff<T>(
 /**
  * Determines if an error should be retried
  */
-export function shouldRetryError(error: any, attempt: number): boolean {
+export function shouldRetryError(error: Error | unknown): boolean {
   // Don't retry CORS errors (they won't resolve with retries)
   if (detectCORSError(error)) {
     return false;
@@ -398,7 +420,11 @@ export function shouldRetryError(error: any, attempt: number): boolean {
 
   // Retry network errors (timeouts, connection issues)
   const errorMessage =
-    typeof error === "string" ? error : error.message || error.toString() || "";
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+      ? error.message
+      : String(error);
 
   const retryablePatterns = [
     "timeout",
@@ -423,19 +449,18 @@ export function shouldRetryError(error: any, attempt: number): boolean {
 export async function executeAIOperation<T>(
   operation: () => Promise<T>,
   config: AIConfiguration,
-  context?: string,
   retryConfig?: RetryConfig
 ): Promise<{ result: T; error: null } | { result: null; error: AIError }> {
   try {
     const result = await retryWithBackoff(
       operation,
       retryConfig || DEFAULT_RETRY_CONFIG,
-      shouldRetryError
+      (error) => shouldRetryError(error)
     );
 
     return { result, error: null };
   } catch (error) {
-    const enhancedError = enhanceAIError(error, config, context);
+    const enhancedError = enhanceAIError(error, config);
     console.error("AI operation failed:", enhancedError);
 
     return { result: null, error: enhancedError };

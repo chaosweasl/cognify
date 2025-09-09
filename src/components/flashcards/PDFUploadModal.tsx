@@ -261,15 +261,15 @@ export function PDFUploadModal({
 
         if (!generateResponse.ok) {
           const errorData = await generateResponse.json();
-          
+
           // Check for enhanced AI error handling
           if (errorData.aiError && errorData.fallbackSuggestions) {
             // Store enhanced error data for display
             setUploadedFiles((prev) =>
               prev.map((f) =>
                 f.id === fileData.id
-                  ? { 
-                      ...f, 
+                  ? {
+                      ...f,
                       status: "error",
                       error: errorData.error || "AI generation failed",
                       aiError: errorData.aiError,
@@ -278,7 +278,7 @@ export function PDFUploadModal({
                   : f
               )
             );
-            
+
             // Don't throw here - let the enhanced error be displayed in UI
             continue; // Skip to next file
           } else {
@@ -354,7 +354,7 @@ export function PDFUploadModal({
   };
 
   const handleShowAIError = (fileId: string) => {
-    const file = uploadedFiles.find(f => f.id === fileId);
+    const file = uploadedFiles.find((f) => f.id === fileId);
     if (file?.aiError && file?.fallbackSuggestions) {
       setCurrentAIError({
         error: file.aiError,
@@ -367,12 +367,20 @@ export function PDFUploadModal({
   const handleRetryGeneration = async () => {
     setShowAIError(false);
     // Reset failed files and retry generation
-    setUploadedFiles(prev => 
-      prev.map(f => f.aiError ? { ...f, status: "pending" as const, error: undefined, aiError: undefined, fallbackSuggestions: undefined } : f)
+    setUploadedFiles((prev) =>
+      prev.map((f) =>
+        f.aiError
+          ? {
+              ...f,
+              status: "pending" as const,
+              error: undefined,
+              aiError: undefined,
+              fallbackSuggestions: undefined,
+            }
+          : f
+      )
     );
     await processFiles();
-  };
-    setIsProcessing(false);
   };
 
   const getStatusIcon = (status: UploadedFile["status"]) => {
@@ -650,7 +658,8 @@ export function PDFUploadModal({
             <DialogHeader className="mb-4">
               <DialogTitle>AI Generation Failed</DialogTitle>
               <DialogDescription>
-                The AI couldn't generate flashcards directly. Here are some solutions:
+                The AI couldn&apos;t generate flashcards directly. Here are some
+                solutions:
               </DialogDescription>
             </DialogHeader>
             <AIErrorHandler

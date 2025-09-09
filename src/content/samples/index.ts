@@ -14,16 +14,47 @@ import cheatsheetReact from "./cheatsheet-react.json";
 import quizJavaScript from "./quiz-javascript.json";
 import quizGeography from "./quiz-geography.json";
 
+// Type definitions for sample data
+export interface SampleFlashcardSet {
+  title: string;
+  description: string;
+  subject: string;
+  difficulty: string;
+  flashcards: Array<{ front: string; back: string; tags?: string[] }>;
+}
+
+export interface SampleCheatsheet {
+  title: string;
+  description: string;
+  subject: string;
+  difficulty: string;
+  sections: Array<{ title: string; content: string; keyPoints: string[] }>;
+}
+
+export interface SampleQuiz {
+  title: string;
+  description: string;
+  subject: string;
+  difficulty: string;
+  questions: Array<{
+    question: string;
+    type: string;
+    options?: string[];
+    correctAnswer: string | number;
+  }>;
+  timeLimit: number;
+}
+
 export const sampleFlashcards = {
   programming: flashcardsProgramming,
   history: flashcardsHistory,
   science: flashcardsScience,
-};
+} as const;
 
 export const sampleCheatsheets = {
   python: cheatsheetPython,
   react: cheatsheetReact,
-};
+} as const;
 
 export const sampleQuizzes = {
   javascript: quizJavaScript,
@@ -55,31 +86,47 @@ export function getAllSamples(type: "flashcards" | "cheatsheets" | "quizzes") {
 // Helper function to get sample metadata
 export function getSampleMetadata() {
   return {
-    flashcards: Object.keys(sampleFlashcards).map((key) => ({
-      key,
-      title: (sampleFlashcards as any)[key].title,
-      description: (sampleFlashcards as any)[key].description,
-      subject: (sampleFlashcards as any)[key].subject,
-      difficulty: (sampleFlashcards as any)[key].difficulty,
-      count: (sampleFlashcards as any)[key].flashcards.length,
-    })),
-    cheatsheets: Object.keys(sampleCheatsheets).map((key) => ({
-      key,
-      title: (sampleCheatsheets as any)[key].title,
-      description: (sampleCheatsheets as any)[key].description,
-      subject: (sampleCheatsheets as any)[key].subject,
-      difficulty: (sampleCheatsheets as any)[key].difficulty,
-      sections: (sampleCheatsheets as any)[key].sections.length,
-    })),
-    quizzes: Object.keys(sampleQuizzes).map((key) => ({
-      key,
-      title: (sampleQuizzes as any)[key].title,
-      description: (sampleQuizzes as any)[key].description,
-      subject: (sampleQuizzes as any)[key].subject,
-      difficulty: (sampleQuizzes as any)[key].difficulty,
-      questions: (sampleQuizzes as any)[key].questions.length,
-      timeLimit: (sampleQuizzes as any)[key].timeLimit,
-    })),
+    flashcards: Object.keys(sampleFlashcards).map((key) => {
+      const sample = sampleFlashcards[
+        key as keyof typeof sampleFlashcards
+      ] as Record<string, unknown>;
+      return {
+        key,
+        title: sample.title as string,
+        description: sample.description as string,
+        subject: sample.subject as string,
+        difficulty: sample.difficulty as string,
+        count: (sample.flashcards as unknown[]).length,
+      };
+    }),
+    cheatsheets: Object.keys(sampleCheatsheets).map((key) => {
+      const sample = sampleCheatsheets[
+        key as keyof typeof sampleCheatsheets
+      ] as Record<string, unknown>;
+      return {
+        key,
+        title: sample.title as string,
+        description: sample.description as string,
+        subject: sample.subject as string,
+        difficulty: sample.difficulty as string,
+        sections: (sample.sections as unknown[]).length,
+      };
+    }),
+    quizzes: Object.keys(sampleQuizzes).map((key) => {
+      const sample = sampleQuizzes[key as keyof typeof sampleQuizzes] as Record<
+        string,
+        unknown
+      >;
+      return {
+        key,
+        title: sample.title as string,
+        description: sample.description as string,
+        subject: sample.subject as string,
+        difficulty: sample.difficulty as string,
+        questions: (sample.questions as unknown[]).length,
+        timeLimit: sample.timeLimit as number,
+      };
+    }),
   };
 }
 

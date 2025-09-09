@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +31,6 @@ import {
   Plus,
   Search,
   Clock,
-  CheckCircle2,
-  XCircle,
   Trophy,
   Target,
   Calendar,
@@ -47,6 +45,17 @@ import {
   getQuizAttemptsByUserId,
 } from "@/app/(main)/projects/actions/quiz-actions";
 import { toast } from "sonner";
+
+interface CreateQuizData {
+  title: string;
+  questions: QuizQuestion[];
+  settings: Quiz["settings"];
+  tags?: string[];
+}
+
+interface UpdateQuizData extends CreateQuizData {
+  id: string;
+}
 
 interface QuizQuestion {
   id: string;
@@ -109,7 +118,7 @@ export function QuizManager({ projectId }: QuizManagerProps) {
 
   useEffect(() => {
     loadQuizzes();
-  }, [projectId]);
+  }, [projectId]); // loadQuizzes is recreated on every render, so we only depend on projectId
 
   const loadQuizzes = async () => {
     try {
@@ -124,7 +133,7 @@ export function QuizManager({ projectId }: QuizManagerProps) {
     }
   };
 
-  const handleCreate = async (quizData: any) => {
+  const handleCreate = async (quizData: CreateQuizData) => {
     try {
       await createQuiz(projectId, quizData);
       toast.success("Quiz created successfully");
@@ -136,14 +145,11 @@ export function QuizManager({ projectId }: QuizManagerProps) {
     }
   };
 
-  const handleUpdate = async (quizData: any) => {
+  const handleUpdate = async (quizData: UpdateQuizData) => {
     if (!editingQuiz) return;
 
     try {
-      await updateQuiz({
-        id: editingQuiz.id,
-        ...quizData,
-      });
+      await updateQuiz(quizData);
       toast.success("Quiz updated successfully");
       loadQuizzes();
       setEditingQuiz(null);
@@ -163,6 +169,19 @@ export function QuizManager({ projectId }: QuizManagerProps) {
     } catch (error) {
       console.error("Failed to delete quiz:", error);
       toast.error("Failed to delete quiz");
+    }
+  };
+
+  const handleSave = async (data: CreateQuizData | UpdateQuizData) => {
+    if (editingQuiz) {
+      // Ensure we have the id for update
+      const updateData: UpdateQuizData = {
+        ...data,
+        id: editingQuiz.id,
+      };
+      await handleUpdate(updateData);
+    } else {
+      await handleCreate(data as CreateQuizData);
     }
   };
 
@@ -261,7 +280,7 @@ export function QuizManager({ projectId }: QuizManagerProps) {
           setShowCreateModal(false);
           setEditingQuiz(null);
         }}
-        onSave={editingQuiz ? handleUpdate : handleCreate}
+        onSave={handleSave}
         quiz={editingQuiz}
         mode={editingQuiz ? "edit" : "create"}
       />
@@ -406,7 +425,7 @@ function QuizCard({
 interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: CreateQuizData | UpdateQuizData) => void;
   quiz?: Quiz | null;
   mode: "create" | "edit";
 }
@@ -495,7 +514,11 @@ function QuizModal({ isOpen, onClose, onSave, quiz, mode }: QuizModalProps) {
     setQuestions(questions.filter((q) => q.id !== id));
   };
 
-  const updateQuestion = (id: string, field: string, value: any) => {
+  const updateQuestion = (
+    id: string,
+    field: string,
+    value: string | number | string[]
+  ) => {
     setQuestions(
       questions.map((q) => (q.id === id ? { ...q, [field]: value } : q))
     );
@@ -622,7 +645,7 @@ function QuizModal({ isOpen, onClose, onSave, quiz, mode }: QuizModalProps) {
 interface QuestionEditorProps {
   question: QuizQuestion;
   index: number;
-  onUpdate: (field: string, value: any) => void;
+  onUpdate: (field: string, value: string | number | string[]) => void;
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -811,30 +834,7 @@ function QuizTakingModal({
     setIsSubmitting(false);
   }, [quiz, isOpen]);
 
-  useEffect(() => {
-    if (!timeRemaining || timeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev && prev <= 1) {
-          handleSubmit(); // Auto-submit when time runs out
-          return 0;
-        }
-        return prev ? prev - 1 : null;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeRemaining]);
-
-  const handleAnswer = (questionId: string, answer: any) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: answer,
-    }));
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!quiz || isSubmitting) return;
 
     setIsSubmitting(true);
@@ -850,6 +850,29 @@ function QuizTakingModal({
     } finally {
       setIsSubmitting(false);
     }
+  }, [quiz, isSubmitting, startTime, answers, onComplete]);
+
+  useEffect(() => {
+    if (!timeRemaining || timeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev && prev <= 1) {
+          handleSubmit(); // Auto-submit when time runs out
+          return 0;
+        }
+        return prev ? prev - 1 : null;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining, handleSubmit]);
+
+  const handleAnswer = (questionId: string, answer: string | string[]) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
   };
 
   if (!quiz) return null;

@@ -55,9 +55,12 @@ const CollapsibleTrigger = React.forwardRef<
     return React.cloneElement(children, {
       onClick: () => onOpenChange(!open),
       ref,
-      className: cn(className, (children.props as any).className),
+      className: cn(
+        className,
+        (children.props as { className?: string }).className
+      ),
       ...props,
-    } as any);
+    } as React.HTMLAttributes<HTMLElement>);
   }
 
   return (

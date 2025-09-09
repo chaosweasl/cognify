@@ -15,11 +15,6 @@ import {
   Zap,
   Clock,
   DollarSign,
-  Lock,
-  Eye,
-  FileText,
-  Settings,
-  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +103,7 @@ export const CommonTooltips = {
         re-entered each session.
       </p>
       <p className="text-status-warning text-xs">
-        ⚠️ You'll need to re-enter your key each time you use AI features.
+        ⚠️ You&apos;ll need to re-enter your key each time you use AI features.
       </p>
     </div>
   ),
@@ -191,7 +186,7 @@ export const CommonTooltips = {
       <ul className="text-xs space-y-1 mt-1">
         <li>• How well you remembered the card</li>
         <li>• Previous intervals and performance</li>
-        <li>• The card's ease factor</li>
+        <li>• The card&apos;s ease factor</li>
       </ul>
     </div>
   ),
@@ -248,8 +243,8 @@ export function withTooltip<P extends object>(
   tooltip: string | React.ReactNode,
   type: HelpTooltipProps["type"] = "info"
 ) {
-  return React.forwardRef<
-    any,
+  const WrappedComponent = React.forwardRef<
+    HTMLElement,
     P & { tooltipProps?: Partial<HelpTooltipProps> }
   >((props, ref) => {
     const { tooltipProps, ...componentProps } = props;
@@ -260,6 +255,11 @@ export function withTooltip<P extends object>(
       </HelpTooltip>
     );
   });
+
+  WrappedComponent.displayName = `withTooltip(${
+    Component.displayName || Component.name || "Component"
+  })`;
+  return WrappedComponent;
 }
 
 // Contextual help sections for complex features

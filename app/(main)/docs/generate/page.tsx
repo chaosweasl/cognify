@@ -585,7 +585,7 @@ export default function GeneratePage() {
             <div className="p-4 border border-subtle rounded-lg">
               <h4 className="font-medium text-primary mb-2">Gemini</h4>
               <p className="text-sm text-secondary mb-2">
-                Google's AI assistant
+                Google&apos;s AI assistant
               </p>
               <Button variant="outline" size="sm" asChild>
                 <a
@@ -623,8 +623,8 @@ export default function GeneratePage() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-secondary">
-              After getting your JSON response from an AI service, here's how to
-              import it into Cognify:
+              After getting your JSON response from an AI service, here&apos;s
+              how to import it into Cognify:
             </p>
 
             <div className="grid md:grid-cols-3 gap-4">
@@ -643,8 +643,8 @@ export default function GeneratePage() {
                   2. Go to Project
                 </h4>
                 <p className="text-sm text-secondary">
-                  Navigate to your project and look for the "Import JSON" or
-                  "Manual Import" button
+                  Navigate to your project and look for the &quot;Import
+                  JSON&quot; or &quot;Manual Import&quot; button
                 </p>
               </div>
 
@@ -663,7 +663,7 @@ export default function GeneratePage() {
               <p className="text-sm text-secondary">
                 <strong className="text-brand-primary">Pro Tip:</strong> Always
                 review generated content before importing. You can edit or
-                remove items that don't meet your needs.
+                remove items that don&apos;t meet your needs.
               </p>
             </div>
           </div>
@@ -685,8 +685,8 @@ export default function GeneratePage() {
                 ❌ AI returns text instead of JSON
               </h5>
               <p className="text-sm text-secondary">
-                → Add "Return ONLY the JSON object, no additional text" to the
-                end of your prompt
+                → Add &quot;Return ONLY the JSON object, no additional
+                text&quot; to the end of your prompt
               </p>
             </div>
 

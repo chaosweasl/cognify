@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +60,7 @@ interface QuizTakingProps {
 
 export default function QuizTaking({ quiz, projectId }: QuizTakingProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(
     quiz.settings.timeLimit ? quiz.settings.timeLimit * 60 : null
   );
@@ -82,49 +82,7 @@ export default function QuizTaking({ quiz, projectId }: QuizTakingProps) {
 
   const currentQuestion = shuffledQuestions[currentQuestionIndex];
 
-  // Timer effect
-  useEffect(() => {
-    if (!hasStarted || !timeRemaining || timeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev && prev <= 1) {
-          handleSubmit();
-          return 0;
-        }
-        return prev ? prev - 1 : null;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [hasStarted, timeRemaining]);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
-  const handleAnswerChange = (questionId: string, answer: any) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: answer,
-    }));
-  };
-
-  const handleFlagQuestion = (index: number) => {
-    setFlaggedQuestions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
 
     try {
@@ -149,7 +107,7 @@ export default function QuizTaking({ quiz, projectId }: QuizTakingProps) {
         throw new Error("Failed to submit quiz");
       }
 
-      const attempt = await response.json();
+      await response.json(); // Just consume the response
       toast.success("Quiz submitted successfully!");
 
       // Redirect to results or back to quizzes
@@ -160,6 +118,58 @@ export default function QuizTaking({ quiz, projectId }: QuizTakingProps) {
     } finally {
       setIsSubmitting(false);
     }
+  }, [
+    quiz.id,
+    quiz.settings.timeLimit,
+    timeRemaining,
+    answers,
+    projectId,
+    router,
+  ]);
+
+  // Timer effect
+  useEffect(() => {
+    if (!hasStarted || !timeRemaining || timeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev && prev <= 1) {
+          handleSubmit();
+          return 0;
+        }
+        return prev ? prev - 1 : null;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [hasStarted, timeRemaining, handleSubmit]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const handleAnswerChange = (
+    questionId: string,
+    answer: string | string[]
+  ) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
+  };
+
+  const handleFlagQuestion = (index: number) => {
+    setFlaggedQuestions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
   };
 
   const renderQuestion = (question: QuizQuestion) => {

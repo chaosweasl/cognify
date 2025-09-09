@@ -91,7 +91,11 @@ export function ProgressiveAISettings({
         ].map((level) => (
           <button
             key={level.id}
-            onClick={() => setUserExperience(level.id as any)}
+            onClick={() =>
+              setUserExperience(
+                level.id as "beginner" | "intermediate" | "advanced"
+              )
+            }
             className={cn(
               "p-3 rounded-lg text-left transition-all duration-200",
               "border-2 hover:scale-[1.02]",
@@ -189,7 +193,7 @@ export function ProgressiveAISettings({
             <ul className="text-xs text-secondary space-y-1">
               <li>• Start with OpenAI or Anthropic for best results</li>
               <li>
-                • Keep your API keys secure - they're never stored on our
+                • Keep your API keys secure - they&apos;re never stored on our
                 servers
               </li>
               <li>• Test your connection before generating content</li>

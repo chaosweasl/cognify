@@ -14,7 +14,6 @@ import {
   Plus,
   Search,
   Clock,
-  Trophy,
   BarChart3,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -64,7 +63,7 @@ export default function QuizViewer({
   projectId,
   initialQuizzes,
 }: QuizViewerProps) {
-  const [quizzes, setQuizzes] = useState<Quiz[]>(initialQuizzes);
+  const quizzes = initialQuizzes;
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
@@ -81,15 +80,18 @@ export default function QuizViewer({
   };
 
   const handleEdit = (quiz: Quiz) => {
-    // TODO: Implement edit functionality
+    // TODO: Implement edit functionality for quiz: ${quiz.title}
+    console.log("Edit quiz:", quiz.title);
   };
 
   const handleDelete = async (quiz: Quiz) => {
-    // TODO: Implement delete functionality
+    // TODO: Implement delete functionality for quiz: ${quiz.title}
+    console.log("Delete quiz:", quiz.title);
   };
 
   const handleViewResults = (quiz: Quiz) => {
-    // TODO: Implement results viewing
+    // TODO: Implement results viewing for quiz: ${quiz.title}
+    console.log("View results for quiz:", quiz.title);
   };
 
   const getQuestionTypeIcon = (type: string) => {

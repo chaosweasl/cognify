@@ -72,8 +72,8 @@ function SecurityConsentModal({
           </div>
           <DialogDescription className="text-left space-y-3">
             <p>
-              You're about to store your <strong>{providerName}</strong> API key
-              in your browser's localStorage.
+              You&apos;re about to store your <strong>{providerName}</strong>{" "}
+              API key in your browser&apos;s localStorage.
             </p>
             <div className="p-3 border border-status-warning/30 bg-status-warning/5 rounded-lg space-y-2">
               <h4 className="font-semibold text-status-warning text-sm">
@@ -89,7 +89,8 @@ function SecurityConsentModal({
             <div className="p-3 border border-brand/30 bg-brand/5 rounded-lg">
               <p className="text-sm text-secondary">
                 <strong className="text-brand">Recommended:</strong> Use API
-                keys with limited scope and monitor your provider's billing.
+                keys with limited scope and monitor your provider&apos;s
+                billing.
               </p>
             </div>
           </DialogDescription>
@@ -227,7 +228,7 @@ export function ApiKeySecurityInput({
                       <div className="space-y-1">
                         <h5 className="font-medium text-status-error text-xs flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" />
-                          What we DON'T do:
+                          What we DON&apos;T do:
                         </h5>
                         <ul className="text-xs text-secondary space-y-1 ml-4">
                           <li>• Store keys on our servers</li>

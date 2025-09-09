@@ -73,12 +73,6 @@ function FallbackSuggestionCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const priorityColor = {
-    high: "border-red-200 bg-red-50",
-    medium: "border-yellow-200 bg-yellow-50",
-    low: "border-gray-200 bg-gray-50",
-  };
-
   const priorityBadgeColor = {
     high: "bg-red-100 text-red-800 border-red-200",
     medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -271,18 +265,21 @@ export function AIErrorHandler({
               </div>
             </div>
 
-            {error.originalError && (
-              <details className="mt-3">
-                <summary className="text-xs font-medium text-muted cursor-pointer hover:text-secondary transition-colors transition-normal">
-                  Original Error Message
-                </summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-700 overflow-x-auto">
-                  {typeof error.originalError === "string"
-                    ? error.originalError
-                    : JSON.stringify(error.originalError, null, 2)}
-                </pre>
-              </details>
-            )}
+            {error.originalError !== null &&
+              error.originalError !== undefined && (
+                <details className="mt-3">
+                  <summary className="text-xs font-medium text-muted cursor-pointer hover:text-secondary transition-colors transition-normal">
+                    Original Error Message
+                  </summary>
+                  <pre className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-700 overflow-x-auto">
+                    {typeof error.originalError === "string"
+                      ? error.originalError
+                      : error.originalError instanceof Error
+                      ? error.originalError.message
+                      : JSON.stringify(error.originalError, null, 2)}
+                  </pre>
+                </details>
+              )}
           </div>
         )}
       </div>
@@ -309,7 +306,7 @@ export function AIErrorHandler({
             <div className="flex-1">
               <h5 className="font-medium text-primary mb-1">Need More Help?</h5>
               <p className="text-sm text-muted mb-2">
-                If these solutions don't work, you can always use our
+                If these solutions don&apos;t work, you can always use our
                 comprehensive manual workflow guide.
               </p>
               <a

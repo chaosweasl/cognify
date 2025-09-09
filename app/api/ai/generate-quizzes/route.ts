@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
 import { withApiSecurity } from "@/lib/utils/apiSecurity";
 import { validateAndSanitizeText } from "@/lib/utils/security";
-import { v4 as uuidv4 } from "uuid";
 
 interface QuizGenerationRequest {
   text: string;
@@ -22,6 +21,17 @@ interface QuizGenerationRequest {
     focusAreas?: string[];
     timeLimit?: number; // in minutes
   };
+}
+
+interface RawQuestionData {
+  id?: string;
+  type?: string;
+  question?: string;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  points?: number;
+  difficulty?: string;
 }
 
 interface QuizQuestion {
@@ -662,7 +672,7 @@ function parseQuizJSON(content: string): QuizQuestion[] {
     const questions = parsed.questions || [];
 
     // Validate and enrich question data
-    return questions.map((q: any, index: number) => ({
+    return questions.map((q: RawQuestionData, index: number) => ({
       id: q.id || `q${index + 1}`,
       type: q.type || "multiple-choice",
       question: q.question || "",

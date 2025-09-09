@@ -3,7 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { validateAIConfig, AIConfiguration } from "@/lib/ai/types";
 import { withApiSecurity } from "@/lib/utils/apiSecurity";
 import { validateAndSanitizeText } from "@/lib/utils/security";
-import { v4 as uuidv4 } from "uuid";
+
+interface CheatsheetSection {
+  id: string;
+  title: string;
+  content: string;
+  keyPoints: string[];
+  examples?: string[];
+}
 
 interface CheatsheetGenerationRequest {
   text: string;
@@ -126,7 +133,7 @@ async function handleGenerateCheatsheets(request: NextRequest) {
       (options.sections || DEFAULT_SECTIONS) / textChunks.length
     );
 
-    let allSections: any[] = [];
+    let allSections: CheatsheetSection[] = [];
     let totalTokensUsed = 0;
 
     for (const chunk of textChunks) {
@@ -216,7 +223,7 @@ async function generateCheatsheetForChunk({
   style: string;
   focusAreas?: string[];
   fileName: string;
-}): Promise<{ sections: any[]; tokensUsed: number }> {
+}): Promise<{ sections: CheatsheetSection[]; tokensUsed: number }> {
   const styleInstructions = {
     "bullet-points": "Use concise bullet points and brief explanations",
     detailed: "Provide detailed explanations with examples and context",
@@ -305,21 +312,24 @@ function chunkText(text: string, maxChunkSize: number): string[] {
   return chunks.length > 0 ? chunks : [text.substring(0, maxChunkSize)];
 }
 
-function generateSummary(sections: any[]): string {
+function generateSummary(sections: CheatsheetSection[]): string {
   if (sections.length === 0) return "";
 
   const topics = sections.map((s) => s.title).join(", ");
   return `This cheatsheet covers ${sections.length} main topics: ${topics}`;
 }
 
-function extractTags(sections: any[], focusAreas?: string[]): string[] {
+function extractTags(
+  sections: CheatsheetSection[],
+  focusAreas?: string[]
+): string[] {
   const tags = new Set<string>();
 
   // Add focus areas as tags
   focusAreas?.forEach((area: string) => tags.add(area.toLowerCase()));
 
   // Extract tags from section titles
-  sections.forEach((section: any) => {
+  sections.forEach((section: CheatsheetSection) => {
     const words = section.title.toLowerCase().split(/\s+/);
     words.forEach((word: string) => {
       if (word.length > 3) {
@@ -334,7 +344,7 @@ function extractTags(sections: any[], focusAreas?: string[]): string[] {
 async function generateWithProvider(
   config: AIConfiguration,
   prompt: string
-): Promise<{ sections: any[]; tokensUsed: number }> {
+): Promise<{ sections: CheatsheetSection[]; tokensUsed: number }> {
   switch (config.provider) {
     case "openai":
       return generateCheatsheetWithOpenAI(config, prompt);
@@ -598,7 +608,7 @@ async function generateCheatsheetWithDeepSeek(
   };
 }
 
-function parseCheatsheetJSON(content: string): any[] {
+function parseCheatsheetJSON(content: string): CheatsheetSection[] {
   try {
     // Remove any markdown formatting
     let cleanContent = content

@@ -3,8 +3,6 @@
  * Implements rate limiting, request batching, caching, and resource optimization
  */
 
-import { AIConfiguration } from "@/lib/ai/types";
-
 // ============================================================================
 // RATE LIMITING & THROTTLING
 // ============================================================================
@@ -118,8 +116,6 @@ export function optimizeTextChunking(
     return [cleanText];
   }
 
-  const chunks: string[] = [];
-
   // Split by paragraphs first
   const paragraphs = cleanText.split(/\n\s*\n/).filter((p) => p.trim());
 
@@ -194,7 +190,6 @@ function createStandardChunks(
 ): string[] {
   const chunks: string[] = [];
   let currentChunk = "";
-  let previousChunk = "";
 
   for (const paragraph of paragraphs) {
     if (currentChunk.length + paragraph.length + 2 <= maxSize) {
@@ -202,7 +197,6 @@ function createStandardChunks(
     } else {
       if (currentChunk) {
         chunks.push(currentChunk.trim());
-        previousChunk = currentChunk;
       }
 
       // Handle oversized paragraphs
@@ -216,7 +210,6 @@ function createStandardChunks(
           } else {
             if (currentChunk) {
               chunks.push(currentChunk.trim());
-              previousChunk = currentChunk;
             }
             currentChunk = sentence;
           }
@@ -357,8 +350,8 @@ export function sanitizeAIRequest(
   };
 }
 
-export function sanitizeAIResponse(response: any): {
-  sanitized: any;
+export function sanitizeAIResponse(response: unknown): {
+  sanitized: unknown;
   warnings: string[];
 } {
   const warnings: string[] = [];
@@ -372,20 +365,22 @@ export function sanitizeAIResponse(response: any): {
 
   // Remove potentially dangerous keys
   const dangerousKeys = ["__proto__", "constructor", "prototype"];
-  function cleanObject(obj: any): any {
+  function cleanObject(obj: unknown): unknown {
     if (obj === null || typeof obj !== "object") return obj;
 
     if (Array.isArray(obj)) {
       return obj.map(cleanObject);
     }
 
-    const cleaned: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (dangerousKeys.includes(key)) {
-        warnings.push(`Dangerous key '${key}' removed from response`);
-        continue;
+    const cleaned: Record<string, unknown> = {};
+    if (typeof obj === "object" && obj !== null) {
+      for (const [key, value] of Object.entries(obj)) {
+        if (dangerousKeys.includes(key)) {
+          warnings.push(`Dangerous key '${key}' removed from response`);
+          continue;
+        }
+        cleaned[key] = cleanObject(value);
       }
-      cleaned[key] = cleanObject(value);
     }
 
     return cleaned;
@@ -428,9 +423,6 @@ export function optimizePromptForTokens(
       compressionRatio: 1.0,
     };
   }
-
-  // Calculate compression ratio needed
-  const compressionRatio = targetTokens / currentTokens;
 
   // Apply optimization strategies
   let optimized = prompt;

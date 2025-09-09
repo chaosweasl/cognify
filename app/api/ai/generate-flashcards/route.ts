@@ -7,9 +7,7 @@ import {
   enhanceAIError,
   getFallbackSuggestions,
   executeAIOperation,
-  detectCORSError,
-  detectRateLimitError,
-  detectAuthError,
+  AIError,
 } from "@/lib/utils/aiErrorHandling";
 import {
   rateLimiter,
@@ -172,7 +170,7 @@ async function handleGenerateFlashcards(request: NextRequest) {
 
     let allGeneratedCards: GeneratedFlashcard[] = [];
     let totalTokensUsed = 0;
-    let lastError: any = null;
+    let lastError: AIError | null = null;
     let corsErrorDetected = false;
     let consecutiveErrors = 0;
 
@@ -223,18 +221,23 @@ async function handleGenerateFlashcards(request: NextRequest) {
         console.error(`Unexpected error in chunk ${i + 1}:`, chunkError);
         consecutiveErrors++;
         performanceMonitor.recordError(operationId);
-        lastError = chunkError;
+        const errorObj =
+          chunkError instanceof Error
+            ? chunkError
+            : new Error(String(chunkError));
+        lastError = enhanceAIError(errorObj, config);
       }
     }
 
     // If all chunks failed, return enhanced error
     if (allGeneratedCards.length === 0 && lastError) {
-      const suggestions = getFallbackSuggestions(lastError, config);
+      const aiError = enhanceAIError(lastError, config);
+      const suggestions = getFallbackSuggestions(aiError, config);
 
       return NextResponse.json(
         {
           error: lastError.message,
-          aiError: lastError,
+          aiError: aiError,
           fallbackSuggestions: suggestions,
           corsDetected: corsErrorDetected,
         },
@@ -351,48 +354,6 @@ async function handleGenerateFlashcards(request: NextRequest) {
   }
 }
 
-function chunkText(text: string, maxChunkSize: number): string[] {
-  const chunks: string[] = [];
-  const paragraphs = text.split(/\n\s*\n/);
-
-  let currentChunk = "";
-
-  for (const paragraph of paragraphs) {
-    if (currentChunk.length + paragraph.length + 2 <= maxChunkSize) {
-      currentChunk += (currentChunk ? "\n\n" : "") + paragraph;
-    } else {
-      if (currentChunk) {
-        chunks.push(currentChunk.trim());
-      }
-
-      if (paragraph.length <= maxChunkSize) {
-        currentChunk = paragraph;
-      } else {
-        // Split long paragraphs by sentences
-        const sentences = paragraph.split(/[.!?]+/).filter((s) => s.trim());
-        currentChunk = "";
-
-        for (const sentence of sentences) {
-          if (currentChunk.length + sentence.length + 1 <= maxChunkSize) {
-            currentChunk += (currentChunk ? ". " : "") + sentence.trim();
-          } else {
-            if (currentChunk) {
-              chunks.push(currentChunk.trim() + ".");
-            }
-            currentChunk = sentence.trim();
-          }
-        }
-      }
-    }
-  }
-
-  if (currentChunk) {
-    chunks.push(currentChunk.trim());
-  }
-
-  return chunks.length > 0 ? chunks : [text];
-}
-
 interface ChunkGenerationParams {
   text: string;
   config: AIConfiguration;
@@ -412,7 +373,7 @@ async function generateFlashcardsForChunk({
 }: ChunkGenerationParams): Promise<{
   flashcards: GeneratedFlashcard[];
   tokensUsed?: number;
-  error?: any;
+  error?: AIError;
 }> {
   // Create and optimize prompt for token efficiency
   let prompt = createFlashcardPrompt({

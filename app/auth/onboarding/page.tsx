@@ -764,8 +764,8 @@ export default function OnboardingPage() {
                       <span>Your API keys never leave your device</span>
                     </div>
                     <div className="text-xs">
-                      We use a "Bring Your Own" model for maximum security and
-                      cost transparency
+                      We use a &quot;Bring Your Own&quot; model for maximum
+                      security and cost transparency
                     </div>
                   </div>
                 )}

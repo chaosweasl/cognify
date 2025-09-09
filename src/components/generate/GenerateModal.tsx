@@ -33,7 +33,6 @@ import {
   BookOpen,
   PuzzleIcon as Quiz,
   CreditCard,
-  Settings,
 } from "lucide-react";
 import { useAISettings } from "@/hooks/useAISettings";
 import { useTokenUsage, estimateTokenCost } from "@/hooks/useTokenUsage";
@@ -231,7 +230,9 @@ export function GenerateModal({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [options, setOptions] = useState<Record<string, any>>({});
+  const [options, setOptions] = useState<
+    Record<string, string | number | boolean>
+  >({});
   const [focusAreas, setFocusAreas] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -360,11 +361,18 @@ export function GenerateModal({
     setIsProcessing(true);
 
     try {
-      let allGeneratedContent: any[] = [];
+      let allGeneratedContent: (
+        | GeneratedFlashcard
+        | GeneratedCheatsheet
+        | GeneratedQuiz
+      )[] = [];
       let totalTokensUsed = 0;
 
       const config = contentTypeConfig[contentType];
-      const mergedOptions: any = { ...config.defaultOptions, ...options };
+      const mergedOptions: Record<string, unknown> = {
+        ...config.defaultOptions,
+        ...options,
+      };
       if (focusAreas.trim()) {
         mergedOptions.focusAreas = focusAreas
           .split(",")
@@ -482,19 +490,19 @@ export function GenerateModal({
 
       // Call the appropriate callback
       if (contentType === "flashcards" && onFlashcardsGenerated) {
-        onFlashcardsGenerated(allGeneratedContent);
+        onFlashcardsGenerated(allGeneratedContent as GeneratedFlashcard[]);
       } else if (
         contentType === "cheatsheets" &&
         onCheatsheetGenerated &&
         allGeneratedContent[0]
       ) {
-        onCheatsheetGenerated(allGeneratedContent[0]);
+        onCheatsheetGenerated(allGeneratedContent[0] as GeneratedCheatsheet);
       } else if (
         contentType === "quizzes" &&
         onQuizGenerated &&
         allGeneratedContent[0]
       ) {
-        onQuizGenerated(allGeneratedContent[0]);
+        onQuizGenerated(allGeneratedContent[0] as GeneratedQuiz);
       }
 
       toast.success(
@@ -565,7 +573,7 @@ export function GenerateModal({
     }
   };
 
-  const updateOption = (key: string, value: any) => {
+  const updateOption = (key: string, value: string | number | boolean) => {
     setOptions((prev) => ({
       ...prev,
       [key]: value,
@@ -573,7 +581,6 @@ export function GenerateModal({
   };
 
   const config = contentTypeConfig[contentType];
-  const IconComponent = config.icon;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -659,18 +666,20 @@ export function GenerateModal({
                             type="number"
                             min={field.min}
                             max={field.max}
-                            value={options[field.key] ?? field.default}
+                            value={String(options[field.key] ?? field.default)}
                             onChange={(e) =>
                               updateOption(
                                 field.key,
-                                parseInt(e.target.value) || field.default
+                                parseInt(e.target.value) ||
+                                  (field.default as number) ||
+                                  0
                               )
                             }
                             className="mt-1"
                           />
                         ) : field.type === "select" ? (
                           <Select
-                            value={options[field.key] ?? field.default}
+                            value={String(options[field.key] ?? field.default)}
                             onValueChange={(value) =>
                               updateOption(field.key, value)
                             }
@@ -690,7 +699,9 @@ export function GenerateModal({
                         ) : (
                           <Input
                             id={field.key}
-                            value={options[field.key] ?? field.default ?? ""}
+                            value={String(
+                              options[field.key] ?? field.default ?? ""
+                            )}
                             onChange={(e) =>
                               updateOption(field.key, e.target.value)
                             }

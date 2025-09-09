@@ -34,9 +34,9 @@ export default function DocsPage() {
           </h1>
         </div>
         <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
-          Learn how to use Cognify's AI-powered study tools with your own API
-          keys. Generate flashcards, cheatsheets, and quizzes while maintaining
-          complete privacy.
+          Learn how to use Cognify&apos;s AI-powered study tools with your own
+          API keys. Generate flashcards, cheatsheets, and quizzes while
+          maintaining complete privacy.
         </p>
       </div>
 
@@ -185,7 +185,8 @@ export default function DocsPage() {
                 For Manual Users
               </h3>
               <p className="text-secondary">
-                Don't have API keys? No problem! Use our copy-paste workflow:
+                Don&apos;t have API keys? No problem! Use our copy-paste
+                workflow:
               </p>
               <ol className="space-y-2 text-sm text-secondary">
                 <li className="flex items-start gap-2">

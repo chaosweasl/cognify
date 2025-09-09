@@ -16,8 +16,6 @@ import {
   Copy,
   Lock,
   Globe,
-  Server,
-  Trash2,
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
@@ -116,9 +114,9 @@ export default function ApiKeysPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-secondary">
-                Cognify is built with a privacy-first "Bring Your Own" (BYO)
-                model. Your API keys are never sent to our servers or stored in
-                our database. Here's how it works:
+                Cognify is built with a privacy-first &quot;Bring Your Own&quot;
+                (BYO) model. Your API keys are never sent to our servers or
+                stored in our database. Here&apos;s how it works:
               </p>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -139,7 +137,7 @@ export default function ApiKeysPage() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-primary flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-status-error" />
-                    What We DON'T Do
+                    What We DON&apos;T Do
                   </h4>
                   <ul className="space-y-2 text-sm text-secondary ml-6">
                     <li>• Store keys on our servers</li>
@@ -310,7 +308,7 @@ export default function ApiKeysPage() {
                 <h4 className="font-semibold text-primary">Storage Location</h4>
                 <div className="p-4 border border-brand/30 rounded-lg bg-brand/5">
                   <p className="text-sm text-secondary">
-                    Keys are stored in your browser's{" "}
+                    Keys are stored in your browser&apos;s{" "}
                     <code className="bg-surface-elevated px-1 rounded">
                       localStorage
                     </code>
@@ -389,8 +387,8 @@ Object.keys(localStorage).filter(key => key.startsWith('ai-api-key-')).forEach(k
                 <p className="text-sm text-secondary">
                   <strong className="text-status-warning">Important:</strong>{" "}
                   Keys are tied to the specific domain (e.g., yoursite.com). If
-                  you're self-hosting or using a different domain, you'll need
-                  to reconfigure your keys.
+                  you&apos;re self-hosting or using a different domain,
+                  you&apos;ll need to reconfigure your keys.
                 </p>
               </div>
             </CardContent>
@@ -410,8 +408,8 @@ Object.keys(localStorage).filter(key => key.startsWith('ai-api-key-')).forEach(k
               <CardContent>
                 <p className="text-sm text-secondary mb-4">
                   Browser CORS (Cross-Origin Resource Sharing) policies may
-                  block direct API calls to some providers. Here's how to handle
-                  this:
+                  block direct API calls to some providers. Here&apos;s how to
+                  handle this:
                 </p>
                 <div className="space-y-3">
                   <div>
@@ -445,7 +443,7 @@ Object.keys(localStorage).filter(key => key.startsWith('ai-api-key-')).forEach(k
                 <div className="space-y-4">
                   <div className="p-3 border border-subtle rounded">
                     <h5 className="font-medium text-primary">
-                      ❌ "Invalid API Key" Error
+                      ❌ &quot;Invalid API Key&quot; Error
                     </h5>
                     <p className="text-sm text-secondary mt-1">
                       • Double-check the key format matches your provider
@@ -457,7 +455,7 @@ Object.keys(localStorage).filter(key => key.startsWith('ai-api-key-')).forEach(k
 
                   <div className="p-3 border border-subtle rounded">
                     <h5 className="font-medium text-primary">
-                      ❌ "Connection Failed" Error
+                      ❌ &quot;Connection Failed&quot; Error
                     </h5>
                     <p className="text-sm text-secondary mt-1">
                       • Check your internet connection
@@ -473,7 +471,7 @@ Object.keys(localStorage).filter(key => key.startsWith('ai-api-key-')).forEach(k
                       ❌ Keys Not Persisting
                     </h5>
                     <p className="text-sm text-secondary mt-1">
-                      • Ensure "Remember API key" is enabled
+                      • Ensure &quot;Remember API key&quot; is enabled
                       <br />
                       • Check if browser is clearing localStorage
                       <br />• Try disabling private/incognito mode

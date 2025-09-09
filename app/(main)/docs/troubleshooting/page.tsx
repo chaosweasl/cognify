@@ -3,7 +3,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -180,7 +179,7 @@ export default function TroubleshootingPage() {
             Troubleshooting Guide
           </h1>
           <p className="text-secondary mt-2">
-            Common issues and solutions for Cognify's AI-powered features
+            Common issues and solutions for Cognify&apos;s AI-powered features
           </p>
         </div>
       </div>
@@ -193,7 +192,7 @@ export default function TroubleshootingPage() {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-4 surface-elevated rounded-lg border border-subtle">
                 <h3 className="font-medium text-primary mb-2">
-                  Can't Connect?
+                  Can&apos;t Connect?
                 </h3>
                 <p className="text-sm text-secondary mb-3">
                   Try the manual workflow instead
@@ -375,8 +374,8 @@ export default function TroubleshootingPage() {
               </h3>
             </div>
             <p className="text-secondary">
-              If you're still experiencing issues, check our GitHub repository
-              or try the manual workflow as a reliable fallback.
+              If you&apos;re still experiencing issues, check our GitHub
+              repository or try the manual workflow as a reliable fallback.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/docs/generate">

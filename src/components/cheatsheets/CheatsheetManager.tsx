@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +20,8 @@ import {
   Plus,
   Search,
   FileText,
-  Tag,
   Calendar,
   Eye,
-  MoreVertical,
 } from "lucide-react";
 import {
   getCheatsheetsByProjectId,
@@ -59,6 +57,12 @@ interface Cheatsheet {
   updated_at: string;
 }
 
+interface CreateCheatsheetData {
+  title: string;
+  content: Cheatsheet["content"];
+  tags?: string[];
+}
+
 interface CheatsheetManagerProps {
   projectId: string;
 }
@@ -75,11 +79,7 @@ export function CheatsheetManager({ projectId }: CheatsheetManagerProps) {
     null
   );
 
-  useEffect(() => {
-    loadCheatsheets();
-  }, [projectId]);
-
-  const loadCheatsheets = async () => {
+  const loadCheatsheets = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getCheatsheetsByProjectId(projectId);
@@ -90,9 +90,13 @@ export function CheatsheetManager({ projectId }: CheatsheetManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
-  const handleCreate = async (cheatsheetData: any) => {
+  useEffect(() => {
+    loadCheatsheets();
+  }, [loadCheatsheets]);
+
+  const handleCreate = async (cheatsheetData: CreateCheatsheetData) => {
     try {
       await createCheatsheet(projectId, cheatsheetData);
       toast.success("Cheatsheet created successfully");
@@ -104,7 +108,7 @@ export function CheatsheetManager({ projectId }: CheatsheetManagerProps) {
     }
   };
 
-  const handleUpdate = async (cheatsheetData: any) => {
+  const handleUpdate = async (cheatsheetData: CreateCheatsheetData) => {
     if (!editingCheatsheet) return;
 
     try {
@@ -338,7 +342,17 @@ function CheatsheetCard({
 interface CheatsheetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: {
+    title: string;
+    content: {
+      sections: CheatsheetSection[];
+      metadata: {
+        generatedAt: string;
+        style: string;
+      };
+    };
+    tags: string[];
+  }) => void;
   cheatsheet?: Cheatsheet | null;
   mode: "create" | "edit";
 }
@@ -409,7 +423,11 @@ function CheatsheetModal({
     setSections(sections.filter((s) => s.id !== id));
   };
 
-  const updateSection = (id: string, field: string, value: any) => {
+  const updateSection = (
+    id: string,
+    field: string,
+    value: string | string[]
+  ) => {
     setSections(
       sections.map((s) => (s.id === id ? { ...s, [field]: value } : s))
     );
@@ -583,7 +601,7 @@ function CheatsheetViewModal({
 
           {/* Sections */}
           <div className="space-y-6">
-            {cheatsheet.content.sections.map((section, index) => (
+            {cheatsheet.content.sections.map((section) => (
               <Card key={section.id} className="p-6">
                 <h3 className="text-lg font-semibold mb-4 text-brand-primary">
                   {section.title}

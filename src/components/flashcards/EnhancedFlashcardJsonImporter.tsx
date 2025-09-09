@@ -8,19 +8,15 @@ import {
   AlertTriangle,
   CheckCircle2,
   X,
-  Sparkles,
   Code,
   Eye,
   EyeOff,
   Info,
-  RefreshCw,
-  Check,
 } from "lucide-react";
 import {
   validateImportData,
   generateImportGuidance,
   ImportPreview,
-  ImportableFlashcard,
 } from "@/lib/utils/importValidation";
 
 // Define Flashcard type that matches the new format

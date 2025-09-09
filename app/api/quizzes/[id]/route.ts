@@ -145,13 +145,15 @@ async function handleUpdateQuiz(
       );
     }
 
-    const updateData: any = { id };
+    const updateData: Record<string, unknown> = { id };
     if (title !== undefined) updateData.title = title.trim();
     if (questions !== undefined) updateData.questions = questions;
     if (settings !== undefined) updateData.settings = settings;
     if (tags !== undefined) updateData.tags = tags;
 
-    const quiz = await updateQuiz(updateData);
+    const quiz = await updateQuiz(
+      updateData as unknown as Parameters<typeof updateQuiz>[0]
+    );
 
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -203,7 +205,10 @@ async function handleDeleteQuiz(
 
 // Route handlers with security
 export const GET = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleGetQuiz(request, context);
   },
   {
@@ -214,7 +219,10 @@ export const GET = withApiSecurity(
 );
 
 export const PUT = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleUpdateQuiz(request, context);
   },
   {
@@ -225,7 +233,10 @@ export const PUT = withApiSecurity(
 );
 
 export const DELETE = withApiSecurity(
-  async (request: NextRequest, context: any) => {
+  async (
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+  ) => {
     return handleDeleteQuiz(request, context);
   },
   {

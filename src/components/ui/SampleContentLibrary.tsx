@@ -10,7 +10,6 @@ import {
   Download,
   Copy,
   BookOpen,
-  HelpCircle,
   Code,
   Globe,
   Microscope,
@@ -18,10 +17,39 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getSampleMetadata, getSample } from "@/src/content/samples";
+import {
+  getSampleMetadata,
+  getSample,
+  SampleFlashcardSet,
+  SampleCheatsheet,
+  SampleQuiz,
+} from "@/src/content/samples";
+
+type SampleContent = SampleFlashcardSet | SampleCheatsheet | SampleQuiz;
+
+interface SampleMetadata {
+  key: string;
+  title: string;
+  description: string;
+  subject: string;
+  difficulty: string;
+}
+
+interface FlashcardMetadata extends SampleMetadata {
+  count: number;
+}
+
+interface CheatsheetMetadata extends SampleMetadata {
+  sections: number;
+}
+
+interface QuizMetadata extends SampleMetadata {
+  questions: number;
+  timeLimit: number;
+}
 
 interface SampleContentLibraryProps {
-  onImport?: (content: any, type: string) => void;
+  onImport?: (content: SampleContent, type: string) => void;
   showImportButton?: boolean;
 }
 
@@ -33,7 +61,10 @@ export function SampleContentLibrary({
   const metadata = getSampleMetadata();
 
   const handleCopySample = (type: string, key: string) => {
-    const sample = getSample(type as any, key);
+    const sample = getSample(
+      type as "flashcards" | "cheatsheets" | "quizzes",
+      key
+    );
     if (sample) {
       navigator.clipboard.writeText(JSON.stringify(sample, null, 2));
       toast.success(`${type} sample copied to clipboard`);
@@ -41,7 +72,10 @@ export function SampleContentLibrary({
   };
 
   const handleDownloadSample = (type: string, key: string) => {
-    const sample = getSample(type as any, key);
+    const sample = getSample(
+      type as "flashcards" | "cheatsheets" | "quizzes",
+      key
+    );
     if (sample) {
       const blob = new Blob([JSON.stringify(sample, null, 2)], {
         type: "application/json",
@@ -59,7 +93,10 @@ export function SampleContentLibrary({
   };
 
   const handleImportSample = (type: string, key: string) => {
-    const sample = getSample(type as any, key);
+    const sample = getSample(
+      type as "flashcards" | "cheatsheets" | "quizzes",
+      key
+    );
     if (sample && onImport) {
       onImport(sample, type);
       toast.success(`${type} sample imported`);
@@ -94,7 +131,7 @@ export function SampleContentLibrary({
   };
 
   const renderSampleList = (
-    samples: any[],
+    samples: (FlashcardMetadata | CheatsheetMetadata | QuizMetadata)[],
     type: string,
     itemLabel: string
   ) => (
@@ -149,10 +186,12 @@ export function SampleContentLibrary({
                 {sample.subject}
               </Badge>
               <Badge variant="outline" className="text-muted">
-                {sample.count || sample.sections || sample.questions}{" "}
+                {("count" in sample && sample.count) ||
+                  ("sections" in sample && sample.sections) ||
+                  ("questions" in sample && sample.questions)}{" "}
                 {itemLabel}
               </Badge>
-              {sample.timeLimit && (
+              {"timeLimit" in sample && sample.timeLimit && (
                 <Badge variant="outline" className="text-muted">
                   {Math.floor(sample.timeLimit / 60)}min
                 </Badge>
@@ -163,7 +202,10 @@ export function SampleContentLibrary({
               <div className="mt-4 p-3 bg-surface-primary rounded-lg border border-subtle">
                 <pre className="text-xs text-secondary overflow-x-auto max-h-32">
                   {JSON.stringify(
-                    getSample(type as any, sample.key),
+                    getSample(
+                      type as "flashcards" | "cheatsheets" | "quizzes",
+                      sample.key
+                    ),
                     null,
                     2
                   ).substring(0, 300)}

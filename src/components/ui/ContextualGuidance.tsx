@@ -14,7 +14,6 @@ import {
   ExternalLink,
   ArrowRight,
 } from "lucide-react";
-import { ContextualHelp } from "./HelpTooltip";
 import { cn } from "@/lib/utils";
 
 interface ContextualGuidanceProps {

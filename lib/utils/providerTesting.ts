@@ -6,15 +6,20 @@
  */
 
 import { AIConfiguration } from "@/lib/ai/types";
-import { enhanceAIError, getFallbackSuggestions } from "./aiErrorHandling";
+import {
+  enhanceAIError,
+  getFallbackSuggestions,
+  AIError,
+  AIFallbackSuggestion,
+} from "./aiErrorHandling";
 
 export interface ProviderTestResult {
   success: boolean;
   provider: string;
   model: string;
   error?: string;
-  aiError?: any;
-  fallbackSuggestions?: any[];
+  aiError?: AIError;
+  fallbackSuggestions?: AIFallbackSuggestion[];
   corsDetected?: boolean;
   responseTime?: number;
   capabilities?: {

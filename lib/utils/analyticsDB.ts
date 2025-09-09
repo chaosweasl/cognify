@@ -3,7 +3,6 @@
  * Database operations for analytics events and error logging
  */
 
-import { createClient } from "@/lib/supabase/client";
 import type { AnalyticsEventType } from "@/lib/utils/analytics";
 import type { ErrorType, ErrorSeverity } from "@/lib/utils/errorBoundaries";
 
@@ -68,7 +67,7 @@ export class ErrorTrackingDB {
   /**
    * Get error logs (returns empty since database table was removed)
    */
-  static async getErrorLogs(limit = 50): Promise<ErrorLogEntry[]> {
+  static async getErrorLogs(): Promise<ErrorLogEntry[]> {
     // Database table was dropped, return empty array
     return [];
   }
@@ -117,11 +116,9 @@ export class AnalyticsDB {
   /**
    * Get analytics events for a user (returns empty - table was removed)
    */
-  static async getUserEvents(
-    userId: string,
-    limit = 100
-  ): Promise<AnalyticsEvent[]> {
+  static async getUserEvents(userId: string): Promise<AnalyticsEvent[]> {
     // analytics_events table was dropped
+    console.log("Getting events for user:", userId);
     return [];
   }
 }
@@ -141,7 +138,7 @@ export class SystemHealthDB {
   /**
    * Get recent health metrics (returns empty - table was removed)
    */
-  static async getRecentMetrics(hours = 24): Promise<SystemHealthMetric[]> {
+  static async getRecentMetrics(): Promise<SystemHealthMetric[]> {
     // system_health_metrics table was dropped
     return [];
   }

@@ -8,7 +8,7 @@
 export interface ValidationError {
   field?: string;
   message: string;
-  value?: any;
+  value?: unknown;
   line?: number;
   column?: number;
 }
@@ -26,7 +26,7 @@ export interface ImportableFlashcard {
   front: string;
   back: string;
   tags?: string[];
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
   originalIndex?: number;
   isValid?: boolean;
   validationErrors?: ValidationError[];
@@ -72,7 +72,7 @@ const FIELD_MAPPINGS = {
 /**
  * Detects the format of imported JSON data
  */
-function detectFormat(data: any): string {
+function detectFormat(data: unknown): string {
   if (Array.isArray(data)) {
     if (data.length === 0) return "empty-array";
 
@@ -90,13 +90,14 @@ function detectFormat(data: any): string {
     return "custom-object-array";
   }
 
-  if (data && typeof data === "object") {
+  if (data && typeof data === "object" && data !== null) {
+    const obj = data as Record<string, unknown>;
     // Check for wrapped formats
-    if (data.flashcards && Array.isArray(data.flashcards))
+    if (obj.flashcards && Array.isArray(obj.flashcards))
       return "wrapped-flashcards";
-    if (data.cards && Array.isArray(data.cards)) return "wrapped-cards";
-    if (data.items && Array.isArray(data.items)) return "wrapped-items";
-    if (data.data && Array.isArray(data.data)) return "wrapped-data";
+    if (obj.cards && Array.isArray(obj.cards)) return "wrapped-cards";
+    if (obj.items && Array.isArray(obj.items)) return "wrapped-items";
+    if (obj.data && Array.isArray(obj.data)) return "wrapped-data";
 
     return "object-wrapper";
   }
@@ -108,7 +109,7 @@ function detectFormat(data: any): string {
  * Normalizes field names to standard format
  */
 function normalizeField(
-  item: Record<string, any>,
+  item: Record<string, unknown>,
   targetField: keyof typeof FIELD_MAPPINGS
 ): string | undefined {
   const possibleNames = FIELD_MAPPINGS[targetField];
@@ -128,7 +129,7 @@ function normalizeField(
  * Validates a single flashcard item
  */
 function validateFlashcardItem(
-  item: any,
+  item: unknown,
   index: number
 ): { flashcard: ImportableFlashcard | null; errors: ValidationError[] } {
   const errors: ValidationError[] = [];
@@ -142,10 +143,11 @@ function validateFlashcardItem(
     return { flashcard: null, errors };
   }
 
+  const itemObj = item as Record<string, unknown>;
   // Normalize fields
-  const front = normalizeField(item, "front");
-  const back = normalizeField(item, "back");
-  const tagsRaw = normalizeField(item, "tags");
+  const front = normalizeField(itemObj, "front");
+  const back = normalizeField(itemObj, "back");
+  const tagsRaw = normalizeField(itemObj, "tags");
 
   // Validate front field
   if (!front || front.length === 0) {
@@ -181,10 +183,10 @@ function validateFlashcardItem(
   let tags: string[] = [];
   if (tagsRaw) {
     try {
-      if (Array.isArray(item.tags)) {
-        tags = item.tags.filter(
-          (tag: any) => typeof tag === "string" && tag.trim().length > 0
-        );
+      if (Array.isArray(itemObj.tags)) {
+        tags = (itemObj.tags as unknown[]).filter(
+          (tag: unknown) => typeof tag === "string" && tag.trim().length > 0
+        ) as string[];
       } else if (typeof tagsRaw === "string") {
         // Split by common delimiters
         tags = tagsRaw
@@ -215,7 +217,7 @@ function validateFlashcardItem(
 export function validateImportData(rawData: string): ImportPreview {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
-  let parsedData: any = null;
+  let parsedData: unknown = null;
 
   // Parse JSON
   try {
@@ -250,16 +252,17 @@ export function validateImportData(rawData: string): ImportPreview {
   const formatDetected = detectFormat(parsedData);
 
   // Extract items array
-  let items: any[] = [];
+  let items: unknown[] = [];
 
   if (Array.isArray(parsedData)) {
     items = parsedData;
   } else if (parsedData && typeof parsedData === "object") {
+    const dataObj = parsedData as Record<string, unknown>;
     // Try different wrapper properties
     const wrapperKeys = ["flashcards", "cards", "items", "data"];
     for (const key of wrapperKeys) {
-      if (parsedData[key] && Array.isArray(parsedData[key])) {
-        items = parsedData[key];
+      if (dataObj[key] && Array.isArray(dataObj[key])) {
+        items = dataObj[key] as unknown[];
         break;
       }
     }
@@ -269,7 +272,7 @@ export function validateImportData(rawData: string): ImportPreview {
         message: `Expected an array of flashcards or an object with one of: ${wrapperKeys.join(
           ", "
         )}`,
-        value: Object.keys(parsedData),
+        value: Object.keys(dataObj),
       });
     }
   } else {

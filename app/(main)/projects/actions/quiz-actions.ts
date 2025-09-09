@@ -44,7 +44,7 @@ interface QuizAttempt {
   id: string;
   quiz_id: string;
   user_id: string;
-  answers: Record<string, any>;
+  answers: Record<string, unknown>;
   score: number;
   total_questions: number;
   time_spent_seconds?: number;
@@ -348,7 +348,7 @@ export async function getQuizById(quizId: string): Promise<Quiz | null> {
 // Submit a quiz attempt
 export async function submitQuizAttempt(
   quizId: string,
-  answers: Record<string, any>,
+  answers: Record<string, unknown>,
   timeSpentSeconds?: number
 ): Promise<QuizAttempt> {
   console.log(`[Quizzes] submitQuizAttempt called for quiz: ${quizId}`);
