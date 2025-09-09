@@ -47,80 +47,42 @@ export interface SystemHealthMetric {
  */
 export class ErrorTrackingDB {
   /**
-   * Log an error to the database
+   * Log an error (memory only - database table removed)
    */
   static async logError(error: ErrorLogEntry): Promise<void> {
     try {
-      const supabase = createClient();
-
-      const { error: dbError } = await supabase.from("error_logs").insert({
+      // Since error_logs table was dropped, we'll just log to console for now
+      // In production, you might want to use external logging service
+      console.error("Error logged:", {
         error_type: error.error_type,
         severity: error.severity,
         message: error.message,
-        stack_trace: error.stack_trace,
-        user_id: error.user_id,
-        session_id: error.session_id,
-        url: error.url,
-        user_agent: error.user_agent,
-        context: error.context,
         timestamp: error.timestamp || new Date().toISOString(),
+        user_id: error.user_id,
       });
-
-      if (dbError) {
-        console.error("Failed to log error to database:", dbError);
-      }
     } catch (error) {
-      console.error("Error logging to database:", error);
+      console.error("Error logging:", error);
     }
   }
 
   /**
-   * Get error logs (admin only)
+   * Get error logs (returns empty since database table was removed)
    */
   static async getErrorLogs(limit = 50): Promise<ErrorLogEntry[]> {
-    try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("error_logs")
-        .select("*")
-        .order("timestamp", { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error("Failed to fetch error logs:", error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching error logs:", error);
-      return [];
-    }
+    // Database table was dropped, return empty array
+    return [];
   }
 
   /**
-   * Clear all error logs (admin only)
+   * Clear all error logs (no-op since database table was removed)
    */
   static async clearErrorLogs(): Promise<void> {
-    try {
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from("error_logs")
-        .delete()
-        .gte("id", "00000000-0000-0000-0000-000000000000"); // Delete all
-
-      if (error) {
-        console.error("Failed to clear error logs:", error);
-      }
-    } catch (error) {
-      console.error("Error clearing error logs:", error);
-    }
+    // Database table was dropped, nothing to clear
+    return;
   }
 
   /**
-   * Get error statistics
+   * Get error statistics (returns empty stats since database table was removed)
    */
   static async getErrorStats(): Promise<{
     total: number;
@@ -129,89 +91,14 @@ export class ErrorTrackingDB {
     recentCount: number;
     trend: "increasing" | "decreasing" | "stable";
   }> {
-    try {
-      const supabase = createClient();
-
-      // Get all errors from last 30 days
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { data, error } = await supabase
-        .from("error_logs")
-        .select("error_type, severity, timestamp")
-        .gte("timestamp", thirtyDaysAgo.toISOString())
-        .order("timestamp", { ascending: false });
-
-      if (error || !data) {
-        console.error("Failed to fetch error stats:", error);
-        return {
-          total: 0,
-          byType: {},
-          bySeverity: {},
-          recentCount: 0,
-          trend: "stable",
-        };
-      }
-
-      const byType = data.reduce((acc, error) => {
-        acc[error.error_type] = (acc[error.error_type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const bySeverity = data.reduce((acc, error) => {
-        acc[error.severity] = (acc[error.severity] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-      const recentCount = data.filter(
-        (error) => new Date(error.timestamp) > oneDayAgo
-      ).length;
-
-      // Calculate trend (simple: compare last 7 days to previous 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-      const lastWeek = data.filter(
-        (error) => new Date(error.timestamp) > sevenDaysAgo
-      ).length;
-      const previousWeek = data.filter(
-        (error) =>
-          new Date(error.timestamp) > fourteenDaysAgo &&
-          new Date(error.timestamp) <= sevenDaysAgo
-      ).length;
-
-      let trend: "increasing" | "decreasing" | "stable" = "stable";
-      if (previousWeek > 0) {
-        const ratio = lastWeek / previousWeek;
-        if (ratio > 1.2) {
-          trend = "increasing";
-        } else if (ratio < 0.8) {
-          trend = "decreasing";
-        }
-      }
-
-      return {
-        total: data.length,
-        byType,
-        bySeverity,
-        recentCount,
-        trend,
-      };
-    } catch (error) {
-      console.error("Error fetching error stats:", error);
-      return {
-        total: 0,
-        byType: {},
-        bySeverity: {},
-        recentCount: 0,
-        trend: "stable",
-      };
-    }
+    // Database table was dropped, return empty stats
+    return {
+      total: 0,
+      byType: {},
+      bySeverity: {},
+      recentCount: 0,
+      trend: "stable",
+    };
   }
 }
 
@@ -220,55 +107,22 @@ export class ErrorTrackingDB {
  */
 export class AnalyticsDB {
   /**
-   * Track an analytics event
+   * Track an analytics event (disabled - table was removed)
    */
   static async trackEvent(event: AnalyticsEvent): Promise<void> {
-    try {
-      const supabase = createClient();
-
-      const { error } = await supabase.from("analytics_events").insert({
-        event_type: event.event_type,
-        user_id: event.user_id,
-        session_id: event.session_id,
-        data: event.data,
-        timestamp: event.timestamp || new Date().toISOString(),
-      });
-
-      if (error) {
-        console.error("Failed to track analytics event:", error);
-      }
-    } catch (error) {
-      console.error("Error tracking analytics event:", error);
-    }
+    // analytics_events table was dropped, just log for now
+    console.log("Analytics event:", event.event_type, event.data);
   }
 
   /**
-   * Get analytics events for a user
+   * Get analytics events for a user (returns empty - table was removed)
    */
   static async getUserEvents(
     userId: string,
     limit = 100
   ): Promise<AnalyticsEvent[]> {
-    try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("analytics_events")
-        .select("*")
-        .eq("user_id", userId)
-        .order("timestamp", { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error("Failed to fetch user analytics:", error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching user analytics:", error);
-      return [];
-    }
+    // analytics_events table was dropped
+    return [];
   }
 }
 
@@ -277,56 +131,19 @@ export class AnalyticsDB {
  */
 export class SystemHealthDB {
   /**
-   * Record system health metrics
+   * Record system health metrics (disabled - table was removed)
    */
   static async recordMetrics(metrics: SystemHealthMetric): Promise<void> {
-    try {
-      const supabase = createClient();
-
-      const { error } = await supabase.from("system_health_metrics").insert({
-        database_response_time: metrics.database_response_time,
-        memory_usage: metrics.memory_usage,
-        active_users: metrics.active_users,
-        requests_per_minute: metrics.requests_per_minute,
-        error_count: metrics.error_count,
-        metrics: metrics.metrics,
-        timestamp: metrics.timestamp || new Date().toISOString(),
-      });
-
-      if (error) {
-        console.error("Failed to record health metrics:", error);
-      }
-    } catch (error) {
-      console.error("Error recording health metrics:", error);
-    }
+    // system_health_metrics table was dropped
+    console.log("Health metrics:", metrics);
   }
 
   /**
-   * Get recent health metrics
+   * Get recent health metrics (returns empty - table was removed)
    */
   static async getRecentMetrics(hours = 24): Promise<SystemHealthMetric[]> {
-    try {
-      const supabase = createClient();
-
-      const startTime = new Date();
-      startTime.setHours(startTime.getHours() - hours);
-
-      const { data, error } = await supabase
-        .from("system_health_metrics")
-        .select("*")
-        .gte("timestamp", startTime.toISOString())
-        .order("timestamp", { ascending: false });
-
-      if (error) {
-        console.error("Failed to fetch health metrics:", error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching health metrics:", error);
-      return [];
-    }
+    // system_health_metrics table was dropped
+    return [];
   }
 }
 

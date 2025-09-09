@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { updateProject } from "@/app/(main)/projects/actions";
 import { CacheInvalidation } from "@/hooks/useCache";
 import { replaceAllFlashcardsForProject } from "@/app/(main)/projects/actions/flashcard-actions";
-import { PDFUploadModal } from "./PDFUploadModal";
+import { GenerateModal } from "../generate/GenerateModal";
 import { FlashcardJsonImporter } from "./FlashcardJsonImporter";
 import { FlashcardExporter } from "./FlashcardExporter";
 import { FlashcardDuplicateDetector } from "./FlashcardDuplicateDetector";
@@ -65,7 +65,7 @@ export function FlashcardEditor({
   );
   const [saving, setSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [showPDFUpload, setShowPDFUpload] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const isAddingCard = useRef(false);
 
   const handleChange = (field: string, value: string) => {
@@ -267,7 +267,7 @@ export function FlashcardEditor({
                   {/* AI Upload Button */}
                   {aiEnabled && (
                     <button
-                      onClick={() => setShowPDFUpload(true)}
+                      onClick={() => setShowGenerateModal(true)}
                       disabled={!isConfigValid()}
                       className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
                         isConfigValid()
@@ -276,9 +276,7 @@ export function FlashcardEditor({
                       }`}
                     >
                       <Zap className="w-5 h-5" />
-                      <span className="hidden sm:inline">
-                        Generate from PDF
-                      </span>
+                      <span className="hidden sm:inline">Generate with AI</span>
                       <span className="sm:hidden">AI</span>
                     </button>
                   )}
@@ -678,10 +676,10 @@ export function FlashcardEditor({
         </div>
       </div>
 
-      {/* PDF Upload Modal */}
-      <PDFUploadModal
-        isOpen={showPDFUpload}
-        onClose={() => setShowPDFUpload(false)}
+      {/* Generate Modal */}
+      <GenerateModal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
         projectId={project.id}
         onFlashcardsGenerated={handleFlashcardsGenerated}
       />

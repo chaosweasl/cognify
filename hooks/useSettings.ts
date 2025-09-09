@@ -35,10 +35,12 @@ export interface UserSettings {
   updated_at: string;
 }
 
-// Default settings - same as before for compatibility
+// Default settings - TODO: Make configurable via environment variables
 const defaultSRSSettings: SRSSettings = {
-  NEW_CARDS_PER_DAY: 20,
-  MAX_REVIEWS_PER_DAY: 100,
+  NEW_CARDS_PER_DAY: parseInt(process.env.DEFAULT_NEW_CARDS_PER_DAY || "20"),
+  MAX_REVIEWS_PER_DAY: parseInt(
+    process.env.DEFAULT_MAX_REVIEWS_PER_DAY || "100"
+  ),
   LEARNING_STEPS: [1, 10, 1440],
   RELEARNING_STEPS: [10, 1440],
   GRADUATING_INTERVAL: 1,

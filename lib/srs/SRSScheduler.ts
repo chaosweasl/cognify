@@ -306,9 +306,11 @@ function getRelearningStep(steps: number[], stepIndex: number): number {
 
 // --- DEFAULT SRS SETTINGS (fallback when user settings aren't available) ---
 export const DEFAULT_SRS_SETTINGS: SRSSettings = {
-  // Daily card limits
-  NEW_CARDS_PER_DAY: 20, // Maximum new cards to introduce per day
-  MAX_REVIEWS_PER_DAY: 200, // Maximum reviews per day (0 = unlimited)
+  // Daily card limits - TODO: Make configurable via environment variables
+  NEW_CARDS_PER_DAY: parseInt(process.env.DEFAULT_NEW_CARDS_PER_DAY || "20"), // Maximum new cards to introduce per day
+  MAX_REVIEWS_PER_DAY: parseInt(
+    process.env.DEFAULT_MAX_REVIEWS_PER_DAY || "200"
+  ), // Maximum reviews per day (0 = unlimited)
 
   // Learning steps (in minutes) – only the micro-steps
   LEARNING_STEPS: [1, 10], // ← no 1440
