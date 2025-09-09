@@ -1,199 +1,165 @@
-# Cognify AI Coding Agent Instructions
+# Cognify AI Coding Assistant Instructions
 
-## Project Architecture & Patterns
+## Project Overview
 
-- **Monorepo structure**: Main app in `app/`, shared logic in `lib/`, UI in `src/components/`, hooks in `hooks/`.
-- **Next.js 15 (App Router)**: Server Components for data loading, Client Components for interactivity. See `app/(main)/[feature]/` for feature modules.
-- **Supabase**: All data access via Supabase client (`lib/supabase/`). Row Level Security (RLS) is enforced; never manually filter by user ID unless necessary.
-- **SRS Logic**: Spaced repetition (SM-2) algorithm in `lib/srs/`. Always use project-specific SRS settings, not hardcoded values.
-- **AI Integration**: Multi-provider AI system (OpenAI, Anthropic, Ollama, LM Studio, DeepSeek) with localStorage-only API key storage.
-- **Styling**: Tailwind CSS + DaisyUI for consistent design system. Use Tailwind utility classes and DaisyUI components. Custom styles in `app/globals.css` and micro-interactions in `app/globals-micro-interactions.css`. UI primitives in `components/ui/`.
-- **State**: Minimal global state via Zustand. Prefer local state/hooks for most UI.
+Cognify is an AI-powered spaced repetition study platform built with Next.js 15, Supabase, and multi-provider AI integration. Users bring their own API keys (BYO model) to generate flashcards, cheatsheets, and quizzes from PDFs and text.
 
-## Key Conventions
+## Architecture & Key Patterns
 
-- **File Organization**:
+### Next.js App Router Structure
 
-  - `app/(main)/[feature]/`: Feature modules (dashboard, projects, settings, etc.)
-  - `app/api/`: API routes organized by feature (ai/, projects/, user/, srs/, system/)
-  - `src/components/`: Feature-specific UI components organized by domain
-  - `components/`: Shared UI primitives and reusable components
-  - `hooks/`: Data and UI hooks (e.g., `useProjects.ts`, `useAISettings.ts`)
-  - `lib/srs/`: SRS algorithm, session management, and database utilities
-  - `lib/utils/`: Utility functions organized by purpose (security, validation, etc.)
-  - `lib/supabase/`: Database access patterns and RLS policies
+- `app/(main)/[feature]/` - Feature routes (server components for data, client components for UI)
+- `app/api/` - API routes with security middleware (`withApiSecurity`)
+- All data fetching uses server components, client components handle interactivity
 
-- **Component Pattern**:
+### Authentication & Security
 
-  - Server Component loads data, passes to Client Component for interactivity
-  - Example: `app/(main)/projects/page.tsx` loads projects, passes to `ProjectsList` (client)
-  - Use React Server Components for data fetching, Client Components for user interactions
-
-- **Data Flow**:
-
-  - All DB access via Supabase client in `lib/supabase/`
-  - Batch updates for SRS state (see `lib/srs/SRSDBUtils.ts`)
-  - Use RLS for security; avoid leaking data between users
-  - Cache invalidation patterns via `hooks/useCache.ts`
-
-- **AI Integration**:
-
-  - API keys stored ONLY in localStorage, never in database
-  - Multi-provider support with connection testing
-  - PDF text extraction + AI flashcard generation pipeline
-  - Token usage tracking and daily limits
-
-- **Notifications**:
-  - Use `sonner` for toasts (`components/ui/sonner.tsx`)
-  - Study reminders and app notifications in DB (`user_notifications`, `app_notifications`)
-  - Enhanced NotificationBell component with real-time updates
-
-## API Architecture (See docs/API.md)
-
-- **Authentication**: Supabase Auth with OAuth providers
-- **AI Endpoints**: `/api/ai/*` for PDF processing and flashcard generation
-- **Project Management**: `/api/projects/*` with full CRUD and statistics
-- **SRS System**: `/api/srs/*` for spaced repetition state management
-- **User Management**: `/api/user/*` for profiles, settings, and data export/import
-- **System**: `/api/system/*` for analytics and error logging
-
-## Feature Implementation Status
-
-### ✅ **COMPLETED MVP FEATURES**
-
-1. **Authentication & Security**: Complete onboarding flow, RLS policies, input validation
-2. **AI-Powered Flashcard Generation**: Multi-provider support, PDF processing, token tracking
-3. **Complete Flashcard System**: CRUD operations, JSON import/export, duplicate detection
-4. **SRS & Study System**: SM-2 algorithm, session persistence, progress tracking
-5. **Project Management**: CRUD operations, templates, bulk operations, statistics
-6. **Settings & Configuration**: Theme system, user preferences, AI provider management
-7. **Notifications & Reminders**: Study reminder system, notification bell, system announcements
-
-### 🚧 **IN PROGRESS**
-
-- **Production Readiness**: Security audit, performance optimization, deployment setup
-- **Admin Dashboard**: User management, system health monitoring
-- **Enhanced Analytics**: Study insights, progress tracking improvements
-
-## Developer Workflows
-
-- **Build**: `pnpm build` (see `package.json`)
-- **Dev**: `pnpm dev` (Next.js dev server)
-- **Lint**: `pnpm lint` (ESLint, config in `eslint.config.mjs`)
-- **Typecheck**: `pnpm typecheck`
-- **Manual Testing**: Prioritize full user flows (auth, onboarding, AI flashcard generation, study sessions)
-
-## Project-Specific Guidance
-
-- **SRS Algorithm**: Never hardcode intervals/ease. Always use project settings from DB. See `lib/srs/SRSScheduler.ts` and `lib/srs/SRSDBUtils.ts`.
-- **AI Configuration**: Store API keys ONLY in localStorage. Validate configurations before use. Support multiple providers gracefully.
-- **Session Continuity**: Study sessions must persist across reloads (localStorage + database sync).
-- **Notifications**: Clean up reminders when projects/cards are deleted. Handle unauthenticated users gracefully.
-- **Settings**: Theme and SRS config are per-user and per-project. Sync with DB and localStorage.
-- **Security**: All user inputs must be sanitized. Use utilities in `lib/utils/security.ts` and `lib/utils/validation.ts`.
-- **Performance**: Implement rate limiting, optimize database queries, use proper caching strategies.
-
-## Architecture Patterns
-
-### Data Access Pattern
+- **Supabase Auth**: All API routes require authentication via `createClient()`
+- **RLS**: Database access relies on Row Level Security - never bypass with service role
+- **API Security**: Wrap all API routes with `withApiSecurity` from `lib/utils/apiSecurity.ts`
+- **Input validation**: Use `validateAndSanitizeText`, `validateUUID` from `lib/utils/security.ts`
 
 ```typescript
-// ✅ Correct: Use Supabase client with RLS
-const { data, error } = await supabase
-  .from("projects")
-  .select("*")
-  .eq("user_id", userId); // RLS handles this automatically
-
-// ❌ Wrong: Manual filtering
-const projects = allProjects.filter((p) => p.user_id === userId);
-```
-
-### Error Handling Pattern
-
-```typescript
-// ✅ Correct: Comprehensive error handling
-try {
-  const result = await apiCall();
-  if (!result.success) {
-    toast.error(result.error);
-    return;
+// Standard API route pattern
+export const POST = withApiSecurity(
+  async (request: NextRequest) => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    // ... implementation
+  },
+  {
+    requireAuth: true,
+    rateLimit: { requests: 30, window: 60 },
+    allowedMethods: ["POST"],
   }
-  // Handle success
-} catch (error) {
-  console.error("API Error:", error);
-  toast.error("An unexpected error occurred");
-}
+);
 ```
 
-### Component Organization Pattern
+### AI Integration (BYO Keys Model)
+
+- **Provider Support**: OpenAI, Anthropic, Ollama, LM Studio, DeepSeek, custom OpenAI-compatible
+- **Key Storage**: API keys in localStorage only via `hooks/useAISettings.ts` + `aiKeyStorage`
+- **Generation Flow**: `app/api/ai/generate-flashcards/route.ts` - server validates, calls provider, returns drafts
+- **Security**: Never store API keys server-side, always require user acceptance before DB save
 
 ```typescript
-// ✅ Feature-based organization
-src/components/
-├── study/              // Study-related components
-│   ├── StudySession.tsx
-│   ├── StudyProgress.tsx
-│   └── ReviewScheduler.tsx
-├── projects/           // Project-related components
-│   ├── ProjectCard.tsx
-│   ├── ProjectList.tsx
-│   └── ProjectEditor.tsx
-└── settings/           // Settings-related components
-    ├── AIConfiguration.tsx
-    └── ThemeSelector.tsx
+// AI provider integration pattern
+const fullConfig = {
+  ...currentConfig,
+  apiKey: aiKeyStorage.getApiKey(config.provider),
+};
 ```
 
-## Examples
+### Database Patterns
 
-- **Server Action**: `app/(main)/projects/actions.ts` for project CRUD operations
-- **SRS Updates**: `lib/srs/SRSDBUtils.ts` for batch SRS state upserts with optimized queries
-- **AI Integration**: `app/api/ai/generate-flashcards/route.ts` for multi-provider AI flashcard generation
-- **UI Notifications**: `import { toast } from 'sonner'; toast.success('Saved!');`
-- **Theme Management**: `hooks/useTheme.ts` for persistent theme state management
+- **Supabase Client**: Use `lib/supabase/client.ts` (browser) or `lib/supabase/server.ts` (server)
+- **Actions**: Database operations in `app/(main)/[feature]/actions/`
+- **Relations**: projects → flashcards → srs_states (user isolation via RLS)
+- **Migrations**: Schema in `schema-dump.sql`, create a .sql migration file for changes.
 
-## Security Guidelines
+### State Management
 
-- **Input Validation**: Use Zod schemas from `lib/utils/validation.ts`
-- **API Security**: Implement rate limiting via `lib/utils/rateLimit.ts`
-- **Data Sanitization**: Use `lib/utils/security.ts` utilities for input cleaning
-- **Authentication**: Always check user auth status in API routes
-- **API Keys**: NEVER store in database - localStorage only for user-provided keys
+- **Zustand**: Global stores in `hooks/` (useProjects, useAISettings, useFlashcards)
+- **Persistence**: Use `persist` middleware, separate sensitive data (API keys in localStorage)
+- **Local State**: Prefer React hooks over Zustand when data doesn't need sharing
 
-## Performance Guidelines
+### SRS (Spaced Repetition System)
 
-- **Database**: Use batch operations for SRS updates, implement proper indexing
-- **AI Requests**: Implement token tracking and daily limits
-- **Caching**: Use `hooks/useCache.ts` for intelligent cache management
-- **Assets**: Optimize images and implement lazy loading where appropriate
-- **Code Splitting**: Dynamic imports for heavy components and routes
+- **Core Logic**: `lib/srs/SRSScheduler.ts` - handles intervals, difficulty adjustments
+- **Sessions**: `lib/srs/SRSSession.ts` - manages study sessions, progress tracking
+- **Database**: `lib/srs/SRSDBUtils.ts` - database operations for SRS states
 
-## Do/Don't
+### UI & Styling Patterns
 
-### ✅ **DO**
+- **Design System**: ShadCN components in `components/ui/`, customize via Tailwind
+- **Theming**: CSS variables for colors, semantic naming (`--surface-primary`, `--text-muted`)
+- **Glass Effects**: `glass-surface` class for cards, `bg-gradient-brand` for CTAs
+- **Loading States**: Use skeleton components from `src/components/ui/skeleton-layouts.tsx`
+- **Animations**: Prefer CSS animations over JS, use `transition-all transition-normal`
 
-- Keep code simple, readable, and maintainable
-- Use project conventions and established patterns
-- Test full user journeys (onboarding → AI setup → flashcard creation → study)
-- Handle errors gracefully with user-friendly messages
-- Follow the established file organization structure
-- Use TypeScript strictly - avoid `any` types
-- Implement proper loading states and optimistic updates
+## Development Workflows
 
-### ❌ **DON'T**
+### Key Commands
 
-- Over-engineer simple features or add unnecessary abstractions
-- Break SRS logic or hardcode intervals/ease factors
-- Store sensitive data (API keys) in the database
-- Ignore error states or loading states in UI components
-- Use global state unless absolutely necessary
-- Bypass validation or sanitization for user inputs
-- Implement features without proper authentication checks
+```bash
+pnpm dev          # Development server (Turbopack)
+pnpm build        # Production build
+pnpm lint         # ESLint check
+npx tsc --noEmit  # Type checking
+```
 
----
+### Testing Strategy
 
-For specific implementation details, refer to:
+- Unit tests for core logic (SRS, AI parsing, validation)
+- Integration tests for API routes with mock providers
+- Manual QA for AI workflows (generation → preview → accept)
 
-- `docs/API.md` - Complete API documentation
-- `docs/UTILS.md` - Utility functions documentation
-- `docs/todo.md` - Feature implementation status
-- Individual component files for usage patterns
+### File Organization
+
+```
+app/(main)/feature/          # Feature pages (server components)
+├── components/              # Feature-specific client components
+├── actions/                 # Server actions for data mutations
+└── page.tsx                 # Main feature page
+
+src/components/feature/      # Reusable components
+components/ui/              # Design system primitives
+hooks/                      # Zustand stores and React hooks
+lib/                        # Core utilities and integrations
+```
+
+## AI-Specific Development Notes
+
+### Content Generation Pipeline
+
+1. **Input**: User provides text/PDF + AI config (provider, model, API key)
+2. **Processing**: Server chunks content, calls AI provider, parses JSON response
+3. **Preview**: Client shows generated content in draft state with edit capability
+4. **Acceptance**: User reviews and accepts items for database save
+
+### Provider Integration Pattern
+
+```typescript
+// Add new AI provider in lib/ai/types.ts
+export const AI_PROVIDERS = {
+  'new-provider': {
+    id: 'new-provider',
+    name: 'New Provider',
+    requiresApiKey: true,
+    models: [/* model definitions */],
+    configFields: [/* configuration fields */]
+  }
+};
+
+// Implement in app/api/ai/generate-flashcards/route.ts
+case "new-provider":
+  return generateWithNewProvider(config, prompt);
+```
+
+### Error Handling Priorities
+
+1. **CORS Issues**: Detect and redirect to manual import flow
+2. **Rate Limits**: Show provider-specific guidance
+3. **Invalid JSON**: Parse errors with helpful formatting suggestions
+4. **Auth Failures**: Clear messaging about API key issues
+
+## Common Pitfalls
+
+- ❌ Don't bypass RLS with service role client
+- ❌ Don't store API keys server-side or in Zustand
+- ❌ Don't save AI-generated content without user acceptance
+- ❌ Don't forget `withApiSecurity` wrapper on API routes
+- ✅ Always validate user input and sanitize content
+- ✅ Use semantic CSS variables for theming
+- ✅ Implement proper loading states and error boundaries
+- ✅ Test AI workflows with multiple providers
+
+## Key Integration Points
+
+- **Authentication**: `lib/supabase/middleware.ts` handles session management
+- **Caching**: Custom cache invalidation in `hooks/useCache.ts`
+- **Notifications**: In-app notifications via `lib/supabase/appNotifications.ts`
+- **Analytics**: Event tracking in `lib/utils/analytics.ts`
+- **Admin Tools**: System monitoring in `src/components/admin/`

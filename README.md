@@ -1,189 +1,253 @@
-# Cognify
+# 🧠 Cognify
 
-**Transform Your Notes Into Smart Flashcards**
+> **AI-Powered Spaced Repetition Study Platform**  
+> Transform your learning with AI-generated flashcards and proven spaced repetition algorithms
 
-Cognify is an AI-powered learning platform that automatically converts your notes, documents, and study materials into interactive flashcards. Study smarter with personalized spaced repetition that adapts to your learning pace.
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)](https://supabase.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
+
+---
 
 ## ✨ Features
 
-- **🤖 AI-Powered Generation**: Advanced AI automatically extracts key concepts from your notes and creates targeted flashcards for optimal learning
-- **📄 Multiple Input Formats**: Upload text, paste content directly, or upload PDF files - Cognify handles various content types seamlessly
-- **🧠 Intelligent Spaced Repetition**: Anki-inspired SRS algorithm with customizable learning steps, intervals, and difficulty ratings
-- **📊 Personal Study Database**: All your flashcards are stored securely in your personal database, accessible anytime for review sessions
-- **🔑 Bring Your Own API**: Use your own AI API token for complete control and privacy - no subscription fees, just bring your preferred AI service
-- **⚙️ Customizable Settings**: Adjust daily card limits, learning steps, graduation intervals, and ease factors to match your learning style
-- **📈 Progress Tracking**: Detailed study statistics, session analytics, and performance insights
-- **🎯 Smart Scheduling**: Automatic reminders for due cards and optimized review sessions
+### 🤖 **AI-Powered Content Generation**
 
-## 🚀 Getting Started
+- **Multi-Provider Support**: OpenAI, Anthropic, Ollama, LM Studio, DeepSeek, and custom endpoints
+- **BYO API Keys**: Secure client-side key storage - never stored on our servers
+- **PDF to Flashcards**: Extract and generate study materials from any PDF document
+- **Intelligent Parsing**: Advanced content chunking and context-aware generation
+
+### 📚 **Spaced Repetition System (SRS)**
+
+- **Evidence-Based Algorithms**: Optimized intervals based on memory science
+- **Adaptive Learning**: Personalized scheduling based on your performance
+- **Progress Tracking**: Detailed analytics on learning patterns and retention
+- **Study Sessions**: Structured practice with immediate feedback
+
+### 🎯 **Study Management**
+
+- **Project Organization**: Group flashcards by subject or topic
+- **Flexible Import/Export**: JSON, CSV, and Anki-compatible formats
+- **Duplicate Detection**: Smart identification of similar content
+- **Bulk Operations**: Efficient management of large flashcard collections
+
+### 🔒 **Security & Privacy**
+
+- **Row Level Security (RLS)**: Database-level user isolation
+- **Client-Side Keys**: API keys stored locally, never on servers
+- **Open Source**: Full transparency and community-driven development
+- **Self-Hostable**: Deploy on your own infrastructure
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
-- Supabase account for database
-- AI API key (OpenAI, Anthropic, etc.) for flashcard generation
+- **Node.js** 18+ and **pnpm**
+- **Supabase** account and project
+- **AI Provider** API key (OpenAI, Anthropic, etc.)
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone and Install**
 
    ```bash
    git clone https://github.com/chaosweasl/cognify.git
    cd cognify
-   ```
-
-2. **Install dependencies**
-
-   ```bash
    pnpm install
    ```
 
-3. **Set up environment variables**
+2. **Environment Setup**
 
    ```bash
    cp .env.example .env.local
    ```
 
-   Fill in your Supabase credentials and other required environment variables.
+   Configure your environment variables:
 
-4. **Run the development server**
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
 
+3. **Database Setup**
+
+   ```bash
+   # Run migrations in your Supabase dashboard or via CLI
+   # Schema is provided in schema-dump.sql
+   ```
+
+4. **Development Server**
    ```bash
    pnpm dev
    ```
-
-5. **Open your browser**
-   Navigate to `http://localhost:3000` to start using Cognify.
-
-## 🛠️ Development Commands
-
-### Essential Commands
-
-````bash
-# Development
-pnpm dev                    # Start development server with Turbopack
-pnpm build                  # Build for production
-pnpm start                  # Start production server
-pnpm lint                   # Run ESLint checks
-pnpm lint --fix            # Fix auto-fixable lint issues
-
-# Type Checking
-npx tsc --noEmit           # Check TypeScript compilation
-
-### Environment Setup
-
-**Required Environment Variables**:
-
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# Optional: Analytics
-NEXT_PUBLIC_VERCEL_ANALYTICS=true
-````
-
-Copy `.env.example` to `.env.local` and fill in your Supabase credentials.
-
-### Development Workflow
-
-1. **Start development server**: `pnpm dev`
-2. **Make changes**: Edit files with hot reloading
-3. **Check types**: `npx tsc --noEmit`
-4. **Lint code**: `pnpm lint`
-5. **Test build**: `pnpm build`
-
-### Authentication Flow
-
-Cognify uses Supabase Auth with the following flow:
-
-1. User signs up/in via Supabase Auth
-2. JWT token stored in httpOnly cookies
-3. Middleware validates tokens on protected routes
-4. Row Level Security (RLS) enforces data isolation
-5. User profile automatically created on first login
-
-## 🛠️ Technology Stack
-
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS, ShadCN
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **State Management**: Zustand
-- **Animations**: Framer Motion
-- **Deployment**: Vercel-ready
-
-## 📚 How It Works
-
-1. **Create a Project**: Start by creating a new study project
-2. **Add Content**: Upload documents, paste notes, or manually create flashcards
-3. **AI Generation**: Let AI analyze your content and generate smart flashcards
-4. **Study Sessions**: Review flashcards using the spaced repetition system
-5. **Rate Performance**: Use Anki-style ratings (Again, Hard, Good, Easy) to optimize scheduling
-6. **Track Progress**: Monitor your learning progress with detailed analytics
-
-## 🎯 Spaced Repetition System
-
-Cognify implements a sophisticated SRS algorithm inspired by Anki, featuring:
-
-- **Learning Steps**: Customizable intervals for new cards (default: 1m, 10m, 1d)
-- **Graduation**: Cards move to review status after completing learning steps
-- **SM-2 Algorithm**: Mature cards use spaced repetition based on performance
-- **Relearning**: Failed cards enter relearning mode with adjusted intervals
-- **Daily Limits**: Control how many new cards and reviews you study per day
-
-## ⚙️ Configuration
-
-Customize your learning experience through the settings page:
-
-- **Daily Limits**: New cards per day, maximum reviews
-- **Learning Steps**: Intervals for new card progression
-- **Ease Settings**: Starting ease, minimum ease, bonus multipliers
-- **AI Integration**: Configure your preferred AI service and model
-
-## 📖 Documentation
-
-- [Study System Guide](docs/study-system.md) - Learn how the SRS algorithm works
-- [AI Integration](docs/ai-setup.md) - Set up AI-powered flashcard generation
-- [API Reference](docs/api.md) - Technical documentation for developers
-
-## 🤝 Contributing
-
-We welcome contributions in specific areas! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
-
-- 🎨 **Themes & UI**: Help make Cognify more beautiful
-- 📝 **Documentation**: Improve guides and help content
-- 🐛 **Bug Reports**: Report issues and help fix them
-- 💡 **Feature Suggestions**: Propose new improvements
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔒 Privacy & Security
-
-- **Local Control**: Your AI API keys are stored securely in your browser
-- **Data Ownership**: All your study data belongs to you
-- **No Tracking**: We don't track your study habits or personal information
-- **Open Source**: Transparent codebase you can audit and self-host
-
-## 🚧 Development Status
-
-Cognify is actively developed with regular updates. Current focus areas:
-
-- Enhanced AI integration options
-- Mobile-responsive improvements
-- Advanced analytics dashboard
-- Import/export functionality
-- Community themes and templates
-
-## 💬 Support
-
-- **Issues**: Report bugs or request features via GitHub Issues
-- **Discussions**: Join community discussions for help and ideas
-- **Documentation**: Check our comprehensive guides and FAQ
+   Visit [http://localhost:3000](http://localhost:3000)
 
 ---
 
-**Start learning smarter today with Cognify!** 🧠✨
+## 🔧 Configuration
+
+### AI Providers Setup
+
+Cognify supports multiple AI providers. Set up your preferred provider:
+
+1. **Navigate to Settings** → **AI Configuration**
+2. **Choose Provider**: OpenAI, Anthropic, Ollama, etc.
+3. **Enter API Key**: Stored securely in your browser's localStorage
+4. **Test Connection**: Verify your configuration works
+
+### BYO (Bring Your Own) API Keys Model
+
+- ✅ **Your Keys, Your Control**: API keys never leave your browser
+- ✅ **No Usage Limits**: Use your own quotas and billing
+- ✅ **Provider Choice**: Switch between providers anytime
+- ⚠️ **Security Notice**: Keys are stored in localStorage - clear them when using shared computers
+
+---
+
+## 📖 Usage Guide
+
+### Creating Your First Study Set
+
+1. **Create a Project**: Organize flashcards by topic
+2. **Add Content**:
+   - Upload PDF documents for AI generation
+   - Import JSON/CSV files
+   - Create flashcards manually
+3. **Review & Edit**: Preview AI-generated content before saving
+4. **Start Studying**: Begin spaced repetition sessions
+
+### Study Workflow
+
+1. **Study Session**: Practice flashcards with SRS scheduling
+2. **Self-Assessment**: Rate difficulty (Easy/Medium/Hard)
+3. **Progress Tracking**: Monitor retention and performance
+4. **Adaptive Scheduling**: System adjusts based on your responses
+
+---
+
+## 🏗️ Architecture
+
+### Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), React 18, TypeScript
+- **Backend**: Supabase (PostgreSQL, Auth, RLS)
+- **Styling**: Tailwind CSS, ShadCN/ui components
+- **AI Integration**: Multi-provider support with client-side calls
+- **State Management**: Zustand for global state
+- **Deployment**: Vercel-ready, self-hostable
+
+### Project Structure
+
+```
+cognify/
+├── app/                    # Next.js App Router
+│   ├── (main)/            # Authenticated routes
+│   ├── api/               # API endpoints
+│   └── auth/              # Authentication pages
+├── components/            # Reusable UI components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Core libraries
+│   ├── ai/               # AI provider integrations
+│   ├── srs/              # Spaced repetition logic
+│   └── supabase/         # Database utilities
+└── src/                   # Feature components
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! This project follows a BYO (Bring Your Own) AI model for security and flexibility.
+
+### Development Workflow
+
+1. **Fork & Clone**: Create your feature branch
+2. **Install Dependencies**: `pnpm install`
+3. **Start Development**: `pnpm dev`
+4. **Run Tests**: `pnpm test` (when available)
+5. **Type Check**: `npx tsc --noEmit`
+6. **Submit PR**: Include tests and documentation
+
+### Key Development Notes
+
+- **Security First**: Never store API keys server-side
+- **RLS Compliance**: All database operations respect Row Level Security
+- **Draft-First UX**: AI-generated content requires user acceptance
+- **Provider Agnostic**: Support multiple AI providers equally
+
+---
+
+## 🔒 Security & API Keys
+
+### Our Approach
+
+- **No Server Storage**: API keys remain in your browser's localStorage
+- **Explicit Consent**: Clear warnings before persisting keys locally
+- **Ephemeral Mode**: Use keys without saving for maximum security
+- **Open Source**: Full code transparency for security auditing
+
+### Best Practices
+
+- 🔑 **Use API Keys with Limited Scope**: Create keys with minimal permissions
+- 🔄 **Rotate Keys Regularly**: Update keys periodically for security
+- 🧹 **Clear Keys on Shared Devices**: Remove keys from localStorage when done
+- 📱 **Use Device-Specific Keys**: Different keys for different devices
+
+---
+
+## 📊 Roadmap
+
+### Current Status: BYO AI-First MVP
+
+- ✅ Multi-provider AI integration
+- ✅ PDF to flashcard generation
+- ✅ Spaced repetition system
+- ✅ Secure key management
+
+### Coming Soon
+
+- 🔄 **Cheatsheet & Quiz Generation**: Beyond just flashcards
+- 📚 **Documentation Site**: Copy/paste prompts for non-developers
+- 🌐 **CORS Fallback**: Manual workflow when browser calls fail
+- 📱 **Mobile App**: React Native application
+- 🔌 **Browser Extension**: Quick content capture
+
+### Future Enhancements
+
+- **YouTube Integration**: Generate content from video transcripts
+- **Collaboration**: Share study sets and team learning
+- **Advanced Analytics**: ML-powered learning insights
+- **Community Marketplace**: Share and discover study materials
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Spaced Repetition Research**: Built on decades of memory science
+- **Open Source Community**: ShadCN/ui, Tailwind CSS, and countless libraries
+- **AI Providers**: OpenAI, Anthropic, and the broader AI community
+- **Early Users**: Thank you for testing and providing feedback
+
+---
+
+## 📞 Support
+
+- 📧 **Issues**: [GitHub Issues](https://github.com/chaosweasl/cognify/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/chaosweasl/cognify/discussions)
+- 📖 **Documentation**: [Project Wiki](https://github.com/chaosweasl/cognify/wiki)
+- 🎯 **Roadmap**: [Project Board](https://github.com/chaosweasl/cognify/projects)
+
+---
+
+**Transform your learning with AI-powered spaced repetition. Start studying smarter, not harder.** 🚀
