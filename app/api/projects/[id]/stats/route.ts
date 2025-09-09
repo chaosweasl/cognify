@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getProjectStudyStats } from "@/lib/srs/SRSDBUtils";
 import { createClient } from "@/lib/supabase/server";
+import { withApiSecurity } from "@/lib/utils/apiSecurity";
 
 // safely resolve id whether context.params is an object or a Promise
 async function resolveProjectId(ctx: unknown): Promise<string | undefined> {
@@ -34,8 +35,7 @@ async function resolveProjectId(ctx: unknown): Promise<string | undefined> {
   return undefined;
 }
 
-// Correct handler signature: request first, context second
-export const GET = async (request: NextRequest, context: unknown) => {
+async function handleGetProjectStats(request: NextRequest, context: unknown) {
   const projectId = await resolveProjectId(context);
 
   if (!projectId) {
@@ -76,4 +76,11 @@ export const GET = async (request: NextRequest, context: unknown) => {
       { status: 500 }
     );
   }
-};
+}
+
+// Apply security middleware
+export const GET = withApiSecurity(handleGetProjectStats, {
+  requireAuth: true,
+  rateLimit: { requests: 100, window: 60 },
+  allowedMethods: ["GET"],
+});

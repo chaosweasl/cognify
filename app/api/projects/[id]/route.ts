@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CacheInvalidation } from "@/hooks/useCache";
+import { withApiSecurity } from "@/lib/utils/apiSecurity";
 
 // Helper: safely pull id out of the framework's context without using `any`
 function getProjectIdFromContext(ctx: unknown): string | undefined {
@@ -10,8 +11,7 @@ function getProjectIdFromContext(ctx: unknown): string | undefined {
   return typeof id === "string" ? id : undefined;
 }
 
-// PATCH: Update a project by ID
-export const PATCH = async (request: NextRequest, context: unknown) => {
+async function handleUpdateProject(request: NextRequest, context: unknown) {
   const id = getProjectIdFromContext(context);
   if (!id) {
     return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
@@ -48,10 +48,9 @@ export const PATCH = async (request: NextRequest, context: unknown) => {
   CacheInvalidation.invalidatePattern("project_stats_");
 
   return NextResponse.json({ message: "Project updated" });
-};
+}
 
-// DELETE: Delete a project by ID
-export const DELETE = async (request: NextRequest, context: unknown) => {
+async function handleDeleteProject(request: NextRequest, context: unknown) {
   const id = getProjectIdFromContext(context);
   if (!id) {
     return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
@@ -68,7 +67,7 @@ export const DELETE = async (request: NextRequest, context: unknown) => {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Delete project
+  // Delete project (will cascade to flashcards and SRS states)
   const { error } = await supabase
     .from("projects")
     .delete()
@@ -86,5 +85,19 @@ export const DELETE = async (request: NextRequest, context: unknown) => {
   CacheInvalidation.invalidate("user_projects");
   CacheInvalidation.invalidatePattern("project_stats_");
 
-  return NextResponse.json({ message: "Project deleted" });
-};
+  return NextResponse.json({ message: "Project deleted successfully" });
+}
+
+// Apply security middleware
+export const PATCH = withApiSecurity(handleUpdateProject, {
+  requireAuth: true,
+  rateLimit: { requests: 30, window: 60 },
+  allowedMethods: ["PATCH"],
+  validateInput: "project",
+});
+
+export const DELETE = withApiSecurity(handleDeleteProject, {
+  requireAuth: true,
+  rateLimit: { requests: 10, window: 60 },
+  allowedMethods: ["DELETE"],
+});
