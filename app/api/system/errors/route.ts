@@ -132,7 +132,7 @@ async function handleGetErrors() {
     }
 
     // Get errors from both database and memory
-    const dbErrors = await ErrorTrackingDB.getErrorLogs(50);
+    const dbErrors = await ErrorTrackingDB.getErrorLogs();
     const dbStats = await ErrorTrackingDB.getErrorStats();
     const memoryErrors = ErrorLogger.getErrors().slice(0, 10); // Keep some recent memory errors
     const memoryStats = ErrorLogger.getErrorStats();

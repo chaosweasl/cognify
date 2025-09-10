@@ -284,10 +284,6 @@ export function FlashcardEditor({
                   {/* JSON Import Button */}
                   <FlashcardJsonImporter
                     onImport={handleImportFlashcards}
-                    existingFlashcards={flashcards.map((card) => ({
-                      front: card.front,
-                      back: card.back,
-                    }))}
                     disabled={saving}
                   />
 

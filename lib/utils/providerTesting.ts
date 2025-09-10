@@ -145,7 +145,7 @@ export async function testProviderConnection(
       const errorData = await response.json();
       const error = new Error(errorData.error || "Connection test failed");
 
-      const aiError = enhanceAIError(error, config, "Connection test");
+      const aiError = enhanceAIError(error, config);
       const suggestions = getFallbackSuggestions(aiError, config);
 
       return {
@@ -166,7 +166,7 @@ export async function testProviderConnection(
     const endTime = Date.now();
     const responseTime = endTime - startTime;
 
-    const aiError = enhanceAIError(error, config, "Connection test");
+    const aiError = enhanceAIError(error, config);
     const suggestions = getFallbackSuggestions(aiError, config);
 
     return {
@@ -234,11 +234,7 @@ export async function testMultipleProviders(
     } else {
       // Handle promise rejection
       const config = configs[index];
-      const aiError = enhanceAIError(
-        result.reason,
-        config,
-        "Batch connection test"
-      );
+      const aiError = enhanceAIError(result.reason, config);
       const suggestions = getFallbackSuggestions(aiError, config);
 
       return {

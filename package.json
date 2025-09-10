@@ -6,10 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test:performance": "node scripts/performance-test.js",
-    "test:build": "npm run build && npm run start & sleep 5 && npm run test:performance && pkill -f 'next start'",
-    "analyze": "ANALYZE=true npm run build"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

@@ -329,11 +329,7 @@ async function handleGenerateFlashcards(request: NextRequest) {
 
     // Enhanced error handling with fallback suggestions
     if (config) {
-      const enhancedError = enhanceAIError(
-        error,
-        config,
-        "Flashcard generation"
-      );
+      const enhancedError = enhanceAIError(error, config);
       const suggestions = getFallbackSuggestions(enhancedError, config);
 
       return NextResponse.json(
@@ -428,11 +424,7 @@ async function generateFlashcardsForChunk({
   };
 
   // Use enhanced AI operation wrapper
-  const { result, error } = await executeAIOperation(
-    operation,
-    config,
-    `Generating flashcards for chunk (${Math.min(text.length, 100)}... chars)`
-  );
+  const { result, error } = await executeAIOperation(operation, config);
 
   if (error) {
     return {

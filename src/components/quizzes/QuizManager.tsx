@@ -96,7 +96,7 @@ interface QuizAttempt {
   id: string;
   quiz_id: string;
   user_id: string;
-  answers: Record<string, any>;
+  answers: Record<string, unknown>;
   score: number;
   total_questions: number;
   time_spent_seconds?: number;
@@ -116,11 +116,8 @@ export function QuizManager({ projectId }: QuizManagerProps) {
   const [takingQuiz, setTakingQuiz] = useState<Quiz | null>(null);
   const [viewingResults, setViewingResults] = useState<Quiz | null>(null);
 
-  useEffect(() => {
-    loadQuizzes();
-  }, [projectId]); // loadQuizzes is recreated on every render, so we only depend on projectId
-
-  const loadQuizzes = async () => {
+  // Memoize loader so hooks can safely depend on it
+  const loadQuizzes = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getQuizzesByProjectId(projectId);
@@ -131,7 +128,13 @@ export function QuizManager({ projectId }: QuizManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    loadQuizzes();
+  }, [loadQuizzes]);
+
+  // ...existing code...
 
   const handleCreate = async (quizData: CreateQuizData) => {
     try {
@@ -815,7 +818,7 @@ function QuizTakingModal({
   onComplete,
 }: QuizTakingModalProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
@@ -910,7 +913,7 @@ function QuizTakingModal({
 
             {currentQ.type === "multiple-choice" && (
               <RadioGroup
-                value={answers[currentQ.id] || ""}
+                value={(answers[currentQ.id] as string) || ""}
                 onValueChange={(value) => handleAnswer(currentQ.id, value)}
               >
                 {currentQ.options?.map((option, idx) => (
@@ -932,7 +935,7 @@ function QuizTakingModal({
 
             {currentQ.type === "true-false" && (
               <RadioGroup
-                value={answers[currentQ.id] || ""}
+                value={(answers[currentQ.id] as string) || ""}
                 onValueChange={(value) => handleAnswer(currentQ.id, value)}
               >
                 <div className="flex items-center space-x-2 p-3 surface-secondary rounded-lg">
@@ -954,7 +957,7 @@ function QuizTakingModal({
               currentQ.type === "fill-blank") && (
               <Input
                 placeholder="Enter your answer..."
-                value={answers[currentQ.id] || ""}
+                value={(answers[currentQ.id] as string) || ""}
                 onChange={(e) => handleAnswer(currentQ.id, e.target.value)}
                 className="text-lg p-4"
               />
