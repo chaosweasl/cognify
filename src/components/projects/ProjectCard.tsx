@@ -30,12 +30,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ProjectTypeBadge } from "./ProjectTypeComponents";
+import { ProjectType } from "@/src/types";
 
 interface ProjectCardProps {
   project: {
     id: string;
     name: string;
     description: string;
+    project_type?: ProjectType;
     formattedCreatedAt: string;
   };
   flashcardCount: number;
@@ -280,6 +283,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   >
                     {project.name}
                   </h3>
+
+                  {/* Project Type Badge */}
+                  {project.project_type && (
+                    <ProjectTypeBadge
+                      projectType={project.project_type}
+                      size="sm"
+                    />
+                  )}
+
                   <Badge
                     variant="outline"
                     className={cn(
@@ -518,17 +530,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 >
                   {project.name}
                 </h3>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs font-semibold px-3 py-1 transition-all duration-slower",
-                    `${status.bgGradient} ${status.borderColor}`,
-                    `bg-gradient-to-r ${status.gradient} bg-clip-text text-transparent border-2`,
-                    "group-hover:scale-105"
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs font-semibold px-3 py-1 transition-all duration-slower",
+                      `${status.bgGradient} ${status.borderColor}`,
+                      `bg-gradient-to-r ${status.gradient} bg-clip-text text-transparent border-2`,
+                      "group-hover:scale-105"
+                    )}
+                  >
+                    {status.label}
+                  </Badge>
+                  {project.project_type && (
+                    <ProjectTypeBadge
+                      projectType={project.project_type}
+                      size="sm"
+                      className="group-hover:scale-105 transition-transform duration-slower"
+                    />
                   )}
-                >
-                  {status.label}
-                </Badge>
+                </div>
               </div>
             </div>
 

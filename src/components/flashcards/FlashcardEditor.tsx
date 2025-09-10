@@ -30,6 +30,7 @@ import { FlashcardExporter } from "./FlashcardExporter";
 import { FlashcardDuplicateDetector } from "./FlashcardDuplicateDetector";
 import { useAISettings } from "@/hooks/useAISettings";
 import { BYOBanner } from "@/src/components/ui/byo-banner";
+import { AIQuickConfig } from "@/src/components/ai/AIQuickConfig";
 import type { Project, Flashcard } from "@/src/types";
 
 interface FlashcardEditorProps {
@@ -452,6 +453,16 @@ export function FlashcardEditor({
                   Advanced Settings
                 </button>
               </div>
+            </div>
+
+            {/* AI Configuration */}
+            <div className="animate-[slideUp_1.6s_ease-out_1s_both]">
+              <AIQuickConfig
+                onConfigurationComplete={(isValid) => {
+                  // Optional: could show notification or update UI based on validation
+                }}
+                compact={true}
+              />
             </div>
           </div>
 

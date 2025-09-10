@@ -138,19 +138,26 @@ export const ValidationSchemas = {
   project: z.object({
     name: z.string().min(1).max(100).trim(),
     description: z.string().max(500).optional(),
-    category: z.string().max(50).optional(),
-    settings: z
-      .object({
-        initialInterval: z.number().min(1).max(365),
-        intervalMultiplier: z.number().min(1.1).max(10),
-        maxInterval: z.number().min(1).max(36500),
-        easyFactor: z.number().min(1.1).max(5),
-        hardFactor: z.number().min(0.1).max(1),
-        againFactor: z.number().min(0.1).max(1),
-        maxReviewsPerDay: z.number().min(1).max(1000).optional(),
-        enableNotifications: z.boolean().optional(),
-      })
-      .partial(),
+    // SRS Settings (directly on project object)
+    new_cards_per_day: z.number().min(1).max(200).optional(),
+    max_reviews_per_day: z.number().min(1).max(1000).optional(),
+    learning_steps: z.array(z.number()).optional(),
+    relearning_steps: z.array(z.number()).optional(),
+    graduating_interval: z.number().min(1).optional(),
+    easy_interval: z.number().min(1).optional(),
+    starting_ease: z.number().min(1.3).optional(),
+    minimum_ease: z.number().min(1.3).optional(),
+    easy_bonus: z.number().min(1.0).optional(),
+    hard_interval_factor: z.number().min(0.1).max(2.0).optional(),
+    easy_interval_factor: z.number().min(1.0).max(3.0).optional(),
+    lapse_recovery_factor: z.number().min(0.1).max(1.0).optional(),
+    leech_threshold: z.number().min(1).max(20).optional(),
+    leech_action: z.enum(["suspend", "tag"]).optional(),
+    new_card_order: z.enum(["random", "created"]).optional(),
+    review_ahead: z.boolean().optional(),
+    bury_siblings: z.boolean().optional(),
+    max_interval: z.number().min(1).max(36500).optional(),
+    lapse_ease_penalty: z.number().min(0.1).max(1.0).optional(),
   }),
 
   // Flashcard validation

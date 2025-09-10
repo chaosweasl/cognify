@@ -22,7 +22,7 @@ async function handleGetProjects() {
       starting_ease, minimum_ease, easy_bonus, hard_interval_factor,
       easy_interval_factor, lapse_recovery_factor, leech_threshold,
       leech_action, new_card_order, review_ahead, bury_siblings,
-      max_interval, lapse_ease_penalty
+      max_interval, lapse_ease_penalty, category
     `
     )
     .eq("user_id", user.id)
@@ -113,6 +113,7 @@ async function handleGetProjects() {
 
     return {
       ...project,
+      project_type: project.category || "flashcards", // Map category to project_type with default
       flashcardCount: totalFlashcards, // Keep for backward compatibility
       stats,
     };
@@ -147,6 +148,15 @@ async function handleCreateProject(request: NextRequest) {
       );
     }
 
+    // Validate project type
+    const validProjectTypes = ["flashcards", "quiz", "cheatsheet"];
+    if (!data.project_type || !validProjectTypes.includes(data.project_type)) {
+      return NextResponse.json(
+        { error: "Valid project type is required" },
+        { status: 400 }
+      );
+    }
+
     // Create the project with SRS settings
     const { data: project, error } = await supabase
       .from("projects")
@@ -155,6 +165,7 @@ async function handleCreateProject(request: NextRequest) {
           user_id: user.id,
           name: data.name.trim(),
           description: data.description?.trim() || null,
+          category: data.project_type, // Using category field for project type
           // SRS settings with defaults
           new_cards_per_day: data.new_cards_per_day || 20,
           max_reviews_per_day: data.max_reviews_per_day || 100,

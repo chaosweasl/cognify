@@ -1,9 +1,55 @@
 // Core types for Cognify
+
+// Project Type Enum
+export type ProjectType = "flashcards" | "quiz" | "cheatsheet";
+
+// Project Type Configuration
+export interface ProjectTypeConfig {
+  id: ProjectType;
+  name: string;
+  description: string;
+  icon: string; // Icon name for lucide-react
+  color: string; // Tailwind color class
+  features: string[];
+}
+
+export const PROJECT_TYPE_CONFIGS: Record<ProjectType, ProjectTypeConfig> = {
+  flashcards: {
+    id: "flashcards",
+    name: "Flashcards",
+    description: "Question-answer pairs for spaced repetition learning",
+    icon: "BookOpen",
+    color: "blue",
+    features: [
+      "Spaced repetition",
+      "Progress tracking",
+      "Difficulty adjustment",
+    ],
+  },
+  quiz: {
+    id: "quiz",
+    name: "Quiz",
+    description: "Interactive quizzes with multiple choice and open questions",
+    icon: "Brain",
+    color: "purple",
+    features: ["Multiple choice", "Short answers", "Instant feedback"],
+  },
+  cheatsheet: {
+    id: "cheatsheet",
+    name: "Cheatsheet",
+    description: "Organized reference materials with key concepts",
+    icon: "FileText",
+    color: "green",
+    features: ["Quick reference", "Structured content", "Easy lookup"],
+  },
+};
+
 export interface Project {
   id: string;
   user_id: string;
   name: string;
   description: string | null;
+  project_type: ProjectType;
   created_at: string;
   updated_at: string;
   new_cards_per_day: number;
@@ -94,6 +140,7 @@ export interface ProjectStats {
 export interface CreateProjectData {
   name: string;
   description?: string;
+  project_type: ProjectType;
   new_cards_per_day?: number;
   max_reviews_per_day?: number;
   // SRS Settings with defaults

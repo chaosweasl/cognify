@@ -196,22 +196,50 @@ async function getDailyStudyCountsFromDB(
     );
 
     if (projectId) {
-      // Get per-project daily stats from API
-      const dailyStatsRes = await fetch(
-        `/api/projects/${projectId}/daily-stats`,
-        {
-          headers: {
-            "x-user-id": userId,
-          },
-          cache: "no-store",
+      // Get per-project daily stats from API (only in browser context)
+      if (typeof window !== "undefined") {
+        const dailyStatsRes = await fetch(
+          `/api/projects/${projectId}/daily-stats`,
+          {
+            headers: {
+              "x-user-id": userId,
+            },
+            cache: "no-store",
+          }
+        );
+        let stats = { newCardsStudied: 0, reviewsCompleted: 0 };
+        if (dailyStatsRes.ok) {
+          try {
+            stats = await dailyStatsRes.json();
+          } catch (e) {
+            console.error(
+              "[getDailyStudyCountsFromDB] Error parsing response:",
+              e
+            );
+          }
         }
-      );
-      let stats = { newCardsStudied: 0, reviewsCompleted: 0 };
-      if (dailyStatsRes.ok) {
-        stats = await dailyStatsRes.json();
+        console.log(
+          `[getDailyStudyCountsFromDB] Project stats: ${JSON.stringify(stats)}`
+        );
+        return stats;
+      } else {
+        // Server-side: use direct database function
+        try {
+          const { getProjectDailyStudyStats } = await import(
+            "@/lib/supabase/dailyStudyStats"
+          );
+          const stats = await getProjectDailyStudyStats(userId, projectId);
+          console.log(
+            `[getDailyStudyCountsFromDB] Project stats (server): ${JSON.stringify(
+              stats
+            )}`
+          );
+          return stats;
+        } catch (e) {
+          console.error("[getDailyStudyCountsFromDB] Server error:", e);
+          return { newCardsStudied: 0, reviewsCompleted: 0 };
+        }
       }
-      console.log(`[getDailyStudyCountsFromDB] Project stats loaded:`, stats);
-      return stats;
     } else {
       // Get global daily stats (legacy support)
       const stats = await getDailyStudyStats(userId);

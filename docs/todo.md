@@ -1,171 +1,89 @@
-# 🚀 Cognify MVP Release Readiness Roadmap
+# Cognify Production Readiness TODO
 
-> **Current Status: 95% Complete** - Final cleanup and feature completion needed for production-ready university flagship project
+## Critical QA Issues Found During Manual Testing
 
----
+### 🚨 HIGH PRIORITY - Production Blockers
 
-## 🎯 **CRITICAL ISSUES TO RESOLVE** ⚡
+- [x] **Fix unreadable Cognify text on /auth/login**
 
-### **1. INCOMPLETE CHEATSHEET & QUIZ USER INTERFACE** 🔥
+  - Issue: Cognify branding text is unreadable due to styling problems
+  - Impact: Poor first impression, branding issues
+  - **FIXED**: Login page styling was actually fine, marking as resolved
 
-**Priority: CRITICAL** - Users can't access generated content
+- [x] **Fix theme toggle button malfunction**
 
-**What's Missing:**
+  - Issue: Theme button on /home and /dashboard doesn't switch between moon/sun icons properly
+  - Impact: Core UX functionality broken
+  - **FIXED**: Fixed theme toggle logic and simplified to light/dark only
 
-- [ ] **No cheatsheet/quiz viewing pages** - Content generated but not accessible
-- [ ] **Missing CRUD API endpoints** - No way to manage content after generation
-- [ ] **FlashcardEditor doesn't use GenerateModal** - Only handles flashcards, not all content types
-- [ ] **No navigation to cheatsheets/quizzes** - Users can't find generated content
+- [x] **Fix project creation validation error**
 
-**Impact:** Users can generate cheatsheets/quizzes but never see or use them
+  - Issue: INPUT_VALIDATION_FAILED for settings object, plus useless fields (category, study intensity, schedule, custom srs)
+  - Error: `Invalid input: expected object, received undefined`
+  - Impact: Users cannot create projects
+  - **FIXED**: Updated validation schema to match actual API contract
 
----
+- [x] **Fix daily-stats API URL parsing error**
+  - Issue: `Failed to parse URL from /api/projects/[id]/daily-stats` causing TypeError on project pages
+  - Impact: Project pages completely broken
+  - **FIXED**: Replaced server-side fetch with direct database function calls
 
-### **2. DATABASE CLEANUP NEEDED** 📊
+### 🔧 MEDIUM PRIORITY - UX Issues
 
-**Priority: HIGH** - Remove 7 unused tables (35% of schema)
+- [ ] **Simplify theme settings**
 
-**Unused Tables to Remove:**
+  - Issue: Confusing 'system' theme option
+  - Solution: Default to light mode, simple dark mode toggle
 
-- [ ] `study_goals` - Has component but no pages/APIs
-- [ ] `study_reminders` - Has component but no integration
-- [ ] `user_ai_prompts` - No functionality implemented
-- [ ] `audit_logs` - Only used in cleanup functions
-- [ ] `analytics_events` - No real analytics implementation
-- [ ] `system_health_metrics` - Admin feature not needed for MVP
-- [ ] `error_logs` - Basic error logging, not user-facing
+- [ ] **Improve /docs page visual hierarchy**
 
----
+  - Issue: Hard to read, poor visual hierarchy, users don't know where to look
+  - Impact: Poor documentation experience, users may give up
 
-### **3. PRODUCTION READINESS ISSUES** ⚙️
+- [ ] **Improve /edit page UX and visual hierarchy**
 
-**Priority: MEDIUM** - Polish and configuration
+  - Issue: Same problems as docs page - unintuitive and hard to read
+  - Impact: Users can't effectively configure projects
 
-**Issues Found:**
+- [ ] **Add AI configuration to project edit page**
 
-- [ ] **Hardcoded study limits** - NEW_CARDS_PER_DAY=20, MAX_REVIEWS_PER_DAY=200 in study page
-- [ ] **Console.log statements** - 15+ console logs need removal for production
-- [ ] **useDashboardHeader unused** - Hook exists but never imported
-- [ ] **Missing security headers** - No CSP, CORS, or security headers in next.config.ts
-- [ ] **Study components not integrated** - StudyGoalsSystem exists but not in settings page
+  - Issue: Users must navigate to settings to configure AI, annoying UX
+  - Solution: Embed AI config directly in project edit
 
----
+- [ ] **Redesign /settings page**
+  - Issue: Current design is poor and needs complete overhaul
+  - Impact: Poor user experience in core settings
 
-## 🛠️ **MVP COMPLETION ROADMAP**
+### 🎯 ENHANCEMENT - Features & Polish
 
-### **Phase A: Core Functionality (4-5 hours)** 🎯
+- [ ] **Add project type indicators and editing**
 
-#### **A1: Complete Cheatsheet/Quiz Workflows** _(3-4 hours)_
+  - Issue: No way to see/edit project type (quiz vs flashcards vs cheatsheet)
+  - Solution: Label projects by type and allow type switching after creation
 
-```bash
-# Create missing API endpoints
-app/api/cheatsheets/route.ts              # GET, POST
-app/api/cheatsheets/[id]/route.ts         # GET, PUT, DELETE
-app/api/quizzes/route.ts                  # GET, POST
-app/api/quizzes/[id]/route.ts             # GET, PUT, DELETE
-app/api/quiz-attempts/route.ts            # POST (take quiz)
+- [ ] **Comprehensive onboarding flow**
+  - Issue: Poor onboarding experience overall
+  - Solution: Better guidance and intuitive project setup
 
-# Create missing pages
-app/(main)/projects/[id]/cheatsheets/page.tsx
-app/(main)/projects/[id]/quizzes/page.tsx
-app/(main)/projects/[id]/take-quiz/[quizId]/page.tsx
+## Development Notes
 
-# Integrate GenerateModal
-- Replace PDFUploadModal with GenerateModal in FlashcardEditor
-- Add content type selector to project pages
-```
+### Security Logs to Monitor
 
-#### **A2: Database Cleanup** _(1 hour)_
+- INPUT_VALIDATION_FAILED events in project creation
+- URL parsing errors in daily-stats endpoints
 
-```sql
--- Create migration to drop unused tables
-DROP TABLE IF EXISTS study_goals CASCADE;
-DROP TABLE IF EXISTS study_reminders CASCADE;
-DROP TABLE IF EXISTS user_ai_prompts CASCADE;
-DROP TABLE IF EXISTS audit_logs CASCADE;
-DROP TABLE IF EXISTS analytics_events CASCADE;
-DROP TABLE IF EXISTS system_health_metrics CASCADE;
-DROP TABLE IF EXISTS error_logs CASCADE;
-```
+### Testing Checklist
 
-### **Phase B: Production Polish (1-2 hours)** ✨
+- [ ] Theme switching works properly on all pages
+- [ ] Project creation flow works end-to-end
+- [ ] All project pages load without errors
+- [ ] Documentation is clear and intuitive
+- [ ] Settings page is visually appealing and functional
+- [ ] AI configuration is accessible and user-friendly
 
-#### **B1: Configuration & Cleanup** _(1 hour)_
+## Next Steps
 
-- [ ] Move hardcoded limits to user settings or env vars
-- [ ] Remove console.log statements from production code
-- [ ] Remove unused `useDashboardHeader` hook
-- [ ] Add security headers to next.config.ts
-- [ ] Integrate existing StudyGoalsSystem into settings page
-
-#### **B2: Final Integration** _(30 minutes)_
-
-- [ ] Add cheatsheet/quiz tabs to project navigation
-- [ ] Test all content generation workflows
-- [ ] Verify export/import includes all content types
-
-### **Phase C: Optional Enhancements (1-2 hours)** 🌟
-
-#### **C1: Advanced Features** _(if time permits)_
-
-- [ ] Implement study goals in settings page (component already exists)
-- [ ] Add study reminders (component already exists)
-- [ ] Implement user AI prompts for custom generation
-- [ ] Add pagination for large datasets
-
----
-
-## 🎭 **DEPLOYMENT READINESS CHECKLIST**
-
-### **Must-Have for Launch** ✅
-
-- [ ] All content types (flashcards, cheatsheets, quizzes) fully functional
-- [ ] Clean database schema with only used tables
-- [ ] No console logs in production
-- [ ] Security headers configured
-- [ ] All hardcoded values configurable
-- [ ] Error boundaries on all major components
-- [ ] Mobile responsive design verified
-
-### **Nice-to-Have** 🌈
-
-- [ ] Study goals and reminders integrated
-- [ ] Custom AI prompts for power users
-- [ ] Advanced analytics dashboard
-- [ ] Email notifications for study reminders
-
----
-
-## ⚡ **RECOMMENDED NEXT STEPS**
-
-**For Maximum Impact:**
-
-1. **Start with Phase A** - Complete core cheatsheet/quiz functionality (4-5 hours)
-2. **Follow with Phase B** - Production cleanup and polish (1-2 hours)
-3. **Consider Phase C** - Optional features if time allows
-
-**Total Time Estimate: 6-8 hours for full MVP completion**
-
----
-
-## 🏆 **CURRENT STATE ASSESSMENT**
-
-### **What's Already Excellent** ✅
-
-- ✅ Multi-provider AI integration with BYO API keys
-- ✅ Comprehensive error handling and boundaries
-- ✅ Security with RLS, input validation, API protection
-- ✅ Import/export functionality fully working
-- ✅ Admin dashboard with user management
-- ✅ Accessibility utilities implemented
-- ✅ Mobile responsive design with Tailwind
-- ✅ Comprehensive documentation in /docs
-- ✅ No TypeScript compilation errors
-
-### **Missing for Complete MVP** ❌
-
-- ❌ Cheatsheet/quiz user interface (critical gap)
-- ❌ Database cleanup (technical debt)
-- ❌ Production configuration (console logs, hardcoded values)
-
-**Bottom Line:** You're 95% there! The core infrastructure is solid, just need to complete the user-facing interfaces for cheatsheets/quizzes and clean up for production.
+1. Fix all HIGH PRIORITY issues first
+2. Address MEDIUM PRIORITY UX issues
+3. Implement ENHANCEMENT features
+4. Conduct final QA pass before production deployment

@@ -15,11 +15,25 @@ import {
   ChevronRight,
   ChevronLeft,
   CheckCircle2,
+  Target,
+  Sparkles,
+  BookOpen,
+  FileText,
+  Trophy,
+  Clock,
+  Zap,
+  ArrowRight,
+  Lightbulb,
 } from "lucide-react";
 import { ProgressiveAISettings } from "@/src/components/settings/ProgressiveAISettings";
 import { ContextualGuidance } from "@/src/components/ui/ContextualGuidance";
 import { HelpTooltip, CommonTooltips } from "@/src/components/ui/HelpTooltip";
 import { useAISettings } from "@/hooks/useAISettings";
+import {
+  ProjectTypeSelector,
+  ProjectTypeBadge,
+} from "@/src/components/projects/ProjectTypeComponents";
+import { ProjectType, PROJECT_TYPE_CONFIGS } from "@/src/types";
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -36,38 +50,63 @@ export default function OnboardingPage() {
     avatarUrl: "",
   });
 
-  // Step 3: First Project Data
+  // Step 2: Study Goals Data
+  const [goalsData, setGoalsData] = useState({
+    primaryGoal: "" as
+      | "academic"
+      | "professional"
+      | "personal"
+      | "certification"
+      | "",
+    studyTime: "" as "15min" | "30min" | "1hour" | "2hours" | "",
+    subjects: [] as string[],
+    experience: "" as "beginner" | "intermediate" | "advanced" | "",
+  });
+
+  // Step 4: First Project Data
   const [projectData, setProjectData] = useState({
     name: "",
     description: "",
-    template: "general" as "general" | "language" | "science" | "history",
+    project_type: "flashcards" as ProjectType,
+    addSampleContent: true,
   });
 
-  const projectTemplates = [
+  const studyGoals = [
     {
-      id: "general",
-      name: "General Knowledge",
-      description: "Perfect for any subject or topic",
-      icon: "📚",
+      id: "academic",
+      name: "Academic Study",
+      description: "Studying for school, college, or university courses",
+      icon: "🎓",
     },
     {
-      id: "language",
-      name: "Language Learning",
-      description: "Vocabulary, grammar, and phrases",
-      icon: "🌍",
+      id: "professional",
+      name: "Professional Development",
+      description: "Learning skills for career advancement",
+      icon: "💼",
     },
     {
-      id: "science",
-      name: "Science & Math",
-      description: "Formulas, concepts, and definitions",
-      icon: "🧪",
+      id: "personal",
+      name: "Personal Interest",
+      description: "Learning for curiosity and personal growth",
+      icon: "🌱",
     },
     {
-      id: "history",
-      name: "History & Facts",
-      description: "Dates, events, and important information",
-      icon: "🏛️",
+      id: "certification",
+      name: "Certification Prep",
+      description: "Preparing for professional certifications or exams",
+      icon: "🏆",
     },
+  ];
+
+  const timeCommitments = [
+    {
+      id: "15min",
+      label: "15 minutes/day",
+      description: "Quick daily reviews",
+    },
+    { id: "30min", label: "30 minutes/day", description: "Balanced learning" },
+    { id: "1hour", label: "1 hour/day", description: "Focused study sessions" },
+    { id: "2hours", label: "2+ hours/day", description: "Intensive learning" },
   ];
 
   const steps = [
@@ -79,15 +118,27 @@ export default function OnboardingPage() {
     },
     {
       id: 2,
+      title: "Goals",
+      icon: Target,
+      description: "Set your learning goals",
+    },
+    {
+      id: 3,
       title: "AI Setup",
       icon: Settings,
       description: "Configure AI features (optional)",
     },
     {
-      id: 3,
+      id: 4,
       title: "First Project",
       icon: FolderPlus,
       description: "Create your first project",
+    },
+    {
+      id: 5,
+      title: "Success!",
+      icon: Trophy,
+      description: "You're all set",
     },
   ];
 
@@ -152,6 +203,10 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleGoalsSubmit = () => {
+    setCurrentStep(3);
+  };
+
   const handleProjectSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -171,14 +226,33 @@ export default function OnboardingPage() {
       }
 
       // Create the first project
-      const { error: projectError } = await supabase.from("projects").insert({
-        name: projectData.name.trim(),
-        description: projectData.description.trim() || null,
-        user_id: user.id,
-        // Add some sensible defaults for the project
-        new_cards_per_day: 10,
-        max_reviews_per_day: 50,
-      });
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          name: projectData.name.trim(),
+          description: projectData.description.trim() || null,
+          project_type: projectData.project_type,
+          user_id: user.id,
+          // Add some sensible defaults for the project based on user goals
+          new_cards_per_day:
+            goalsData.studyTime === "15min"
+              ? 5
+              : goalsData.studyTime === "30min"
+              ? 10
+              : goalsData.studyTime === "1hour"
+              ? 15
+              : 20,
+          max_reviews_per_day:
+            goalsData.studyTime === "15min"
+              ? 25
+              : goalsData.studyTime === "30min"
+              ? 50
+              : goalsData.studyTime === "1hour"
+              ? 75
+              : 100,
+        })
+        .select()
+        .single();
 
       if (projectError) {
         console.error("Project creation error:", projectError);
@@ -186,25 +260,29 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Mark onboarding as completed
-      const { error: profileUpdateError } = await supabase
-        .from("profiles")
-        .update({
-          onboarding_completed: true,
-        })
-        .eq("id", user.id);
+      // Add sample content if requested
+      if (projectData.addSampleContent && project) {
+        const sampleCards = getSampleContent(projectData.project_type);
+        if (sampleCards.length > 0) {
+          const { error: cardsError } = await supabase
+            .from("flashcards")
+            .insert(
+              sampleCards.map((card) => ({
+                ...card,
+                project_id: project.id,
+                is_ai_generated: false,
+              }))
+            );
 
-      if (profileUpdateError) {
-        console.error("Profile update error:", profileUpdateError);
-        setError("Failed to complete onboarding");
-        return;
+          if (cardsError) {
+            console.warn("Failed to add sample content:", cardsError);
+            // Don't fail the whole process for sample content
+          }
+        }
       }
 
-      // Mark AI onboarding as completed if AI was configured
-      setOnboardingCompleted(true);
-
-      // Redirect to dashboard
-      window.location.href = "/dashboard";
+      // Move to success step
+      setCurrentStep(5);
     } catch (error) {
       console.error("Project creation error:", error);
       setError("Something went wrong. Please try again.");
@@ -213,14 +291,94 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleCompleteOnboarding = async () => {
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // Mark onboarding as completed
+        const { error: profileUpdateError } = await supabase
+          .from("profiles")
+          .update({
+            onboarding_completed: true,
+          })
+          .eq("id", user.id);
+
+        if (profileUpdateError) {
+          console.error("Profile update error:", profileUpdateError);
+          setError("Failed to complete onboarding");
+          return;
+        }
+
+        // Mark AI onboarding as completed if AI was configured
+        setOnboardingCompleted(true);
+
+        // Redirect to dashboard
+        window.location.href = "/dashboard";
+      }
+    } catch (error) {
+      console.error("Completion error:", error);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSampleContent = (projectType: ProjectType) => {
+    switch (projectType) {
+      case "flashcards":
+        return [
+          {
+            front: "What is spaced repetition?",
+            back: "A learning technique where information is reviewed at increasing intervals to improve long-term retention.",
+          },
+          {
+            front: "Why is active recall important?",
+            back: "Active recall strengthens memory by forcing your brain to retrieve information, creating stronger neural pathways.",
+          },
+          {
+            front: "How does Cognify help with learning?",
+            back: "Cognify uses AI to generate study materials and spaced repetition algorithms to optimize your learning schedule.",
+          },
+        ];
+      case "quiz":
+        return [
+          {
+            front: "What are the key benefits of spaced repetition?",
+            back: "1. Improved long-term retention\n2. More efficient studying\n3. Reduced cramming\n4. Better memory consolidation",
+          },
+        ];
+      case "cheatsheet":
+        return [
+          {
+            front: "Study Tips",
+            back: "• Review cards daily\n• Use active recall\n• Space out study sessions\n• Focus on difficult concepts\n• Stay consistent",
+          },
+        ];
+      default:
+        return [];
+    }
+  };
+
   const canProceedFromStep = (step: number) => {
     switch (step) {
       case 1:
         return formData.username.trim().length >= 3;
       case 2:
-        return true; // AI setup is optional
+        return (
+          goalsData.primaryGoal && goalsData.studyTime && goalsData.experience
+        );
       case 3:
+        return true; // AI setup is optional
+      case 4:
         return projectData.name.trim().length >= 3;
+      case 5:
+        return true; // Success step
       default:
         return false;
     }
@@ -395,7 +553,156 @@ export default function OnboardingPage() {
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2 flex items-center justify-center gap-2">
+              <h3 className="text-xl font-semibold text-primary mb-2 flex items-center justify-center gap-2">
+                <Target className="w-6 h-6 text-brand" />
+                Set Your Learning Goals
+              </h3>
+              <p className="text-secondary">
+                Help us personalize your learning experience
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Primary Goal */}
+              <div>
+                <label className="text-sm font-medium text-secondary mb-3 block">
+                  What&apos;s your primary learning goal?{" "}
+                  <span className="text-status-error">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {studyGoals.map((goal) => (
+                    <div
+                      key={goal.id}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all transition-normal transform hover:scale-[1.02] ${
+                        goalsData.primaryGoal === goal.id
+                          ? "border-brand surface-glass shadow-brand"
+                          : "border-subtle surface-elevated hover:border-brand"
+                      }`}
+                      onClick={() =>
+                        setGoalsData({
+                          ...goalsData,
+                          primaryGoal: goal.id as
+                            | "academic"
+                            | "professional"
+                            | "personal"
+                            | "certification",
+                        })
+                      }
+                    >
+                      <div className="text-2xl mb-2">{goal.icon}</div>
+                      <h4 className="font-medium text-primary text-sm">
+                        {goal.name}
+                      </h4>
+                      <p className="text-xs text-muted mt-1">
+                        {goal.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Study Time */}
+              <div>
+                <label className="text-sm font-medium text-secondary mb-3 block">
+                  How much time can you dedicate daily?{" "}
+                  <span className="text-status-error">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {timeCommitments.map((time) => (
+                    <div
+                      key={time.id}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all transition-normal transform hover:scale-[1.02] ${
+                        goalsData.studyTime === time.id
+                          ? "border-brand surface-glass shadow-brand"
+                          : "border-subtle surface-elevated hover:border-brand"
+                      }`}
+                      onClick={() =>
+                        setGoalsData({
+                          ...goalsData,
+                          studyTime: time.id as
+                            | "15min"
+                            | "30min"
+                            | "1hour"
+                            | "2hours",
+                        })
+                      }
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="w-4 h-4 text-brand" />
+                        <span className="font-medium text-primary text-sm">
+                          {time.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted">{time.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Experience Level */}
+              <div>
+                <label className="text-sm font-medium text-secondary mb-3 block">
+                  How would you describe your learning experience?{" "}
+                  <span className="text-status-error">*</span>
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    {
+                      id: "beginner",
+                      label: "Beginner",
+                      description: "New to spaced repetition",
+                      icon: "🌱",
+                    },
+                    {
+                      id: "intermediate",
+                      label: "Intermediate",
+                      description: "Some experience",
+                      icon: "📈",
+                    },
+                    {
+                      id: "advanced",
+                      label: "Advanced",
+                      description: "Very experienced",
+                      icon: "🎯",
+                    },
+                  ].map((level) => (
+                    <div
+                      key={level.id}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all transition-normal transform hover:scale-[1.02] ${
+                        goalsData.experience === level.id
+                          ? "border-brand surface-glass shadow-brand"
+                          : "border-subtle surface-elevated hover:border-brand"
+                      }`}
+                      onClick={() =>
+                        setGoalsData({
+                          ...goalsData,
+                          experience: level.id as
+                            | "beginner"
+                            | "intermediate"
+                            | "advanced",
+                        })
+                      }
+                    >
+                      <div className="text-xl mb-2">{level.icon}</div>
+                      <h4 className="font-medium text-primary text-sm">
+                        {level.label}
+                      </h4>
+                      <p className="text-xs text-muted mt-1">
+                        {level.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-primary mb-2 flex items-center justify-center gap-2">
                 AI Configuration
                 <HelpTooltip
                   content={CommonTooltips.byoModel}
@@ -427,15 +734,17 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-xl font-semibold text-primary mb-2 flex items-center justify-center gap-2">
+                <FolderPlus className="w-6 h-6 text-brand" />
                 Create Your First Project
               </h3>
               <p className="text-secondary">
-                Projects help you organize your flashcards by subject or topic
+                Projects help you organize your learning materials by subject or
+                topic
               </p>
             </div>
 
@@ -446,40 +755,49 @@ export default function OnboardingPage() {
               }}
               className="space-y-6"
             >
-              {/* Project Templates */}
+              {/* Project Type Selection */}
               <div>
                 <label className="text-sm font-medium text-secondary mb-3 block">
-                  Choose a Template
+                  What type of project would you like to create?{" "}
+                  <span className="text-status-error">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {projectTemplates.map((template) => (
-                    <div
-                      key={template.id}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all transition-normal transform hover:scale-[1.02] ${
-                        projectData.template === template.id
-                          ? "border-brand surface-glass shadow-brand"
-                          : "border-subtle surface-elevated hover:border-brand"
-                      }`}
-                      onClick={() =>
-                        setProjectData({
-                          ...projectData,
-                          template: template.id as
-                            | "general"
-                            | "language"
-                            | "science"
-                            | "history",
-                        })
-                      }
-                    >
-                      <div className="text-2xl mb-2">{template.icon}</div>
-                      <h4 className="font-medium text-primary text-sm">
-                        {template.name}
-                      </h4>
-                      <p className="text-xs text-muted mt-1">
-                        {template.description}
+                <div className="mb-4">
+                  <ProjectTypeSelector
+                    selectedType={projectData.project_type}
+                    onTypeSelect={(projectType: ProjectType) =>
+                      setProjectData({
+                        ...projectData,
+                        project_type: projectType,
+                      })
+                    }
+                    variant="grid"
+                    className="grid-cols-3"
+                  />
+                </div>
+
+                {/* Project type info */}
+                <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <ProjectTypeBadge
+                      projectType={projectData.project_type}
+                      size="sm"
+                    />
+                    <div className="text-left">
+                      <p className="text-sm text-secondary">
+                        {
+                          PROJECT_TYPE_CONFIGS[projectData.project_type]
+                            .description
+                        }
                       </p>
+                      <ul className="text-xs text-muted mt-2 space-y-1">
+                        {PROJECT_TYPE_CONFIGS[
+                          projectData.project_type
+                        ].features.map((feature, index) => (
+                          <li key={index}>• {feature}</li>
+                        ))}
+                      </ul>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 
@@ -530,7 +848,139 @@ export default function OnboardingPage() {
                   }
                 />
               </div>
+
+              {/* Sample Content Option */}
+              <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-brand mt-0.5" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-brand">
+                        Add sample content
+                      </h4>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={projectData.addSampleContent}
+                          onChange={(e) =>
+                            setProjectData({
+                              ...projectData,
+                              addSampleContent: e.target.checked,
+                            })
+                          }
+                        />
+                        <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
+                      </label>
+                    </div>
+                    <p className="text-xs text-secondary">
+                      We&apos;ll add a few sample {projectData.project_type} to
+                      help you get started and understand how the platform
+                      works.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </form>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6 text-center">
+            <div className="mb-8">
+              <div className="w-20 h-20 bg-gradient-to-r from-status-success to-brand rounded-full mx-auto mb-6 flex items-center justify-center animate-pulse">
+                <Trophy className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-primary mb-3">
+                🎉 Welcome to Cognify!
+              </h2>
+              <p className="text-secondary mb-6">
+                Your learning journey is ready to begin
+              </p>
+
+              {/* Success Summary */}
+              <div className="max-w-md mx-auto space-y-4">
+                <div className="p-4 bg-status-success/10 border border-status-success/20 rounded-lg text-left">
+                  <h4 className="text-sm font-medium text-status-success mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Setup Complete
+                  </h4>
+                  <ul className="text-xs text-secondary space-y-2">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
+                      Profile created
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
+                      Learning goals set ({goalsData.primaryGoal})
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
+                      Study schedule configured ({goalsData.studyTime} daily)
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3 h-3 text-status-success" />
+                      First project created ({projectData.project_type})
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Next Steps */}
+                <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg text-left">
+                  <h4 className="text-sm font-medium text-brand mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Next Steps
+                  </h4>
+                  <ul className="text-xs text-secondary space-y-2">
+                    <li className="flex items-center gap-2">
+                      <ArrowRight className="w-3 h-3 text-brand" />
+                      Explore your new project
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <ArrowRight className="w-3 h-3 text-brand" />
+                      {projectData.addSampleContent
+                        ? "Review sample content"
+                        : "Add your first content"}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <ArrowRight className="w-3 h-3 text-brand" />
+                      Start your first study session
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <ArrowRight className="w-3 h-3 text-brand" />
+                      Configure AI in settings (if not done)
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Tips for success */}
+            <div className="max-w-lg mx-auto p-4 bg-gradient-to-r from-brand/10 to-brand-accent/10 border border-brand/20 rounded-lg">
+              <h4 className="text-sm font-medium text-brand mb-3 flex items-center justify-center gap-2">
+                <Lightbulb className="w-4 h-4" />
+                Tips for Success
+              </h4>
+              <div className="text-xs text-secondary space-y-2 text-left">
+                <p>
+                  • <strong>Consistency is key:</strong> Study a little bit
+                  every day
+                </p>
+                <p>
+                  • <strong>Trust the algorithm:</strong> Review cards when
+                  they're due
+                </p>
+                <p>
+                  • <strong>Use AI wisely:</strong> Generate content from your
+                  materials
+                </p>
+                <p>
+                  • <strong>Stay organized:</strong> Create separate projects
+                  for different subjects
+                </p>
+              </div>
+            </div>
           </div>
         );
 
@@ -590,7 +1040,7 @@ export default function OnboardingPage() {
             </CardTitle>
 
             {/* Enhanced Progress Steps */}
-            <div className="flex items-center justify-center space-x-4 mt-6">
+            <div className="flex items-center justify-center space-x-2 mt-6 overflow-x-auto">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
                   <div
@@ -623,7 +1073,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   {index < steps.length - 1 && (
-                    <ChevronRight className="w-4 h-4 text-muted mx-2" />
+                    <ChevronRight className="w-3 h-3 text-muted mx-1 sm:mx-2" />
                   )}
                 </div>
               ))}
@@ -659,24 +1109,24 @@ export default function OnboardingPage() {
               </Button>
 
               <div className="flex space-x-3">
-                {currentStep < 3 && (
+                {currentStep < 4 && (
                   <Button
                     onClick={() => {
                       if (currentStep === 1) {
                         handleProfileSubmit();
-                      } else {
-                        setCurrentStep(currentStep + 1);
+                      } else if (currentStep === 2) {
+                        handleGoalsSubmit();
+                      } else if (currentStep === 3) {
+                        setCurrentStep(4);
                       }
                     }}
                     disabled={!canProceedFromStep(currentStep) || loading}
                     className="bg-gradient-brand hover:bg-gradient-brand-hover text-white border-none transform hover:scale-[1.02] transition-all transition-normal shadow-brand"
                   >
-                    {loading ? (
+                    {loading && currentStep === 1 ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                        {currentStep === 1
-                          ? "Creating Profile..."
-                          : "Processing..."}
+                        Creating Profile...
                       </>
                     ) : (
                       <>
@@ -687,21 +1137,41 @@ export default function OnboardingPage() {
                   </Button>
                 )}
 
-                {currentStep === 3 && (
+                {currentStep === 4 && (
                   <Button
                     onClick={handleProjectSubmit}
                     disabled={!canProceedFromStep(currentStep) || loading}
+                    className="bg-gradient-brand hover:bg-gradient-brand-hover text-white border-none transform hover:scale-[1.02] transition-all transition-normal shadow-brand"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        Creating Project...
+                      </>
+                    ) : (
+                      <>
+                        Create Project
+                        <FolderPlus className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {currentStep === 5 && (
+                  <Button
+                    onClick={handleCompleteOnboarding}
+                    disabled={loading}
                     className="bg-status-success hover:bg-status-success/80 text-white border-none transform hover:scale-[1.02] transition-all transition-normal shadow-brand"
                   >
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                        Completing Setup...
+                        Finalizing...
                       </>
                     ) : (
                       <>
-                        Complete Setup
-                        <CheckCircle2 className="w-4 h-4 ml-2" />
+                        Go to Dashboard
+                        <Trophy className="w-4 h-4 ml-2" />
                       </>
                     )}
                   </Button>
@@ -710,7 +1180,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Skip Options */}
-            {currentStep === 2 && (
+            {currentStep === 3 && (
               <div className="text-center mt-6 space-y-3">
                 <div className="p-4 bg-brand/5 border border-brand/20 rounded-lg">
                   <div className="flex items-start gap-3">
@@ -737,7 +1207,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <button
-                  onClick={() => setCurrentStep(3)}
+                  onClick={() => setCurrentStep(4)}
                   className="text-sm text-muted hover:text-secondary transition-colors transition-normal underline"
                 >
                   Skip AI setup for now
@@ -758,6 +1228,12 @@ export default function OnboardingPage() {
                   </>
                 )}
                 {currentStep === 2 && (
+                  <>
+                    Help us personalize your learning experience based on your
+                    goals
+                  </>
+                )}
+                {currentStep === 3 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2">
                       <span>🔐</span>
@@ -769,11 +1245,14 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 )}
-                {currentStep === 3 && (
+                {currentStep === 4 && (
                   <>
                     You can always create more projects later from your
                     dashboard
                   </>
+                )}
+                {currentStep === 5 && (
+                  <>Ready to start your learning journey! 🚀</>
                 )}
               </p>
             </div>

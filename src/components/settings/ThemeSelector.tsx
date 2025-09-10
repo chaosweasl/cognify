@@ -1,9 +1,9 @@
 import React from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useThemeStore } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
-type ThemeType = "light" | "dark" | "system";
+type ThemeType = "light" | "dark";
 
 interface ThemeOption {
   value: ThemeType;
@@ -25,12 +25,6 @@ const themeOptions: ThemeOption[] = [
     icon: Moon,
     description: "Use dark theme",
   },
-  {
-    value: "system",
-    label: "System",
-    icon: Monitor,
-    description: "Use system preference",
-  },
 ];
 
 export function ThemeSelector() {
@@ -40,7 +34,7 @@ export function ThemeSelector() {
     return (
       <div className="space-y-2">
         <label className="text-sm font-medium text-secondary">Theme</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {themeOptions.map((option) => (
             <div
               key={option.value}
@@ -57,7 +51,7 @@ export function ThemeSelector() {
       <label className="text-sm font-medium text-secondary">
         Theme Preference
       </label>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {themeOptions.map((option) => {
           const Icon = option.icon;
           const isSelected = theme === option.value;

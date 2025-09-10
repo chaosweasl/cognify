@@ -1,856 +1,425 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CacheInvalidation } from "@/hooks/useCache";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowRight,
   ArrowLeft,
-  Check,
+  Save,
+  Loader2,
   Sparkles,
-  BookOpen,
-  Target,
-  Clock,
-  Zap,
-  User,
-  ChevronDown,
-  Play,
-  Settings,
-  Star,
-  Coffee,
-  GraduationCap,
-  Briefcase,
-  Heart,
-  Code,
-  Palette,
-  Globe,
-  Dumbbell,
   Rocket,
+  ChevronRight,
+  Settings,
 } from "lucide-react";
+import { ProjectTypeSelector, ProjectTypeInfo } from "./ProjectTypeComponents";
+import { ProjectType, CreateProjectData } from "@/src/types";
 
-// Wizard steps
 const STEPS = {
-  WELCOME: 0,
-  PURPOSE: 1,
-  CATEGORY: 2,
-  INTENSITY: 3,
-  SCHEDULE: 4,
-  ADVANCED: 5,
-  CONFIRMATION: 6,
+  PROJECT_TYPE: 0,
+  PROJECT_DETAILS: 1,
+  STUDY_SETTINGS: 2,
+  CONFIRMATION: 3,
 };
 
-// Category options with icons and descriptions
-const CATEGORIES = [
-  {
-    id: "language",
-    icon: Globe,
-    title: "Language Learning",
-    description: "Master new languages with smart repetition",
-    color: "from-brand-primary to-brand-tertiary",
-  },
-  {
-    id: "academic",
-    icon: GraduationCap,
-    title: "Academic Study",
-    description: "Excel in your coursework and exams",
-    color: "from-brand-accent to-brand-secondary",
-  },
-  {
-    id: "professional",
-    icon: Briefcase,
-    title: "Professional Skills",
-    description: "Advance your career with targeted learning",
-    color: "from-emerald-500 to-teal-500",
-  },
-  {
-    id: "coding",
-    icon: Code,
-    title: "Programming",
-    description: "Learn coding concepts and syntax",
-    color: "from-orange-500 to-red-500",
-  },
-  {
-    id: "creative",
-    icon: Palette,
-    title: "Creative Arts",
-    description: "Develop your artistic talents",
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    id: "fitness",
-    icon: Dumbbell,
-    title: "Health & Fitness",
-    description: "Build healthy habits and knowledge",
-    color: "from-green-500 to-lime-500",
-  },
-  {
-    id: "hobby",
-    icon: Heart,
-    title: "Personal Interest",
-    description: "Pursue your passions and hobbies",
-    color: "from-indigo-500 to-blue-500",
-  },
-  {
-    id: "other",
-    icon: Sparkles,
-    title: "Something Else",
-    description: "Create a custom learning experience",
-    color: "from-yellow-500 to-orange-500",
-  },
-];
-
-// Study intensity options
-const INTENSITY_OPTIONS = [
-  {
-    id: "light",
-    title: "Light & Steady",
-    subtitle: "5-10 min/day",
-    newCards: 5,
-    maxReviews: 50,
-    icon: Coffee,
-    color: "from-emerald-400 to-teal-400",
-  },
-  {
-    id: "moderate",
-    title: "Balanced",
-    subtitle: "15-20 min/day",
-    newCards: 15,
-    maxReviews: 100,
-    icon: Target,
-    color: "from-brand-primary to-violet-400",
-  },
-  {
-    id: "intensive",
-    title: "Intensive",
-    subtitle: "30+ min/day",
-    newCards: 30,
-    maxReviews: 200,
-    icon: Zap,
-    color: "from-orange-400 to-red-400",
-  },
-];
-
-// Schedule options
-const SCHEDULE_OPTIONS = [
-  { id: "daily", title: "Daily", subtitle: "Every day", icon: Clock },
-  {
-    id: "weekdays",
-    title: "Weekdays",
-    subtitle: "Monday - Friday",
-    icon: Briefcase,
-  },
-  {
-    id: "flexible",
-    title: "Flexible",
-    subtitle: "When I have time",
-    icon: Star,
-  },
-];
-
-// Add types for options
-type CategoryOption = (typeof CATEGORIES)[number];
-type IntensityOption = (typeof INTENSITY_OPTIONS)[number];
-type ScheduleOption = (typeof SCHEDULE_OPTIONS)[number];
-
 export function ProjectCreator() {
-  const [currentStep, setCurrentStep] = useState(STEPS.WELCOME);
+  const [currentStep, setCurrentStep] = useState(STEPS.PROJECT_TYPE);
+  const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
-    purpose: string;
-    category: CategoryOption | null;
-    intensity: IntensityOption | null;
-    schedule: ScheduleOption | null;
-    customSettings: boolean;
+    description: string;
+    project_type: ProjectType | null;
+    new_cards_per_day: number;
+    max_reviews_per_day: number;
   }>({
     name: "",
-    purpose: "",
-    category: null,
-    intensity: null,
-    schedule: null,
-    customSettings: false,
+    description: "",
+    project_type: null,
+    new_cards_per_day: 20,
+    max_reviews_per_day: 100,
   });
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [animationClass, setAnimationClass] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
-  // Define ordered steps (controls progress and next/prev reliably)
-  const STEP_ORDER = [
-    STEPS.WELCOME,
-    STEPS.PURPOSE,
-    STEPS.CATEGORY,
-    STEPS.INTENSITY,
-    STEPS.SCHEDULE,
-    STEPS.CONFIRMATION,
-  ];
+  const progress = ((currentStep + 1) / 4) * 100;
 
-  // Animation handler for smooth transitions
-  const handleStepChange = (newStep: number) => {
-    setAnimationClass("opacity-0 transform translate-x-4");
-    setTimeout(() => {
-      setCurrentStep(newStep);
-      setAnimationClass("opacity-100 transform translate-x-0");
-    }, 150);
+  const handleNext = () => {
+    if (currentStep < STEPS.CONFIRMATION) {
+      setCurrentStep(currentStep + 1);
+    }
   };
 
-  useEffect(() => {
-    setTimeout(
-      () => setAnimationClass("opacity-100 transform translate-x-0"),
-      100
-    );
-  }, []);
-
-  // Progress calculation based on STEP_ORDER
-  const currentIndex = Math.max(0, STEP_ORDER.indexOf(currentStep));
-  const TOTAL_STEPS = STEP_ORDER.length;
-  const progress = ((currentIndex + 1) / TOTAL_STEPS) * 100;
-
-  // --- Steps (identical to your previous ones, only handlers use functional setState) ---
-
-  const WelcomeStep = () => (
-    <div className="text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-      <div className="relative inline-flex items-center justify-center">
-        <div className="w-32 h-32 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-3xl flex items-center justify-center shadow-brand-lg transform hover:scale-105 transition-all transition-slow group">
-          <Rocket className="w-16 h-16 text-white group-hover:animate-bounce" />
-        </div>
-        <div className="absolute -inset-4 bg-gradient-glass rounded-3xl blur opacity-60 animate-pulse" />
-        <div className="absolute -top-2 -right-2 w-8 h-8 bg-status-warning rounded-full animate-bounce opacity-80 delay-300">
-          <Sparkles className="w-5 h-5 text-white m-1.5" />
-        </div>
-        <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-brand-secondary rounded-full animate-bounce opacity-80 delay-500">
-          <Star className="w-3 h-3 text-white m-1.5" />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-text-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent">
-          Welcome to Cognify
-        </h1>
-        <p className="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
-          Let&apos;s create your perfect learning experience in just a few
-          steps.
-          <span className="block mt-2 text-brand-primary font-semibold">
-            ✨ Personalized • 🧠 AI-Powered • 🚀 Effective
-          </span>
-        </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <button
-          onClick={() => handleStepChange(STEPS.PURPOSE)}
-          className="group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-semibold px-8 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand"
-        >
-          <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
-          <div className="relative flex items-center gap-3">
-            <Play className="w-5 h-5" />
-            <span>Get Started</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </button>
-
-        <div className="flex items-center gap-2 text-text-muted text-sm">
-          <Clock className="w-4 h-4" />
-          <span>Takes 2 minutes</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const PurposeStep = () => (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-brand-secondary to-brand-accent rounded-2xl flex items-center justify-center mx-auto shadow-brand">
-          <User className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary">
-          Tell us about your project
-        </h2>
-        <p className="text-text-muted max-w-xl mx-auto">
-          Give your learning project a name and describe what you want to
-          achieve.
-        </p>
-      </div>
-
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="space-y-3">
-          <label className="block text-secondary font-semibold">
-            Project Name
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
-            placeholder="e.g., Spanish Vocabulary, React Fundamentals, MCAT Prep..."
-            className="w-full px-4 py-4 surface-elevated border border-subtle rounded-xl text-primary placeholder:text-muted focus:border-brand focus:shadow-brand transition-all transition-normal text-lg"
-            autoFocus
-          />
-        </div>
-
-        <div className="space-y-3">
-          <label className="block text-secondary font-semibold">
-            What&apos;s your goal?
-          </label>
-          <textarea
-            value={formData.purpose}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, purpose: e.target.value }))
-            }
-            placeholder="Describe what you want to learn and why it's important to you..."
-            rows={4}
-            className="w-full px-4 py-4 surface-elevated border border-subtle rounded-xl text-primary placeholder:text-muted focus:border-brand focus:shadow-brand transition-all transition-normal resize-none"
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const CategoryStep = () => (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-brand-tertiary to-green-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
-          <BookOpen className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary">
-          What type of project is this?
-        </h2>
-        <p className="text-text-muted max-w-xl mx-auto">
-          Choose the category that best matches your learning goals.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto mb-10 md:mb-16">
-        {CATEGORIES.map((category, index) => {
-          const IconComponent = category.icon;
-          const isSelected = formData.category?.id === category.id;
-
-          return (
-            <button
-              key={category.id}
-              onClick={() => setFormData((prev) => ({ ...prev, category }))}
-              className={`group relative overflow-hidden p-6 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-left ${
-                isSelected
-                  ? "border-brand surface-elevated shadow-brand"
-                  : "border-subtle surface-secondary hover:border-brand"
-              }`}
-              style={{
-                animationDelay: `${index * 100}ms`,
-                animation: "slideInUp 0.6s ease-out both",
-              }}
-            >
-              {isSelected && (
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
-              )}
-
-              <div className="relative space-y-4">
-                <div
-                  className={`w-12 h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center shadow-brand group-hover:scale-110 transition-transform transition-normal`}
-                >
-                  <IconComponent className="w-6 h-6 text-white" />
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-primary mb-1 group-hover:brand-primary transition-colors">
-                    {category.title}
-                  </h3>
-                  <p className="text-sm text-muted leading-relaxed">
-                    {category.description}
-                  </p>
-                </div>
-
-                {isSelected && (
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white" />
-                  </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const IntensityStep = () => (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
-          <Target className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary">
-          How intensive should your study sessions be?
-        </h2>
-        <p className="text-text-muted max-w-xl mx-auto">
-          Choose a pace that fits your lifestyle and goals. You can always
-          adjust this later.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {INTENSITY_OPTIONS.map((option, index) => {
-          const IconComponent = option.icon;
-          const isSelected = formData.intensity?.id === option.id;
-
-          return (
-            <button
-              key={option.id}
-              onClick={() =>
-                setFormData((prev) => ({ ...prev, intensity: option }))
-              }
-              className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
-                isSelected
-                  ? "border-brand surface-elevated shadow-brand"
-                  : "border-subtle surface-secondary hover:border-brand"
-              }`}
-              style={{
-                animationDelay: `${index * 200}ms`,
-                animation: "slideInUp 0.6s ease-out both",
-              }}
-            >
-              {isSelected && (
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
-              )}
-
-              <div className="relative space-y-6">
-                <div
-                  className={`w-16 h-16 bg-gradient-to-br ${option.color} rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal`}
-                >
-                  <IconComponent className="w-8 h-8 text-white" />
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-bold text-primary mb-2 group-hover:brand-primary transition-colors">
-                    {option.title}
-                  </h3>
-                  <p className="text-brand-primary font-semibold text-lg mb-3">
-                    {option.subtitle}
-                  </p>
-                  <div className="text-sm text-muted space-y-1">
-                    <div>{option.newCards} new cards/day</div>
-                    <div>Up to {option.maxReviews} reviews/day</div>
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white" />
-                  </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const ScheduleStep = () => (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto shadow-brand">
-          <Clock className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary">
-          When do you plan to study?
-        </h2>
-        <p className="text-text-muted max-w-xl mx-auto">
-          Set up a schedule that works for you. Consistency is key to effective
-          learning.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {SCHEDULE_OPTIONS.map((option, index) => {
-          const IconComponent = option.icon;
-          const isSelected = formData.schedule?.id === option.id;
-
-          return (
-            <button
-              key={option.id}
-              onClick={() =>
-                setFormData((prev) => ({ ...prev, schedule: option }))
-              }
-              className={`group relative overflow-hidden p-8 rounded-2xl border transition-all transition-normal hover:scale-[1.02] hover:shadow-brand text-center ${
-                isSelected
-                  ? "border-brand surface-elevated shadow-brand"
-                  : "border-subtle surface-secondary hover:border-brand"
-              }`}
-              style={{
-                animationDelay: `${index * 200}ms`,
-                animation: "slideInUp 0.6s ease-out both",
-              }}
-            >
-              {isSelected && (
-                <div className="absolute -inset-0.5 bg-gradient-glass rounded-2xl blur opacity-100" />
-              )}
-
-              <div className="relative space-y-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-400 to-brand-secondary rounded-2xl flex items-center justify-center mx-auto shadow-brand group-hover:scale-110 transition-transform transition-normal">
-                  <IconComponent className="w-8 h-8 text-white" />
-                </div>
-
-                <div>
-                  <h3 className="text-xl font-bold text-primary mb-2 group-hover:brand-primary transition-colors">
-                    {option.title}
-                  </h3>
-                  <p className="text-text-muted">{option.subtitle}</p>
-                </div>
-
-                {isSelected && (
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
-                    <Check className="w-5 h-5 text-white" />
-                  </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="max-w-2xl mx-auto">
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="w-full p-4 surface-secondary border border-subtle rounded-xl text-left transition-all transition-normal hover:border-brand hover:shadow-brand group"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Settings className="w-5 h-5 text-muted group-hover:brand-primary transition-colors" />
-              <span className="font-semibold text-secondary group-hover:text-primary transition-colors">
-                Advanced Settings
-              </span>
-            </div>
-            <ChevronDown
-              className={`w-5 h-5 text-muted transition-transform ${
-                showAdvanced ? "rotate-180" : ""
-              }`}
-            />
-          </div>
-        </button>
-
-        {showAdvanced && (
-          <div className="mt-4 p-6 surface-elevated border border-subtle rounded-xl space-y-4 animate-in slide-in-from-top-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-secondary">
-                  Custom SRS Settings
-                </div>
-                <div className="text-sm text-muted">
-                  Fine-tune the spaced repetition algorithm
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    customSettings: !prev.customSettings,
-                  }))
-                }
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                  formData.customSettings ? "bg-brand-primary" : "bg-text-muted"
-                }`}
-              >
-                <div
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                    formData.customSettings
-                      ? "translate-x-6"
-                      : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // --- Project creation handler using API (production ready) ---
-  type CreateProjectResponse = {
-    id?: string;
-    name?: string;
-    message?: string;
-    error?: string;
+  const handlePrev = () => {
+    if (currentStep > STEPS.PROJECT_TYPE) {
+      setCurrentStep(currentStep - 1);
+    }
   };
-  const createProject = async () => {
-    if (isCreating) return;
 
-    // Validate required fields before submit
-    if (!formData.name.trim()) {
-      toast.error("Project name is required");
-      return;
+  const canProceed = () => {
+    switch (currentStep) {
+      case STEPS.PROJECT_TYPE:
+        return formData.project_type !== null;
+      case STEPS.PROJECT_DETAILS:
+        return formData.name.trim().length > 0;
+      case STEPS.STUDY_SETTINGS:
+        return formData.new_cards_per_day > 0 && formData.max_reviews_per_day > 0;
+      case STEPS.CONFIRMATION:
+        return true;
+      default:
+        return false;
     }
-    if (!formData.intensity) {
-      toast.error("Please select a study intensity");
-      return;
-    }
-    if (!formData.schedule) {
-      toast.error("Please select a study schedule");
+  };
+
+  const handleCreateProject = async () => {
+    if (!formData.project_type || !formData.name.trim()) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
     setIsCreating(true);
 
     try {
-      // Compose payload for API (only fields supported by backend)
-      const payload = {
+      const projectData: CreateProjectData = {
         name: formData.name.trim(),
-        description: formData.purpose?.trim() || undefined,
-        new_cards_per_day: formData.intensity.newCards,
-        max_reviews_per_day: formData.intensity.maxReviews,
-        // Advanced SRS settings could be added here if UI exposes them
+        description: formData.description.trim() || undefined,
+        project_type: formData.project_type,
+        new_cards_per_day: formData.new_cards_per_day,
+        max_reviews_per_day: formData.max_reviews_per_day,
       };
 
-      const res = await fetch("/api/projects", {
+      const response = await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
       });
 
-      let data: CreateProjectResponse;
-      try {
-        data = await res.json();
-      } catch {
-        data = { error: "Invalid server response" };
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Project creation failed:", error);
+        throw new Error("Failed to create project");
       }
 
-      if (!res.ok || data.error) {
-        toast.error(data.error || "Failed to create project");
-        setIsCreating(false);
-        return;
-      }
+      const newProject = await response.json();
 
-      // SUCCESS: Invalidate cache on client side after successful creation
+      // Invalidate cache
       CacheInvalidation.invalidate("user_projects");
-      CacheInvalidation.invalidatePattern("project_stats_");
 
       toast.success("Project created successfully!");
-
-      // Navigate to projects page instead of dashboard to see the new project
-      router.push("/projects");
+      router.push(`/projects/${newProject.id}/edit`);
     } catch (error) {
-      console.error("Network error creating project:", error);
-      toast.error("Network error: Failed to create project");
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project. Please try again.");
+    } finally {
       setIsCreating(false);
     }
   };
 
-  const ConfirmationStep = () => (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <div className="w-20 h-20 bg-gradient-brand rounded-3xl flex items-center justify-center mx-auto shadow-brand-lg animate-pulse">
-          <Check className="w-10 h-10 text-white" />
-        </div>
-        <h2 className="text-3xl font-bold text-primary">
-          Perfect! Your project is ready
-        </h2>
-        <p className="text-text-muted max-w-xl mx-auto">
-          Review your choices below, then create your personalized learning
-          experience.
-        </p>
-      </div>
-
-      <div className="max-w-2xl mx-auto space-y-4">
-        <div className="surface-elevated border border-subtle rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-brand rounded-xl flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="font-bold text-primary text-lg">
-                {formData.name || "Untitled Project"}
-              </div>
-              <div className="text-text-muted">
-                {formData.purpose || "No description provided"}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {formData.category && (
-          <div className="surface-elevated border border-subtle rounded-xl p-6">
-            <div className="flex items-center gap-4">
-              {React.createElement(formData.category.icon, {
-                className: "w-6 h-6 text-brand-primary",
-              })}
-              <div>
-                <div className="font-semibold text-secondary">Category</div>
-                <div className="text-primary">{formData.category.title}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {formData.intensity && (
-          <div className="surface-elevated border border-subtle rounded-xl p-6">
-            <div className="flex items-center gap-4">
-              <Target className="w-6 h-6 text-brand-primary" />
-              <div>
-                <div className="font-semibold text-secondary">
-                  Study Intensity
-                </div>
-                <div className="text-primary">
-                  {formData.intensity.title} - {formData.intensity.subtitle}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {formData.schedule && (
-          <div className="surface-elevated border border-subtle rounded-xl p-6">
-            <div className="flex items-center gap-4">
-              <Clock className="w-6 h-6 text-brand-primary" />
-              <div>
-                <div className="font-semibold text-secondary">Schedule</div>
-                <div className="text-primary">
-                  {formData.schedule.title} - {formData.schedule.subtitle}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="text-center">
-        <button
-          onClick={createProject}
-          disabled={isCreating}
-          className={`group relative overflow-hidden bg-gradient-brand hover:shadow-brand-lg text-white font-bold text-lg px-10 py-4 rounded-xl transition-all transition-normal hover:scale-[1.02] shadow-brand ${
-            isCreating ? "opacity-75 cursor-not-allowed" : ""
-          }`}
-        >
-          <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-slow skew-x-12" />
-          <div className="relative flex items-center gap-3">
-            <Sparkles className="w-6 h-6" />
-            <span>
-              {isCreating ? "Creating Project..." : "Create My Project"}
-            </span>
-            <Rocket
-              className={`w-6 h-6 ${
-                isCreating ? "animate-spin" : "group-hover:animate-bounce"
-              }`}
-            />
-          </div>
-        </button>
-      </div>
-    </div>
-  );
-
-  // Mapping steps to components
-  const stepsMap: Record<number, React.FC> = {
-    [STEPS.WELCOME]: WelcomeStep,
-    [STEPS.PURPOSE]: PurposeStep,
-    [STEPS.CATEGORY]: CategoryStep,
-    [STEPS.INTENSITY]: IntensityStep,
-    [STEPS.SCHEDULE]: ScheduleStep,
-    [STEPS.CONFIRMATION]: ConfirmationStep,
-  };
-
-  // Navigation helpers
-  const canGoNext = () => {
+  const renderStep = () => {
     switch (currentStep) {
-      case STEPS.WELCOME:
-        return true;
-      case STEPS.PURPOSE:
-        return formData.name.trim().length > 0;
-      case STEPS.CATEGORY:
-        return formData.category !== null;
-      case STEPS.INTENSITY:
-        return formData.intensity !== null;
-      case STEPS.SCHEDULE:
-        return formData.schedule !== null;
+      case STEPS.PROJECT_TYPE:
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary">
+                Choose Your Project Type
+              </h2>
+              <p className="text-secondary max-w-2xl mx-auto">
+                Select the type of learning material you want to create. This will help us optimize the experience for your needs.
+              </p>
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+              <ProjectTypeSelector
+                selectedType={formData.project_type}
+                onTypeSelect={(type) =>
+                  setFormData((prev) => ({ ...prev, project_type: type }))
+                }
+                variant="grid"
+              />
+            </div>
+          </div>
+        );
+
+      case STEPS.PROJECT_DETAILS:
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+                <Rocket className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary">
+                Project Details
+              </h2>
+              <p className="text-secondary max-w-2xl mx-auto">
+                Give your project a name and describe what you want to learn.
+              </p>
+            </div>
+
+            {formData.project_type && (
+              <div className="max-w-md mx-auto mb-8">
+                <ProjectTypeInfo projectType={formData.project_type} showFeatures={false} />
+              </div>
+            )}
+
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-secondary">
+                  Project Name *
+                </label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="e.g., Spanish Vocabulary, React Fundamentals, Biology Terms..."
+                  className="text-lg py-3"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-secondary">
+                  Description
+                </label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  placeholder="Describe what you want to learn or achieve with this project..."
+                  rows={4}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case STEPS.STUDY_SETTINGS:
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto">
+                <Settings className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary">
+                Study Settings
+              </h2>
+              <p className="text-secondary max-w-2xl mx-auto">
+                Configure how many cards you want to study each day. You can change these settings later.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <Card className="glass-surface border-subtle">
+                <CardHeader>
+                  <CardTitle className="text-xl text-primary">Daily Study Limits</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-secondary">
+                        New Cards Per Day
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={formData.new_cards_per_day}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            new_cards_per_day: parseInt(e.target.value) || 1,
+                          }))
+                        }
+                        className="text-lg"
+                      />
+                      <p className="text-xs text-muted">
+                        How many new cards to introduce daily
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-secondary">
+                        Max Reviews Per Day
+                      </label>
+                      <Input
+                        type="number"
+                        min="10"
+                        max="500"
+                        value={formData.max_reviews_per_day}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            max_reviews_per_day: parseInt(e.target.value) || 10,
+                          }))
+                        }
+                        className="text-lg"
+                      />
+                      <p className="text-xs text-muted">
+                        Maximum cards to review in one day
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-brand-primary/5 border border-brand-primary/20 rounded-xl">
+                    <h4 className="font-semibold text-brand-primary mb-2">
+                      Recommended Settings
+                    </h4>
+                    <p className="text-sm text-secondary">
+                      For beginners, we recommend starting with 10-20 new cards and 50-100 reviews per day. You can always adjust these settings later based on your progress.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case STEPS.CONFIRMATION:
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-brand rounded-2xl flex items-center justify-center mx-auto">
+                <Rocket className="w-8 h-8 text-white animate-bounce" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary">
+                Ready to Create Your Project!
+              </h2>
+              <p className="text-secondary max-w-2xl mx-auto">
+                Review your project settings below and click create to start your learning journey.
+              </p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <Card className="glass-surface border-subtle">
+                <CardHeader>
+                  <CardTitle className="text-xl text-primary flex items-center gap-3">
+                    {formData.project_type && (
+                      <ProjectTypeInfo 
+                        projectType={formData.project_type} 
+                        showFeatures={false}
+                        className="mb-0"
+                      />
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-sm font-semibold text-secondary">Project Name:</span>
+                      <p className="text-primary font-medium">{formData.name}</p>
+                    </div>
+                    
+                    {formData.description && (
+                      <div>
+                        <span className="text-sm font-semibold text-secondary">Description:</span>
+                        <p className="text-primary">{formData.description}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-subtle">
+                      <div>
+                        <span className="text-sm font-semibold text-secondary">New Cards/Day:</span>
+                        <p className="text-primary font-medium">{formData.new_cards_per_day}</p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-secondary">Max Reviews/Day:</span>
+                        <p className="text-primary font-medium">{formData.max_reviews_per_day}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
       default:
-        return false;
+        return null;
     }
   };
 
-  const handleNext = () => {
-    if (!canGoNext()) return;
-    const idx = STEP_ORDER.indexOf(currentStep);
-    if (idx === -1) return;
-    const next = STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
-    if (next !== undefined) handleStepChange(next);
-  };
-
-  const handlePrev = () => {
-    const idx = STEP_ORDER.indexOf(currentStep);
-    if (idx <= 0) return;
-    const prev = STEP_ORDER[idx - 1];
-    handleStepChange(prev);
-  };
-
-  // Step renderer
-  const renderStep = () => {
-    const StepComponent = stepsMap[currentStep];
-    return StepComponent ? <StepComponent /> : null;
-  };
-
   return (
-    <div
-      className="flex-1 surface-primary relative overflow-hidden"
-      style={{
-        paddingBottom: "calc(76px + env(safe-area-inset-bottom) + 16px)",
-      }}
-    >
-      {/* Progress bar */}
-      {currentStep !== STEPS.WELCOME && (
-        <div className="relative z-10 p-4 md:p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="surface-secondary rounded-full h-2 overflow-hidden shadow-inner">
+    <div className="min-h-screen bg-gradient-to-br from-background via-surface-primary to-surface-secondary">
+      <div className="container mx-auto px-6 py-12 max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-brand-primary to-brand-secondary bg-clip-text text-transparent mb-4">
+            Create New Project
+          </h1>
+          
+          {/* Progress Bar */}
+          <div className="max-w-md mx-auto mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-secondary">Progress</span>
+              <span className="text-sm font-medium text-brand-primary">
+                {currentStep + 1} of 4
+              </span>
+            </div>
+            <div className="w-full h-2 surface-secondary rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-brand transition-all duration-1000 ease-out shadow-brand"
+                className="h-full bg-gradient-brand rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <div className="flex justify-between items-center mt-4 text-sm">
-              <span className="text-text-muted">
-                Step {currentIndex + 1} of {TOTAL_STEPS}
-              </span>
-              <span className="text-brand-primary font-semibold">
-                {Math.round(progress)}% complete
-              </span>
-            </div>
           </div>
         </div>
-      )}
-      {/* Main content */}
-      <div
-        className={`relative z-10 w-full max-w-7xl mx-auto px-6 py-8 md:py-12 transition-all transition-normal ${animationClass}`}
-      >
-        {renderStep()}
-      </div>
-      {/* Navigation - FIXED so it can't be hidden */}
-      {currentStep !== STEPS.WELCOME && currentStep !== STEPS.CONFIRMATION && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-50 border-t border-subtle bg-white/5 backdrop-blur-md"
-          style={{ height: "76px", padding: "12px 16px" }}
-        >
-          <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-            <button
-              onClick={handlePrev}
-              className="group flex items-center gap-2 px-4 md:px-6 py-3 surface-secondary border border-subtle rounded-xl text-secondary hover:text-primary hover:border-brand transition-all transition-normal interactive-hover"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-semibold">Back</span>
-            </button>
 
-            <button
-              onClick={handleNext}
-              disabled={!canGoNext()}
-              className={`group flex items-center gap-2 px-4 md:px-6 py-3 rounded-xl font-semibold transition-all transition-normal ${
-                canGoNext()
-                  ? "bg-gradient-brand text-white hover:shadow-brand shadow-brand hover:scale-[1.02]"
-                  : "surface-primary border border-subtle text-muted opacity-95 cursor-not-allowed"
-              }`}
-            >
-              <span>Continue</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
+        {/* Step Content */}
+        <div className="mb-12">
+          {renderStep()}
         </div>
-      )}
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center max-w-2xl mx-auto">
+          <Button
+            variant="outline"
+            onClick={currentStep === STEPS.PROJECT_TYPE ? () => router.back() : handlePrev}
+            className="hover:scale-105 transition-transform"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {currentStep === STEPS.PROJECT_TYPE ? "Cancel" : "Previous"}
+          </Button>
+
+          {currentStep === STEPS.CONFIRMATION ? (
+            <Button
+              onClick={handleCreateProject}
+              disabled={!canProceed() || isCreating}
+              className="bg-gradient-brand hover:scale-105 transition-transform"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Create Project
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="bg-gradient-brand hover:scale-105 transition-transform disabled:opacity-50 disabled:transform-none"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

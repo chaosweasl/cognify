@@ -192,9 +192,9 @@ export function HeaderMain() {
           className="h-10 w-10 sm:h-12 sm:w-12 text-secondary hover:text-primary interactive-hover transition-all transition-normal group rounded-xl touch-manipulation"
         >
           {isHydrated && theme === "dark" ? (
-            <Sun className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal group-hover:rotate-180" />
+            <Sun className="h-5 w-5 group-hover:text-brand-primary transition-colors transition-normal group-hover:rotate-180" />
           ) : (
-            <Moon className="h-5 w-5 group-hover:brand-primary transition-colors transition-normal group-hover:-rotate-12" />
+            <Moon className="h-5 w-5 group-hover:text-brand-primary transition-colors transition-normal group-hover:-rotate-12" />
           )}
         </Button>
 
